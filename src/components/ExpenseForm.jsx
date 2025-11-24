@@ -1,4 +1,4 @@
-// src/components/ExpenseForm.jsx - 費用表單 (支援 Light/Dark Mode)
+// src/components/ExpenseForm.jsx - 費用表單 (新增分攤方式)
 
 import React, { useState } from 'react';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
@@ -12,6 +12,8 @@ const ExpenseForm = ({ tripId, collaborators, currency, onSave, onClose }) => {
     const [amount, setAmount] = useState('');
     const [paidBy, setPaidBy] = useState(user?.uid || collaborators[0]?.uid || '');
     const [category, setCategory] = useState('一般');
+    // 新增分攤方式狀態，預設為 'equal' (平均分攤)
+    const [splitMethod, setSplitMethod] = useState('equal'); 
 
     const EXPENSE_CATEGORIES = ['餐飲', '交通', '住宿', '門票', '購物', '一般'];
 
@@ -23,13 +25,40 @@ const ExpenseForm = ({ tripId, collaborators, currency, onSave, onClose }) => {
             return;
         }
 
+        const expenseAmount = parseFloat(amount);
+        
+        // ***********************************************
+        // 計算分攤的成員和金額
+        let splitWith;
+        if (splitMethod === 'paid_by_only') {
+            // 單人支付：只有支付者自己需要結算
+            splitWith = [{ uid: paidBy, share: expenseAmount }];
+        } else {
+            // 平均分攤 (equal)：默認為所有協作者平均分攤
+            const totalCollaborators = collaborators.length;
+            const sharePerPerson = Math.round((expenseAmount / totalCollaborators) * 100) / 100; // 確保兩位小數
+            splitWith = collaborators.map(c => ({ 
+                uid: c.uid, 
+                share: sharePerPerson 
+            }));
+            
+            // 處理餘數，加到第一個成員上
+            const remainder = expenseAmount - (sharePerPerson * totalCollaborators);
+            if (remainder !== 0) {
+                splitWith[0].share = Math.round((splitWith[0].share + remainder) * 100) / 100;
+            }
+        }
+        // ***********************************************
+
         const newExpense = {
             id: uuidv4(),
             description,
-            amount: parseFloat(amount),
+            amount: expenseAmount,
             currency,
             paidBy,
             category,
+            splitMethod, // 記錄分攤方式
+            splitWith,   // 記錄分攤結果
             date: new Date().toISOString().split('T')[0],
             createdAt: new Date().toISOString(),
         };
@@ -48,7 +77,6 @@ const ExpenseForm = ({ tripId, collaborators, currency, onSave, onClose }) => {
     };
 
     return (
-        // Modal 卡片樣式：白色 / 深灰，Threads 圓角風格
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl w-full max-w-md shadow-2xl text-gray-800 dark:text-white">
             <h2 className="text-2xl font-bold mb-4 text-red-600 dark:text-red-400">新增旅行支出 ({currency})</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -77,6 +105,17 @@ const ExpenseForm = ({ tripId, collaborators, currency, onSave, onClose }) => {
                         {collaborators.map(c => (
                             <option key={c.uid} value={c.uid}>{c.name}</option>
                         ))}
+                    </select>
+                </div>
+                
+                {/* 費用分攤方式 (新增) */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">費用分攤方式</label>
+                    <select value={splitMethod} onChange={(e) => setSplitMethod(e.target.value)}
+                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white">
+                        <option value="equal">平均分攤給所有人 ({collaborators.length} 人)</option>
+                        <option value="paid_by_only">單人支付（費用由支付者自己負擔）</option>
+                        {/* 可以後續擴展：按比例、指定金額等 */}
                     </select>
                 </div>
 
