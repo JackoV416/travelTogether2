@@ -3,6 +3,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 // ***********************************************
 // 從環境變量讀取配置
@@ -23,6 +24,8 @@ const app = initializeApp(firebaseConfig);
 // 導出服務
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+// 導出 Storage 服務
+export const storage = getStorage(app)
 
 // 注意：如果您的專案使用其他 Firebase 服務（如 Storage），
 // 請確保也在此處初始化並導出它們。
