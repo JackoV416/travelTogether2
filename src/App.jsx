@@ -1,29 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'; // 從 firebase SDK 導入
-import { auth, googleProvider, db } from './firebase'; // 從我們設定的 firebase.js 導入
+import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'; 
+import { auth, googleProvider } from './firebase'; // 注意這裡只需要 auth 和 provider
 
+// 確保這三個頁面組件的路徑和名稱是正確的
 import Home from './pages/Home';
 import CreateTrip from './pages/CreateTrip';
 import TripDetail from './pages/TripDetail';
 
-// 假設這是所有頁面都要使用的 Auth Context (專業做法，但此處為簡化直接在 App.jsx 處理)
+// ------------------------------------------------------------------
+// useAuth Hook: 處理用戶登入狀態
 const useAuth = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 監聽登入狀態的變化
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
     });
-
-    // 清除監聽
     return () => unsubscribe();
   }, []);
 
-  // Google 登入操作
   const login = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
@@ -32,19 +30,19 @@ const useAuth = () => {
     }
   };
 
-  // 登出操作
   const logout = async () => {
     await signOut(auth);
   };
 
   return { user, loading, login, logout };
 };
+// ------------------------------------------------------------------
 
 
 function App() {
   const { user, loading, login, logout } = useAuth();
   
-  // * 以下保留原本的 trips 狀態管理 (仍使用 localStorage 模擬) *
+  // *** 臨時的 trips 狀態管理 (之後會替換為 Firestore) ***
   const [trips, setTrips] = useState(() => {
     const savedTrips = localStorage.getItem('myTrips');
     return savedTrips ? JSON.parse(savedTrips) : [
@@ -57,18 +55,16 @@ function App() {
   }, [trips]);
 
   const handleAddTrip = (newTripData) => {
-    // ... (保留原本的 handleAddTrip 邏輯)
     const newTrip = { id: Date.now(), ...newTripData }; 
     setTrips([newTrip, ...trips]);
   };
-  // ***************
+  // ***************************************************************
 
-  // 1. 如果正在載入狀態，顯示載入畫面
   if (loading) {
     return <div className="min-h-screen bg-jp-bg flex items-center justify-center text-xl">載入中...</div>;
   }
 
-  // 2. 如果用戶未登入，顯示登入提示畫面
+  // 未登入畫面
   if (!user) {
     return (
       <div className="min-h-screen bg-jp-bg flex flex-col items-center justify-center p-8">
@@ -84,15 +80,14 @@ function App() {
     );
   }
 
-
-  // 3. 用戶已登入，顯示主 App 畫面 (Routing)
+  // 已登入畫面
   return (
     <BrowserRouter>
       <Routes>
-        {/* Home 和 CreateTrip 現在可以知道當前登入用戶是誰了 */}
         <Route path="/" element={<Home trips={trips} user={user} logout={logout} />} /> 
         <Route path="/create" element={<CreateTrip onAddTrip={handleAddTrip} />} />
-        <Route path="/trip/:id" element={<TripDetail user={user} />} />
+        {/* 注意：這裡我們使用 trips 數據來查找詳情，因為還沒用 Firestore */}
+        <Route path="/trip/:id" element={<TripDetail user={user} trips={trips} />} /> 
       </Routes>
     </BrowserRouter>
   );
