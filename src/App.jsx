@@ -1,104 +1,111 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-// 導入 Firestore 實時監聽、新增文檔和查詢相關函式
-import { collection, onSnapshot, addDoc, setDoc, doc, query, orderBy } from 'firebase/firestore'; 
-import { auth, db } from './firebase'; 
+// src/App.jsx
 
-// 導入頁面和組件
+import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { collection, addDoc, getDocs, doc, setDoc } from 'firebase/firestore';
+import { auth, googleAuthProvider, signInWithPopup, db } from './firebase'; // 確保路徑正確
 import Home from './pages/Home';
 import CreateTrip from './pages/CreateTrip';
 import TripDetail from './pages/TripDetail';
+import LandingPage from './pages/LandingPage'; // 引入登陸頁
 
 // ----------------------------------------------------------------------
-// 輔助函式：Google 身份驗證 Hook
+// 登入/登出和用戶狀態管理 Hook
 // ----------------------------------------------------------------------
 const useAuth = () => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged(currentUser => {
-            setUser(currentUser);
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            if (currentUser) {
+                // 如果用戶登入，檢查並儲存用戶資料到 Firestore (若不存在)
+                const userRef = doc(db, 'users', currentUser.uid);
+                await setDoc(userRef, {
+                    uid: currentUser.uid,
+                    displayName: currentUser.displayName,
+                    email: currentUser.email,
+                    photoURL: currentUser.photoURL,
+                }, { merge: true }); // 使用 merge: true 避免覆蓋現有資料
+
+                setUser(currentUser);
+            } else {
+                setUser(null);
+            }
             setLoading(false);
         });
+
         return () => unsubscribe();
     }, []);
 
     const login = async () => {
-        const provider = new GoogleAuthProvider();
         try {
-            await signInWithPopup(auth, provider);
+            await signInWithPopup(auth, googleAuthProvider);
         } catch (error) {
             console.error('Google 登入錯誤:', error);
+            // 處理登入彈窗關閉等情況
+            if (error.code === 'auth/popup-closed-by-user') {
+                alert('您已取消 Google 登入。');
+            } else {
+                alert(`登入失敗: ${error.message}`);
+            }
         }
     };
 
-    const logout = () => {
-        signOut(auth);
+    const logout = async () => {
+        await signOut(auth);
     };
 
     return { user, loading, login, logout };
 };
 
 // ----------------------------------------------------------------------
-// 應用程式主要組件
+// 主應用程式組件
 // ----------------------------------------------------------------------
 function App() {
+    // 獲取用戶狀態和認證函式
     const { user, loading, login, logout } = useAuth();
-    const [trips, setTrips] = useState([]); // 儲存所有行程數據
+    
+    // 行程資料狀態
+    const [trips, setTrips] = useState([]);
 
-    // *** 1. 用戶資料寫入 Firestore (新功能) ***
+    // 獲取行程資料
+    const fetchTrips = async (userId) => {
+        if (!userId) return;
+        try {
+            const tripsCollectionRef = collection(db, 'trips');
+            const data = await getDocs(tripsCollectionRef);
+            
+            // 過濾出屬於該用戶或他參與的行程
+            const tripList = data.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(trip => 
+                    trip.ownerId === userId || 
+                    trip.members.some(member => member.id === userId)
+                );
+            setTrips(tripList);
+        } catch (error) {
+            console.error('獲取行程列表錯誤:', error);
+        }
+    };
+    
     useEffect(() => {
         if (user) {
-            // 每次成功登入後，將用戶資料寫入 'users' 集合
-            const userRef = doc(db, 'users', user.uid);
-            setDoc(userRef, {
-                uid: user.uid,
-                displayName: user.displayName,
-                email: user.email,
-                lastLogin: new Date().toISOString()
-            }, { merge: true }); // 使用 merge: true 以免覆蓋其他資訊
-        }
-    }, [user]); 
-    // **********************************
-
-
-    // *** 2. 實時監聽 Firestore (Home 頁面數據來源) ***
-    useEffect(() => {
-        if (!user) {
+            fetchTrips(user.uid);
+        } else {
             setTrips([]);
-            return;
         }
-
-        const q = query(
-            collection(db, 'trips'),
-            // 僅顯示該用戶擁有的行程（未來可擴展為包含該用戶的行程）
-            orderBy('createdAt', 'desc') 
-        );
-
-        // 設置實時監聽
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const tripsData = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            setTrips(tripsData);
-        }, (error) => {
-            console.error("Firestore 實時監聽錯誤:", error);
-            // 可以在這裡處理錯誤顯示給用戶
-        });
-
-        return () => unsubscribe(); // 組件卸載時取消監聽
     }, [user]);
-    // **********************************
 
 
     // 新增行程到 Firestore
-    const addTrip = async (tripData) => {
-        if (!user) return;
+    const handleAddTrip = async (newTripData) => {
         try {
-            await addDoc(collection(db, 'trips'), tripData);
+            const docRef = await addDoc(collection(db, 'trips'), newTripData);
+            const savedTrip = { id: docRef.id, ...newTripData };
+            setTrips(prevTrips => [...prevTrips, savedTrip]);
+            return savedTrip;
         } catch (error) {
             console.error('新增行程錯誤:', error);
             alert('新增行程失敗。');
@@ -107,48 +114,34 @@ function App() {
 
 
     if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-100">
-                <p className="text-xl font-medium">載入中...</p>
-            </div>
-        );
+        return <div className="min-h-screen bg-jp-bg flex items-center justify-center text-white text-xl">載入中...</div>;
     }
 
+    // 判斷是否顯示登陸頁
     if (!user) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-jp-bg p-4">
-                <h1 className="text-4xl font-bold mb-6 text-gray-800">🧳 旅行小幫手</h1>
-                <p className="text-lg mb-8 text-gray-600">請登入以管理您的旅行計畫和費用。</p>
-                <button 
-                    onClick={login} 
-                    className="flex items-center space-x-3 bg-white border border-gray-300 p-3 rounded-full shadow-md hover:shadow-lg transition-shadow"
-                >
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/Logo_2013_Google_%282015-2020%29.svg" alt="Google logo" className="w-6 h-6"/>
-                    <span className="text-gray-700 font-medium">使用 Google 帳戶登入</span>
-                </button>
-            </div>
-        );
+        return <LandingPage login={login} />;
     }
 
     return (
         <Router>
-            <Routes>
-                {/* Home 頁面：顯示所有行程 */}
-                <Route 
-                    path="/" 
-                    element={<Home trips={trips} user={user} logout={logout} />} 
-                />
-                
-                {/* 創建行程頁面 */}
-                <Route 
-                    path="/create" 
-                    element={<CreateTrip onAddTrip={addTrip} user={user} />} 
-                />
-                
-                {/* 行程詳情頁面 */}
-                <Route 
-                    path="/trip/:id" 
-                    element={<TripDetail user={user} />} 
-                />
-                
-                {/* 404
+            <div className="min-h-screen bg-jp-bg">
+                <Routes>
+                    <Route 
+                        path="/" 
+                        element={<Home trips={trips} logout={logout} user={user} />} 
+                    />
+                    <Route 
+                        path="/create" 
+                        element={<CreateTrip onAddTrip={handleAddTrip} user={user} />} 
+                    />
+                    <Route 
+                        path="/trip/:id" 
+                        element={<TripDetail user={user} fetchTrips={fetchTrips} />} 
+                    />
+                </Routes>
+            </div>
+        </Router>
+    );
+}
+
+export default App;
