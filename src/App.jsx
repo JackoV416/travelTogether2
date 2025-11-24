@@ -1,4 +1,4 @@
-mport React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'; // 從 firebase SDK 導入
 import { auth, googleProvider, db } from './firebase'; // 從我們設定的 firebase.js 導入
