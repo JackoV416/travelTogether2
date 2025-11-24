@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日本旅 | Japan Trip</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Zen+Kaku+Gothic+New:wght@300;400;500&display=swap');
+        
+        body {
+            font-family: 'Zen Kaku Gothic New', 'Noto Sans TC', sans-serif;
+            background-color: #F7F7F5; /* 日式米色背景 */
+            color: #333;
+        }
+        
+        /* 隱藏滾動條但保持功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        .card-shadow {
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        }
+
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .tag-must-eat { background-color: #FFE4E1; color: #D65A5A; }
+        .tag-must-buy { background-color: #E0F2F1; color: #26A69A; }
+        .tag-transport { background-color: #F3F4F6; color: #4B5563; }
+    </style>
+</head>
+<body class="pb-24">
+
+    <header class="fixed top-0 w-full z-50 bg-[#F7F7F5] px-6 py-4 flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-bold tracking-widest">京都・大阪</h1>
+            <p class="text-xs text-gray-500 mt-1">2024.11.24 - 11.30</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <div class="flex -space-x-2">
+                <img class="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/150?img=32" alt="User">
+                <div class="w-8 h-8 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-xs text-gray-600">+2</div>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center card-shadow">
+                <i class="fas fa-cloud-sun text-orange-400"></i>
+            </div>
+        </div>
+    </header>
+
+    <main class="mt-20 px-4 space-y-6">
+
+        <section class="bg-white p-4 rounded-2xl card-shadow">
+            <div class="flex justify-between items-end mb-2">
+                <h3 class="text-sm font-bold text-gray-400">總預算</h3>
+                <span class="text-lg font-bold">¥ 45,200 / ¥ 100,000</span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-2">
+                <div class="bg-black h-2 rounded-full" style="width: 45%"></div>
+            </div>
+        </section>
+
+        <div class="flex items-center space-x-2 mb-2 mt-8">
+            <span class="bg-black text-white text-xs px-2 py-1 rounded">DAY 1</span>
+            <h2 class="font-bold text-lg">抵達與祇園漫步</h2>
+            <span class="text-xs text-gray-400 ml-auto">14°C 晴</span>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 card-shadow relative border-l-4 border-gray-400">
+            <div class="absolute top-4 right-4">
+                <button class="bg-black text-white text-xs px-3 py-1.5 rounded-full flex items-center">
+                    <i class="fas fa-location-arrow mr-1"></i> 導航
+                </button>
+            </div>
+            <div class="flex items-start">
+                <div class="mr-3 mt-1"><i class="fas fa-plane text-gray-400"></i></div>
+                <div>
+                    <h3 class="font-bold">關西機場 -> 京都車站</h3>
+                    <p class="text-xs text-gray-500 mt-1">HARUKA 特急列車</p>
+                    <div class="mt-2 flex gap-2">
+<span class="text-xs px-2 py-1 bg-gray-100 rounded">預約號: 442B</span>
+                        <span class="text-xs px-2 py-1 bg-gray-100 rounded">13:15發</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-0 card-shadow overflow-hidden">
+            <div class="h-32 bg-gray-200 w-full bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80');">
+                <div class="w-full h-full bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                    <h3 class="text-white font-bold text-lg">清水寺 (Kiyomizu-dera)</h3>
+                </div>
+            </div>
+            <div class="p-5">
+                <div class="flex justify-between items-start mb-3">
+                    <p class="text-sm text-gray-600 leading-relaxed">
+                        京都最古老的寺院。必看「清水舞台」與求姻緣的「地主神社」。
+                    </p>
+                    <button class="text-gray-400 hover:text-black ml-2"><i class="fas fa-map-marker-alt text-xl"></i></button>
+                </div>
+                <div class="space-y-2 mt-3 pt-3 border-t border-gray-100">
+                    <div class="flex items-center text-xs">
+                        <span class="tag-must-buy px-2 py-0.5 rounded mr-2">必買</span>
+                        <span>清水燒陶瓷、七味粉</span>
+                    </div>
+                    <div class="flex items-center text-xs">
+                        <span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded mr-2">故事</span>
+                        <span class="text-gray-500">據說從舞台跳下沒死就能願望成真(請勿模仿)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 card-shadow border-l-4 border-orange-300">
+            <div class="flex justify-between">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 class="font-bold text-lg">菊乃井 無碍山房</h3>
+                        <span class="text-xs text-orange-400"><i class="fas fa-star"></i> 4.8</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">日式甜點 / 懷石料理</p>
+                </div>
+                <button class="bg-black text-white h-8 w-8 rounded-full flex items-center justify-center text-xs">
+                    <i class="fas fa-location-arrow"></i>
+                </button>
+            </div>
+            <div class="mt-3 bg-orange-50 p-3 rounded-xl">
+                <p class="text-xs text-gray-700"><span class="font-bold text-orange-600">AI 推薦：</span> 必點 <span class="font-bold">抹茶濃味聖代</span>，非常濃郁。需提前預約。</p>
+            </div>
+            <div class="mt-2 text-xs text-gray-400 flex items-center gap-1">
+                <i class="fas fa-clock"></i> 預約時間: 16:00
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2 mb-2 mt-8">
+            <span class="bg-black text-white text-xs px-2 py-1 rounded">DAY 2</span>
+            <h2 class="font-bold text-lg">嵐山一日遊</h2>
+            <span class="text-xs text-gray-400 ml-auto">16°C 陰</span>
+        </div>
+
+         <div class="bg-white rounded-2xl p-5 card-shadow border-l-4 border-blue-400">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-500">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold">自駕前往嵐山</h3>
+                        <p class="text-xs text-gray-500">預計車程 35 分鐘</p>
+                    </div>
+                </div>
+                <button class="text-sm font-bold text-blue-500">導航</button>
+            </div>
+        </div>
+
+    </main>
+<nav class="glass-nav fixed bottom-0 w-full pb-safe">
+        <div class="flex justify-around items-center h-16 px-2">
+            <button class="flex flex-col items-center justify-center w-16 text-black">
+                <i class="fas fa-map-signs text-lg mb-1"></i>
+                <span class="text-[10px] font-medium">行程</span>
+            </button>
+            <button class="flex flex-col items-center justify-center w-16 text-gray-400">
+                <i class="fas fa-receipt text-lg mb-1"></i>
+                <span class="text-[10px] font-medium">記帳</span>
+            </button>
+            <button class="flex flex-col items-center justify-center w-16 text-gray-400">
+                <i class="fas fa-ticket-alt text-lg mb-1"></i>
+                <span class="text-[10px] font-medium">預訂</span>
+            </button>
+            <button class="flex flex-col items-center justify-center w-16 text-gray-400">
+                <i class="fas fa-user text-lg mb-1"></i>
+                <span class="text-[10px] font-medium">資訊</span>
+            </button>
+        </div>
+    </nav>
+
+</body>
+</html>
