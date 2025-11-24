@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'; 
-// *** 新增 Firestore 相關導入 ***
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore'; 
 
 import { auth, googleProvider, db } from './firebase'; 
@@ -11,7 +10,7 @@ import Home from './pages/Home';
 import CreateTrip from './pages/CreateTrip'; 
 import TripDetail from './pages/TripDetail'; 
 
-// useAuth Hook: 處理用戶登入/登出狀態
+
 function useAuth() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -47,23 +46,20 @@ function App() {
   const { user, loading, login, logout } = useAuth();
   
   // ------------------------------------------------------------------
-  // *** Firestore 數據核心邏輯 (步驟 2-C) ***
+  // *** Firestore 數據核心邏輯 ***
   const [trips, setTrips] = useState([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
 
   useEffect(() => {
-    // 檢查用戶是否存在
     if (!user) {
-        setTrips([]); // 清空行程，避免看到前一個用戶的數據
+        setTrips([]); 
         setIsDataLoading(false);
         return; 
     }
 
-    // 1. 建立查詢：從 'trips' 集合中，依照建立時間排序
     const tripsCollection = collection(db, 'trips');
     const q = query(tripsCollection, orderBy('createdAt', 'desc'));
 
-    // 2. 實時監聽數據變化 (onSnapshot)
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const tripsData = snapshot.docs.map(doc => ({
             id: doc.id,
@@ -76,16 +72,20 @@ function App() {
         setIsDataLoading(false);
     });
 
-    // 清理函數：當元件卸載或 user 改變時停止監聽
     return () => unsubscribe();
   }, [user]);
 
   // 函式：將新行程數據寫入 Firestore
+  // 變更：接受 members 陣列
   const addTrip = async (newTripData) => {
       try {
-          // 使用 addDoc 寫入數據庫
           await addDoc(collection(db, 'trips'), {
               ...newTripData,
+              // *** 新增的數據結構欄位 ***
+              flights: [], // 用於功能 1 & 2
+              expenses: [], // 用於功能 4 & 5
+              members: newTripData.members, // 接受從 CreateTrip 傳入的成員列表
+              // **********************
               ownerId: user.uid, 
               ownerName: user.displayName,
               collaborators: [user.email], 
@@ -97,17 +97,14 @@ function App() {
   };
   // ------------------------------------------------------------------
 
-  // 1. Auth 載入中
   if (loading) {
     return <div className="min-h-screen bg-jp-bg flex items-center justify-center text-xl">身份驗證載入中...</div>;
   }
 
-  // 2. 數據載入中 (已登入)
   if (user && isDataLoading) {
     return <div className="min-h-screen bg-jp-bg flex items-center justify-center text-xl">數據載入中...</div>;
   }
 
-  // 3. 未登入畫面
   if (!user) {
     return (
       <div className="min-h-screen bg-jp-bg flex flex-col items-center justify-center p-8">
@@ -123,13 +120,11 @@ function App() {
     );
   }
 
-  // 4. 已登入並載入完成，渲染主應用程式
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home trips={trips} user={user} logout={logout} />} /> 
-        {/* 將 onAddTrip prop 設定為新的 addTrip 函式 */}
-        <Route path="/create" element={<CreateTrip onAddTrip={addTrip} />} />
+        <Route path="/create" element={<CreateTrip onAddTrip={addTrip} user={user} />} />
         <Route path="/trip/:id" element={<TripDetail user={user} trips={trips} />} /> 
       </Routes>
     </BrowserRouter>
