@@ -22,14 +22,22 @@ const useAuth = () => {
     return () => unsubscribe();
   }, []);
 
-  const login = async () => {
+const login = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      // 在嘗試彈出 Google 登入視窗時
+      await signInWithPopup(auth, googleProvider); 
     } catch (error) {
-      console.error("Google 登入錯誤:", error);
+      // * 確保這裡有 try...catch *
+      // 在瀏覽器控制台打印錯誤，但不會讓整個 App 崩潰
+      console.error("Google 登入錯誤:", error.code, error.message);
+      
+      // 如果用戶手動關閉登入視窗，則跳出
+      if (error.code === 'auth/popup-closed-by-user') {
+          console.log("用戶關閉了登入視窗。");
+      }
     }
-  };
-
+};
+  
   const logout = async () => {
     await signOut(auth);
   };
