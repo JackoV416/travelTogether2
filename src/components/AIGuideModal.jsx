@@ -1,163 +1,136 @@
-// src/components/AIGuideModal.jsx
+// src/components/AIGuideModal.jsx - 最終版本 (新增智能提示與 VPN 提示)
 
-import React, { useState } from 'react';
-import { useTheme } from '../contexts/ThemeContext';
-import { v4 as uuidv4 } from 'uuid';
+import React, { useState, useMemo } from 'react';
 
-// 模擬 Gemini AI 建議行程的函式
-const mockGeminiSuggest = async (tripData, duration) => {
-    // 這裡模擬 AI 處理時間
-    await new Promise(resolve => setTimeout(resolve, 2000)); 
+const AIGuideModal = ({ isOpen, onClose, tripDestination, apiError }) => {
+    const [prompt, setPrompt] = useState('');
+    const [response, setResponse] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    // 模擬 AI 生成的 JSON 格式回應 (必須是 JSON 以便解析)
-    const suggestedItinerary = [
-        {
-            date: "2025-12-26",
-            time: "09:00",
-            activity: "抵達新宿，在機器人餐廳享用早餐（需預約）",
-            category: "餐飲"
-        },
-        {
-            date: "2025-12-26",
-            time: "11:00",
-            activity: "東京晴空塔 (Tokyo Skytree) 觀景台",
-            category: "門票"
-        },
-        {
-            date: "2025-12-26",
-            time: "15:00",
-            activity: "淺草寺與雷門參觀，體驗傳統文化",
-            category: "觀光"
-        },
-        {
-            date: "2025-12-26",
-            time: "18:30",
-            activity: "澀谷 Shibuya Sky 觀景台，欣賞日落與夜景",
-            category: "觀光"
-        },
-    ];
+    if (!isOpen) return null;
 
-    return suggestedItinerary;
-};
+    // ***********************************************
+    // 1. 根據目的地生成預設提示語
+    const defaultPrompts = useMemo(() => {
+        if (!tripDestination) {
+            return [
+                '推薦一個兩天一夜的國內小旅行。',
+                '規劃一個低預算的週末行程。'
+            ];
+        }
 
-const AIGuideModal = ({ trip, onAddItems, onClose }) => {
-    const { theme } = useTheme();
-    const [loading, setLoading] = useState(false);
-    const [suggestions, setSuggestions] = useState(null);
-    const [error, setError] = useState(null);
-    const [selectedItems, setSelectedItems] = useState([]);
+        // 簡化目的地匹配，僅使用第一個詞
+        const city = tripDestination.split(',')[0].trim();
 
-    const handleGenerate = async () => {
-        setLoading(true);
-        setSuggestions(null);
-        setError(null);
-        
+        if (city.includes('東京') || city.includes('大阪') || city.includes('京都')) {
+            return [
+                `給我一份為期三天的${city}美食清單。`,
+                `如果遇到下雨，${city}有什麼室內活動推薦？`,
+                `比較${city}的交通選項：地鐵、公車、計程車。`,
+            ];
+        } else if (city.includes('巴黎') || city.includes('羅馬') || city.includes('倫敦')) {
+            return [
+                `在${city}，如何避開主要觀光景點的人潮？`,
+                `推薦三個在${city}的免費博物館或景點。`,
+                `從${city}市中心到主要機場的最佳方式是什麼？`,
+            ];
+        } else {
+            return [
+                `推薦${city}的五個必去景點。`,
+                `在${city}旅行，當地的習俗或禁忌是什麼？`,
+            ];
+        }
+    }, [tripDestination]);
+    // ***********************************************
+    
+    // 模擬 AI 請求處理
+    const handleSend = async () => {
+        if (!prompt || isLoading || apiError) return;
+
+        setIsLoading(true);
+        setResponse('');
+        // 模擬 API 呼叫
         try {
-            // 在實際應用中，您會在這裡呼叫您的後端 API，然後後端 API 再呼叫 Gemini API
-            // 這裡我們使用模擬函式
-            const duration = (new Date(trip.endDate) - new Date(trip.startDate)) / (1000 * 3600 * 24) + 1;
-            const result = await mockGeminiSuggest(trip, duration);
-            
-            setSuggestions(result);
-            setSelectedItems(result.map(item => item.id || uuidv4())); // 預設全部選中
-        } catch (e) {
-            setError('AI 建議生成失敗，請稍後再試。');
-            console.error(e);
+            await new Promise(resolve => setTimeout(resolve, 2000)); 
+            setResponse(`這是 AI 導覽對於「${prompt}」的模擬回覆，內容將根據您的目的地 ${tripDestination} 提供專業建議。`);
+        } catch (error) {
+            setResponse('AI 服務請求失敗，請稍後再試。');
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
-    const handleToggleSelect = (id) => {
-        setSelectedItems(prev => 
-            prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
-        );
-    };
-
-    const handleConfirmAdd = () => {
-        if (!suggestions || selectedItems.length === 0) return;
-
-        const itemsToAdd = suggestions
-            .filter(item => selectedItems.includes(item.id || uuidv4()))
-            .map(item => ({
-                ...item,
-                id: item.id || uuidv4(), // 確保每個項目都有唯一的 ID
-            }));
-
-        onAddItems(itemsToAdd);
-    };
-
-    // 格式化日期範圍
-    const formatDate = (dateString) => new Date(dateString).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' });
-    
     return (
-        // Modal 卡片樣式：Threads 風格
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl w-full max-w-xl shadow-2xl text-gray-800 dark:text-white">
-            <h2 className="text-2xl font-bold mb-4 text-pink-600 dark:text-pink-400">✨ AI 行程建議 (Gemini)</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                根據您的旅程 **{trip.title}** ({formatDate(trip.startDate)} - {formatDate(trip.endDate)}) 獲取建議。
-            </p>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all duration-300 scale-100" onClick={(e) => e.stopPropagation()}>
+                
+                <div className="p-6">
+                    <h2 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mb-4 flex items-center">
+                        🤖 AI 旅行導覽
+                    </h2>
+                    
+                    {/* 2. 錯誤與 VPN 提示區 */}
+                    {apiError && (
+                        <div className="p-3 mb-4 bg-red-100 dark:bg-red-900/40 border border-red-400 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 font-medium">
+                            ⚠️ 連線失敗：AI 服務可能無法連線。
+                            <p className="mt-1 text-sm font-semibold">
+                                **請確認您已開啟 VPN** 或檢查您的網路連線，然後再試一次。
+                            </p>
+                        </div>
+                    )}
 
-            {/* 產生按鈕 */}
-            <button 
-                onClick={handleGenerate}
-                disabled={loading}
-                className={`w-full p-3 font-bold rounded-lg transition-colors active:scale-95 ${
-                    loading ? 'bg-gray-400 dark:bg-gray-600 text-white cursor-not-allowed' : 'bg-pink-500 hover:bg-pink-600 dark:bg-pink-600 dark:hover:bg-pink-700 text-white'
-                }`}
-            >
-                {loading ? '思考中，請稍候...' : '生成 AI 行程建議'}
-            </button>
-
-            {error && <p className="text-red-500 mt-3">{error}</p>}
-            
-            {/* AI 建議列表 */}
-            {suggestions && (
-                <div className="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3 max-h-80 overflow-y-auto">
-                    <h3 className="text-lg font-semibold text-gray-700 dark:text-white mb-2">建議行程 ({suggestions.length} 項)</h3>
-                    {suggestions.map((item, index) => {
-                        const itemId = item.id || uuidv4();
-                        const isSelected = selectedItems.includes(itemId);
-
-                        return (
-                            <div key={itemId} className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${
-                                isSelected ? 'bg-pink-50 dark:bg-pink-900/50 border-pink-500' : 'bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
-                            }`}
-                                onClick={() => handleToggleSelect(itemId)}
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    readOnly
-                                    className="w-4 h-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500 dark:focus:ring-pink-600 dark:bg-gray-700 dark:border-gray-600 mr-3"
-                                />
-                                <div className="flex-grow">
-                                    <p className="font-medium text-gray-900 dark:text-white">{item.activity}</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(item.date)} {item.time} / {item.category}</p>
-                                </div>
-                            </div>
-                        );
-                    })}
+                    {/* 預設提示語區 */}
+                    <div className="mb-4">
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">💡 建議快速提問：</p>
+                        <div className="flex flex-wrap gap-2">
+                            {defaultPrompts.map((p, index) => (
+                                <button key={index}
+                                    onClick={() => setPrompt(p)}
+                                    className="px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                                    {p}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    {/* 輸入區 */}
+                    <textarea
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder="輸入您的旅行問題，例如：在當地如何找到素食餐廳？"
+                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white mb-4 focus:ring-indigo-500 focus:border-indigo-500"
+                        rows="3"
+                        disabled={isLoading}
+                    />
+                    
+                    {/* 回覆區 */}
+                    <div className={`p-4 min-h-[100px] border rounded-lg mb-4 ${response ? 'border-indigo-300 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700'}`}>
+                        {isLoading ? (
+                            <p className="text-indigo-500 dark:text-indigo-400">AI 正在思考中...</p>
+                        ) : response ? (
+                            <p className="text-gray-800 dark:text-gray-100 whitespace-pre-wrap">{response}</p>
+                        ) : (
+                            <p className="text-gray-500 dark:text-gray-400">AI 回覆將顯示在這裡。</p>
+                        )}
+                    </div>
+                    
+                    {/* 按鈕區 */}
+                    <div className="flex justify-end space-x-3">
+                        <button onClick={onClose}
+                            className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">
+                            關閉
+                        </button>
+                        <button onClick={handleSend}
+                            disabled={!prompt || isLoading || apiError}
+                            className={`px-4 py-2 text-white rounded-lg transition-colors ${
+                                !prompt || isLoading || apiError 
+                                    ? 'bg-indigo-400 dark:bg-indigo-500 opacity-50 cursor-not-allowed' 
+                                    : 'bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 active:scale-95'
+                            }`}>
+                            {isLoading ? '發送中...' : '發送給 AI'}
+                        </button>
+                    </div>
                 </div>
-            )}
-            
-            {/* 確認/關閉按鈕 */}
-            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
-                {suggestions && (
-                    <button 
-                        onClick={handleConfirmAdd}
-                        disabled={selectedItems.length === 0}
-                        className={`px-4 py-2 text-white rounded-full font-bold transition-colors active:scale-95 ${
-                            selectedItems.length === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600'
-                        }`}
-                    >
-                        確認加入 ({selectedItems.length} 項)
-                    </button>
-                )}
-                <button type="button" onClick={onClose} 
-                    className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-white rounded-full hover:bg-gray-400 dark:hover:bg-gray-500 font-medium active:scale-95 transition-transform">
-                    {suggestions ? '關閉' : '取消'}
-                </button>
             </div>
         </div>
     );
