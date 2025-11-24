@@ -1,10 +1,10 @@
-// src/pages/TripDetail.jsx - 整合了所有功能和圖片相簿的最終版本
+// src/pages/TripDetail.jsx - 包含所有功能、圖片相簿、錯誤邊界和地圖導航的最終版本
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove } from 'firebase/firestore'; 
-import { db, storage } from '../firebase'; // 確保導入 storage
-import { ref, deleteObject } from 'firebase/storage'; // 用於刪除圖片
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore'; 
+import { db, storage } from '../firebase'; 
+import { ref, deleteObject } from 'firebase/storage'; 
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import ItineraryForm from '../components/ItineraryForm';
@@ -17,8 +17,7 @@ import ExpenseChart from '../components/ExpenseChart';
 import { getDestinationTimeZone, getShortTimeZoneName } from '../utils/timeZoneMap'; 
 import { exportJsonToFile, importJsonFromFile } from '../utils/dataManager'; 
 import { useToast } from '../hooks/useToast'; 
-import { uploadTripPhoto } from '../utils/imageUpload'; // 導入圖片上傳邏輯
-// 導入常數
+import { uploadTripPhoto } from '../utils/imageUpload'; 
 import { 
     EXPENSE_CATEGORIES, 
     EXPENSE_CATEGORY_COLORS, 
@@ -43,6 +42,15 @@ const getDatesArray = (startDate, endDate) => {
     return dates;
 };
 
+// 輔助函式：產生 Google 地圖導航 URL (新功能)
+const getMapsUrl = (location) => {
+    if (!location) return '#';
+    // 使用標準 URL 格式，當在手機上點擊時，會自動嘗試在 Google Maps App 中開啟並搜尋
+    const encodedLocation = encodeURIComponent(location);
+    return `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
+};
+
+
 const TripDetail = () => {
     const { tripId } = useParams();
     const { user, loading: authLoading } = useAuth();
@@ -57,7 +65,7 @@ const TripDetail = () => {
     const [isFlightFormOpen, setIsFlightFormOpen] = useState(false);
     const [isAIGuideModalOpen, setIsAIGuideModalOpen] = useState(false);
     const [editItem, setEditItem] = useState(null);
-    const [selectedDate, setSelectedDate] = useState('all'); // 'all' 或 'YYYY-MM-DD'
+    const [selectedDate, setSelectedDate] = useState('all'); 
     const [searchQuery, setSearchQuery] = useState('');
     
     // 圖片上傳狀態
@@ -447,6 +455,13 @@ const TripDetail = () => {
         if (result.source.index === result.destination.index) return;
         if (!isOwner) return;
 
+        // 這裡需要確保我們只對當前篩選後的行程列表進行操作
+        // 如果有篩選，則需要複雜的重新計算原始陣列的索引，為了簡化，我們僅在 'all' 模式下允許拖曳排序
+        if (selectedDate !== 'all' || searchQuery) {
+            showToast('在篩選或限定日期模式下，無法更改行程順序。', 'warning');
+            return;
+        }
+
         const newItinerary = [...trip.itinerary];
         const [removed] = newItinerary.splice(result.source.index, 1);
         newItinerary.splice(result.destination.index, 0, removed);
@@ -463,7 +478,7 @@ const TripDetail = () => {
         }
     };
 
-    // 處理日期切換的鍵盤邏輯 (步驟十五)
+    // 處理日期切換的鍵盤邏輯
     const handleKeyDown = useCallback((event) => {
         // 確保當前沒有表單開啟，且不是在輸入框中
         if (isItineraryFormOpen || isFlightFormOpen || isExpenseFormOpen || event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
@@ -535,7 +550,7 @@ const TripDetail = () => {
             </header>
 
             <main className="max-w-xl mx-auto space-y-4"> 
-                {/* 旅程概覽卡片 (保持不變) */}
+                {/* 旅程概覽卡片 */}
                 <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
                     <h2 className="text-xl font-bold mb-3 flex items-center justify-between text-indigo-600 dark:text-indigo-400">
                         概覽 
@@ -563,6 +578,32 @@ const TripDetail = () => {
                             </button>
                         </div>
                     </div>
+                </div>
+
+                {/* 目的地地圖與導航卡片 (新功能) */}
+                <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
+                    <h2 className="text-xl font-bold mb-3 flex items-center justify-between text-green-600 dark:text-green-400">
+                        📍 目的地導航
+                    </h2>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                        當前主要目的地：<span className="font-bold">{trip.destination}</span>
+                    </p>
+                    
+                    <a 
+                        href={getMapsUrl(trip.destination)} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center w-full p-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition-colors shadow-lg"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V14a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd" />
+                        </svg>
+                        在 Google 地圖上查看並導航
+                    </a>
+                    
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
+                        * 點擊將開啟 Google 地圖 App 或網頁版。
+                    </p>
                 </div>
 
 
@@ -729,7 +770,7 @@ const TripDetail = () => {
                                 <ul {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
                                     {filteredItinerary.length > 0 ? (
                                         filteredItinerary.map((item, index) => (
-                                            <Draggable key={item.id} draggableId={item.id} index={index} isDragDisabled={!isOwner}>
+                                            <Draggable key={item.id} draggableId={item.id} index={index} isDragDisabled={!isOwner || selectedDate !== 'all' || searchQuery}>
                                                 {(provided, snapshot) => (
                                                     <li ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
                                                         onClick={() => handleEditItinerary(item)}
@@ -785,7 +826,7 @@ const TripDetail = () => {
                     </DragDropContext>
                 </div>
                 
-                {/* 航班資訊卡片 (保持不變) */}
+                {/* 航班資訊卡片 */}
                 <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
                     <h2 className="text-xl font-bold mb-3 flex items-center justify-between text-blue-600 dark:text-blue-400">
                         ✈️ 航班/交通資訊
@@ -809,7 +850,7 @@ const TripDetail = () => {
                     )}
                 </div>
 
-                {/* 圖片相簿區塊 (新功能) */}
+                {/* 圖片相簿區塊 */}
                 <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
                     <h2 className="text-xl font-bold mb-3 flex items-center justify-between text-yellow-600 dark:text-yellow-400">
                         🖼️ 旅程相簿
