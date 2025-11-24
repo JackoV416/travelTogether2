@@ -158,8 +158,9 @@ const CreateTrip = ({ onAddTrip, user }) => {
     };
 
     return (
-        <div className="min-h-screen bg-jp-bg p-4 max-w-lg mx-auto">
-            <h1 className="text-3xl font-bold mb-6 text-center text-white">新增旅行計畫</h1>
+        <div className="min-h-screen bg-white p-4 max-w-lg mx-auto"> 
+            <h1 className="text-3xl font-bold mb-6 text-center text-black">新增旅行計畫</h1>
+                                                                {/* 確保這裡使用深色，例如 text-black */}
             
             <form onSubmit={handleSubmit} className="space-y-6 bg-gray-800 p-6 rounded-xl shadow-lg text-white">
                 
