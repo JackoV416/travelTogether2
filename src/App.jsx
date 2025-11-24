@@ -91,17 +91,16 @@ function App() {
   }
 
   // 已登入畫面
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home trips={trips} user={user} logout={logout} />} /> 
-        <Route path="/create" element={<CreateTrip onAddTrip={handleAddTrip} />} />
-        {/* 請確認這裡有傳入 trips，TripDetail 程式碼需要它 */}
-        <Route path="/trip/:id" element={<TripDetail user={user} trips={trips} />} /> 
-      </Routes>
-    </BrowserRouter>
-  );
-
+ return user ? ( // <--- 新增這行：確保 user 存在 (非 null) 才渲染
+  <BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Home trips={trips} user={user} logout={logout} />} /> 
+      <Route path="/create" element={<CreateTrip onAddTrip={handleAddTrip} />} />
+      <Route path="/trip/:id" element={<TripDetail user={user} trips={trips} />} /> 
+    </Routes>
+  </BrowserRouter>
+) : null; // 如果 user 是 null 且未進入 if (!user) 區塊，則渲染 null (空白)，但這可以幫助我們隔離問題。
+// 注意：理論上不會執行到這裡，但可以防止意外崩潰。
 }
 
 export default App;
