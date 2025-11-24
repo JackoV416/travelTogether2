@@ -86,11 +86,12 @@ function App() {
       <Routes>
         <Route path="/" element={<Home trips={trips} user={user} logout={logout} />} /> 
         <Route path="/create" element={<CreateTrip onAddTrip={handleAddTrip} />} />
-        {/* 注意：這裡我們使用 trips 數據來查找詳情，因為還沒用 Firestore */}
+        {/* 請確認這裡有傳入 trips，TripDetail 程式碼需要它 */}
         <Route path="/trip/:id" element={<TripDetail user={user} trips={trips} />} /> 
       </Routes>
     </BrowserRouter>
   );
+
 }
 
 export default App;
