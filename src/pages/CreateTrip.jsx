@@ -1,266 +1,206 @@
-// src/pages/CreateTrip.jsx
+// src/pages/CreateTrip.jsx - 新增旅行計畫
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { doc, setDoc } from 'firebase/firestore';
+import { useAuth } from '../contexts/AuthContext';
+import { collection, addDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
-import { v4 as uuidv4 } from 'uuid';
+import BudgetCurrencySelector from '../components/BudgetCurrencySelector';
+import InviteCollaborator from '../components/InviteCollaborator';
 
-const AVAILABLE_CURRENCIES = ['HKD', 'JPY', 'USD', 'TWD', 'EUR'];
-
-const CreateTrip = ({ user, allUsers = [] }) => {
+const CreateTrip = () => {
+    const { user } = useAuth();
     const navigate = useNavigate();
-
-    const defaultMember = {
-        id: user.uid,
-        name: user.displayName + ' (我)',
-        initialBudget: 0,
-        budgetCurrency: 'HKD'
-    };
 
     const [title, setTitle] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
-    const [members, setMembers] = useState([defaultMember]);
-    
-    // 非 Google 帳戶成員輸入
+    const [budget, setBudget] = useState('');
+    const [currency, setCurrency] = useState('HKD');
+    const [collaborators, setCollaborators] = useState([{ uid: user?.uid, name: user?.displayName || 'Jamie Kwok (我)', budgetShare: 0, email: user?.email }]);
     const [newMemberName, setNewMemberName] = useState('');
-    const [newMemberBudget, setNewMemberBudget] = useState(0);
-    const [newMemberCurrency, setNewMemberCurrency] = useState('HKD');
-    
-    // Google 用戶邀請 (簡化為 Email 輸入)
-    const [inviteEmail, setInviteEmail] = useState('');
-    const [searchResult, setSearchResult] = useState(null); 
+    const [newMemberShare, setNewMemberShare] = useState(0);
 
-    const handleSearchUser = () => {
-        const foundUser = allUsers.find(u => u.email.toLowerCase() === inviteEmail.toLowerCase());
-        
-        if (foundUser) {
-            const isAlreadyMember = members.some(m => m.id === foundUser.uid);
-            if (!isAlreadyMember) {
-                setSearchResult(foundUser);
-            } else {
-                setSearchResult({ error: '該用戶已在成員列表中' });
-            }
-        } else {
-            setSearchResult({ error: '找不到該 Google 註冊用戶' });
-        }
+    // 處理協作者預算份額變更
+    const handleBudgetShareChange = (index, value) => {
+        const newCollaborators = [...collaborators];
+        newCollaborators[index].budgetShare = parseFloat(value) || 0;
+        setCollaborators(newCollaborators);
     };
 
-    const handleAddGoogleUser = () => {
-        if (searchResult && searchResult.uid) {
-            const newGoogleMember = {
-                id: searchResult.uid,
-                name: searchResult.displayName,
-                initialBudget: 0,
-                budgetCurrency: 'HKD',
-                isGoogleUser: true
-            };
-            setMembers(prev => [...prev, newGoogleMember]);
-            setInviteEmail('');
-            setSearchResult(null);
-        }
-    };
-
-    const handleAddNewMember = () => {
-        if (newMemberName.trim() && newMemberBudget >= 0) {
-            const newNonGoogleMember = {
-                id: uuidv4(),
-                name: newMemberName.trim(),
-                initialBudget: parseFloat(newMemberBudget),
-                budgetCurrency: newMemberCurrency
-            };
-            setMembers(prev => [...prev, newNonGoogleMember]);
+    // 新增非 Google 帳戶成員
+    const handleAddNewMember = (e) => {
+        e.preventDefault();
+        if (newMemberName.trim() && newMemberShare >= 0) {
+            setCollaborators(prev => [
+                ...prev,
+                {
+                    uid: `local-${Date.now()}`,
+                    name: newMemberName.trim(),
+                    budgetShare: parseFloat(newMemberShare) || 0,
+                    email: null, // 非 Google 帳戶
+                }
+            ]);
             setNewMemberName('');
-            setNewMemberBudget(0);
-            setNewMemberCurrency('HKD');
-        } else {
-            alert('請輸入有效的成員名稱和預算 (>= 0)');
+            setNewMemberShare(0);
         }
-    };
-
-    const handleRemoveMember = (id) => {
-        if (id !== user.uid) { 
-            setMembers(prev => prev.filter(member => member.id !== id));
-        } else {
-            alert('您不能移除自己！');
-        }
-    };
-
-    const handleUpdateBudget = (id, newBudget, newCurrency) => {
-        setMembers(prev => prev.map(member => 
-            member.id === id 
-                ? { ...member, initialBudget: parseFloat(newBudget), budgetCurrency: newCurrency } 
-                : member
-        ));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!title || !startDate || !endDate || members.length === 0) {
-            alert('請填寫所有必填欄位並確保至少有一位成員。');
+        if (!title.trim() || !startDate || !endDate || budget <= 0) {
+            alert('請填寫所有必填欄位：旅行標題、日期和總預算。');
+            return;
+        }
+
+        if (new Date(startDate) > new Date(endDate)) {
+            alert('結束日期不能早於開始日期。');
             return;
         }
 
         try {
-            const newTripId = uuidv4();
-            const newTrip = {
-                id: newTripId,
+            // 1. 創建 Trip 文件
+            const tripData = {
                 title,
                 startDate,
                 endDate,
+                totalBudget: parseFloat(budget),
+                currency,
                 ownerId: user.uid,
-                members,
+                collaborators: collaborators.map(c => ({
+                    uid: c.uid,
+                    name: c.name,
+                    budgetShare: c.budgetShare,
+                    email: c.email,
+                })),
                 expenses: [],
-                itinerary: [],
-                flightInfo: null, 
-                createdAt: new Date().toISOString(),
+                itinerary: [], // 新增行程欄位
+                flights: [], // 新增航班欄位
+                createdAt: new Date(),
             };
 
-            await setDoc(doc(db, 'trips', newTripId), newTrip);
+            const docRef = await addDoc(collection(db, 'trips'), tripData);
+
+            // 2. 更新 User 的 trips 列表 (假設 user 集合存在)
+            const userRef = doc(db, 'users', user.uid);
+            await updateDoc(userRef, {
+                trips: arrayUnion(docRef.id)
+            });
+
             alert('旅行計畫創建成功！');
-            navigate(`/trip/${newTripId}`);
+            navigate(`/trip/${docRef.id}`);
+
         } catch (error) {
             console.error('創建旅行計畫失敗:', error);
-            alert('創建旅行計畫失敗，請檢查網路或權限。');
+            alert('創建失敗，請稍後重試。');
         }
     };
-    
+
     return (
-        <div className="min-h-screen bg-gray-900 p-4 max-w-lg mx-auto text-white">
-            <h1 className="text-3xl font-bold mb-6 text-center text-white">新增旅行計畫</h1>
-            
-            <form onSubmit={handleSubmit} className="space-y-6 bg-gray-800 p-6 rounded-3xl shadow-2xl">
-                
-                {/* 旅行標題 */}
-                <input
-                    type="text"
-                    placeholder="旅行標題 (必填)"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="w-full p-4 border border-gray-700 rounded-xl bg-gray-700 text-white placeholder-gray-400"
-                    required
-                />
-                
-                {/* 開始/結束日期 */}
-                <div className="flex space-x-4">
-                    <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="w-full p-4 border border-gray-700 rounded-xl bg-gray-700 text-white"
-                        required
-                    />
-                    <input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="w-full p-4 border border-gray-700 rounded-xl bg-gray-700 text-white"
-                        required
-                    />
-                </div>
+        <div className="min-h-screen bg-gray-900 flex items-start justify-center p-4">
+            <div className="bg-gray-800 p-8 rounded-3xl w-full max-w-2xl shadow-2xl text-white">
+                <h1 className="text-3xl font-extrabold mb-6 text-center text-indigo-400">新增旅行計畫</h1>
 
-                {/* 旅行成員與個人預算區塊 */}
-                <div className="border border-indigo-500 p-4 rounded-xl space-y-4 bg-gray-700">
-                    <h2 className="text-xl font-semibold text-indigo-400">👤 旅行成員與個人預算</h2>
-                    <p className="text-sm text-gray-400">結算基準貨幣: HKD</p>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* 旅行標題 */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">旅行標題 (必填)</label>
+                        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required
+                            className="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 placeholder-gray-400 text-white focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="東京五日遊" />
+                    </div>
 
-                    {/* 現有成員列表 */}
-                    <div className="space-y-3">
-                        {members.map(member => (
-                            <div key={member.id} className="flex items-center space-x-2 bg-gray-800 p-3 rounded-xl">
-                                <span className="flex-grow">{member.name}</span>
-                                
-                                {/* 預算輸入 */}
+                    {/* 日期選擇 */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-1">開始日期 (必填)</label>
+                            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required
+                                className="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 text-white focus:ring-indigo-500 focus:border-indigo-500" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-1">結束日期 (必填)</label>
+                            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required
+                                className="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 text-white focus:ring-indigo-500 focus:border-indigo-500" />
+                        </div>
+                    </div>
+
+                    {/* 總預算 */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">總預算 (必填)</label>
+                        <div className="flex">
+                            <input type="number" value={budget} onChange={(e) => setBudget(e.target.value)} required min="1"
+                                className="flex-grow p-3 border border-r-0 border-gray-600 rounded-l-xl bg-gray-700 placeholder-gray-400 text-white focus:ring-indigo-500 focus:border-indigo-500"
+                                placeholder="例如: 10000" />
+                            <BudgetCurrencySelector currency={currency} setCurrency={setCurrency}
+                                className="p-3 border border-gray-600 rounded-r-xl bg-gray-600 text-white" />
+                        </div>
+                    </div>
+
+                    {/* 旅行成員與預算 */}
+                    <div className="pt-4 border-t border-gray-700">
+                        <h2 className="text-xl font-bold mb-4 text-indigo-400">旅行成員與預算分攤</h2>
+                        <p className="text-sm text-gray-400 mb-4">請設定每個成員需負擔的預算份額 (金額)。</p>
+
+                        <div className="space-y-3">
+                            {collaborators.map((member, index) => (
+                                <div key={member.uid || index} className="flex items-center space-x-3 p-3 bg-gray-700 rounded-xl">
+                                    <span className="flex-grow text-white truncate">{member.name}</span>
+                                    <span className="text-gray-400">{currency}</span>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={member.budgetShare}
+                                        onChange={(e) => handleBudgetShareChange(index, e.target.value)}
+                                        className="w-24 p-2 border border-gray-600 rounded-lg bg-gray-600 text-right text-white"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* 新增其他成員 (非 Google 帳戶) */}
+                        <div className="mt-6 p-4 bg-gray-700 rounded-xl">
+                            <h3 className="font-semibold text-gray-300 mb-3">新增其他成員 (非 Google 帳戶)</h3>
+                            <div className="grid grid-cols-3 gap-3">
+                                <input
+                                    type="text"
+                                    value={newMemberName}
+                                    onChange={(e) => setNewMemberName(e.target.value)}
+                                    placeholder="新成員姓名"
+                                    className="col-span-2 p-2 border border-gray-600 rounded-lg bg-gray-600 text-white placeholder-gray-400"
+                                />
                                 <input
                                     type="number"
-                                    value={member.initialBudget}
-                                    onChange={(e) => handleUpdateBudget(member.id, e.target.value, member.budgetCurrency)}
-                                    className="w-20 p-2 border border-gray-600 rounded-lg bg-gray-600 text-white text-right"
                                     min="0"
-                                    step="0.01"
+                                    value={newMemberShare}
+                                    onChange={(e) => setNewMemberShare(e.target.value)}
+                                    placeholder="預算份額"
+                                    className="p-2 border border-gray-600 rounded-lg bg-gray-600 text-right text-white"
                                 />
-                                {/* 貨幣選擇 */}
-                                <select
-                                    value={member.budgetCurrency}
-                                    onChange={(e) => handleUpdateBudget(member.id, member.initialBudget, e.target.value)}
-                                    className="p-2 border border-gray-600 rounded-lg bg-gray-600 text-white"
-                                >
-                                    {AVAILABLE_CURRENCIES.map(c => (
-                                        <option key={c} value={c}>{c}</option>
-                                    ))}
-                                </select>
-                                
-                                {member.id !== user.uid && (
-                                    <button
-                                        type="button"
-                                        onClick={() => handleRemoveMember(member.id)}
-                                        className="text-red-400 hover:text-red-300 ml-2"
-                                    >
-                                        &times;
-                                    </button>
-                                )}
                             </div>
-                        ))}
+                            <button type="button" onClick={handleAddNewMember}
+                                className="w-full mt-3 p-2 border border-indigo-500 text-indigo-300 rounded-lg hover:bg-indigo-900 transition-colors">
+                                + 新增成員
+                            </button>
+                        </div>
                     </div>
 
-                    {/* --- 新增其他成員 (非 Google 帳戶) --- */}
-                    <div className="pt-4 border-t border-gray-600 space-y-3">
-                        <h3 className="text-lg font-medium text-white">新增其他成員</h3>
-                        <div className="flex space-x-2">
-                            <input
-                                type="text"
-                                placeholder="新成員姓名"
-                                value={newMemberName}
-                                onChange={(e) => setNewMemberName(e.target.value)}
-                                className="flex-grow p-3 border border-gray-600 rounded-xl bg-gray-800 text-white"
-                            />
-                            <input
-                                type="number"
-                                placeholder="預算"
-                                value={newMemberBudget}
-                                onChange={(e) => setNewMemberBudget(e.target.value)}
-                                className="w-20 p-3 border border-gray-600 rounded-xl bg-gray-800 text-white text-right"
-                                min="0"
-                                step="0.01"
-                            />
-                            <select
-                                value={newMemberCurrency}
-                                onChange={(e) => setNewMemberCurrency(e.target.value)}
-                                className="p-3 border border-gray-600 rounded-xl bg-gray-800 text-white"
-                            >
-                                {AVAILABLE_CURRENCIES.map(c => (
-                                    <option key={c} value={c}>{c}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={handleAddNewMember}
-                            className="w-full bg-yellow-600 text-white p-3 rounded-full font-medium hover:bg-yellow-700 active:scale-95 transition-transform"
-                        >
-                            + 新增其他成員
+                    {/* 邀請 Google 註冊用戶 (可選) */}
+                    <InviteCollaborator tripId={null} currentCollaborators={collaborators} />
+
+                    {/* 創建按鈕 */}
+                    <div className="pt-6 space-y-3">
+                        <button type="submit"
+                            className="w-full p-4 bg-indigo-600 text-white font-bold rounded-full shadow-lg hover:bg-indigo-700 active:scale-95 transition-transform">
+                            創建計畫
+                        </button>
+                        <button type="button" onClick={() => navigate('/')}
+                            className="w-full p-4 bg-gray-600 text-white font-bold rounded-full hover:bg-gray-500">
+                            取消並返回
                         </button>
                     </div>
-                </div>
-
-
-                {/* 創建按鈕 */}
-                <button
-                    type="submit"
-                    className="w-full bg-blue-600 text-white p-4 rounded-full font-bold text-lg hover:bg-blue-700 active:scale-95 transition-transform shadow-md"
-                >
-                    創建計畫
-                </button>
-                <button
-                    type="button"
-                    onClick={() => navigate('/')}
-                    className="w-full bg-gray-600 text-white p-4 rounded-full font-medium hover:bg-gray-500 active:scale-95 transition-transform"
-                >
-                    取消並返回
-                </button>
-            </form>
+                </form>
+            </div>
         </div>
     );
 };
