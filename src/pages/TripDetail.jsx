@@ -1,9 +1,10 @@
-// src/pages/TripDetail.jsx - 最終版本 (已移除常數，並導入)
+// src/pages/TripDetail.jsx - 整合了所有功能和圖片相簿的最終版本
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc, deleteDoc, arrayUnion } from 'firebase/firestore'; 
-import { db } from '../firebase';
+import { doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove } from 'firebase/firestore'; 
+import { db, storage } from '../firebase'; // 確保導入 storage
+import { ref, deleteObject } from 'firebase/storage'; // 用於刪除圖片
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import ItineraryForm from '../components/ItineraryForm';
@@ -16,14 +17,13 @@ import ExpenseChart from '../components/ExpenseChart';
 import { getDestinationTimeZone, getShortTimeZoneName } from '../utils/timeZoneMap'; 
 import { exportJsonToFile, importJsonFromFile } from '../utils/dataManager'; 
 import { useToast } from '../hooks/useToast'; 
-// ***********************************************
+import { uploadTripPhoto } from '../utils/imageUpload'; // 導入圖片上傳邏輯
 // 導入常數
 import { 
     EXPENSE_CATEGORIES, 
     EXPENSE_CATEGORY_COLORS, 
     ITINERARY_CATEGORY_COLORS 
 } from '../constants';
-// ***********************************************
 
 
 // 輔助函式：將 Date 對象格式化為 YYYY-MM-DD
@@ -59,6 +59,10 @@ const TripDetail = () => {
     const [editItem, setEditItem] = useState(null);
     const [selectedDate, setSelectedDate] = useState('all'); // 'all' 或 'YYYY-MM-DD'
     const [searchQuery, setSearchQuery] = useState('');
+    
+    // 圖片上傳狀態
+    const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
     // 費用追蹤狀態 (已持久化)
     const getInitialExpenseSortBy = () => localStorage.getItem(`trip_${tripId}_sort`) || 'date';
@@ -92,6 +96,10 @@ const TripDetail = () => {
                 // 檢查協作者列表是否包含當前用戶
                 const isCollaborator = tripData.collaborators.some(c => c.uid === user.uid);
                 if (isCollaborator) {
+                    // 確保 photos 陣列存在
+                    if (!tripData.photos) {
+                        tripData.photos = [];
+                    }
                     setTrip(tripData);
                 } else {
                     showToast('您無權訪問此旅程。', 'error');
@@ -363,6 +371,74 @@ const TripDetail = () => {
         const hash = uid ? uid.split('').reduce((acc, char) => char.charCodeAt(0) + acc, 0) : 0;
         const colors = ['bg-red-400', 'bg-blue-400', 'bg-green-400', 'bg-yellow-400', 'bg-purple-400', 'bg-pink-400'];
         return colors[hash % colors.length];
+    };
+
+    // 圖片上傳處理
+    const handlePhotoUpload = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        setUploading(true);
+        setUploadProgress(0);
+
+        try {
+            const photoURL = await uploadTripPhoto(file, tripId, setUploadProgress);
+            
+            // 圖片上傳成功後，將 URL 和元數據儲存到 Firestore 的 trip.photos 陣列中
+            const newPhoto = {
+                id: uuidv4(),
+                url: photoURL,
+                creatorId: user.uid,
+                timestamp: new Date().toISOString(),
+                fileName: file.name,
+                size: file.size,
+            };
+
+            const tripRef = doc(db, 'trips', tripId);
+            await updateDoc(tripRef, {
+                photos: arrayUnion(newPhoto),
+                notifications: arrayUnion({ message: `${user.displayName || user.email} 上傳了一張新照片。`, timestamp: new Date().toISOString() })
+            });
+
+            showToast('照片上傳成功！', 'success');
+            fetchTrip(); // 重新載入數據
+        } catch (error) {
+            console.error("Photo upload failed:", error);
+            // 由於 uploadTripPhoto 已經提供了錯誤信息，我們直接使用
+            showToast(error.message || '照片上傳失敗，請重試。', 'error');
+        } finally {
+            setUploading(false);
+            setUploadProgress(0);
+        }
+    };
+    
+    // 圖片刪除處理
+    const handleDeletePhoto = async (photo) => {
+        if (!window.confirm("確定要刪除這張照片嗎？這將會從雲端永久移除。")) return;
+
+        try {
+            // 1. 刪除 Storage 中的檔案
+            // 從 URL 解析出 Storage 的路徑
+            const urlParts = photo.url.split('o/');
+            const pathWithQuery = urlParts[1].split('?')[0];
+            const storagePath = decodeURIComponent(pathWithQuery);
+            
+            const imageRef = ref(storage, storagePath);
+            await deleteObject(imageRef);
+
+            // 2. 刪除 Firestore 中的紀錄
+            const tripRef = doc(db, 'trips', tripId);
+            await updateDoc(tripRef, {
+                photos: arrayRemove(photo),
+                notifications: arrayUnion({ message: `${user.displayName || user.email} 刪除了一張照片。`, timestamp: new Date().toISOString() })
+            });
+
+            showToast('照片已成功刪除！', 'success');
+            fetchTrip();
+        } catch (error) {
+            console.error("Photo deletion failed:", error);
+            showToast('照片刪除失敗，請檢查權限或連線。', 'error');
+        }
     };
 
     // 拖曳結束處理
@@ -731,6 +807,73 @@ const TripDetail = () => {
                     ) : (
                         <p className="text-gray-500 dark:text-gray-400">目前沒有航班資訊。</p>
                     )}
+                </div>
+
+                {/* 圖片相簿區塊 (新功能) */}
+                <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
+                    <h2 className="text-xl font-bold mb-3 flex items-center justify-between text-yellow-600 dark:text-yellow-400">
+                        🖼️ 旅程相簿
+                    </h2>
+                    
+                    <div className="mb-4">
+                        {/* 上傳輸入 */}
+                        <input 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={handlePhotoUpload}
+                            disabled={uploading || !isOwner}
+                            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900 dark:file:text-indigo-300 dark:hover:file:bg-indigo-800 disabled:opacity-50"
+                        />
+                        
+                        {/* 上傳進度條 */}
+                        {uploading && (
+                            <div className="mt-2">
+                                <p className="text-sm text-indigo-600 dark:text-indigo-400 mb-1">
+                                    上傳中 ({uploadProgress.toFixed(0)}%)
+                                </p>
+                                <div className="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
+                                    <div className="bg-indigo-600 h-1.5 rounded-full" 
+                                        style={{ width: `${uploadProgress}%` }}>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            * 僅限圖片，單張檔案大小限制為 5MB。
+                        </p>
+                    </div>
+                    
+                    {/* 照片畫廊 */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {(trip.photos || []).length > 0 ? (
+                            (trip.photos || []).slice().reverse().map((photo) => ( // 反轉顯示，最新在上
+                                <div key={photo.id} className="relative group overflow-hidden rounded-lg shadow-md aspect-square bg-gray-200 dark:bg-gray-700">
+                                    <img src={photo.url} alt={photo.fileName || 'Trip Photo'} 
+                                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                        onClick={() => window.open(photo.url, '_blank')} // 點擊查看大圖
+                                    />
+                                    
+                                    {isOwner && (
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); handleDeletePhoto(photo); }}
+                                            title="刪除照片"
+                                            className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 z-10"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 10-2 0v6a1 1 0 102 0V8z" clipRule="evenodd" /></svg>
+                                        </button>
+                                    )}
+                                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-40 text-white text-xs p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        上傳者: {getCreatorName(photo.creatorId)}
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="col-span-full text-center py-4 text-gray-500 dark:text-gray-400">
+                                目前相簿中沒有照片。
+                            </div>
+                        )}
+                    </div>
                 </div>
             </main>
             
