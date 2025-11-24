@@ -1,26 +1,30 @@
-// src/main.jsx (或 App.jsx)
+// src/main.jsx - 導入並包裹 ErrorBoundary
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
-import { AuthProvider } from './contexts/AuthContext.jsx';
-import { ThemeProvider } from './contexts/ThemeContext.jsx'; // <-- 引入 ThemeProvider
-// 引入 ToastProvider
-import ToastProvider from './components/ToastProvider'; 
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { ToastProvider } from './hooks/useToast';
+// 導入新的 ErrorBoundary
+import ErrorBoundary from './components/ErrorBoundary.jsx'; 
+
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <ThemeProvider> {/* <-- 包裹在 ThemeProvider 內 */}
-      <AuthProvider>
-        <ToastProvider>
-          <App />
-        </ToastProvider>
-      </AuthProvider>
-    </ThemeProvider>
+  // 在開發模式下，React.StrictMode 有助於捕獲潛在問題，但不建議在生產環境中移除
+  <React.StrictMode> 
+    <ErrorBoundary> {/* 將整個應用程式包裹在錯誤邊界內 */}
+        <BrowserRouter>
+            <AuthProvider>
+                <ThemeProvider>
+                    <ToastProvider>
+                        <App />
+                    </ToastProvider>
+                </ThemeProvider>
+            </AuthProvider>
+        </BrowserRouter>
+    </ErrorBoundary>
   </React.StrictMode>,
 );
-// 如果您有 index.css，請檢查它是否存在。
-// 錯誤信息中提到了 "src/index.css (非 Tailwind)"，但這通常不是問題所在。
-// 關鍵是 JSX 語法錯誤： Expected ';' but found 'src' 
-// 請重點檢查第 12 行附近是否有遺漏的分號或多餘的程式碼。
