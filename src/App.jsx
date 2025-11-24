@@ -18,16 +18,15 @@ const useAuth = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-            if (currentUser) {
-                // 如果用戶登入，檢查並儲存用戶資料到 Firestore (若不存在)
-                const userRef = doc(db, 'users', currentUser.uid);
-                await setDoc(userRef, {
-                    uid: currentUser.uid,
-                    displayName: currentUser.displayName,
-                    email: currentUser.email,
-                    photoURL: currentUser.photoURL,
-                }, { merge: true }); // 使用 merge: true 避免覆蓋現有資料
+       const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+        if (currentUser) {
+            // ... 嘗試將用戶資訊寫入 'users' 集合
+            await setDoc(doc(db, 'users', currentUser.uid), {
+                uid: currentUser.uid,
+                displayName: currentUser.displayName,
+                email: currentUser.email,
+                photoURL: currentUser.photoURL,
+            }, { merge: true }); // 使用 merge: true 避免覆蓋
 
                 setUser(currentUser);
             } else {
