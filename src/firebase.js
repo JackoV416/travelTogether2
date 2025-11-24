@@ -8,7 +8,6 @@ import { getFirestore } from 'firebase/firestore';
 // !! 請用 Firebase 控制台複製的內容替換整個 firebaseConfig 變數 !!
 // =========================================================================
 const firebaseConfig = {
-    // !! 請用您正確的設定替換這裡的註釋 !!
   apiKey: "AIzaSyBGlEoflf06E_lBi7FHnU1k2xNRN3_QBes",
   authDomain: "travel-together2-byjamie.firebaseapp.com",
   projectId: "travel-together2-byjamie",
@@ -22,6 +21,7 @@ const firebaseConfig = {
 
 // 1. 初始化 Firebase 應用程式
 const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 // 2. 匯出所需的服務
 export const auth = getAuth(app); 
