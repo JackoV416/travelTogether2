@@ -4,9 +4,9 @@ import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import { auth, googleProvider, db } from './firebase';  // 注意這裡只需要 auth 和 provider
 
 // 確保這三個頁面組件的路徑和名稱是正確的
-import Home from './pages/Home';
-import CreateTrip from './pages/CreateTrip';
-import TripDetail from './pages/TripDetail';
+import Home from './pages/Home'; // Home.jsx
+import CreateTrip from './pages/CreateTrip'; // CreateTrip.jsx
+import TripDetail from './pages/TripDetail'; // TripDetail.jsx
 
 // ------------------------------------------------------------------
 // useAuth Hook: 處理用戶登入狀態
