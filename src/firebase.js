@@ -1,6 +1,8 @@
-import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeApp } from 'firebase/app';
+// 引入 Authentication 服務和 Google 登入提供者
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth'; 
+// 引入 Firestore 服務
+import { getFirestore } from 'firebase/firestore'; 
 
 // TODO: 請用你的 Firebase 專案設定替換下方內容
 const firebaseConfig = {
@@ -13,10 +15,13 @@ const firebaseConfig = {
   measurementId: "G-WB5T9XJ42E"
 };
 
-// 初始化 Firebase 應用程式
+// 1. 初始化 Firebase 應用程式
 const app = initializeApp(firebaseConfig);
 
-// 匯出主要的服務
-export const auth = getAuth(app); // 用於登入
-export const googleProvider = new GoogleAuthProvider(); // Google 登入專用
-export const db = getFirestore(app); // 用於 Firestore 資料庫
+// 2. 匯出所需的服務
+export const auth = getAuth(app); // 認證服務
+export const googleAuthProvider = new GoogleAuthProvider(); // Google 登入提供者
+export const db = getFirestore(app); // Firestore 資料庫
+
+// 3. 匯出 Auth 相關函式供 App.jsx 和其他地方使用
+export { signInWithPopup, signOut }; 
