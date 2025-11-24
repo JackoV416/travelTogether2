@@ -1,3 +1,7 @@
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore'; 
+// (其他導入保持不變，確保 auth, googleProvider, db 都從 './firebase' 導入)
+import { auth, googleProvider, db } from './firebase'; 
+
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'; 
@@ -50,29 +54,61 @@ const login = async () => {
 function App() {
   const { user, loading, login, logout } = useAuth();
   
-  // *** 臨時的 trips 狀態管理 (之後會替換為 Firestore) ***
-  const [trips, setTrips] = useState(() => {
-    const savedTrips = localStorage.getItem('myTrips');
-    return savedTrips ? JSON.parse(savedTrips) : [
-      { id: 1, title: '京都・大阪', startDate: '2024-11-24', endDate: '2024-11-30', budget: 100000 }
-    ];
-  });
+ // ------------------------------------------------------------------
+// 核心數據邏輯：即時監聽 Firestore 行程
+const [trips, setTrips] = useState([]);
+const [isDataLoading, setIsDataLoading] = useState(true); // 新增數據載入狀態
 
-  useEffect(() => {
-    localStorage.setItem('myTrips', JSON.stringify(trips));
-  }, [trips]);
+useEffect(() => {
+    // 檢查用戶是否存在 (理論上已經登入)
+    if (!user) return; 
 
-  const handleAddTrip = (newTripData) => {
-    const newTrip = { id: Date.now(), ...newTripData }; 
-    setTrips([newTrip, ...trips]);
-  };
-  // ***************************************************************
+    // 1. 建立查詢：從 'trips' 集合中，依照建立時間排序
+    const tripsCollection = collection(db, 'trips');
+    const q = query(tripsCollection, orderBy('createdAt', 'desc'));
 
-/*
+    // 2. 實時監聽數據變化 (onSnapshot)
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const tripsData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        setTrips(tripsData);
+        setIsDataLoading(false); // 數據載入完成
+    }, (error) => {
+        console.error("Firestore 數據監聽錯誤:", error);
+        setIsDataLoading(false);
+    });
+
+    // 清理函數：當元件卸載時停止監聽
+    return () => unsubscribe();
+}, [user]);
+
+// 函式：將新行程寫入 Firestore
+const addTrip = async (newTripData) => {
+    try {
+        await addDoc(collection(db, 'trips'), {
+            ...newTripData,
+            ownerId: user.uid, // 記錄創建者
+            ownerName: user.displayName,
+            collaborators: [user.email], // 預設創建者為協作者
+            createdAt: serverTimestamp() // Firestore 時間戳記
+        });
+    } catch (error) {
+        console.error("新增行程到 Firestore 錯誤:", error);
+    }
+};
+// ------------------------------------------------------------------
+
+
   if (loading) {
     return <div className="min-h-screen bg-jp-bg flex items-center justify-center text-xl">載入中...</div>;
   }
-  */
+    // 原本的 loading 檢查現在用來檢查 Auth
+    // 這裡新增一個數據載入檢查
+  if (isDataLoading) {
+    return <div className="min-h-screen bg-jp-bg flex items-center justify-center text-xl">數據載入中...</div>;
+  }
 
   // 未登入畫面
   if (!user) {
@@ -95,7 +131,8 @@ function App() {
   <BrowserRouter>
     <Routes>
       <Route path="/" element={<Home trips={trips} user={user} logout={logout} />} /> 
-      <Route path="/create" element={<CreateTrip onAddTrip={handleAddTrip} />} />
+      {/* 將原來的 handleAddTrip 替換為新的 addTrip 函式 */}
+      <Route path="/create" element={<CreateTrip onAddTrip={addTrip} />} />
       <Route path="/trip/:id" element={<TripDetail user={user} trips={trips} />} /> 
     </Routes>
   </BrowserRouter>
