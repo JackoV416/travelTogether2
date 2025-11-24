@@ -143,8 +143,8 @@ const CreateTrip = ({ user, allUsers }) => {
     // 渲染
     return (
         // ********************** 暗黑模式修正: bg-gray-900 **********************
-        <div className="min-h-screen bg-gray-900 p-4 max-w-lg mx-auto text-black">
-            <h1 className="text-3xl font-bold mb-6 text-center text-black">新增旅行計畫</h1>
+        <div className="min-h-screen bg-gray-900 p-4 max-w-lg mx-auto text-white">
+            <h1 className="text-3xl font-bold mb-6 text-center text-white">新增旅行計畫</h1>
             
             <form onSubmit={handleSubmit} className="space-y-6 bg-gray-800 p-6 rounded-xl shadow-lg">
                 
