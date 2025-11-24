@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'; 
-import { auth, googleProvider } from './firebase'; // 注意這裡只需要 auth 和 provider
+import { auth, googleProvider, db } from './firebase';  // 注意這裡只需要 auth 和 provider
 
 // 確保這三個頁面組件的路徑和名稱是正確的
 import Home from './pages/Home';
