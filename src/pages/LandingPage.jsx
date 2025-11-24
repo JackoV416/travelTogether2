@@ -1,10 +1,12 @@
-// src/pages/LandingPage.jsx - 整合登入/註冊功能和華麗簡介 (修正版本)
+// src/pages/LandingPage.jsx - 整合登入/註冊功能和華麗簡介 (已整合 LogService)
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+// 假設 useAuth 是從這裡導入的
+import { useAuth } from '../contexts/AuthContext'; 
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../hooks/useToast';
+import LogService from '../services/logService'; // <<< 新增 LogService 導入
 
 const LandingPage = () => {
     const [email, setEmail] = useState('');
@@ -12,6 +14,7 @@ const LandingPage = () => {
     const [isRegister, setIsRegister] = useState(false);
     const [loading, setLoading] = useState(false);
     
+    // 假設 useAuth 確實存在，並提供了認證函數
     const { login, register, signInWithGoogle, user } = useAuth();
     const { isDarkMode, toggleTheme } = useTheme();
     const navigate = useNavigate();
@@ -19,7 +22,7 @@ const LandingPage = () => {
 
     // 如果用戶已經登入，直接導航到儀表板
     if (user) {
-        navigate('/dashboard'); // 這裡假設您的儀表板路徑是 /dashboard
+        navigate('/dashboard'); 
         return null;
     }
 
@@ -37,7 +40,12 @@ const LandingPage = () => {
             }
             navigate('/dashboard'); 
         } catch (error) {
-            console.error("Auth error:", error);
+            // *** 使用 LogService 記錄錯誤 ***
+            LogService.error(error, { 
+                operation: isRegister ? 'USER_REGISTER' : 'USER_LOGIN',
+                email: email
+            }); 
+            
             // 顯示更友好的錯誤訊息
             const message = error.message.includes('email-already-in-use') 
                 ? '此 Email 已被註冊。' 
@@ -60,14 +68,18 @@ const LandingPage = () => {
             showToast('Google 登入成功！', 'success');
             navigate('/dashboard');
         } catch (error) {
-            console.error("Google sign-in error:", error);
+            // *** 使用 LogService 記錄錯誤 ***
+            LogService.error(error, { 
+                operation: 'GOOGLE_SIGN_IN' 
+            });
+
             showToast('Google 登入失敗。', 'error');
         } finally {
             setLoading(false);
         }
     };
 
-    // 登入/註冊表單組件
+    // 登入/註冊表單組件 (AuthForm, IntroSection, FeatureItem - 程式碼與之前相同)
     const AuthForm = () => (
         <form onSubmit={handleSubmit} className="space-y-6">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -142,7 +154,6 @@ const LandingPage = () => {
         </form>
     );
 
-    // 華麗簡介區塊組件
     const IntroSection = () => (
         <div className="hidden lg:block relative h-full p-12 rounded-2xl shadow-xl overflow-hidden text-white transition-all duration-500"
              style={{
@@ -168,7 +179,6 @@ const LandingPage = () => {
                 </div>
             </div>
 
-            {/* 視覺裝飾 */}
             <div className="absolute top-0 right-0 p-4">
                 <div className="w-16 h-16 bg-white bg-opacity-10 rounded-full animate-pulse"></div>
             </div>
@@ -178,7 +188,6 @@ const LandingPage = () => {
         </div>
     );
 
-    // 輔助組件：特色項目
     const FeatureItem = ({ icon, title, description }) => (
         <div className="flex items-start space-x-3 bg-white bg-opacity-10 p-3 rounded-lg backdrop-blur-sm">
             <span className="text-2xl pt-1">{icon}</span>
