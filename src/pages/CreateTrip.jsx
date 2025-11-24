@@ -1,20 +1,19 @@
-// src/pages/CreateTrip.jsx - 新增旅行計畫 (同時支援 Light/Dark 模式)
+// src/pages/CreateTrip.jsx - 最終版本 (支援 Light/Dark Mode)
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext'; // <-- 引入 Theme Context
 import { collection, addDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
 import BudgetCurrencySelector from '../components/BudgetCurrencySelector';
 import InviteCollaborator from '../components/InviteCollaborator';
-import { useTheme } from '../contexts/ThemeContext'; // <-- 引入 useTheme
 
 const CreateTrip = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const { toggleTheme } = useTheme(); // <-- 獲取切換函式
+    const { toggleTheme, theme } = useTheme(); // <-- 引入主題切換
 
-    // ... (所有 state 定義) ...
     const [title, setTitle] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -24,38 +23,107 @@ const CreateTrip = () => {
     const [newMemberName, setNewMemberName] = useState('');
     const [newMemberShare, setNewMemberShare] = useState(0);
 
-    // ... (handleBudgetShareChange, handleAddNewMember, handleSubmit 函式保持不變) ...
+    // 處理協作者預算份額變更
+    const handleBudgetShareChange = (index, value) => { /* ... 保持不變 ... */ };
+    // 新增非 Google 帳戶成員
+    const handleAddNewMember = (e) => { /* ... 保持不變 ... */ };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!title.trim() || !startDate || !endDate || budget <= 0) {
+            alert('請填寫所有必填欄位：旅行標題、日期和總預算。');
+            return;
+        }
+
+        if (new Date(startDate) > new Date(endDate)) {
+            alert('結束日期不能早於開始日期。');
+            return;
+        }
+
+        try {
+            const tripData = {
+                title,
+                startDate,
+                endDate,
+                totalBudget: parseFloat(budget),
+                currency,
+                ownerId: user.uid,
+                collaborators: collaborators.map(c => ({
+                    uid: c.uid,
+                    name: c.name,
+                    budgetShare: c.budgetShare,
+                    email: c.email,
+                })),
+                expenses: [],
+                itinerary: [],
+                flights: [],
+                createdAt: new Date(),
+            };
+
+            const docRef = await addDoc(collection(db, 'trips'), tripData);
+            const userRef = doc(db, 'users', user.uid);
+            await updateDoc(userRef, { trips: arrayUnion(docRef.id) });
+
+            alert('旅行計畫創建成功！');
+            navigate(`/trip/${docRef.id}`);
+
+        } catch (error) {
+            console.error('創建旅行計畫失敗:', error);
+            alert('創建失敗，請稍後重試。');
+        }
+    };
 
     return (
-        // 頁面背景：淺色/深色切換
+        // 頁面背景：Threads 淺灰 / Dark Mode 深灰
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-start justify-center p-4">
-            {/* 卡片背景：淺色/深色切換 */}
+            {/* 卡片背景：白色 / 深灰，Threads 圓角風格 */}
             <div className="bg-white dark:bg-gray-800 p-8 rounded-xl w-full max-w-2xl shadow-lg border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-white">
                 
                 {/* 標題與切換按鈕 */}
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">新增旅行計畫</h1>
                     <button onClick={toggleTheme} className="p-2 rounded-full text-gray-800 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                        主題切換
+                        {theme === 'light' ? '🌙' : '☀️'}
                     </button>
                 </div>
-                
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* 旅行標題 */}
                     <div>
                         <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">旅行標題 (必填)</label>
                         <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required
-                            // 輸入框樣式同時支援兩模式
+                            // 統一的輸入框樣式
                             className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 placeholder-gray-400 text-gray-800 dark:text-white focus:ring-indigo-500 focus:border-indigo-500"
                             placeholder="東京五日遊" />
                     </div>
 
-                    {/* 日期選擇 (樣式同上) */}
-                    {/* ... */}
+                    {/* 日期選擇 */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">開始日期 (必填)</label>
+                            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required
+                                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">結束日期 (必填)</label>
+                            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required
+                                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" />
+                        </div>
+                    </div>
 
-                    {/* 總預算 (樣式同上) */}
-                    {/* ... */}
-                    
+                    {/* 總預算 */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">總預算 (必填)</label>
+                        <div className="flex">
+                            <input type="number" value={budget} onChange={(e) => setBudget(e.target.value)} required min="1"
+                                className="flex-grow p-3 border border-r-0 border-gray-300 dark:border-gray-600 rounded-l-lg bg-white dark:bg-gray-700 placeholder-gray-400 text-gray-800 dark:text-white focus:ring-indigo-500 focus:border-indigo-500"
+                                placeholder="例如: 10000" />
+                            <BudgetCurrencySelector currency={currency} setCurrency={setCurrency}
+                                className="p-3 border border-gray-300 dark:border-gray-600 rounded-r-lg bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-white" />
+                        </div>
+                    </div>
+
                     {/* 旅行成員與預算 */}
                     <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                         <h2 className="text-xl font-bold mb-4 text-indigo-600 dark:text-indigo-400">旅行成員與預算分攤</h2>
@@ -71,7 +139,6 @@ const CreateTrip = () => {
                                         min="0"
                                         value={member.budgetShare}
                                         onChange={(e) => handleBudgetShareChange(index, e.target.value)}
-                                        // 輸入框樣式
                                         className="w-24 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-600 text-right text-gray-800 dark:text-white"
                                     />
                                 </div>
