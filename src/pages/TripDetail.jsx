@@ -6,7 +6,9 @@ import { doc, getDoc, updateDoc, arrayUnion, deleteDoc } from 'firebase/firestor
 import { db } from '../firebase';
 import ExpenseForm from '../components/ExpenseForm'; 
 
-// 貨幣定義（必須與 CreateTrip.jsx 保持一致）
+// ----------------------------------------------------------------------
+// 貨幣定義和輔助函式（必須與 CreateTrip.jsx 保持一致）
+// ----------------------------------------------------------------------
 const BASE_CURRENCY = 'HKD';
 const EXCHANGE_RATES = {
     'HKD': 1.0,
@@ -24,6 +26,23 @@ const convertToHKD = (amount, currency) => {
     const rate = EXCHANGE_RATES[currency] || 1; 
     return amount / rate;
 };
+
+// 輔助函式：專業貨幣格式化
+const formatCurrency = (amount, currency) => {
+    const selectedCurrency = currency || BASE_CURRENCY;
+    
+    // 設置 JPY/TWD 為零小數位，其他為兩位
+    const minimumFractionDigits = (selectedCurrency === 'JPY' || selectedCurrency === 'TWD') ? 0 : 2;
+
+    const formatter = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: selectedCurrency,
+        minimumFractionDigits: minimumFractionDigits,
+        maximumFractionDigits: 2,
+    });
+    return formatter.format(amount);
+};
+// ----------------------------------------------------------------------
 
 
 const TripDetail = ({ user }) => {
@@ -45,6 +64,7 @@ const TripDetail = ({ user }) => {
                 if (docSnap.exists()) {
                     const tripData = { id: docSnap.id, ...docSnap.data() };
                     setTrip(tripData);
+                    // 初始化時計算結算餘額
                     setBalances(calculateBalances(tripData.members || [], tripData.expenses || []));
                 } else {
                     console.error("找不到該行程文件！");
@@ -60,22 +80,6 @@ const TripDetail = ({ user }) => {
     }, [id, user, navigate]);
 
 
-    // 輔助函式：專業貨幣格式化
-    const formatCurrency = (amount, currency) => {
-        const selectedCurrency = currency || BASE_CURRENCY;
-        
-        const minimumFractionDigits = (selectedCurrency === 'JPY' || selectedCurrency === 'TWD') ? 0 : 2;
-
-        const formatter = new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: selectedCurrency,
-            minimumFractionDigits: minimumFractionDigits,
-            maximumFractionDigits: 2,
-        });
-        return formatter.format(amount);
-    };
-
-
     // 結算邏輯核心函式
     const calculateBalances = (members, expenses) => {
         const initialBalances = members.reduce((acc, m) => {
@@ -84,7 +88,7 @@ const TripDetail = ({ user }) => {
         }, {});
 
         expenses.forEach(expense => {
-            // 注意：expenses.cost 已經是 HKD (由 ExpenseForm 轉換)
+            // expenses.cost 已經是 HKD (由 ExpenseForm 轉換)
             const cost = expense.cost || 0;
             const paidById = expense.paidById;
             const sharedBy = expense.sharedBy || [];
@@ -135,9 +139,11 @@ const TripDetail = ({ user }) => {
         if (!trip) return;
         try {
             const tripRef = doc(db, 'trips', id);
+            // 將新費用新增到 expenses 陣列
             await updateDoc(tripRef, {
                 expenses: arrayUnion(newExpense)
             });
+            // 更新本地狀態
             const updatedExpenses = [...(trip.expenses || []), newExpense];
             const updatedTrip = { ...trip, expenses: updatedExpenses };
             setTrip(updatedTrip);
@@ -169,19 +175,20 @@ const TripDetail = ({ user }) => {
         return acc;
     }, {}) || {};
 
-    const totalExpenses = trip.expenses?.reduce((sum, exp) => exp.cost, 0) || 0;
+    // 計算總支出 (總費用已在 ExpenseForm 中轉換為 HKD)
+    const totalExpenses = trip.expenses?.reduce((sum, exp) => sum + exp.cost, 0) || 0;
     
-    // 重新計算總預算（從成員預算加總）
+    // 重新計算總預算（將所有成員的個人預算轉換為 HKD 後加總）
     const calculatedTotalBudget = trip.members?.reduce((sum, member) => {
         return sum + convertToHKD(member.initialBudget || 0, member.budgetCurrency || BASE_CURRENCY);
     }, 0) || 0;
 
 
     return (
-        <div className="min-h-screen bg-jp-bg p-4 max-w-2xl mx-auto">
+        <div className="min-h-screen bg-jp-bg p-4 max-w-2xl mx-auto text-white">
             
             <div className="flex justify-between items-center mb-4">
-                <button onClick={() => navigate('/')} className="text-black font-medium flex items-center">
+                <button onClick={() => navigate('/')} className="text-white font-medium flex items-center">
                     &larr; 返回行程列表
                 </button>
                 <button 
@@ -194,21 +201,21 @@ const TripDetail = ({ user }) => {
 
 
             {/* 行程標題 */}
-            <div className="bg-white p-6 rounded-xl shadow-md mb-6">
+            <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
                 <h1 className="text-3xl font-bold mb-2">{trip.title}</h1>
-                <p className="text-gray-600">日期: {formatDate(trip.startDate)} - {formatDate(trip.endDate)}</p>
+                <p className="text-gray-400">日期: {formatDate(trip.startDate)} - {formatDate(trip.endDate)}</p>
                 {/* 顯示計算後的總預算 (以 HKD 結算) */}
-                <p className="text-gray-600 font-bold">
+                <p className="text-white font-bold text-lg mt-2">
                     總預算 ({BASE_CURRENCY}): {formatCurrency(calculatedTotalBudget, BASE_CURRENCY)}
                 </p>
             </div>
 
             {/* 成員列表 */}
-            <div className="bg-white p-6 rounded-xl shadow-md mb-6">
+            <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
                 <h2 className="text-xl font-bold mb-3">旅行成員</h2>
                 <ul className="list-disc list-inside space-y-1">
                     {trip.members?.map(member => (
-                        <li key={member.id} className="text-gray-700">
+                        <li key={member.id} className="text-gray-300">
                             {member.name}
                             {/* 顯示個人預算，使用其設定的貨幣 */}
                             {member.initialBudget > 0 && <span> (預算: {formatCurrency(member.initialBudget, member.budgetCurrency || BASE_CURRENCY)})</span>}
@@ -218,28 +225,28 @@ const TripDetail = ({ user }) => {
             </div>
 
             {/* 費用與結算區 */}
-            <div className="bg-white p-6 rounded-xl shadow-md mb-6">
+            <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
                 <h2 className="text-xl font-bold mb-3">💸 費用追蹤與結算</h2>
                 {/* 總支出和結算固定使用 BASE_CURRENCY (HKD) */}
                 <p className="text-lg font-semibold mb-3">總支出: {formatCurrency(totalExpenses, BASE_CURRENCY)}</p>
 
                 {/* 顯示所有費用 */}
-                <div className="space-y-3 mb-4 max-h-48 overflow-y-auto border-t pt-3">
+                <div className="space-y-3 mb-4 max-h-48 overflow-y-auto border-t border-gray-700 pt-3">
                     {trip.expenses?.length > 0 ? (
                         trip.expenses.map((exp) => (
-                            <div key={exp.id || Math.random()} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                            <div key={exp.id || Math.random()} className="flex justify-between items-center bg-gray-700 p-3 rounded-lg">
                                 <div>
                                     <p className="font-medium">{exp.description}</p>
-                                    <p className="text-sm text-gray-500">
+                                    <p className="text-sm text-gray-400">
                                         支付: {memberMap[exp.paidById]} /
                                         分攤: {exp.sharedBy.length} 人
                                     </p>
                                 </div>
-                                <p className="font-bold text-red-600">
+                                <p className="font-bold text-red-400 text-right">
                                     -{formatCurrency(exp.cost, BASE_CURRENCY)}
                                     {/* 顯示原始貨幣金額 (可選) */}
                                     {exp.originalCurrency && exp.originalCurrency !== BASE_CURRENCY && (
-                                        <span className="text-xs text-gray-400 block">({exp.originalCost} {exp.originalCurrency})</span>
+                                        <span className="text-xs text-gray-500 block">({formatCurrency(exp.originalCost, exp.originalCurrency)})</span>
                                     )}
                                 </p>
                             </div>
@@ -250,16 +257,16 @@ const TripDetail = ({ user }) => {
                 </div>
                 
                 {/* 結算結果總覽 */}
-                <div className="border-t pt-4 mt-4">
-                    <h3 className="text-xl font-bold mb-3">💰 誰欠誰？ (最終結算)</h3>
+                <div className="border-t border-gray-700 pt-4 mt-4">
+                    <h3 className="text-xl font-bold mb-3">💰 誰欠誰？ (最終結算 - {BASE_CURRENCY})</h3>
                     <div className="space-y-2">
                         {Object.values(balances).map(member => (
                             <div key={member.name} className="flex justify-between items-center text-lg">
                                 <span className="font-medium">{member.name}</span>
                                 {member.balance > 0 ? (
-                                    <span className="text-green-600 font-bold">應收: +{formatCurrency(member.balance, BASE_CURRENCY)}</span>
+                                    <span className="text-green-400 font-bold">應收: +{formatCurrency(member.balance, BASE_CURRENCY)}</span>
                                 ) : member.balance < 0 ? (
-                                    <span className="text-red-600 font-bold">應付: {formatCurrency(member.balance, BASE_CURRENCY)}</span>
+                                    <span className="text-red-400 font-bold">應付: {formatCurrency(member.balance, BASE_CURRENCY)}</span>
                                 ) : (
                                     <span className="text-gray-500">已結清</span>
                                 )}
@@ -271,7 +278,7 @@ const TripDetail = ({ user }) => {
                 {/* 按鈕：開啟費用表單 */}
                 <button
                     onClick={() => setShowExpenseForm(true)}
-                    className="w-full bg-red-500 text-white p-3 rounded-full font-medium active:scale-95 transition-transform mt-6"
+                    className="w-full bg-red-600 text-white p-3 rounded-full font-medium active:scale-95 transition-transform mt-6"
                 >
                     + 新增支出
                 </button>
@@ -279,7 +286,7 @@ const TripDetail = ({ user }) => {
 
             {/* 彈窗/表單：新增支出 */}
             {showExpenseForm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
                     <ExpenseForm
                         members={trip.members}
                         onAddExpense={handleAddExpense}
@@ -291,7 +298,7 @@ const TripDetail = ({ user }) => {
             )}
 
             {/* 佔位符：航班資訊 */}
-            <div className="bg-white p-6 rounded-xl shadow-md mb-6">
+            <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
                 <h2 className="text-xl font-bold mb-3">✈️ 航班資訊</h2>
                 <p className="text-gray-500">（待新增航班輸入表單）</p>
             </div>
