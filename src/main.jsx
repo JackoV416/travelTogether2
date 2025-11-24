@@ -1,11 +1,12 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.jsx'
-// 確保導入是單獨一行，並且路徑是正確的
-import './index.css' 
+// src/main.jsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App.jsx';
+import './index.css';
 
+// 確保這裡是乾淨的程式碼，沒有額外的文字或錯誤符號
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>,
-)
+  </React.StrictMode>
+);
