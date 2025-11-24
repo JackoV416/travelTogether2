@@ -142,5 +142,11 @@ function App() {
         </Router>
     );
 }
+    const TripDetail = React.lazy(() => import('./pages/TripDetail.jsx'));
+    return {
+        <Routes>
+            <Route path="/trip/:tripId" element={<React.Suspense fallback={<div>載入中...</div>}><TripDetail /></React.Suspense>} />
+        </Routes>
+    }
 
 export default App;
