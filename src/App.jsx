@@ -12,7 +12,7 @@ import TripDetail from './pages/TripDetail';
 // useAuth Hook: 處理用戶登入狀態
 const useAuth = () => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // 預設為 true
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -67,10 +67,11 @@ function App() {
     setTrips([newTrip, ...trips]);
   };
   // ***************************************************************
-
+  /*
   if (loading) {
     return <div className="min-h-screen bg-jp-bg flex items-center justify-center text-xl">載入中...</div>;
   }
+  */
 
   // 未登入畫面
   if (!user) {
