@@ -6,12 +6,16 @@ import App from './App.jsx';
 import './index.css';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import { ThemeProvider } from './contexts/ThemeContext.jsx'; // <-- 引入 ThemeProvider
+// 引入 ToastProvider
+import ToastProvider from './components/ToastProvider'; 
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ThemeProvider> {/* <-- 包裹在 ThemeProvider 內 */}
       <AuthProvider>
-        <App />
+        <ToastProvider>
+          <App />
+        </ToastProvider>
       </AuthProvider>
     </ThemeProvider>
   </React.StrictMode>,
