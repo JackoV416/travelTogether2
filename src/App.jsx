@@ -68,10 +68,11 @@ function App() {
   };
   // ***************************************************************
 
+/*
   if (loading) {
     return <div className="min-h-screen bg-jp-bg flex items-center justify-center text-xl">載入中...</div>;
   }
-
+  */
 
   // 未登入畫面
   if (!user) {
