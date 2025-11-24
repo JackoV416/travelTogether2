@@ -1,4 +1,4 @@
-// src/pages/TripDetail.jsx - 包含所有功能、圖片相簿、錯誤邊界和地圖導航的最終版本
+// src/pages/TripDetail.jsx - 包含所有功能、圖片相簿、地圖導航和待辦清單的最終版本
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -42,11 +42,11 @@ const getDatesArray = (startDate, endDate) => {
     return dates;
 };
 
-// 輔助函式：產生 Google 地圖導航 URL (新功能)
+// 輔助函式：產生 Google 地圖導航 URL
 const getMapsUrl = (location) => {
     if (!location) return '#';
-    // 使用標準 URL 格式，當在手機上點擊時，會自動嘗試在 Google Maps App 中開啟並搜尋
     const encodedLocation = encodeURIComponent(location);
+    // 標準 Google Maps search URL，用於在移動設備上開啟 App
     return `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
 };
 
@@ -104,9 +104,12 @@ const TripDetail = () => {
                 // 檢查協作者列表是否包含當前用戶
                 const isCollaborator = tripData.collaborators.some(c => c.uid === user.uid);
                 if (isCollaborator) {
-                    // 確保 photos 陣列存在
+                    // 確保 photos 和 memos 陣列存在
                     if (!tripData.photos) {
                         tripData.photos = [];
+                    }
+                    if (!tripData.memos) { // 確保 memos 存在
+                        tripData.memos = [];
                     }
                     setTrip(tripData);
                 } else {
@@ -239,6 +242,76 @@ const TripDetail = () => {
         }
     };
     
+    // --- 備忘錄處理邏輯 (新功能) ---
+
+    const handleAddMemo = async () => {
+        const content = prompt("請輸入新的待辦事項或備忘錄：");
+        if (!content || content.trim() === '') return;
+
+        try {
+            const newMemo = {
+                id: uuidv4(),
+                content: content.trim(),
+                isCompleted: false,
+                creatorId: user.uid,
+                timestamp: new Date().toISOString(),
+            };
+
+            const tripRef = doc(db, 'trips', tripId);
+            await updateDoc(tripRef, {
+                memos: arrayUnion(newMemo),
+                notifications: arrayUnion({ message: `${user.displayName || user.email} 新增了待辦事項：「${content.substring(0, 20)}...」。`, timestamp: new Date().toISOString() })
+            });
+
+            showToast('備忘錄新增成功！', 'success');
+            fetchTrip();
+        } catch (error) {
+            console.error("Error adding memo:", error);
+            showToast('新增備忘錄失敗。', 'error');
+        }
+    };
+
+    const handleToggleMemo = async (memo) => {
+        try {
+            const tripRef = doc(db, 'trips', tripId);
+            
+            // 1. 從陣列中移除舊項目
+            await updateDoc(tripRef, {
+                memos: arrayRemove(memo)
+            });
+
+            // 2. 新增更新後的項目
+            const updatedMemo = { ...memo, isCompleted: !memo.isCompleted };
+            await updateDoc(tripRef, {
+                memos: arrayUnion(updatedMemo)
+            });
+            
+            showToast(updatedMemo.isCompleted ? '事項已完成！' : '事項已重啟。', 'success');
+            fetchTrip();
+        } catch (error) {
+            console.error("Error toggling memo:", error);
+            showToast('更新備忘錄狀態失敗。', 'error');
+        }
+    };
+
+    const handleDeleteMemo = async (memo) => {
+        if (!window.confirm("確定要刪除這筆備忘錄嗎？")) return;
+        
+        try {
+            const tripRef = doc(db, 'trips', tripId);
+            await updateDoc(tripRef, {
+                memos: arrayRemove(memo),
+                notifications: arrayUnion({ message: `${user.displayName || user.email} 刪除了待辦事項：「${memo.content.substring(0, 20)}...」。`, timestamp: new Date().toISOString() })
+            });
+
+            showToast('備忘錄已刪除！', 'success');
+            fetchTrip();
+        } catch (error) {
+            console.error("Error deleting memo:", error);
+            showToast('刪除備忘錄失敗。', 'error');
+        }
+    };
+    
     // 行程列表處理
     const allTripDates = useMemo(() => {
         if (!trip || !trip.startDate || !trip.endDate) return [];
@@ -316,9 +389,9 @@ const TripDetail = () => {
             finalBalances[c.uid] = c.paid - c.spent;
         });
         
-        const debtMap = {};
         const settlements = [];
 
+        // 簡化計算，實際應用中會需要更複雜的債務優化演算法
         Object.keys(finalBalances).forEach(debtorId => {
             Object.keys(finalBalances).forEach(creditorId => {
                 if (debtorId !== creditorId && finalBalances[debtorId] < 0 && finalBalances[creditorId] > 0) {
@@ -352,13 +425,11 @@ const TripDetail = () => {
 
     // 輔助函式：獲取行程項目邊框顏色
     const getCategoryBorderClass = (category) => {
-        // 使用導入的常數
         return ITINERARY_CATEGORY_COLORS[category] || 'border-gray-400'; 
     };
 
     // 輔助函式：獲取費用類別文本顏色
     const getExpenseCategoryColor = (category) => {
-        // 使用導入的常數
         return EXPENSE_CATEGORY_COLORS[category] || 'text-gray-500';
     };
 
@@ -412,7 +483,6 @@ const TripDetail = () => {
             fetchTrip(); // 重新載入數據
         } catch (error) {
             console.error("Photo upload failed:", error);
-            // 由於 uploadTripPhoto 已經提供了錯誤信息，我們直接使用
             showToast(error.message || '照片上傳失敗，請重試。', 'error');
         } finally {
             setUploading(false);
@@ -426,7 +496,6 @@ const TripDetail = () => {
 
         try {
             // 1. 刪除 Storage 中的檔案
-            // 從 URL 解析出 Storage 的路徑
             const urlParts = photo.url.split('o/');
             const pathWithQuery = urlParts[1].split('?')[0];
             const storagePath = decodeURIComponent(pathWithQuery);
@@ -455,8 +524,7 @@ const TripDetail = () => {
         if (result.source.index === result.destination.index) return;
         if (!isOwner) return;
 
-        // 這裡需要確保我們只對當前篩選後的行程列表進行操作
-        // 如果有篩選，則需要複雜的重新計算原始陣列的索引，為了簡化，我們僅在 'all' 模式下允許拖曳排序
+        // 僅在 'all' 模式下允許拖曳排序，否則會有索引問題
         if (selectedDate !== 'all' || searchQuery) {
             showToast('在篩選或限定日期模式下，無法更改行程順序。', 'warning');
             return;
@@ -580,7 +648,7 @@ const TripDetail = () => {
                     </div>
                 </div>
 
-                {/* 目的地地圖與導航卡片 (新功能) */}
+                {/* 目的地地圖與導航卡片 */}
                 <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
                     <h2 className="text-xl font-bold mb-3 flex items-center justify-between text-green-600 dark:text-green-400">
                         📍 目的地導航
@@ -770,11 +838,12 @@ const TripDetail = () => {
                                 <ul {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
                                     {filteredItinerary.length > 0 ? (
                                         filteredItinerary.map((item, index) => (
+                                            // 只有在非篩選、非日期限定模式下才可拖曳
                                             <Draggable key={item.id} draggableId={item.id} index={index} isDragDisabled={!isOwner || selectedDate !== 'all' || searchQuery}>
                                                 {(provided, snapshot) => (
                                                     <li ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
                                                         onClick={() => handleEditItinerary(item)}
-                                                        className={`p-3 pl-4 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm flex justify-between items-center hover:shadow-md transition-shadow cursor-grab border-l-4 ${getCategoryBorderClass(item.category)}
+                                                        className={`p-3 pl-4 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm flex justify-between items-center hover:shadow-md transition-shadow ${!isOwner || selectedDate !== 'all' || searchQuery ? 'cursor-pointer' : 'cursor-grab'} border-l-4 ${getCategoryBorderClass(item.category)}
                                                                 ${snapshot.isDragging 
                                                                     ? 'shadow-2xl border-2 border-indigo-500 transform scale-[1.02] rotate-1' 
                                                                     : 'hover:shadow-lg'
@@ -916,6 +985,77 @@ const TripDetail = () => {
                         )}
                     </div>
                 </div>
+                
+                {/* 待辦清單/備忘錄卡片 (新功能) */}
+                <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
+                    <h2 className="text-xl font-bold mb-3 flex items-center justify-between text-pink-600 dark:text-pink-400">
+                        📝 待辦清單 / 備忘錄
+                        <button onClick={handleAddMemo}
+                            className="text-sm p-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors">
+                            + 新增事項
+                        </button>
+                    </h2>
+
+                    <div className="space-y-3">
+                        {(trip.memos || [])
+                            .slice()
+                            .sort((a, b) => {
+                                // 排序：未完成的在前，然後按時間排序
+                                if (a.isCompleted !== b.isCompleted) {
+                                    return a.isCompleted ? 1 : -1;
+                                }
+                                return new Date(b.timestamp) - new Date(a.timestamp);
+                            })
+                            .map((memo) => (
+                                <div key={memo.id} 
+                                    className={`flex items-center p-3 rounded-lg transition-all 
+                                                ${memo.isCompleted 
+                                                    ? 'bg-green-50 dark:bg-green-900/50 line-through text-gray-400 dark:text-gray-500'
+                                                    : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600'
+                                                }`}>
+                                    
+                                    {/* Checkbox (點擊切換狀態) */}
+                                    <input 
+                                        type="checkbox" 
+                                        checked={memo.isCompleted} 
+                                        onChange={() => handleToggleMemo(memo)} 
+                                        className={`form-checkbox h-5 w-5 rounded transition-colors cursor-pointer
+                                                    ${memo.isCompleted ? 'text-green-500' : 'text-pink-500'}`}
+                                    />
+
+                                    {/* 內容和創建者 */}
+                                    <div className="flex-1 min-w-0 mx-3">
+                                        <p className={`font-semibold text-sm ${memo.isCompleted ? 'text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-white'}`}>
+                                            {memo.content}
+                                        </p>
+                                        <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-0.5">
+                                            創建者: 
+                                            <span title={`${getCollaboratorName(memo.creatorId)} 創建`} 
+                                                className={`ml-1 w-4 h-4 flex items-center justify-center text-xs font-semibold text-white rounded-full ${getAvatarColor(memo.creatorId)}`}>
+                                                {getCreatorName(memo.creatorId)}
+                                            </span>
+                                        </span>
+                                    </div>
+
+                                    {/* 刪除按鈕 */}
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleDeleteMemo(memo); }}
+                                        title="刪除備忘錄"
+                                        className="text-gray-400 hover:text-red-500 transition-colors ml-2"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 10-2 0v6a1 1 0 102 0V8z" clipRule="evenodd" /></svg>
+                                    </button>
+                                </div>
+                            ))}
+
+                        {(trip.memos || []).length === 0 && (
+                            <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+                                目前沒有待辦事項。
+                            </p>
+                        )}
+                    </div>
+                </div>
+
             </main>
             
             {/* Modals 區域 */}
