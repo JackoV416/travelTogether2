@@ -23,14 +23,10 @@ const CreateTrip = ({ onAddTrip }) => {
         navigate('/');
     };
     
-    // ... (以下 JSX 程式碼不變)
-    // ...
-    
     return (
         <div className="min-h-screen bg-jp-bg p-4 max-w-lg mx-auto">
             <h1 className="text-2xl font-bold mb-6 text-center">新增旅行計畫</h1>
             
-            {/* 確保這裡的 onSubmit 綁定了 handleSubmit */}
             <form onSubmit={handleSubmit} className="space-y-4">
                 {/* 旅行標題 */}
                 <input 
