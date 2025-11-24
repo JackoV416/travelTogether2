@@ -1,6 +1,6 @@
-// src/pages/TripDetail.jsx - 最終版本 (新增數據匯入功能)
+// src/pages/TripDetail.jsx - 最終版本 (新增行程項目顏色標籤)
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'; // <-- 引入 useRef
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc, deleteDoc, arrayUnion } from 'firebase/firestore'; 
 import { db } from '../firebase';
@@ -14,134 +14,114 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { v4 as uuidv4 } from 'uuid';
 import ExpenseChart from '../components/ExpenseChart';
 import { getDestinationTimeZone, getShortTimeZoneName } from '../utils/timeZoneMap'; 
-// 引入數據管理工具 (dataManager.js)
 import { exportJsonToFile, importJsonFromFile } from '../utils/dataManager'; 
 
 
-// ... (費用類別常數, getDatesArray 輔助函式等保持不變) ...
+// 費用類別常數 (保持不變)
+const EXPENSE_CATEGORIES = ['餐飲', '交通', '住宿', '門票', '購物', '一般', '其他'];
+
+// ***********************************************
+// 1. 行程類別顏色映射 (新增)
+const ITINERARY_CATEGORY_COLORS = {
+    '住宿': 'border-indigo-500', 
+    '景點': 'border-blue-500',
+    '餐飲': 'border-yellow-500',
+    '交通': 'border-green-500',
+    '購物': 'border-pink-500',
+    '活動': 'border-red-500',
+    '其他': 'border-gray-500',
+};
+// ***********************************************
+
+
+// 輔助函式：產生旅行期間的所有日期列表 (保持不變)
+const getDatesArray = (startDate, endDate) => { /* ... */ };
 
 const TripDetail = () => {
     const { tripId } = useParams();
-    const navigate = useNavigate();
-    const { user } = useAuth();
-    const { theme, toggleTheme } = useTheme(); 
-
-    // ... (所有狀態定義) ...
-
-    // ***********************************************
-    // 1. 引用文件輸入欄位
+    // ... (所有狀態和 hooks 保持不變) ...
     const fileInputRef = useRef(null); 
-    // ***********************************************
 
-    // ... (所有其他邏輯和狀態保持不變) ...
-    const isOwner = useMemo(() => { /* ... */ }, [user?.uid, trip?.ownerUid]);
-    // ... (handleExportData 函式保持不變) ...
+    // ... (所有邏輯函式和 useMemo 保持不變) ...
+
+    // ***********************************************
+    // 2. 獲取顏色類名
+    const getCategoryBorderClass = useCallback((category) => {
+        return ITINERARY_CATEGORY_COLORS[category] || ITINERARY_CATEGORY_COLORS['其他'];
+    }, []);
+    // ***********************************************
     
-    // ***********************************************
-    // 2. 匯入數據函式
-    const handleImportData = async (event) => {
-        if (!isOwner) {
-            alert('只有旅程創建者才能匯入數據。');
-            return;
-        }
-        
-        const file = event.target.files[0];
-        if (!file) return;
-
-        // 清空 input 欄位，確保下次選擇同一個文件也能觸發 onChange
-        event.target.value = null; 
-
-        if (!window.confirm('確定要匯入數據嗎？匯入的行程、航班和支出將會**合併到**現有數據中！')) {
-            return;
-        }
-
-        try {
-            const importedData = await importJsonFromFile(file);
-
-            // 簡單驗證結構
-            if (!importedData.itinerary && !importedData.flights && !importedData.expenses) {
-                throw new Error("匯入的 JSON 文件中沒有有效的 'itinerary', 'flights', 或 'expenses' 欄位。");
-            }
-
-            const newItinerary = importedData.itinerary?.map(item => ({...item, id: uuidv4()})) || [];
-            const newFlights = importedData.flights?.map(item => ({...item, id: uuidv4()})) || [];
-            const newExpenses = importedData.expenses?.map(item => ({...item, id: uuidv4()})) || [];
-            
-            // 構建更新對象：使用 arrayUnion 進行合併，確保不覆蓋現有的其他欄位
-            const updateData = {};
-            if (newItinerary.length > 0) updateData.itinerary = arrayUnion(...newItinerary);
-            if (newFlights.length > 0) updateData.flights = arrayUnion(...newFlights);
-            if (newExpenses.length > 0) updateData.expenses = arrayUnion(...newExpenses);
-
-            if (Object.keys(updateData).length === 0) {
-                alert('匯入文件中未包含任何可匯入的數據 (行程、航班、支出)。');
-                return;
-            }
-
-            await updateDoc(doc(db, 'trips', tripId), updateData);
-            alert('數據已成功匯入並合併！');
-            // 重新拉取數據以更新 UI
-            fetchTripData(); 
-
-        } catch (error) {
-            console.error('數據匯入失敗:', error);
-            alert(`數據匯入失敗: ${error.message}`);
-        }
-    };
-
-    // 觸發文件選擇的函式
-    const handleTriggerImport = () => {
-        if (isOwner) {
-            fileInputRef.current.click();
-        } else {
-            alert('只有旅程創建者才能匯入數據。');
-        }
-    };
-    // ***********************************************
+    // ... (handleExportData, handleImportData 等保持不變) ...
     
     if (loading) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-white flex justify-center items-center">載入中...</div>;
     if (!trip) return null;
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8 text-gray-800 dark:text-white">
-            {/* ... (Header 保持不變) ... */}
+            {/* ... (Header & 費用追蹤卡片 保持不變) ... */}
 
             <main className="max-w-xl mx-auto space-y-4"> 
-                {/* 旅程概覽卡片 */}
-                <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
-                    {/* ... (概覽資訊保持不變) ... */}
-                    
-                    <div className="flex space-x-3 mt-4">
-                        {/* AI 導覽按鈕 */}
-                        <button onClick={handleOpenAIGuide} 
-                            className="flex-1 p-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 dark:bg-green-700 dark:hover:bg-green-600 active:scale-95 transition-transform">
-                            🤖 啟動 AI 導覽
-                        </button>
-                        
-                        {/* 導出按鈕 */}
-                        <button onClick={handleExportData} 
-                            className="p-3 bg-gray-500 text-white font-bold rounded-lg hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700 active:scale-95 transition-transform">
-                            ⬇️ 導出
-                        </button>
-                        
-                        {/* 3. 匯入按鈕與隱藏的 file input */}
-                        <button onClick={handleTriggerImport}
-                            className="p-3 bg-indigo-500 text-white font-bold rounded-lg hover:bg-indigo-600 dark:bg-indigo-700 dark:hover:bg-indigo-600 active:scale-95 transition-transform">
-                            ⬆️ 匯入
-                        </button>
-                        <input
-                            type="file"
-                            ref={fileInputRef} // 綁定 ref
-                            onChange={handleImportData} // 處理文件
-                            accept=".json"
-                            style={{ display: 'none' }} // 隱藏 input
-                            disabled={!isOwner}
-                        />
-                    </div>
-                </div>
+                {/* ... (旅程概覽卡片 保持不變) ... */}
 
-                {/* ... (其他卡片和 Modals 保持不變) ... */}
+                {/* ... (費用追蹤與結算卡片 保持不變) ... */}
+
+                {/* 行程規劃卡片 */}
+                <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
+                    <h2 className="text-xl font-bold mb-3 flex items-center justify-between text-indigo-600 dark:text-indigo-400">
+                        🗺️ 行程規劃 (當地時間)
+                        {isOwner && (
+                            <button onClick={() => setIsItineraryFormOpen(true)} className="text-sm bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded-full transition-colors active:scale-95">
+                                + 新增行程
+                            </button>
+                        )}
+                    </h2>
+                    
+                    {/* ... (搜索輸入框 & 日期選擇器 保持不變) ... */}
+
+                    {/* 行程列表 - 修改 li 元素的樣式 */}
+                    <DragDropContext onDragEnd={isOwner ? onDragEnd : () => {}}> 
+                        <Droppable droppableId="itinerary">
+                            {(provided) => (
+                                <ul {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
+                                    {filteredItinerary.length > 0 ? (
+                                        filteredItinerary.map((item, index) => (
+                                            <Draggable key={item.id} draggableId={item.id} index={index} isDragDisabled={!isOwner}>
+                                                {(provided) => (
+                                                    <li ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
+                                                        // ***********************************************
+                                                        // 3. 應用顏色標籤樣式 (border-l-4 和動態顏色類名)
+                                                        className={`p-3 pl-4 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm flex justify-between items-center hover:shadow-md transition-shadow cursor-grab border-l-4 ${getCategoryBorderClass(item.category)}`}> 
+                                                        {/* *********************************************** */}
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-xs font-semibold uppercase text-indigo-500 dark:text-indigo-400">
+                                                                {item.category}
+                                                            </div>
+                                                            <div className="font-bold text-gray-800 dark:text-white truncate">
+                                                                {item.activity}
+                                                            </div>
+                                                            {/* ... (時間顯示保持不變) ... */}
+                                                        </div>
+                                                        <div className="flex space-x-2">
+                                                            {/* ... (編輯/刪除按鈕保持不變) ... */}
+                                                        </div>
+                                                    </li>
+                                                )}
+                                            </Draggable>
+                                        ))
+                                    ) : (
+                                        /* ... (列表為空提示保持不變) ... */
+                                        <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+                                            {searchQuery !== '' ? `找不到與「${searchQuery}」相關的行程。` : (selectedDate === 'all' ? '目前沒有行程項目。' : `這一天 (${selectedDate}) 沒有行程。`)}
+                                        </p>
+                                    )}
+                                    {provided.placeholder}
+                                </ul>
+                            )}
+                        </Droppable>
+                    </DragDropContext>
+                </div>
                 
+                {/* ... (航班資訊卡片 保持不變) ... */}
             </main>
             
             {/* ... (Modals 區域保持不變) ... */}
