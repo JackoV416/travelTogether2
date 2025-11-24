@@ -1,6 +1,7 @@
+// src/pages/TripDetail.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-// 導入 deleteDoc, updateDoc, arrayUnion 等 Firestore 函式
 import { doc, getDoc, updateDoc, arrayUnion, deleteDoc } from 'firebase/firestore'; 
 import { db } from '../firebase';
 import ExpenseForm from '../components/ExpenseForm'; 
@@ -24,7 +25,6 @@ const TripDetail = ({ user }) => {
                 if (docSnap.exists()) {
                     const tripData = { id: docSnap.id, ...docSnap.data() };
                     setTrip(tripData);
-                    // 數據載入後立即計算餘額
                     setBalances(calculateBalances(tripData.members || [], tripData.expenses || []));
                 } else {
                     console.error("找不到該行程文件！");
@@ -37,9 +37,25 @@ const TripDetail = ({ user }) => {
         };
 
         fetchTripDetails();
-        
-        // 注意：這裡只做了單次獲取。在下一個階段可以替換成 onSnapshot 實時監聽，以確保多人協作時的即時性。
     }, [id, user, navigate]);
+
+
+    // *** 輔助函式：專業貨幣格式化 (新版本) ***
+    const formatCurrency = (amount, currency) => {
+        const selectedCurrency = currency || 'HKD';
+        
+        // 根據貨幣調整小數點位數
+        const minimumFractionDigits = (selectedCurrency === 'JPY' || selectedCurrency === 'TWD') ? 0 : 2;
+
+        const formatter = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: selectedCurrency,
+            minimumFractionDigits: minimumFractionDigits,
+            maximumFractionDigits: 2,
+        });
+        return formatter.format(amount);
+    };
+    // **********************************
 
 
     // *** 結算邏輯核心函式 (功能 4 & 5) ***
@@ -59,12 +75,10 @@ const TripDetail = ({ user }) => {
             const paidById = expense.paidById;
             const sharedBy = expense.sharedBy || [];
             
-            // 1. 記錄支付金額 (Paid)
             if (initialBalances[paidById]) {
                 initialBalances[paidById].paid += cost;
             }
 
-            // 2. 記錄應付金額 (Owed)
             if (sharedBy.length > 0) {
                 const shareAmount = cost / sharedBy.length;
                 sharedBy.forEach(memberId => {
@@ -75,7 +89,6 @@ const TripDetail = ({ user }) => {
             }
         });
 
-        // 3. 計算最終餘額 (Balance = Paid - Owed)
         Object.values(initialBalances).forEach(member => {
             member.balance = member.paid - member.owed;
         });
@@ -84,22 +97,18 @@ const TripDetail = ({ user }) => {
     };
     // **********************************
     
-    // *** 刪除旅程函式 (新功能) ***
+    // *** 刪除旅程函式 ***
     const handleDeleteTrip = async () => {
         if (!trip) return;
 
-        // 步驟 1: 確認刪除
         const isConfirmed = window.confirm(`您確定要永久刪除行程：「${trip.title}」嗎？此操作無法復原。`);
         
         if (isConfirmed) {
             try {
-                // 步驟 2: 呼叫 Firestore 刪除 API
                 const docRef = doc(db, 'trips', id);
                 await deleteDoc(docRef);
 
                 alert(`行程「${trip.title}」已成功刪除。`);
-                
-                // 步驟 3: 導航回行程列表
                 navigate('/');
             } catch (error) {
                 console.error("刪除行程錯誤:", error);
@@ -119,13 +128,11 @@ const TripDetail = ({ user }) => {
                 expenses: arrayUnion(newExpense)
             });
 
-            // 本地更新狀態
             const updatedExpenses = [...(trip.expenses || []), newExpense];
             const updatedTrip = { ...trip, expenses: updatedExpenses };
             setTrip(updatedTrip);
-            // 立即重新計算結算結果
             setBalances(calculateBalances(trip.members || [], updatedExpenses));
-            setShowExpenseForm(false); // 關閉表單
+            setShowExpenseForm(false);
             
         } catch (error) {
             console.error("新增費用到 Firestore 錯誤:", error);
@@ -133,29 +140,13 @@ const TripDetail = ({ user }) => {
         }
     };
 
-    if (loading) {
-        return <div className="min-h-screen bg-jp-bg flex items-center justify-center text-xl">載入行程詳情...</div>;
-    }
 
-    if (!trip) {
-        return <div className="min-h-screen bg-jp-bg flex items-center justify-center text-xl">行程不存在。</div>;
-    }
-    
-    // 輔助函式：格式化日期
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
         const date = dateString.toDate ? dateString.toDate() : new Date(dateString);
         return date.toLocaleDateString('zh-HK', { month: 'short', day: 'numeric', year: 'numeric' });
     };
-    
-    // 輔助函式：格式化金額（為了相容舊數據，使用字串格式化，但建議使用 Intl.NumberFormat）
-    const formatCurrency = (amount, currency = 'HKD') => {
-        // 這裡暫時只做簡單的字串拼接，因為貨幣格式化需要引入更多邏輯
-        // 建議在實際專案中使用 Intl.NumberFormat 實現完整的貨幣格式化
-        const symbolMap = { 'HKD': 'HK$', 'USD': 'US$', 'JPY': '¥', 'TWD': 'NT$', 'EUR': '€' };
-        const symbol = symbolMap[trip.currency] || '$';
-        return `${symbol} ${Math.abs(amount).toFixed(2).toLocaleString()}`;
-    };
+
 
     const memberMap = trip.members?.reduce((acc, m) => {
         acc[m.id] = m.name;
@@ -163,6 +154,7 @@ const TripDetail = ({ user }) => {
     }, {}) || {};
 
     const totalExpenses = trip.expenses?.reduce((sum, exp) => sum + exp.cost, 0) || 0;
+
 
     return (
         <div className="min-h-screen bg-jp-bg p-4 max-w-2xl mx-auto">
@@ -184,6 +176,7 @@ const TripDetail = ({ user }) => {
             <div className="bg-white p-6 rounded-xl shadow-md mb-6">
                 <h1 className="text-3xl font-bold mb-2">{trip.title}</h1>
                 <p className="text-gray-600">日期: {formatDate(trip.startDate)} - {formatDate(trip.endDate)}</p>
+                {/* 顯示總預算，使用 formatCurrency */}
                 <p className="text-gray-600 font-bold">
                     總預算: {formatCurrency(trip.budget || 0, trip.currency)}
                 </p>
@@ -196,6 +189,7 @@ const TripDetail = ({ user }) => {
                     {trip.members?.map(member => (
                         <li key={member.id} className="text-gray-700">
                             {member.name}
+                            {/* 顯示個人預算，使用 formatCurrency */}
                             {member.initialBudget > 0 && <span> (預算: {formatCurrency(member.initialBudget, trip.currency)})</span>}
                         </li>
                     ))}
@@ -203,4 +197,84 @@ const TripDetail = ({ user }) => {
             </div>
 
             {/* 費用與結算區 (功能 4 & 5) */}
-            <div className
+            <div className="bg-white p-6 rounded-xl shadow-md mb-6">
+                <h2 className="text-xl font-bold mb-3">💸 費用追蹤與結算</h2>
+                {/* 顯示總支出，使用 formatCurrency */}
+                <p className="text-lg font-semibold mb-3">總支出: {formatCurrency(totalExpenses, trip.currency)}</p>
+
+                {/* 顯示所有費用 */}
+                <div className="space-y-3 mb-4 max-h-48 overflow-y-auto border-t pt-3">
+                    {trip.expenses?.length > 0 ? (
+                        trip.expenses.map((exp) => (
+                            <div key={exp.id || Math.random()} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                                <div>
+                                    <p className="font-medium">{exp.description}</p>
+                                    <p className="text-sm text-gray-500">
+                                        支付: {memberMap[exp.paidById]} /
+                                        分攤: {exp.sharedBy.length} 人
+                                    </p>
+                                </div>
+                                {/* 顯示單筆費用，使用 formatCurrency */}
+                                <p className="font-bold text-red-600">-{formatCurrency(exp.cost, trip.currency)}</p>
+                            </div>
+                        ))
+                    ) : (
+                        <p className="text-gray-500">目前沒有費用記錄。</p>
+                    )}
+                </div>
+                
+                {/* 結算結果總覽 */}
+                <div className="border-t pt-4 mt-4">
+                    <h3 className="text-xl font-bold mb-3">💰 誰欠誰？ (最終結算)</h3>
+                    <div className="space-y-2">
+                        {Object.values(balances).map(member => (
+                            <div key={member.name} className="flex justify-between items-center text-lg">
+                                <span className="font-medium">{member.name}</span>
+                                {member.balance > 0 ? (
+                                    <span className="text-green-600 font-bold">應收: +{formatCurrency(member.balance, trip.currency)}</span>
+                                ) : member.balance < 0 ? (
+                                    <span className="text-red-600 font-bold">應付: {formatCurrency(member.balance, trip.currency)}</span>
+                                ) : (
+                                    <span className="text-gray-500">已結清</span>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* 按鈕：開啟費用表單 */}
+                <button
+                    onClick={() => setShowExpenseForm(true)}
+                    className="w-full bg-red-500 text-white p-3 rounded-full font-medium active:scale-95 transition-transform mt-6"
+                >
+                    + 新增支出
+                </button>
+            </div>
+
+            {/* 彈窗/表單：新增支出 */}
+            {showExpenseForm && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <ExpenseForm
+                        members={trip.members}
+                        onAddExpense={handleAddExpense}
+                        onClose={() => setShowExpenseForm(false)}
+                    />
+                </div>
+            )}
+
+            {/* 佔位符：航班資訊 */}
+            <div className="bg-white p-6 rounded-xl shadow-md mb-6">
+                <h2 className="text-xl font-bold mb-3">✈️ 航班資訊</h2>
+                <p className="text-gray-500">（待新增航班輸入表單）</p>
+            </div>
+
+            {/* TODO: AI 推薦按鈕 (功能 6) */}
+            <button className="w-full bg-green-600 text-white p-3 rounded-full font-medium mt-6 active:scale-95 transition-transform shadow-lg">
+                🤖 AI 推薦行程 (功能 6)
+            </button>
+
+        </div>
+    );
+};
+
+export default TripDetail;
