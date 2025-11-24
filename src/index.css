@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 引入我們設定的日式與中文常用字體 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Zen+Kaku+Gothic+New:wght@300;400;500&display=swap');
+
+/* 應用字體到全域，並進行手機端優化 */
+body {
+    /* 使用 Zen Kaku Gothic New 為主要字體，Noto Sans TC 為中文字體備選 */
+    font-family: 'Zen Kaku Gothic New', 'Noto Sans TC', sans-serif;
+    /* 防止在 PWA 上意外縮放，優化觸控體驗 */
+    touch-action: manipulation;
+}
