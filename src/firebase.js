@@ -1,27 +1,28 @@
-import { initializeApp } from 'firebase/app';
-// 引入 Authentication 服務和需要的函式
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth'; 
-// 引入 Firestore 服務
-import { getFirestore } from 'firebase/firestore'; 
+// src/firebase.js - 從環境變量讀取配置
 
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+
+// ***********************************************
+// 從環境變量讀取配置
 const firebaseConfig = {
-      // !! 請用您正確的設定替換這裡的註釋 !!
-  apiKey: "AIzaSyBGlEoflf06E_lBi7FHnU1k2xNRN3_QBes",
-  authDomain: "travel-together2-byjamie.firebaseapp.com",
-  projectId: "travel-together2-byjamie",
-  storageBucket: "travel-together2-byjamie.firebasestorage.app",
-  messagingSenderId: "270079374388",
-  appId: "1:270079374388:web:93aeeb483945dbab7ac661",
-  measurementId: "G-WB5T9XJ42E"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
 };
+// ***********************************************
 
-// 1. 初始化 Firebase 應用程式
+// 初始化 Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 
-// 2. 匯出所需的服務
-export const googleAuthProvider = new GoogleAuthProvider(); // Google 登入提
-export const db = getFirestore(app); // Firestore 資料庫
+// 導出服務
+export const auth = getAuth(app);
+export const db = getFirestore(app);
 
-// 3. 匯出 Auth 相關函式供 App.jsx 和其他地方使用
-export { signInWithPopup, signOut };
+// 注意：如果您的專案使用其他 Firebase 服務（如 Storage），
+// 請確保也在此處初始化並導出它們。
