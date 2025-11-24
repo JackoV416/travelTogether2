@@ -1,4 +1,4 @@
-// src/pages/TripDetail.jsx (請完整替換)
+// src/pages/TripDetail.jsx
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -60,7 +60,7 @@ const TripDetail = ({ user }) => {
     }, [id, user, navigate]);
 
 
-    // *** 輔助函式：專業貨幣格式化 ***
+    // 輔助函式：專業貨幣格式化
     const formatCurrency = (amount, currency) => {
         const selectedCurrency = currency || BASE_CURRENCY;
         
@@ -76,20 +76,15 @@ const TripDetail = ({ user }) => {
     };
 
 
-    // *** 費用結算邏輯核心函式 (不變) ***
+    // 結算邏輯核心函式
     const calculateBalances = (members, expenses) => {
-        // ... (結算邏輯與上次相同) ...
         const initialBalances = members.reduce((acc, m) => {
-            acc[m.id] = { 
-                name: m.name, 
-                paid: 0, 
-                owed: 0, 
-                balance: 0 
-            };
+            acc[m.id] = { name: m.name, paid: 0, owed: 0, balance: 0 };
             return acc;
         }, {});
 
         expenses.forEach(expense => {
+            // 注意：expenses.cost 已經是 HKD (由 ExpenseForm 轉換)
             const cost = expense.cost || 0;
             const paidById = expense.paidById;
             const sharedBy = expense.sharedBy || [];
@@ -116,10 +111,12 @@ const TripDetail = ({ user }) => {
     };
 
 
-    // *** 刪除旅程函式 (不變) ***
+    // 刪除旅程函式
     const handleDeleteTrip = async () => {
         if (!trip) return;
+
         const isConfirmed = window.confirm(`您確定要永久刪除行程：「${trip.title}」嗎？此操作無法復原。`);
+        
         if (isConfirmed) {
             try {
                 const docRef = doc(db, 'trips', id);
@@ -172,18 +169,16 @@ const TripDetail = ({ user }) => {
         return acc;
     }, {}) || {};
 
-    const totalExpenses = trip.expenses?.reduce((sum, exp) => sum + exp.cost, 0) || 0;
+    const totalExpenses = trip.expenses?.reduce((sum, exp) => exp.cost, 0) || 0;
     
-    // *** 重新計算總預算（從成員預算加總）***
+    // 重新計算總預算（從成員預算加總）
     const calculatedTotalBudget = trip.members?.reduce((sum, member) => {
-        // 將每個成員的個人預算 (可能為不同貨幣) 轉換成 HKD 後加總
         return sum + convertToHKD(member.initialBudget || 0, member.budgetCurrency || BASE_CURRENCY);
     }, 0) || 0;
 
 
     return (
         <div className="min-h-screen bg-jp-bg p-4 max-w-2xl mx-auto">
-            {/* ... (省略頂部按鈕) ... */}
             
             <div className="flex justify-between items-center mb-4">
                 <button onClick={() => navigate('/')} className="text-black font-medium flex items-center">
@@ -240,7 +235,13 @@ const TripDetail = ({ user }) => {
                                         分攤: {exp.sharedBy.length} 人
                                     </p>
                                 </div>
-                                <p className="font-bold text-red-600">-{formatCurrency(exp.cost, BASE_CURRENCY)}</p>
+                                <p className="font-bold text-red-600">
+                                    -{formatCurrency(exp.cost, BASE_CURRENCY)}
+                                    {/* 顯示原始貨幣金額 (可選) */}
+                                    {exp.originalCurrency && exp.originalCurrency !== BASE_CURRENCY && (
+                                        <span className="text-xs text-gray-400 block">({exp.originalCost} {exp.originalCurrency})</span>
+                                    )}
+                                </p>
                             </div>
                         ))
                     ) : (
@@ -276,14 +277,13 @@ const TripDetail = ({ user }) => {
                 </button>
             </div>
 
-            {/* 彈窗/表單：新增支出 (ExpenseForm 組件的貨幣也需調整為 HKD) */}
+            {/* 彈窗/表單：新增支出 */}
             {showExpenseForm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <ExpenseForm
                         members={trip.members}
                         onAddExpense={handleAddExpense}
                         onClose={() => setShowExpenseForm(false)}
-                        // 確保 ExpenseForm 知道結算貨幣
                         baseCurrency={BASE_CURRENCY} 
                         exchangeRates={EXCHANGE_RATES}
                     />
@@ -296,7 +296,6 @@ const TripDetail = ({ user }) => {
                 <p className="text-gray-500">（待新增航班輸入表單）</p>
             </div>
 
-            {/* TODO: AI 推薦按鈕 (功能 6) */}
             <button className="w-full bg-green-600 text-white p-3 rounded-full font-medium mt-6 active:scale-95 transition-transform shadow-lg">
                 🤖 AI 推薦行程 (功能 6)
             </button>
