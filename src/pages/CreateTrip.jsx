@@ -1,8 +1,7 @@
-// src/pages/CreateTrip.jsx (請完整替換)
+// src/pages/CreateTrip.jsx
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-// 導入 Firestore 相關函式
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase'; 
 
@@ -11,13 +10,12 @@ const BASE_CURRENCY = 'HKD';
 const AVAILABLE_CURRENCIES = ['HKD', 'JPY', 'USD', 'TWD', 'EUR'];
 
 // 簡化匯率表 (所有貨幣兌換 1 HKD 的值)
-// 1 HKD = X YYY
 const EXCHANGE_RATES = {
-    'HKD': 1.0,  // HKD 兌 HKD
-    'JPY': 19.5, // 假設 1 HKD = 19.5 JPY
-    'USD': 0.13, // 假設 1 HKD = 0.13 USD
-    'TWD': 4.1,  // 假設 1 HKD = 4.1 TWD
-    'EUR': 0.12, // 假設 1 HKD = 0.12 EUR
+    'HKD': 1.0,
+    'JPY': 19.5, 
+    'USD': 0.13,
+    'TWD': 4.1,
+    'EUR': 0.12,
 };
 
 // 輔助函式：將任何貨幣金額轉換為基礎結算貨幣 (HKD)
@@ -25,14 +23,7 @@ const convertToHKD = (amount, currency) => {
     if (!amount || !currency || currency === BASE_CURRENCY) {
         return amount || 0;
     }
-    
-    // 匯率定義為 "1 HKD 能換多少其他貨幣"
-    // 因此，要將其他貨幣換成 HKD，需要 "其他貨幣金額 / 匯率"
-    
-    // 例如：100 JPY 轉換成 HKD = 100 / 19.5
-    const rate = EXCHANGE_RATES[currency] || 1; // 找不到則視為 1:1
-    
-    // 將輸入貨幣轉換為 1 單位 HKD
+    const rate = EXCHANGE_RATES[currency] || 1;
     return amount / rate;
 };
 
@@ -44,9 +35,7 @@ const CreateTrip = ({ onAddTrip, user }) => {
     const [title, setTitle] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
-    // 移除 [budget, setBudget]
-    // 移除 [currency, setCurrency]
-
+    
     // 成員資訊狀態 (確保初始化包含當前用戶)
     const [members, setMembers] = useState([
         { id: user.uid, name: user.displayName || 'Me', initialBudget: 0, budgetCurrency: BASE_CURRENCY }
@@ -54,25 +43,11 @@ const CreateTrip = ({ onAddTrip, user }) => {
     const [newMemberName, setNewMemberName] = useState('');
     const [newMemberBudget, setNewMemberBudget] = useState(0);
     const [newMemberBudgetCurrency, setNewMemberBudgetCurrency] = useState(BASE_CURRENCY);
+    const [searchEmail, setSearchEmail] = useState('');
+    const [searchResults, setSearchResults] = useState([]); 
 
 
-    // 成員管理邏輯
-    const handleAddMember = (e) => {
-        e.preventDefault();
-        if (newMemberName.trim() === '' || members.some(m => m.name === newMemberName)) return;
-
-        const newMember = {
-            id: `guest-${Date.now()}`, 
-            name: newMemberName.trim(),
-            initialBudget: parseFloat(newMemberBudget) || 0,
-            budgetCurrency: newMemberBudgetCurrency // 儲存成員預算的貨幣
-        };
-        setMembers([...members, newMember]);
-        setNewMemberName('');
-        setNewMemberBudget(0);
-        setNewMemberBudgetCurrency(BASE_CURRENCY);
-    };
-
+    // 處理個人預算變動 (包含貨幣選擇)
     const handleBudgetChange = (id, newBudget, newCurrency) => {
         setMembers(members.map(member => 
             member.id === id 
@@ -85,17 +60,31 @@ const CreateTrip = ({ onAddTrip, user }) => {
         ));
     };
 
+    // 處理新增非 Google 帳戶成員
+    const handleAddMember = (e) => {
+        e.preventDefault();
+        if (newMemberName.trim() === '' || members.some(m => m.name === newMemberName)) return;
+
+        const newMember = {
+            id: `guest-${Date.now()}`, 
+            name: newMemberName.trim(),
+            initialBudget: parseFloat(newMemberBudget) || 0,
+            budgetCurrency: newMemberBudgetCurrency 
+        };
+        setMembers([...members, newMember]);
+        setNewMemberName('');
+        setNewMemberBudget(0);
+        setNewMemberBudgetCurrency(BASE_CURRENCY);
+    };
+
+    // 處理移除成員
     const handleRemoveMember = (id) => {
         setMembers(members.filter(m => m.id !== id));
     };
 
 
-    // 成員搜尋邏輯 (與上次相同，但新增貨幣欄位)
-    const [searchEmail, setSearchEmail] = useState('');
-    const [searchResults, setSearchResults] = useState([]); 
-
+    // 處理 Google 帳戶搜尋
     const handleSearchUser = async (e) => {
-        // ... (搜尋邏輯與上次相同) ...
         e.preventDefault();
         if (searchEmail.trim() === '') {
             setSearchResults([]);
@@ -116,7 +105,7 @@ const CreateTrip = ({ onAddTrip, user }) => {
                         name: userData.displayName,
                         email: userData.email,
                         initialBudget: 0,
-                        budgetCurrency: BASE_CURRENCY // 預設為 HKD
+                        budgetCurrency: BASE_CURRENCY
                     });
                 }
             });
@@ -128,12 +117,12 @@ const CreateTrip = ({ onAddTrip, user }) => {
         }
     };
     
+    // 處理加入搜尋到的成員
     const handleAddFoundMember = (foundUser) => {
         setMembers([...members, foundUser]);
         setSearchEmail('');
         setSearchResults([]);
     };
-    // ------------------------------------
 
 
     const handleSubmit = async (e) => {
@@ -144,19 +133,18 @@ const CreateTrip = ({ onAddTrip, user }) => {
             return;
         }
 
-        // *** 計算總預算 (新邏輯) ***
+        // 計算總預算 (將所有成員的個人預算轉換為 HKD 後加總)
         let totalBudgetHKD = 0;
         members.forEach(member => {
             const budgetInHKD = convertToHKD(member.initialBudget, member.budgetCurrency);
             totalBudgetHKD += budgetInHKD;
         });
-        // *************************
 
         const newTrip = {
             title,
             startDate,
             endDate,
-            budget: totalBudgetHKD, // 儲存轉換後的 HKD 總預算
+            budget: totalBudgetHKD, // 儲存計算後的 HKD 總預算
             currency: BASE_CURRENCY, // 結算貨幣固定為 HKD
             members, // 包含成員、個人預算和個人預算的貨幣
             ownerId: user.uid,
@@ -168,21 +156,6 @@ const CreateTrip = ({ onAddTrip, user }) => {
         await onAddTrip(newTrip); 
         navigate('/');
     };
-    
-    // 輔助函式：格式化金額 (僅用於顯示)
-    const formatAmount = (amount, currency) => {
-        const selectedCurrency = currency || BASE_CURRENCY;
-        const minimumFractionDigits = (selectedCurrency === 'JPY' || selectedCurrency === 'TWD') ? 0 : 2;
-
-        const formatter = new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: selectedCurrency,
-            minimumFractionDigits: minimumFractionDigits,
-            maximumFractionDigits: 2,
-        });
-        return formatter.format(amount);
-    };
-
 
     return (
         <div className="min-h-screen bg-jp-bg p-4 max-w-lg mx-auto">
@@ -218,14 +191,15 @@ const CreateTrip = ({ onAddTrip, user }) => {
 
 
                 {/* 旅行成員與預算 */}
-                <h2 className="text-xl font-bold border-t border-gray-600 pt-4">旅行成員與預算</h2>
+                <h2 className="text-xl font-bold border-t border-gray-600 pt-4">旅行成員與個人預算</h2>
                 <p className="text-sm text-gray-400">總結算貨幣: {BASE_CURRENCY}</p>
                 {members.map(member => (
                     <div key={member.id} className="flex items-center space-x-2 bg-gray-700 p-3 rounded-lg">
                         <span className="font-medium flex-1">{member.name} {member.id === user.uid && '(我)'}</span>
+                        
                         <input
                             type="number"
-                            placeholder="個人預算"
+                            placeholder="預算金額"
                             value={member.initialBudget}
                             onChange={(e) => handleBudgetChange(member.id, e.target.value)}
                             className="w-24 p-2 border border-gray-600 rounded-lg text-right bg-gray-600"
@@ -277,12 +251,12 @@ const CreateTrip = ({ onAddTrip, user }) => {
                         </select>
                     </div>
                     <button type="button" onClick={handleAddMember} className="w-full mt-2 bg-gray-600 text-white p-3 rounded-full font-medium hover:bg-gray-500">
-                        + 新增其他成員 (非 Google 帳戶)
+                        + 新增其他成員
                     </button>
                 </div>
 
 
-                {/* Google 帳戶搜尋區塊 (與上次相同) */}
+                {/* Google 帳戶搜尋區塊 */}
                 <div className="pt-4 border-t border-gray-700">
                     <h3 className="text-lg font-bold mb-2">邀請 Google 註冊用戶 (輸入 Email)</h3>
                     <form onSubmit={handleSearchUser} className="flex space-x-2">
