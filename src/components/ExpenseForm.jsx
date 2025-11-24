@@ -1,157 +1,102 @@
-// src/components/ExpenseForm.jsx
+// src/components/ExpenseForm.jsx - 費用表單 (支援 Light/Dark Mode)
 
 import React, { useState } from 'react';
-import { v4 as uuidv4 } from 'uuid'; // 用於生成唯一 ID
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { db } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
+import { v4 as uuidv4 } from 'uuid';
 
-// 貨幣定義 (必須與 CreateTrip/TripDetail 保持一致)
-const AVAILABLE_CURRENCIES = ['HKD', 'JPY', 'USD', 'TWD', 'EUR'];
-
-const ExpenseForm = ({ members, onAddExpense, onClose, baseCurrency, exchangeRates }) => {
-    
-    // 表單狀態
+const ExpenseForm = ({ tripId, collaborators, currency, onSave, onClose }) => {
+    const { user } = useAuth();
     const [description, setDescription] = useState('');
-    const [originalCost, setOriginalCost] = useState(''); // 用戶輸入的原始金額
-    const [originalCurrency, setOriginalCurrency] = useState(baseCurrency); // 用戶輸入的原始貨幣
-    const [paidById, setPaidById] = useState(members[0]?.id || '');
-    const [sharedBy, setSharedBy] = useState(members.map(m => m.id)); // 預設所有成員分攤
+    const [amount, setAmount] = useState('');
+    const [paidBy, setPaidBy] = useState(user?.uid || collaborators[0]?.uid || '');
+    const [category, setCategory] = useState('一般');
 
-    // 輔助函式：將任何貨幣金額轉換為基礎結算貨幣 (HKD)
-    const convertToHKD = (amount, currency) => {
-        if (!amount || !currency || currency === baseCurrency) {
-            return amount || 0;
-        }
-        const rate = exchangeRates[currency] || 1;
-        return amount / rate;
-    };
+    const EXPENSE_CATEGORIES = ['餐飲', '交通', '住宿', '門票', '購物', '一般'];
 
-
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-
-        if (!description || originalCost <= 0 || !paidById || sharedBy.length === 0) {
-            alert('請填寫完整費用資訊，並確保金額和分攤成員正確。');
+        
+        if (!description.trim() || amount <= 0 || !paidBy) {
+            alert('請填寫所有必填欄位並確保金額大於零。');
             return;
         }
 
-        const amount = parseFloat(originalCost);
-        
-        // 1. 轉換為結算貨幣 (HKD)
-        const costInHKD = convertToHKD(amount, originalCurrency);
-
-        // 2. 準備要儲存的費用資料
         const newExpense = {
-            id: uuidv4(), // 生成唯一的費用 ID
+            id: uuidv4(),
             description,
-            // 儲存原始輸入
-            originalCost: amount, 
-            originalCurrency,
-            // 儲存轉換後的結算金額 (關鍵)
-            cost: costInHKD, 
-            paidById,
-            sharedBy,
+            amount: parseFloat(amount),
+            currency,
+            paidBy,
+            category,
+            date: new Date().toISOString().split('T')[0],
             createdAt: new Date().toISOString(),
         };
 
-        onAddExpense(newExpense);
-    };
-
-    const handleShareToggle = (memberId) => {
-        setSharedBy(prev => 
-            prev.includes(memberId)
-                ? prev.filter(id => id !== memberId)
-                : [...prev, memberId]
-        );
+        try {
+            const tripDocRef = doc(db, 'trips', tripId);
+            await updateDoc(tripDocRef, {
+                expenses: arrayUnion(newExpense)
+            });
+            onSave(newExpense);
+            onClose();
+        } catch (error) {
+            console.error('新增支出失敗:', error);
+            alert('新增支出失敗，請檢查網路。');
+        }
     };
 
     return (
-        <div className="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-md">
-            <h2 className="text-2xl font-bold mb-4 text-white">新增支出</h2>
-            
+        // Modal 卡片樣式：白色 / 深灰，Threads 圓角風格
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl w-full max-w-md shadow-2xl text-gray-800 dark:text-white">
+            <h2 className="text-2xl font-bold mb-4 text-red-600 dark:text-red-400">新增旅行支出 ({currency})</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
                 
-                {/* 費用描述 */}
-                <input
-                    type="text"
-                    placeholder="支出描述 (e.g., 晚餐, 門票)"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="w-full p-3 border border-gray-600 rounded-lg bg-gray-700 text-white"
-                    required
-                />
+                {/* 描述 */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">描述 (必填)</label>
+                    <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} required
+                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400"
+                        placeholder="午餐：壽司" />
+                </div>
 
-                {/* 金額與貨幣選擇 (原始輸入) */}
-                <div className="flex space-x-2">
-                    <input
-                        type="number"
-                        placeholder="金額"
-                        value={originalCost}
-                        onChange={(e) => setOriginalCost(e.target.value)}
-                        className="flex-grow p-3 border border-gray-600 rounded-lg bg-gray-700 text-white"
-                        min="0.01"
-                        step="0.01"
-                        required
-                    />
-                    <select
-                        value={originalCurrency}
-                        onChange={(e) => setOriginalCurrency(e.target.value)}
-                        className="p-3 border border-gray-600 rounded-lg bg-gray-700 text-white"
-                    >
-                        {AVAILABLE_CURRENCIES.map(c => (
-                            <option key={c} value={c}>{c}</option>
+                {/* 金額 */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">金額 (必填)</label>
+                    <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} required min="0.01" step="0.01"
+                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400" />
+                </div>
+
+                {/* 誰支付的 */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">支付者 (必填)</label>
+                    <select value={paidBy} onChange={(e) => setPaidBy(e.target.value)} required
+                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white">
+                        <option value="" disabled>請選擇支付者</option>
+                        {collaborators.map(c => (
+                            <option key={c.uid} value={c.uid}>{c.name}</option>
                         ))}
                     </select>
                 </div>
 
-                {/* 誰支付了這筆費用 */}
+                {/* 類別 */}
                 <div>
-                    <label className="block text-gray-300 mb-1 font-medium">誰支付了？</label>
-                    <select
-                        value={paidById}
-                        onChange={(e) => setPaidById(e.target.value)}
-                        className="w-full p-3 border border-gray-600 rounded-lg bg-gray-700 text-white"
-                        required
-                    >
-                        {members.map(member => (
-                            <option key={member.id} value={member.id}>{member.name}</option>
-                        ))}
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">類別</label>
+                    <select value={category} onChange={(e) => setCategory(e.target.value)}
+                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white">
+                        {EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                 </div>
-
-                {/* 誰分攤這筆費用 */}
-                <div>
-                    <label className="block text-gray-300 mb-2 font-medium">誰分攤這筆費用？</label>
-                    <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
-                        {members.map(member => (
-                            <div key={member.id} className="flex items-center justify-between bg-gray-700 p-2 rounded-lg">
-                                <span className="text-white">{member.name}</span>
-                                <input
-                                    type="checkbox"
-                                    checked={sharedBy.includes(member.id)}
-                                    onChange={() => handleShareToggle(member.id)}
-                                    className="h-5 w-5 text-red-600 bg-gray-600 border-gray-500 rounded focus:ring-red-500"
-                                />
-                            </div>
-                        ))}
-                    </div>
+                
+                <div className="flex justify-end space-x-3 pt-4">
+                    <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-white rounded-full hover:bg-gray-400 dark:hover:bg-gray-500 font-medium active:scale-95 transition-transform">取消</button>
+                    <button type="submit" className="px-4 py-2 bg-red-600 dark:bg-red-700 text-white rounded-full hover:bg-red-700 dark:hover:bg-red-600 font-bold active:scale-95 transition-transform">
+                        儲存支出
+                    </button>
                 </div>
-
-                {/* 提交按鈕 */}
-                <button
-                    type="submit"
-                    className="w-full bg-red-600 text-white p-3 rounded-full font-bold hover:bg-red-700 active:scale-95 transition-transform mt-4"
-                >
-                    新增費用 (轉換為 {baseCurrency})
-                </button>
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="w-full bg-gray-600 text-white p-3 rounded-full font-medium hover:bg-gray-500"
-                >
-                    取消
-                </button>
             </form>
         </div>
     );
 };
-
 export default ExpenseForm;
