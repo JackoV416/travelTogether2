@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+// 導入 deleteDoc 函式
+import { doc, getDoc, updateDoc, arrayUnion, deleteDoc } from 'firebase/firestore'; 
 import { db } from '../firebase';
 import ExpenseForm from '../components/ExpenseForm'; 
 
@@ -10,12 +11,11 @@ const TripDetail = ({ user }) => {
     const [trip, setTrip] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showExpenseForm, setShowExpenseForm] = useState(false);
-    const [balances, setBalances] = useState({}); // 儲存結算結果
+    const [balances, setBalances] = useState({});
 
     useEffect(() => {
         if (!user || !id) return;
 
-        // 這裡可以加入實時監聽，但目前先使用單次獲取確保邏輯正確
         const fetchTripDetails = async () => {
             try {
                 const docRef = doc(db, 'trips', id);
@@ -24,7 +24,6 @@ const TripDetail = ({ user }) => {
                 if (docSnap.exists()) {
                     const tripData = { id: docSnap.id, ...docSnap.data() };
                     setTrip(tripData);
-                    // 數據載入後立即計算餘額
                     setBalances(calculateBalances(tripData.members || [], tripData.expenses || []));
                 } else {
                     console.error("找不到該行程文件！");
@@ -40,7 +39,32 @@ const TripDetail = ({ user }) => {
     }, [id, user, navigate]);
 
 
-    // *** 結算邏輯核心函式 (功能 4 & 5) ***
+    // *** 新增刪除功能函式 ***
+    const handleDeleteTrip = async () => {
+        if (!trip) return;
+
+        // 步驟 1: 確認刪除，防止誤觸
+        const isConfirmed = window.confirm(`您確定要永久刪除行程：「${trip.title}」嗎？此操作無法復原。`);
+        
+        if (isConfirmed) {
+            try {
+                // 步驟 2: 呼叫 Firestore 刪除 API
+                const docRef = doc(db, 'trips', id);
+                await deleteDoc(docRef);
+
+                alert(`行程「${trip.title}」已成功刪除。`);
+                
+                // 步驟 3: 導航回行程列表
+                navigate('/');
+            } catch (error) {
+                console.error("刪除行程錯誤:", error);
+                alert("刪除行程失敗，請稍後再試。");
+            }
+        }
+    };
+    // **************************
+
+
     const calculateBalances = (members, expenses) => {
         const initialBalances = members.reduce((acc, m) => {
             acc[m.id] = { 
@@ -80,7 +104,6 @@ const TripDetail = ({ user }) => {
 
         return initialBalances;
     };
-    // **********************************
 
 
     const handleAddExpense = async (newExpense) => {
@@ -92,11 +115,9 @@ const TripDetail = ({ user }) => {
                 expenses: arrayUnion(newExpense)
             });
 
-            // 本地更新狀態
             const updatedExpenses = [...(trip.expenses || []), newExpense];
             const updatedTrip = { ...trip, expenses: updatedExpenses };
             setTrip(updatedTrip);
-            // 立即重新計算結算結果
             setBalances(calculateBalances(trip.members || [], updatedExpenses));
 
         } catch (error) {
@@ -129,9 +150,18 @@ const TripDetail = ({ user }) => {
     return (
         <div className="min-h-screen bg-jp-bg p-4 max-w-2xl mx-auto">
 
-            <button onClick={() => navigate('/')} className="text-black font-medium mb-4 flex items-center">
-                &larr; 返回行程列表
-            </button>
+            <div className="flex justify-between items-center mb-4">
+                <button onClick={() => navigate('/')} className="text-black font-medium flex items-center">
+                    &larr; 返回行程列表
+                </button>
+                {/* 刪除按鈕 */}
+                <button 
+                    onClick={handleDeleteTrip} 
+                    className="text-sm text-white bg-gray-500 hover:bg-red-700 p-2 rounded-lg transition-colors"
+                >
+                    刪除旅程
+                </button>
+            </div>
 
             {/* 行程標題 */}
             <div className="bg-white p-6 rounded-xl shadow-md mb-6">
@@ -178,7 +208,7 @@ const TripDetail = ({ user }) => {
                     )}
                 </div>
                 
-                {/* *** 結算結果總覽 *** */}
+                {/* 結算結果總覽 */}
                 <div className="border-t pt-4 mt-4">
                     <h3 className="text-xl font-bold mb-3">💰 誰欠誰？ (最終結算)</h3>
                     <div className="space-y-2">
@@ -188,7 +218,7 @@ const TripDetail = ({ user }) => {
                                 {member.balance > 0 ? (
                                     <span className="text-green-600 font-bold">應收: +{member.balance.toFixed(2)}</span>
                                 ) : member.balance < 0 ? (
-                                    <span className="text-red-600 font-bold">應付: {member.balance.toFixed(2)}</span>
+                                    <span className="text-red-600 font-bold">應付: {Math.abs(member.balance).toFixed(2)}</span>
                                 ) : (
                                     <span className="text-gray-500">已結清</span>
                                 )}
@@ -196,7 +226,6 @@ const TripDetail = ({ user }) => {
                         ))}
                     </div>
                 </div>
-                {/* ********************** */}
 
                 {/* 按鈕：開啟費用表單 */}
                 <button
