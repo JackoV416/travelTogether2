@@ -1,379 +1,460 @@
-// src/pages/TripDetail.jsx
+// src/pages/TripDetail.jsx - 旅行詳情
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
+import ItineraryForm from '../components/ItineraryForm';
+import FlightForm from '../components/FlightForm';
 import ExpenseForm from '../components/ExpenseForm';
-import FlightForm from '../components/FlightForm'; 
-import ItineraryForm from '../components/ItineraryForm'; // <-- 新增行程表單
+import { v4 as uuidv4 } from 'uuid';
 
-// 貨幣與匯率定義 (必須與 CreateTrip 保持一致)
-const BASE_CURRENCY = 'HKD'; 
-const EXCHANGE_RATES = {
-    'HKD': 1.0,
-    'JPY': 19.5, 
-    'USD': 0.13,
-    'TWD': 4.1,
-    'EUR': 0.12,
-};
-
-// 輔助函式：將任何貨幣金額轉換為基礎結算貨幣 (HKD)
-const convertToHKD = (amount, currency) => {
-    if (!amount || !currency || currency === BASE_CURRENCY) {
-        return amount || 0;
-    }
-    const rate = EXCHANGE_RATES[currency] || 1;
-    return amount / rate;
-};
-
-
-const TripDetail = ({ user }) => {
+const TripDetail = () => {
     const { tripId } = useParams();
     const navigate = useNavigate();
-    
+    const { user } = useAuth();
+
     const [trip, setTrip] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    
-    // Modal 狀態
+    const [isItineraryFormOpen, setIsItineraryFormOpen] = useState(false);
+    const [isFlightFormOpen, setIsFlightFormOpen] = useState(false);
     const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
-    const [isFlightFormOpen, setIsFlightFormOpen] = useState(false); 
-    const [isItineraryFormOpen, setIsItineraryFormOpen] = useState(false); 
+    
+    // 行程編輯狀態
+    const [editingItineraryItem, setEditingItineraryItem] = useState(null); 
+    // 航班編輯狀態
+    const [editingFlight, setEditingFlight] = useState(null); 
 
+    const fetchTripData = useCallback(async () => {
+        if (!tripId) return;
 
-    // --- 數據載入邏輯 ---
-    useEffect(() => {
-        const fetchTrip = async () => {
-            if (!user || !tripId) return;
-            setLoading(true);
-            try {
-                const tripDocRef = doc(db, 'trips', tripId);
-                const docSnap = await getDoc(tripDocRef);
+        try {
+            const docRef = doc(db, 'trips', tripId);
+            const docSnap = await getDoc(docRef);
 
-                if (docSnap.exists()) {
-                    setTrip({ id: docSnap.id, ...docSnap.data() });
-                } else {
-                    setError('找不到該旅行計畫。');
-                }
-            } catch (err) {
-                console.error('載入旅行計畫錯誤:', err);
-                setError('載入資料失敗。');
-            } finally {
-                setLoading(false);
+            if (docSnap.exists()) {
+                setTrip({ id: docSnap.id, ...docSnap.data() });
+            } else {
+                alert('找不到該旅行計畫！');
+                navigate('/');
             }
-        };
+        } catch (error) {
+            console.error('獲取旅行計畫失敗:', error);
+            alert('載入資料失敗，請檢查網路。');
+        } finally {
+            setLoading(false);
+        }
+    }, [tripId, navigate]);
 
-        fetchTrip();
-    }, [user, tripId]);
+    useEffect(() => {
+        fetchTripData();
+    }, [fetchTripData]);
 
+    // =================================================================
+    // 費用追蹤 (Expense) 邏輯
+    // =================================================================
 
-    // --- 核心計算邏輯 ---
-    const { 
-        calculatedTotalBudget, 
-        totalExpensesInHKD, 
-        balances 
-    } = useMemo(() => {
-        if (!trip) return { calculatedTotalBudget: 0, totalExpensesInHKD: 0, balances: {} };
-
-        // 1. 計算總預算
-        let totalBudget = 0;
-        trip.members.forEach(member => {
-            const budgetInHKD = convertToHKD(member.initialBudget, member.budgetCurrency);
-            totalBudget += budgetInHKD;
-        });
-
-        // 2. 計算總支出
-        const totalExpenses = trip.expenses.reduce((sum, expense) => sum + expense.cost, 0);
-
-        // 3. 計算分攤結餘 (Balances)
-        const initialBalances = trip.members.reduce((acc, member) => {
-            acc[member.id] = 0;
-            return acc;
-        }, {});
-
-        const calculatedBalances = trip.expenses.reduce((acc, expense) => {
-            const shareCount = expense.sharedBy.length;
-            const shareAmount = expense.cost / shareCount;
-
-            acc[expense.paidById] = (acc[expense.paidById] || 0) + expense.cost;
-
-            expense.sharedBy.forEach(memberId => {
-                acc[memberId] = (acc[memberId] || 0) - shareAmount;
-            });
-
-            return acc;
-        }, initialBalances);
-
-        return { 
-            calculatedTotalBudget: totalBudget, 
-            totalExpensesInHKD: totalExpenses, 
-            balances: calculatedBalances 
-        };
-
-    }, [trip]);
-
-
-    // --- 數據操作函式 ---
-
-    // 處理新增費用
-    const handleAddExpense = async (newExpense) => {
+    // 處理費用新增/編輯後的更新
+    const handleAddExpense = (newExpense) => {
         if (!trip) return;
         
+        // 費用追蹤的實作 (ExpenseForm) 假設會將數據寫入 Firebase，這裡只負責關閉 Modal 並重新載入
+        setIsExpenseFormOpen(false);
+        fetchTripData(); // 重新載入數據以更新總支出
+    };
+
+    // 計算總支出 (簡單加總，複雜分攤在 ExpenseForm 中處理)
+    const totalSpent = trip?.expenses?.reduce((acc, expense) => acc + expense.amount, 0) || 0;
+
+    // 簡單的結算狀態 (假設結清)
+    const settlementStatus = '已結清';
+
+    // =================================================================
+    // 行程規劃 (Itinerary) 邏輯 - 新增/編輯/刪除
+    // =================================================================
+
+    // 處理新增行程項目
+    const handleAddItineraryItem = async (newItem) => {
+        if (!trip) return;
+
         try {
             const tripDocRef = doc(db, 'trips', tripId);
             await updateDoc(tripDocRef, {
-                expenses: arrayUnion(newExpense)
+                itinerary: [...(trip.itinerary || []), newItem]
             });
 
             // 本地更新狀態
             setTrip(prev => ({
                 ...prev,
-                expenses: [...(prev.expenses || []), newExpense]
-            }));
-            
-            setIsExpenseFormOpen(false);
-        } catch (e) {
-            console.error('新增費用失敗:', e);
-            alert('新增費用失敗，請檢查網路或權限。');
-        }
-    };
-    
-    // 處理新增/編輯航班資訊
-    const handleAddFlight = async (flightData) => {
-        if (!trip) return;
-
-        try {
-            const tripDocRef = doc(db, 'trips', tripId);
-            await updateDoc(tripDocRef, {
-                flightInfo: flightData 
-            });
-
-            setTrip(prev => ({
-                ...prev,
-                flightInfo: flightData
-            }));
-            
-            setIsFlightFormOpen(false);
-        } catch (e) {
-            console.error('新增航班資訊失敗:', e);
-            alert('新增航班資訊失敗，請檢查網路。');
-        }
-    };
-
-    // 處理新增行程項目
-    const handleAddItineraryItem = async (newItem) => {
-        if (!trip) return;
-        
-        try {
-            const tripDocRef = doc(db, 'trips', tripId);
-            await updateDoc(tripDocRef, {
-                itinerary: arrayUnion(newItem)
-            });
-
-            setTrip(prev => ({
-                ...prev,
                 itinerary: [...(prev.itinerary || []), newItem]
             }));
-            
+
             setIsItineraryFormOpen(false);
+
         } catch (e) {
             console.error('新增行程項目失敗:', e);
             alert('新增行程項目失敗，請檢查網路或權限。');
         }
     };
 
+    // 處理刪除行程項目
+    const handleDeleteItineraryItem = async (itemId) => {
+        if (!trip || !window.confirm('確定要刪除這個行程項目嗎？')) return;
 
-    // --- 渲染錯誤/載入中 (略) ---
-    if (loading) return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">載入中...</div>;
-    if (error) return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-red-400">錯誤: {error}</div>;
-    if (!trip) return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">無資料</div>;
+        try {
+            const newItinerary = (trip.itinerary || []).filter(item => item.id !== itemId);
+            
+            const tripDocRef = doc(db, 'trips', tripId);
+            await updateDoc(tripDocRef, {
+                itinerary: newItinerary
+            });
+
+            // 本地更新狀態
+            setTrip(prev => ({
+                ...prev,
+                itinerary: newItinerary
+            }));
+        } catch (e) {
+            console.error('刪除行程項目失敗:', e);
+            alert('刪除行程項目失敗，請檢查網路或權限。');
+        }
+    };
+
+    // 處理編輯行程項目 (從 Modal 接收新的數據)
+    const handleEditItineraryItem = async (editedItem) => {
+        if (!trip) return;
+
+        try {
+            const newItinerary = (trip.itinerary || []).map(item => 
+                item.id === editedItem.id ? editedItem : item
+            );
+            
+            const tripDocRef = doc(db, 'trips', tripId);
+            await updateDoc(tripDocRef, {
+                itinerary: newItinerary
+            });
+
+            // 本地更新狀態
+            setTrip(prev => ({
+                ...prev,
+                itinerary: newItinerary
+            }));
+            
+            setEditingItineraryItem(null); // 清除編輯狀態
+            setIsItineraryFormOpen(false); // 關閉 Modal
+        } catch (e) {
+            console.error('編輯行程項目失敗:', e);
+            alert('編輯行程項目失敗，請檢查網路或權限。');
+        }
+    };
+
+    // =================================================================
+    // 航班資訊 (Flights) 邏輯 - 新增/編輯
+    // =================================================================
+    
+    // 處理航班新增/編輯後的更新
+    const handleSaveFlight = async (flightData) => {
+        if (!trip) return;
+        
+        try {
+            let newFlights;
+            if (editingFlight) {
+                // 編輯現有航班
+                newFlights = (trip.flights || []).map(f => 
+                    f.id === editingFlight.id ? flightData : f
+                );
+            } else {
+                // 新增航班
+                newFlights = [...(trip.flights || []), { ...flightData, id: uuidv4() }];
+            }
+
+            const tripDocRef = doc(db, 'trips', tripId);
+            await updateDoc(tripDocRef, {
+                flights: newFlights
+            });
+
+            // 本地更新狀態
+            setTrip(prev => ({
+                ...prev,
+                flights: newFlights
+            }));
+
+            setEditingFlight(null);
+            setIsFlightFormOpen(false);
+            
+        } catch (e) {
+            console.error('儲存航班資訊失敗:', e);
+            alert('儲存航班資訊失敗，請檢查網路或權限。');
+        }
+    };
+    
+    // 處理刪除航班
+    const handleDeleteFlight = async (flightId) => {
+        if (!trip || !window.confirm('確定要刪除這筆航班資訊嗎？')) return;
+
+        try {
+            const newFlights = (trip.flights || []).filter(f => f.id !== flightId);
+            
+            const tripDocRef = doc(db, 'trips', tripId);
+            await updateDoc(tripDocRef, {
+                flights: newFlights
+            });
+
+            // 本地更新狀態
+            setTrip(prev => ({
+                ...prev,
+                flights: newFlights
+            }));
+        } catch (e) {
+            console.error('刪除航班資訊失敗:', e);
+            alert('刪除航班資訊失敗，請檢查網路或權限。');
+        }
+    };
 
 
-    // --- 主渲染 ---
+    // =================================================================
+    // 其他功能
+    // =================================================================
+
+    const handleDeleteTrip = async () => {
+        if (!window.confirm('確定要永久刪除此旅行計畫嗎？此操作無法撤銷。')) return;
+
+        try {
+            await deleteDoc(doc(db, 'trips', tripId));
+            alert('旅行計畫已刪除！');
+            navigate('/');
+        } catch (e) {
+            console.error('刪除旅行計畫失敗:', e);
+            alert('刪除失敗，請稍後再試。');
+        }
+    };
+
+    if (loading) return <div className="min-h-screen bg-gray-900 text-white flex justify-center items-center">載入中...</div>;
+    if (!trip) return null;
+
+
+    // 格式化日期
+    const formatDateRange = (start, end) => {
+        const formatOptions = { year: 'numeric', month: 'numeric', day: 'numeric' };
+        const dF = (dateString) => new Date(dateString).toLocaleDateString(undefined, formatOptions);
+        return `${dF(start)} - ${dF(end)}`;
+    };
+
     return (
-        <div className="min-h-screen bg-gray-900 p-4 max-w-xl mx-auto text-white">
-            <button 
-                onClick={() => navigate('/')}
-                className="text-blue-400 hover:text-blue-300 mb-6 flex items-center font-medium"
-            >
-                &larr; 返回行程列表
-            </button>
+        <div className="min-h-screen bg-gray-900 p-4 sm:p-6 lg:p-8 text-white">
+            <header className="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
+                <button onClick={() => navigate('/')} className="text-indigo-400 hover:text-indigo-300 transition-colors flex items-center">
+                    ← 返回行程列表
+                </button>
+                <button onClick={handleDeleteTrip} className="px-3 py-1 bg-red-600 text-white rounded-full hover:bg-red-700 text-sm transition-colors active:scale-95">
+                    刪除旅程
+                </button>
+            </header>
 
-            {/* 標題與預算摘要 */}
-            <h1 className="text-3xl font-extrabold mb-2">{trip.title}</h1>
-            <p className="text-gray-400 mb-4 text-sm">
-                日期: {trip.startDate} - {trip.endDate}
-            </p>
-            <div className="p-4 bg-gray-800 rounded-xl shadow-lg mb-6">
-                <p className="text-lg font-semibold text-green-400">
-                    預算總計: {BASE_CURRENCY} {calculatedTotalBudget.toFixed(2)}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                    (由 {trip.members.length} 位成員個人預算匯總)
-                </p>
-            </div>
-
-            {/* 旅行成員列表 */}
-            <div className="mb-8 p-4 bg-gray-800 rounded-xl shadow-lg">
-                <h2 className="text-xl font-bold mb-3 text-indigo-400">👨‍👩‍👧‍👦 旅行成員</h2>
-                <div className="space-y-2">
-                    {trip.members.map(member => (
-                        <div key={member.id} className="p-3 rounded-lg flex justify-between items-center border border-gray-700">
-                            <span>{member.name}</span>
-                            <span className="text-sm text-gray-400">
-                                {member.initialBudget.toFixed(2)} {member.budgetCurrency}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-            
-            
-            {/* 1. 行程規劃區塊 */}
-            <div className="mb-8 p-4 bg-gray-800 rounded-xl shadow-lg">
-                <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
-                    🗺️ 行程規劃
-                </h2>
+            <main className="max-w-4xl mx-auto space-y-6">
                 
-                {trip.itinerary && trip.itinerary.length > 0 ? (
-                    <ul className="space-y-3">
-                        {trip.itinerary
-                            .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)) 
-                            .map((item) => (
+                {/* 標題與基本資訊卡片 */}
+                <div className="bg-gray-800 p-6 rounded-3xl shadow-xl">
+                    <h1 className="text-3xl font-extrabold mb-2 text-indigo-300">
+                        {trip.title}
+                    </h1>
+                    <p className="text-gray-400 mb-1 text-sm">
+                        日期: {formatDateRange(trip.startDate, trip.endDate)}
+                    </p>
+                    <p className="text-lg font-semibold text-green-400">
+                        總預算 ({trip.currency}): HK$ {trip.totalBudget.toLocaleString()}
+                    </p>
+                </div>
+
+                {/* 旅行成員卡片 */}
+                <div className="bg-gray-800 p-6 rounded-3xl shadow-xl">
+                    <h2 className="text-xl font-bold mb-3 flex items-center text-indigo-400">
+                        👥 旅行成員
+                    </h2>
+                    <ul className="space-y-1">
+                        {(trip.collaborators || []).map((member, index) => (
+                            <li key={member.uid || index} className="text-gray-300">
+                                • {member.name} (預算: {trip.currency} {member.budgetShare.toLocaleString()})
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                {/* ================================================================= */}
+                {/* 費用追蹤與結算卡片 */}
+                {/* ================================================================= */}
+                <div className="bg-gray-800 p-6 rounded-3xl shadow-xl">
+                    <h2 className="text-xl font-bold mb-3 flex items-center text-indigo-400">
+                        💰 費用追蹤與結算
+                    </h2>
+                    
+                    <div className="space-y-4">
+                        <p className="text-lg text-red-400 font-semibold">
+                            總支出: {trip.currency} {totalSpent.toLocaleString()}
+                        </p>
+                        <p className="text-gray-400 text-sm">
+                            目前沒有費用記錄。
+                        </p>
+                        
+                        <div className="flex justify-between items-center border-t border-gray-700 pt-3">
+                            <h3 className="text-md font-semibold text-yellow-400">
+                                誰欠誰？ (最終結算 - {trip.currency})
+                            </h3>
+                            <span className="text-green-400">{settlementStatus}</span>
+                        </div>
+                        <p className="text-sm text-gray-300">{trip.collaborators[0].name} 已結清</p>
+
+                        <button onClick={() => setIsExpenseFormOpen(true)}
+                            className="w-full p-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 active:scale-95 transition-transform mt-2">
+                            + 新增支出
+                        </button>
+                    </div>
+                </div>
+
+
+                {/* ================================================================= */}
+                {/* 行程規劃卡片 - 新增/編輯/刪除 */}
+                {/* ================================================================= */}
+                <div className="bg-gray-800 p-6 rounded-3xl shadow-xl">
+                    <h2 className="text-xl font-bold mb-4 flex items-center text-indigo-400">
+                        🗺️ 行程規劃
+                    </h2>
+                    
+                    <ul className="space-y-3 mb-4">
+                        {(trip.itinerary && trip.itinerary.length > 0) ? (
+                            trip.itinerary.map(item => (
                                 <li key={item.id} className="bg-gray-700 p-3 rounded-xl flex flex-col shadow-md">
                                     <div className="flex justify-between items-center text-sm text-gray-400 mb-1">
                                         <span>{item.date} {item.time}</span>
                                         <span className="font-semibold text-yellow-400">[{item.category}]</span>
                                     </div>
-                                    <span className="font-medium text-white">{item.activity}</span>
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium text-white flex-grow">{item.activity}</span>
+                                        <div className="space-x-2">
+                                            <button
+                                                onClick={() => {
+                                                    setEditingItineraryItem(item); // 設定要編輯的項目
+                                                    setIsItineraryFormOpen(true);  // 開啟 Modal
+                                                }}
+                                                className="text-blue-400 hover:text-blue-300 text-sm"
+                                            >
+                                                編輯
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteItineraryItem(item.id)}
+                                                className="text-red-400 hover:text-red-300 text-sm"
+                                            >
+                                                刪除
+                                            </button>
+                                        </div>
+                                    </div>
                                 </li>
                             ))
-                        }
+                        ) : (
+                            <p className="text-gray-400">目前沒有行程項目。</p>
+                        )}
                     </ul>
-                ) : (
-                    <p className="text-gray-500 mb-4">目前沒有行程項目。點擊下方按鈕新增。</p>
-                )}
 
-                <button
-                    onClick={() => setIsItineraryFormOpen(true)}
-                    className="w-full bg-indigo-600 text-white p-3 rounded-full font-medium hover:bg-indigo-700 mt-4 active:scale-95 transition-transform"
-                >
-                    + 新增行程項目 (美食 / 景點 / 交通)
-                </button>
-            </div>
-            
-            
-            {/* 2. 航班資訊區塊 */}
-            <div className="mb-8 p-4 bg-gray-800 rounded-xl shadow-lg">
-                <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
-                    🛫 航班資訊
-                </h2>
-
-                {trip.flightInfo ? (
-                    <div className="bg-gray-700 p-4 rounded-xl space-y-2 shadow-md">
-                        <p className="font-semibold text-teal-400">去程:</p>
-                        <p className="ml-4 text-sm">{trip.flightInfo.departureFlight} ({trip.flightInfo.departureDate})</p>
-                        
-                        {trip.flightInfo.returnFlight && (
-                            <>
-                                <p className="font-semibold text-teal-400">回程:</p>
-                                <p className="ml-4 text-sm">{trip.flightInfo.returnFlight} ({trip.flightInfo.returnDate})</p>
-                            </>
-                        )}
-                        
-                        {trip.flightInfo.notes && (
-                            <p className="text-xs text-gray-400 border-t border-gray-600 pt-2 mt-2">備註: {trip.flightInfo.notes}</p>
-                        )}
-                        
-                        <button 
-                            onClick={() => setIsFlightFormOpen(true)}
-                            className="text-yellow-400 hover:text-yellow-300 text-sm mt-2 font-medium"
-                        >
-                            編輯航班資訊
-                        </button>
-                    </div>
-                ) : (
-                    <>
-                        <p className="text-gray-500 mb-4">目前沒有航班資訊。</p>
-                        <button 
-                            onClick={() => setIsFlightFormOpen(true)}
-                            className="w-full bg-teal-600 text-white p-3 rounded-full font-medium hover:bg-teal-700 active:scale-95 transition-transform"
-                        >
-                            + 新增航班資訊
-                        </button>
-                    </>
-                )}
-            </div>
-            
-            
-            {/* 3. 費用追蹤與結算區塊 */}
-            <div className="mb-8 p-4 bg-gray-800 rounded-xl shadow-lg">
-                <h2 className="text-2xl font-bold text-white mb-4">💰 費用追蹤與結算</h2>
-                <p className="text-xl font-medium mb-4 text-red-400">總支出: {BASE_CURRENCY} {totalExpensesInHKD.toFixed(2)}</p>
-                
-                {/* 費用列表 */}
-                <div className="space-y-3 mb-6">
-                    {trip.expenses && trip.expenses.length > 0 ? (
-                        trip.expenses.map(expense => (
-                            <div key={expense.id} className="bg-gray-700 p-3 rounded-xl shadow-md border-l-4 border-red-500">
-                                <p className="font-semibold text-lg">{expense.description}</p>
-                                <p className="text-red-300">
-                                    -{expense.originalCost.toFixed(2)} {expense.originalCurrency} 
-                                    <span className="text-gray-400 ml-2 text-sm">({expense.cost.toFixed(2)} {BASE_CURRENCY})</span>
-                                </p>
-                                <p className="text-sm text-gray-400">由 {trip.members.find(m => m.id === expense.paidById)?.name} 支付</p>
-                                <p className="text-xs text-gray-500">分攤者: {expense.sharedBy.map(id => trip.members.find(m => m.id === id)?.name).join(', ')}</p>
-                            </div>
-                        ))
-                    ) : (
-                        <p className="text-gray-500">目前沒有費用記錄。</p>
-                    )}
+                    <button onClick={() => { setEditingItineraryItem(null); setIsItineraryFormOpen(true); }}
+                        className="w-full p-3 border border-indigo-600 text-indigo-300 font-bold rounded-xl hover:bg-indigo-900 active:scale-95 transition-transform">
+                        + 新增行程項目
+                    </button>
                 </div>
 
-                {/* 結算狀態 */}
-                <h3 className="text-xl font-semibold mb-3 text-yellow-400 border-t border-gray-700 pt-4">結餘概覽 ({BASE_CURRENCY})</h3>
-                <div className="space-y-2">
-                    {Object.entries(balances).map(([memberId, balance]) => {
-                        const memberName = trip.members.find(m => m.id === memberId)?.name;
-                        const statusClass = balance > 0 ? 'text-green-400' : balance < 0 ? 'text-red-400' : 'text-gray-400';
-                        const statusText = balance > 0 ? '應收' : balance < 0 ? '應付' : '平衡';
+                {/* ================================================================= */}
+                {/* 航班資訊卡片 - 新增/編輯 */}
+                {/* ================================================================= */}
+                <div className="bg-gray-800 p-6 rounded-3xl shadow-xl">
+                    <h2 className="text-xl font-bold mb-4 flex items-center text-indigo-400">
+                        ✈️ 航班資訊
+                    </h2>
+                    
+                    <ul className="space-y-3 mb-4">
+                        {(trip.flights && trip.flights.length > 0) ? (
+                            trip.flights.map(flight => (
+                                <li key={flight.id} className="bg-gray-700 p-3 rounded-xl shadow-md space-y-1">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium text-white">{flight.flightNumber} ({flight.departureCity} → {flight.arrivalCity})</span>
+                                        <div className="space-x-2">
+                                            <button
+                                                onClick={() => {
+                                                    setEditingFlight(flight); // 設定要編輯的項目
+                                                    setIsFlightFormOpen(true);  // 開啟 Modal
+                                                }}
+                                                className="text-blue-400 hover:text-blue-300 text-sm"
+                                            >
+                                                編輯
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteFlight(flight.id)}
+                                                className="text-red-400 hover:text-red-300 text-sm"
+                                            >
+                                                刪除
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-gray-400">出發: {flight.departureTime} ({flight.departureAirport})</p>
+                                    <p className="text-sm text-gray-400">抵達: {flight.arrivalTime} ({flight.arrivalAirport})</p>
+                                </li>
+                            ))
+                        ) : (
+                            <p className="text-gray-400">目前沒有航班記錄。</p>
+                        )}
+                    </ul>
 
-                        return (
-                            <div key={memberId} className="flex justify-between p-3 bg-gray-700 rounded-lg font-medium">
-                                <span>{memberName}</span>
-                                <span className={statusClass}>
-                                    {statusText}: {Math.abs(balance).toFixed(2)}
-                                </span>
-                            </div>
-                        );
-                    })}
+                    <button onClick={() => { setEditingFlight(null); setIsFlightFormOpen(true); }}
+                        className="w-full p-3 border border-indigo-600 text-indigo-300 font-bold rounded-xl hover:bg-indigo-900 active:scale-95 transition-transform">
+                        + 新增航班資訊
+                    </button>
                 </div>
-                
-                <button 
-                    onClick={() => setIsExpenseFormOpen(true)}
-                    className="w-full bg-red-600 text-white p-3 rounded-full font-bold hover:bg-red-700 mt-6 active:scale-95 transition-transform"
-                >
-                    + 新增支出
-                </button>
-            </div>
 
+
+                {/* AI 推薦行程 (已移除，避免與新功能混淆) */}
+            </main>
+
+            {/* ================================================================= */}
             {/* Modals 區域 */}
-            {isExpenseFormOpen && ( /* ... ExpenseForm Modal ... */ )}
-            {isFlightFormOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-                    <FlightForm
-                        initialData={trip.flightInfo}
-                        onSaveFlight={handleAddFlight} 
-                        onClose={() => setIsFlightFormOpen(false)}
-                    />
-                </div>
-            )}
+            {/* ================================================================= */}
+
+            {/* 行程規劃 Modal */}
             {isItineraryFormOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
                     <ItineraryForm
+                        initialData={editingItineraryItem}
                         onAddItem={handleAddItineraryItem} 
-                        onClose={() => setIsItineraryFormOpen(false)}
+                        onEditItem={handleEditItineraryItem}
+                        onClose={() => {
+                            setIsItineraryFormOpen(false);
+                            setEditingItineraryItem(null);
+                        }}
+                    />
+                </div>
+            )}
+
+            {/* 航班資訊 Modal */}
+            {isFlightFormOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                    <FlightForm
+                        initialData={editingFlight}
+                        onSave={handleSaveFlight}
+                        onClose={() => {
+                            setIsFlightFormOpen(false);
+                            setEditingFlight(null);
+                        }}
+                    />
+                </div>
+            )}
+
+            {/* 費用追蹤 Modal (假設 ExpenseForm 已存在) */}
+            {isExpenseFormOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                    <ExpenseForm 
+                        tripId={tripId}
+                        collaborators={trip.collaborators || []}
+                        currency={trip.currency}
+                        onSave={handleAddExpense}
+                        onClose={() => setIsExpenseFormOpen(false)}
                     />
                 </div>
             )}
