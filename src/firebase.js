@@ -8,7 +8,8 @@ import { getFirestore } from 'firebase/firestore';
 
 // TODO: 請用你的 Firebase 專案設定替換下方內容 (保持不變)
 const firebaseConfig = {
-    // ... 您的 Firebase 設定內容 ...
+    @@ -13,10 +15,13 @@ const firebaseConfig = {
+      measurementId: "G-WB5T9XJ42E"
 };
 
 // 1. 初始化 Firebase 應用程式
