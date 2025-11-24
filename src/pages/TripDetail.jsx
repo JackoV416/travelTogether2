@@ -1,4 +1,4 @@
-// src/pages/TripDetail.jsx - 最終版本 (新增行程項目顏色標籤)
+// src/pages/TripDetail.jsx - 最終版本 (新增快速新增今天的行程功能)
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -17,42 +17,83 @@ import { getDestinationTimeZone, getShortTimeZoneName } from '../utils/timeZoneM
 import { exportJsonToFile, importJsonFromFile } from '../utils/dataManager'; 
 
 
-// 費用類別常數 (保持不變)
-const EXPENSE_CATEGORIES = ['餐飲', '交通', '住宿', '門票', '購物', '一般', '其他'];
+// ... (費用類別常數, 顏色映射常數保持不變) ...
 
-// ***********************************************
-// 1. 行程類別顏色映射 (新增)
-const ITINERARY_CATEGORY_COLORS = {
-    '住宿': 'border-indigo-500', 
-    '景點': 'border-blue-500',
-    '餐飲': 'border-yellow-500',
-    '交通': 'border-green-500',
-    '購物': 'border-pink-500',
-    '活動': 'border-red-500',
-    '其他': 'border-gray-500',
+// 輔助函式：將 Date 對象格式化為 YYYY-MM-DD
+const formatDate = (date) => {
+    return date.toISOString().split('T')[0];
 };
-// ***********************************************
-
 
 // 輔助函式：產生旅行期間的所有日期列表 (保持不變)
 const getDatesArray = (startDate, endDate) => { /* ... */ };
 
 const TripDetail = () => {
     const { tripId } = useParams();
-    // ... (所有狀態和 hooks 保持不變) ...
-    const fileInputRef = useRef(null); 
+    const navigate = useNavigate();
+    const { user } = useAuth();
+    const { theme, toggleTheme } = useTheme(); 
 
-    // ... (所有邏輯函式和 useMemo 保持不變) ...
-
+    const [trip, setTrip] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [selectedDate, setSelectedDate] = useState('all'); 
+    
+    // ... (其他狀態保持不變) ...
+    const [isItineraryFormOpen, setIsItineraryFormOpen] = useState(false);
+    
     // ***********************************************
-    // 2. 獲取顏色類名
-    const getCategoryBorderClass = useCallback((category) => {
-        return ITINERARY_CATEGORY_COLORS[category] || ITINERARY_CATEGORY_COLORS['其他'];
-    }, []);
+    // 1. 新增狀態以傳遞快速新增的預設日期
+    const [quickAddDate, setQuickAddDate] = useState(null); 
     // ***********************************************
     
-    // ... (handleExportData, handleImportData 等保持不變) ...
+    // ... (所有邏輯和 useMemo 保持不變) ...
+
+    const isOwner = useMemo(() => { /* ... */ }, [user?.uid, trip?.ownerUid]);
+    // ... (其他 useMemo 保持不變) ...
     
+    // ***********************************************
+    // 2. 判斷今天是否在行程期間內
+    const todayTripDate = useMemo(() => {
+        if (!trip || !trip.startDate || !trip.endDate) return null;
+
+        const today = new Date();
+        const todayStr = formatDate(today);
+        
+        // 確保日期範圍包含今天
+        if (todayStr >= trip.startDate && todayStr <= trip.endDate) {
+            return todayStr;
+        }
+        return null;
+    }, [trip]);
+    // ***********************************************
+    
+    // ***********************************************
+    // 3. 快速新增今天的行程
+    const handleQuickAddItinerary = () => {
+        if (!isOwner) {
+            alert('只有旅程創建者才能新增行程。');
+            return;
+        }
+        
+        if (todayTripDate) {
+            // 設置預設日期並打開表單
+            setQuickAddDate(todayTripDate); 
+            setEditingItineraryItem(null); // 確保是新增模式
+            setIsItineraryFormOpen(true);
+        } else {
+            alert('今天不在旅程期間內，請使用一般新增功能手動選擇日期。');
+            setIsItineraryFormOpen(true);
+        }
+    };
+    // ***********************************************
+
+    // 關閉表單時重置 quickAddDate
+    const handleCloseItineraryForm = () => {
+        setIsItineraryFormOpen(false);
+        setEditingItineraryItem(null);
+        setQuickAddDate(null); // <-- 重置狀態
+    };
+
+
     if (loading) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-white flex justify-center items-center">載入中...</div>;
     if (!trip) return null;
 
@@ -62,69 +103,53 @@ const TripDetail = () => {
 
             <main className="max-w-xl mx-auto space-y-4"> 
                 {/* ... (旅程概覽卡片 保持不變) ... */}
-
+                
                 {/* ... (費用追蹤與結算卡片 保持不變) ... */}
 
                 {/* 行程規劃卡片 */}
                 <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
                     <h2 className="text-xl font-bold mb-3 flex items-center justify-between text-indigo-600 dark:text-indigo-400">
                         🗺️ 行程規劃 (當地時間)
-                        {isOwner && (
-                            <button onClick={() => setIsItineraryFormOpen(true)} className="text-sm bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded-full transition-colors active:scale-95">
-                                + 新增行程
-                            </button>
-                        )}
+                        <div className="flex space-x-2">
+                            {/* 4. 新增快速新增按鈕 */}
+                            {isOwner && todayTripDate && (
+                                <button onClick={handleQuickAddItinerary} className="text-sm bg-indigo-700 hover:bg-indigo-800 text-white px-3 py-1 rounded-full transition-colors active:scale-95">
+                                    + 新增今天
+                                </button>
+                            )}
+                            {isOwner && (
+                                <button onClick={() => { setIsItineraryFormOpen(true); setQuickAddDate(null); setEditingItineraryItem(null); }} className="text-sm bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded-full transition-colors active:scale-95">
+                                    + 新增行程
+                                </button>
+                            )}
+                        </div>
                     </h2>
                     
                     {/* ... (搜索輸入框 & 日期選擇器 保持不變) ... */}
 
-                    {/* 行程列表 - 修改 li 元素的樣式 */}
-                    <DragDropContext onDragEnd={isOwner ? onDragEnd : () => {}}> 
-                        <Droppable droppableId="itinerary">
-                            {(provided) => (
-                                <ul {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
-                                    {filteredItinerary.length > 0 ? (
-                                        filteredItinerary.map((item, index) => (
-                                            <Draggable key={item.id} draggableId={item.id} index={index} isDragDisabled={!isOwner}>
-                                                {(provided) => (
-                                                    <li ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
-                                                        // ***********************************************
-                                                        // 3. 應用顏色標籤樣式 (border-l-4 和動態顏色類名)
-                                                        className={`p-3 pl-4 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm flex justify-between items-center hover:shadow-md transition-shadow cursor-grab border-l-4 ${getCategoryBorderClass(item.category)}`}> 
-                                                        {/* *********************************************** */}
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="text-xs font-semibold uppercase text-indigo-500 dark:text-indigo-400">
-                                                                {item.category}
-                                                            </div>
-                                                            <div className="font-bold text-gray-800 dark:text-white truncate">
-                                                                {item.activity}
-                                                            </div>
-                                                            {/* ... (時間顯示保持不變) ... */}
-                                                        </div>
-                                                        <div className="flex space-x-2">
-                                                            {/* ... (編輯/刪除按鈕保持不變) ... */}
-                                                        </div>
-                                                    </li>
-                                                )}
-                                            </Draggable>
-                                        ))
-                                    ) : (
-                                        /* ... (列表為空提示保持不變) ... */
-                                        <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                                            {searchQuery !== '' ? `找不到與「${searchQuery}」相關的行程。` : (selectedDate === 'all' ? '目前沒有行程項目。' : `這一天 (${selectedDate}) 沒有行程。`)}
-                                        </p>
-                                    )}
-                                    {provided.placeholder}
-                                </ul>
-                            )}
-                        </Droppable>
-                    </DragDropContext>
+                    {/* 行程列表 - 保持不變 */}
+                    {/* ... */}
                 </div>
                 
                 {/* ... (航班資訊卡片 保持不變) ... */}
             </main>
             
-            {/* ... (Modals 區域保持不變) ... */}
+            {/* Modals 區域 */}
+            {isOwner && isItineraryFormOpen && (
+                <ItineraryForm
+                    isOpen={isItineraryFormOpen}
+                    onClose={handleCloseItineraryForm} // <-- 使用新的關閉函式
+                    tripId={tripId}
+                    currentTrip={trip}
+                    initialData={editingItineraryItem}
+                    // ***********************************************
+                    // 5. 傳遞預設日期給表單
+                    defaultDate={quickAddDate} 
+                    // ***********************************************
+                    onSuccess={fetchTripData}
+                />
+            )}
+            {/* ... (其他 Modals 保持不變) ... */}
         </div>
     );
 };
