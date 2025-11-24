@@ -2,16 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 
-// ----------------------------------------------------------------------
-// 輔助函式：貨幣轉換 (從 CreateTrip.jsx 和 TripDetail.jsx 複製過來)
-// ----------------------------------------------------------------------
-// 注意：為了防止重複定義，這些常數和函式在實際專案中應該放在一個單獨的 helper 檔案中。
 const BASE_CURRENCY = 'HKD';
 const AVAILABLE_CURRENCIES = ['HKD', 'JPY', 'USD', 'TWD', 'EUR'];
 
-// 假設的簡化匯率表 (所有貨幣兌換 1 HKD 的值)
-// 1 HKD = X YYY
-// 這裡我們直接使用 TripDetail 傳入的 props，但為避免錯誤，先定義一個本地函式。
+// 輔助函式：貨幣轉換 (需要在這個組件中重定義或作為 props 傳入，這裡使用傳入的 props)
 const convertToHKD = (amount, currency, rates) => {
     if (!amount || !currency || currency === BASE_CURRENCY) {
         return amount || 0;
@@ -19,31 +13,24 @@ const convertToHKD = (amount, currency, rates) => {
     const rate = rates[currency] || 1; 
     return amount / rate;
 };
-// ----------------------------------------------------------------------
 
 
 const ExpenseForm = ({ members, onAddExpense, onClose, baseCurrency, exchangeRates }) => {
     
-    // 初始化費用狀態
     const [description, setDescription] = useState('');
     const [cost, setCost] = useState(0);
-    // 費用支付者 ID，預設為第一個成員 (通常是自己)
     const [paidById, setPaidById] = useState(members[0]?.id || ''); 
-    // 分攤者 ID 陣列，預設為所有成員
     const [sharedBy, setSharedBy] = useState(members.map(m => m.id));
-    // 費用貨幣，預設為基礎貨幣 (HKD)
-    const [expenseCurrency, setExpenseCurrency] = useState(BASE_CURRENCY);
+    const [expenseCurrency, setExpenseCurrency] = useState(baseCurrency);
 
 
     useEffect(() => {
-        // 確保至少有一個成員被選中為支付者和分攤者
         if (members.length > 0 && !paidById) {
             setPaidById(members[0].id);
         }
     }, [members, paidById]);
 
 
-    // 處理分攤者勾選/取消勾選
     const handleSharedByChange = (memberId, isChecked) => {
         if (isChecked) {
             setSharedBy([...sharedBy, memberId]);
@@ -56,33 +43,34 @@ const ExpenseForm = ({ members, onAddExpense, onClose, baseCurrency, exchangeRat
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        if (!description || cost <= 0 || !paidById || sharedBy.length === 0) {
+        if (!description || parseFloat(cost) <= 0 || !paidById || sharedBy.length === 0) {
             alert('請確認填寫了描述、金額大於零，並選擇了支付者和分攤者。');
             return;
         }
 
-        // *** 步驟 1: 進行貨幣轉換 ***
-        const costInHKD = convertToHKD(parseFloat(cost), expenseCurrency, exchangeRates);
+        // 進行貨幣轉換
+        const costFloat = parseFloat(cost);
+        const costInHKD = convertToHKD(costFloat, expenseCurrency, exchangeRates);
         
-        // 步驟 2: 構建新費用對象
         const newExpense = {
             id: Date.now(), 
             description,
-            // 儲存轉換後的基礎貨幣 (HKD) 金額
-            cost: costInHKD, 
+            cost: costInHKD, // 儲存轉換後的基礎貨幣 (HKD) 金額
             paidById,
             sharedBy,
-            // 儲存原始輸入信息，以便追溯
-            originalCost: parseFloat(cost), 
+            originalCost: costFloat, 
             originalCurrency: expenseCurrency,
             date: new Date().toISOString()
         };
         
-        // 步驟 3: 提交給父組件 (TripDetail)
         onAddExpense(newExpense);
-        // 關閉表單
-        onClose();
     };
+
+
+    // 預覽轉換後的金額
+    const convertedCost = cost > 0 
+        ? convertToHKD(parseFloat(cost), expenseCurrency, exchangeRates).toFixed(2) 
+        : '0.00';
 
 
     return (
@@ -129,7 +117,7 @@ const ExpenseForm = ({ members, onAddExpense, onClose, baseCurrency, exchangeRat
                     </div>
                     {/* 顯示轉換後的金額 */}
                     <p className="text-xs text-gray-500 mt-1">
-                        **結算金額**: {convertToHKD(parseFloat(cost), expenseCurrency, exchangeRates).toFixed(2)} {baseCurrency}
+                        **結算金額**: {convertedCost} {baseCurrency}
                     </p>
                 </div>
                 
