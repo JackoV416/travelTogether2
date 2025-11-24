@@ -4,12 +4,13 @@ import { getFirestore } from "firebase/firestore";
 
 // TODO: 請用你的 Firebase 專案設定替換下方內容
 const firebaseConfig = {
-  apiKey: "你的_API_KEY",
-  authDomain: "你的專案ID.firebaseapp.com",
-  projectId: "你的專案ID",
-  storageBucket: "你的專案ID.firebasestorage.app",
-  messagingSenderId: "...",
-  appId: "..."
+  apiKey: "AIzaSyBGlEoflf06E_lBi7FHnU1k2xNRN3_QBes",
+  authDomain: "travel-together2-byjamie.firebaseapp.com",
+  projectId: "travel-together2-byjamie",
+  storageBucket: "travel-together2-byjamie.firebasestorage.app",
+  messagingSenderId: "270079374388",
+  appId: "1:270079374388:web:93aeeb483945dbab7ac661",
+  measurementId: "G-WB5T9XJ42E"
 };
 
 const app = initializeApp(firebaseConfig);
