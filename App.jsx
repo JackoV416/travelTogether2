@@ -3,12 +3,13 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { 
     getFirestore, doc, collection, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, 
-    query, orderBy, where, getDocs, runTransaction, setLogLevel 
+    query, orderBy, where, getDocs, runTransaction, setLogLevel, serverTimestamp 
 } from 'firebase/firestore';
 import { 
     Home, Users, Briefcase, ListTodo, PiggyBank, MapPin, NotebookPen, Loader2, Plus, 
     Trash2, Save, X, Utensils, Bus, ShoppingBag, Bell, ChevronLeft, CalendarDays, 
-    Calculator, Clock, Check, Menu, Settings, Calendar, DollarSign, RefreshCw 
+    Calculator, Clock, Check, Menu, Settings, Calendar, DollarSign, RefreshCw, HandCoins,
+    Pencil, TrendingDown, ClipboardList
 } from 'lucide-react';
 
 // 設定 Firestore Log Level
@@ -39,12 +40,21 @@ const auth = getAuth(app);
 // 基礎結算貨幣設定為港元 (HKD)
 const BASE_CURRENCY = 'HKD';
 const CURRENCY_OPTIONS = [
-    { code: 'HKD', name: '港元' },
-    { code: 'TWD', name: '新台幣' },
-    { code: 'USD', name: '美元' },
-    { code: 'JPY', name: '日圓' },
-    { code: 'EUR', name: '歐元' },
-    { code: 'CNY', name: '人民幣' },
+    { code: 'HKD', name: '港元', symbol: '$' },
+    { code: 'TWD', name: '新台幣', symbol: 'NT$' },
+    { code: 'USD', name: '美元', symbol: '$' },
+    { code: 'JPY', name: '日圓', symbol: '¥' },
+    { code: 'EUR', name: '歐元', symbol: '€' },
+    { code: 'CNY', name: '人民幣', symbol: '¥' },
+];
+
+const TRANSACTION_CATEGORIES = [
+    { id: 'food', name: '餐飲', icon: Utensils, color: 'text-red-500', bg: 'bg-red-50' },
+    { id: 'transport', name: '交通', icon: Bus, color: 'text-blue-500', bg: 'bg-blue-50' },
+    { id: 'lodging', name: '住宿', icon: Home, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+    { id: 'shopping', name: '購物', icon: ShoppingBag, color: 'text-purple-500', bg: 'bg-purple-50' },
+    { id: 'activity', name: '活動', icon: Calendar, color: 'text-green-500', bg: 'bg-green-50' },
+    { id: 'other', name: '其他', icon: ClipboardList, color: 'text-gray-500', bg: 'bg-gray-50' },
 ];
 
 
@@ -59,6 +69,11 @@ const getCollectionRef = (collectionName, userId) => {
 /** 取得單一文件路徑 */
 const getDocumentRef = (collectionName, documentId, userId) => {
     return doc(db, 'artifacts', appId, 'public', 'data', collectionName, documentId);
+};
+
+/** 取得交易紀錄的集合路徑 (巢狀於行程下) */
+const getTransactionsCollectionRef = (tripId, userId) => {
+    return collection(getDocumentRef('trips', tripId, userId), 'transactions');
 };
 
 /**
@@ -83,6 +98,17 @@ const formatDateTime = (dateObj) => {
     return dateObj.toLocaleTimeString('zh-TW', {
         hour: '2-digit', minute: '2-digit', hour12: false
     });
+};
+
+/**
+ * 格式化金額
+ * @param {number} amount - 金額
+ * @param {string} currencyCode - 貨幣代碼
+ * @returns {string} 格式化後的金額字串 (含符號)
+ */
+const formatCurrency = (amount, currencyCode) => {
+    const symbol = CURRENCY_OPTIONS.find(c => c.code === currencyCode)?.symbol || currencyCode;
+    return `${symbol} ${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 };
 
 /**
@@ -116,7 +142,6 @@ const fetchExchangeRate = async (fromCurrency, toCurrency) => {
             });
 
             if (!response.ok) {
-                // 如果是 429 Too Many Requests，則重試
                 if (response.status === 429 && i < 2) {
                     await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
                     continue;
@@ -130,7 +155,6 @@ const fetchExchangeRate = async (fromCurrency, toCurrency) => {
             // 嘗試解析數值
             const rate = parseFloat(text);
             if (isNaN(rate) || rate === 0) {
-                 // 如果解析失敗或結果為 0，視為找不到有效匯率
                  return 0; 
             }
             return rate;
@@ -177,7 +201,6 @@ const useAppState = () => {
             if (user) {
                 setUserId(user.uid);
             } else {
-                // 如果沒有登入，嘗試登入
                 if (!userId) {
                     authenticate();
                 }
@@ -205,7 +228,6 @@ const useAppState = () => {
                     ...data,
                     startDate: data.startDate ? new Date(data.startDate.seconds * 1000) : null,
                     endDate: data.endDate ? new Date(data.endDate.seconds * 1000) : null,
-                    // 確保基礎貨幣為 HKD，如果舊資料沒有，則設定
                     baseCurrency: data.baseCurrency || BASE_CURRENCY, 
                 };
             });
@@ -224,7 +246,7 @@ const useAppState = () => {
 };
 
 // --- Dashboard Component ---
-
+// ... (Dashboard Component 保持不變)
 const Dashboard = ({ setCurrentView, setSelectedTripId }) => {
     const { userId, isAuthReady, trips, isLoading, error, db } = useAppState();
     const [isAdding, setIsAdding] = useState(false);
@@ -254,7 +276,6 @@ const Dashboard = ({ setCurrentView, setSelectedTripId }) => {
         } catch (e) {
             console.error("建立行程失敗:", e);
             // 改用自定義彈窗或訊息
-            // 注意: 此處使用 alert 僅作為臨時錯誤顯示，建議替換為自定義 modal
             alert("建立行程失敗，請稍後再試。"); 
         }
     };
@@ -266,7 +287,7 @@ const Dashboard = ({ setCurrentView, setSelectedTripId }) => {
         
         try {
             await deleteDoc(getDocumentRef('trips', tripId, userId));
-            console.log("行程刪除成功:", tripId);
+            console.log("刪除行程成功:", tripId);
         } catch (e) {
             console.error("刪除行程失敗:", e);
             alert("刪除行程失敗，請稍後再試。");
@@ -400,13 +421,13 @@ const TripCard = ({ trip, onDelete, onNavigate }) => {
     );
 };
 
-// --- Trip Detail Component (包含 5 大功能模組) ---
-
+// --- Trip Detail Component ---
+// ... (Trip Detail Component 保持不變)
 const TripDetail = ({ tripId, setCurrentView }) => {
     const { userId, isAuthReady, db } = useAppState();
     const [tripData, setTripData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('budget'); // 預設為 預算，以展示新功能
+    const [activeTab, setActiveTab] = useState('budget'); 
     const [notificationCounts, setNotificationCounts] = useState({ itinerary: 0, budget: 1, todo: 3, note: 0, location: 0 });
 
     useEffect(() => {
@@ -462,10 +483,15 @@ const TripDetail = ({ tripId, setCurrentView }) => {
 
         switch (activeTab) {
             case 'itinerary':
-                // 這裡的 ItineraryContent 相當於您想像中的 'ItineraryForm' 相關功能
                 return <ItineraryContent tripId={tripId} userId={userId} db={db} tripData={tripData} />;
             case 'budget':
-                return <BudgetContent tripId={tripId} userId={userId} db={db} baseCurrency={tripData.baseCurrency} />;
+                // 傳遞所有必要的 props 給 BudgetContent
+                return <BudgetContent 
+                    tripId={tripId} 
+                    userId={userId} 
+                    db={db} 
+                    baseCurrency={tripData.baseCurrency} 
+                />;
             case 'todo':
                 return <TodoContent tripId={tripId} userId={userId} db={db} />;
             case 'note':
@@ -549,9 +575,518 @@ const TripDetail = ({ tripId, setCurrentView }) => {
     );
 };
 
-// --- Sub-Components for 5 Core Features ---
+// --- Budget Transaction Modal Component ---
 
-// 1. 行程 (Itinerary) - 相當於傳統結構中的 ItineraryForm / ItineraryDisplay
+const AddTransactionModal = ({ isVisible, onClose, onSave, baseCurrency, tripId, userId }) => {
+    const defaultCurrency = CURRENCY_OPTIONS.find(c => c.code !== baseCurrency) || CURRENCY_OPTIONS[0];
+    
+    const [amount, setAmount] = useState(0);
+    const [description, setDescription] = useState('');
+    const [category, setCategory] = useState(TRANSACTION_CATEGORIES[0].id);
+    const [fromCurrency, setFromCurrency] = useState(defaultCurrency.code);
+    const [convertedAmount, setConvertedAmount] = useState(0);
+    const [rate, setRate] = useState(0);
+    const [loadingRate, setLoadingRate] = useState(false);
+    const [rateError, setRateError] = useState(null);
+    const [saveLoading, setSaveLoading] = useState(false);
+
+    // 重置所有狀態
+    const resetForm = useCallback(() => {
+        setAmount(0);
+        setDescription('');
+        setCategory(TRANSACTION_CATEGORIES[0].id);
+        setFromCurrency(defaultCurrency.code);
+        setConvertedAmount(0);
+        setRate(0);
+        setRateError(null);
+        setSaveLoading(false);
+    }, [defaultCurrency.code]);
+
+    useEffect(() => {
+        if (isVisible) {
+            resetForm();
+        }
+    }, [isVisible, resetForm]);
+
+    // 匯率轉換邏輯 (與 BudgetContent 共享)
+    const handleConvert = useCallback(async (currentAmount, currentFromCurrency) => {
+        if (currentAmount <= 0 || currentFromCurrency === baseCurrency) {
+            setConvertedAmount(currentAmount);
+            setRate(1);
+            setRateError(null);
+            return;
+        }
+
+        setLoadingRate(true);
+        setRateError(null);
+
+        try {
+            const exchangeRate = await fetchExchangeRate(currentFromCurrency, baseCurrency);
+            
+            if (exchangeRate > 0) {
+                const converted = currentAmount * exchangeRate;
+                setRate(exchangeRate);
+                setConvertedAmount(parseFloat(converted.toFixed(2)));
+            } else {
+                setRate(0);
+                setConvertedAmount(0);
+                setRateError(`無法取得 ${currentFromCurrency} 兌 ${baseCurrency} 的即時匯率。`);
+            }
+        } catch (e) {
+            setRate(0);
+            setConvertedAmount(0);
+            setRateError('獲取匯率時發生網路錯誤，請稍後重試。');
+            console.error(e);
+        } finally {
+            setLoadingRate(false);
+        }
+    }, [baseCurrency]);
+
+    useEffect(() => {
+        if (amount > 0) {
+            handleConvert(amount, fromCurrency);
+        } else {
+            setConvertedAmount(0);
+            setRate(0);
+            setRateError(null);
+        }
+    }, [amount, fromCurrency, handleConvert]);
+
+    // 儲存交易
+    const handleSaveTransaction = async () => {
+        if (amount <= 0 || !description.trim() || convertedAmount <= 0) {
+            alert("請確保輸入有效的金額、描述和匯率轉換成功。");
+            return;
+        }
+        
+        setSaveLoading(true);
+
+        const transactionData = {
+            description: description.trim(),
+            category: category,
+            originalAmount: amount,
+            originalCurrency: fromCurrency,
+            convertedAmount: convertedAmount,
+            baseCurrency: baseCurrency,
+            exchangeRate: rate,
+            createdAt: serverTimestamp(), // 使用 Firestore 伺服器時間戳
+            tripId: tripId,
+            userId: userId,
+        };
+
+        try {
+            const collectionRef = getTransactionsCollectionRef(tripId, userId);
+            await addDoc(collectionRef, transactionData);
+            onSave(); // 通知父組件儲存成功
+            resetForm();
+            onClose();
+        } catch (e) {
+            console.error("儲存交易失敗:", e);
+            alert("儲存交易記錄失敗，請檢查網路或權限。");
+        } finally {
+            setSaveLoading(false);
+        }
+    };
+
+
+    if (!isVisible) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className={`w-full max-w-lg ${cardClasses} p-6 overflow-y-auto max-h-[90vh] transition-all transform duration-300 scale-100`}>
+                <header className="flex justify-between items-center border-b pb-3 mb-4">
+                    <h2 className="text-xl font-bold text-gray-900 flex items-center">
+                        <HandCoins className="w-6 h-6 mr-2 text-indigo-600" />
+                        新增交易記錄
+                    </h2>
+                    <button onClick={onClose} className="p-2 text-gray-500 hover:text-gray-800 rounded-full hover:bg-gray-100">
+                        <X className="w-6 h-6" />
+                    </button>
+                </header>
+                
+                <div className="space-y-4">
+                    {/* 交易描述 */}
+                    <div>
+                        <label className="text-sm font-medium text-gray-700 block mb-1">描述/項目名稱</label>
+                        <input
+                            type="text"
+                            placeholder="例如: 午餐拉麵"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            className={inputClasses}
+                        />
+                    </div>
+
+                    {/* 類別選擇 */}
+                    <div>
+                        <label className="text-sm font-medium text-gray-700 block mb-1">支出類別</label>
+                        <div className="flex flex-wrap gap-2">
+                            {TRANSACTION_CATEGORIES.map(cat => (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => setCategory(cat.id)}
+                                    className={`px-3 py-1.5 rounded-full text-sm font-medium border transition duration-150 flex items-center 
+                                        ${cat.id === category 
+                                            ? `bg-indigo-600 text-white shadow-md border-indigo-600`
+                                            : `bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200`
+                                        }`}
+                                >
+                                    <cat.icon className="w-4 h-4 mr-1" />
+                                    {cat.name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 金額和貨幣選擇 */}
+                    <div className="flex gap-3">
+                        <div className="flex-1">
+                            <label className="text-sm font-medium text-gray-700 block mb-1">原始金額</label>
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                placeholder="金額"
+                                value={amount || ''}
+                                onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+                                className={inputClasses}
+                            />
+                        </div>
+                        <div className="w-2/5">
+                            <label className="text-sm font-medium text-gray-700 block mb-1">貨幣</label>
+                            <select
+                                value={fromCurrency}
+                                onChange={(e) => setFromCurrency(e.target.value)}
+                                className={inputClasses}
+                            >
+                                {CURRENCY_OPTIONS.map(option => (
+                                    <option key={option.code} value={option.code}>
+                                        {option.code}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* 轉換結果顯示 */}
+                    <div className="mt-4 p-3 bg-indigo-50 border border-dashed border-indigo-300 rounded-xl">
+                        <p className="text-sm font-medium text-gray-600 mb-1">
+                            轉換至結算貨幣 ({baseCurrency})
+                        </p>
+                        <div className="flex items-center justify-between">
+                            <p className="text-2xl font-extrabold text-indigo-700">
+                                {loadingRate ? <Loader2 className="w-5 h-5 animate-spin text-indigo-500" /> : formatCurrency(convertedAmount, baseCurrency)}
+                            </p>
+                            
+                        </div>
+                        
+                        {(rate > 0) && fromCurrency !== baseCurrency && (
+                            <p className="text-xs text-gray-500 mt-2">
+                                匯率: 1 {fromCurrency} = {rate.toFixed(4)} {baseCurrency}
+                            </p>
+                        )}
+                        {rateError && (
+                            <div className="text-xs text-red-600 mt-2">{rateError}</div>
+                        )}
+                    </div>
+                </div>
+
+                {/* 儲存按鈕 */}
+                <div className="mt-6 flex justify-end">
+                    <button
+                        onClick={handleSaveTransaction}
+                        disabled={saveLoading || convertedAmount <= 0 || !description.trim()}
+                        className={buttonClasses('bg-indigo-600', 'hover:bg-indigo-700')}
+                    >
+                        {saveLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Save className="w-5 h-5 mr-2" />}
+                        儲存 ({formatCurrency(convertedAmount, baseCurrency)})
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+// 2. 預算 (Budget) - 實現即時貨幣轉換和交易記錄
+const BudgetContent = ({ tripId, userId, db, baseCurrency }) => {
+    const [transactions, setTransactions] = useState([]);
+    const [isTransactionsLoading, setIsTransactionsLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [amount, setAmount] = useState(0);
+    const [fromCurrency, setFromCurrency] = useState('JPY'); 
+    const [convertedAmount, setConvertedAmount] = useState(0);
+    const [rate, setRate] = useState(0);
+    const [loadingRate, setLoadingRate] = useState(false);
+    const [rateError, setRateError] = useState(null);
+
+    // 交易記錄監聽
+    useEffect(() => {
+        if (!tripId || !userId) return;
+
+        const q = query(getTransactionsCollectionRef(tripId, userId), orderBy('createdAt', 'desc'));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const data = snapshot.docs.map(doc => {
+                const docData = doc.data();
+                return {
+                    id: doc.id,
+                    ...docData,
+                    createdAt: docData.createdAt ? new Date(docData.createdAt.seconds * 1000) : new Date(),
+                };
+            });
+            setTransactions(data);
+            setIsTransactionsLoading(false);
+        }, (err) => {
+            console.error("載入交易記錄失敗:", err);
+            setIsTransactionsLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [tripId, userId]);
+
+
+    // 計算總支出
+    const totalSpent = useMemo(() => {
+        return transactions.reduce((sum, t) => sum + t.convertedAmount, 0);
+    }, [transactions]);
+
+
+    // 匯率轉換邏輯 (用於主畫面的計算器)
+    const handleConvert = useCallback(async (currentAmount, currentFromCurrency) => {
+        if (currentAmount <= 0 || currentFromCurrency === baseCurrency) {
+            setConvertedAmount(currentAmount);
+            setRate(1);
+            setRateError(null);
+            return;
+        }
+
+        setLoadingRate(true);
+        setRateError(null);
+
+        try {
+            const exchangeRate = await fetchExchangeRate(currentFromCurrency, baseCurrency);
+            
+            if (exchangeRate > 0) {
+                const converted = currentAmount * exchangeRate;
+                setRate(exchangeRate);
+                setConvertedAmount(parseFloat(converted.toFixed(2)));
+            } else {
+                setRate(0);
+                setConvertedAmount(0);
+                setRateError(`無法取得 ${currentFromCurrency} 兌 ${baseCurrency} 的即時匯率。`);
+            }
+        } catch (e) {
+            setRate(0);
+            setConvertedAmount(0);
+            setRateError('獲取匯率時發生網路錯誤，請稍後重試。');
+            console.error(e);
+        } finally {
+            setLoadingRate(false);
+        }
+    }, [baseCurrency]);
+
+    useEffect(() => {
+        if (amount > 0) {
+            handleConvert(amount, fromCurrency);
+        } else {
+            setConvertedAmount(0);
+            setRate(0);
+            setRateError(null);
+        }
+    }, [amount, fromCurrency, baseCurrency, handleConvert]);
+
+    // 處理金額輸入
+    const handleAmountChange = (e) => {
+        const value = parseFloat(e.target.value);
+        setAmount(isNaN(value) ? 0 : value);
+    };
+
+    const targetCurrencyName = CURRENCY_OPTIONS.find(c => c.code === baseCurrency)?.name || baseCurrency;
+
+    // 刪除交易紀錄
+    const handleDeleteTransaction = async (transactionId) => {
+        const isConfirmed = window.confirm("確定要刪除這筆交易記錄嗎？"); 
+        if (!isConfirmed) return;
+        
+        try {
+            const docRef = doc(getTransactionsCollectionRef(tripId, userId), transactionId);
+            await deleteDoc(docRef);
+            console.log("交易刪除成功:", transactionId);
+        } catch (e) {
+            console.error("刪除交易失敗:", e);
+            alert("刪除交易失敗，請稍後再試。");
+        }
+    };
+
+
+    return (
+        <div className="space-y-6">
+            <h3 className="text-xl font-semibold text-gray-800 flex items-center mb-4">
+                <PiggyBank className="w-5 h-5 mr-2 text-indigo-600" />
+                預算管理 (結算貨幣: {baseCurrency})
+            </h3>
+
+            {/* 總支出概覽 */}
+            <div className={`${cardClasses} p-4 sm:p-6 bg-indigo-50 border-indigo-300`}>
+                <p className="text-sm font-medium text-indigo-700 mb-1">總支出 (以 {baseCurrency} 結算)</p>
+                <p className="text-4xl font-extrabold text-indigo-800">
+                    {formatCurrency(totalSpent, baseCurrency)}
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                    {transactions.length} 筆記錄
+                </p>
+            </div>
+            
+            {/* 匯率轉換區塊 (計算器) */}
+            <div className={`${cardClasses} border border-indigo-200 shadow-lg space-y-3`}>
+                <h4 className="text-lg font-bold text-indigo-700 flex items-center">
+                    <Calculator className="w-5 h-5 mr-2" />
+                    即時匯率計算器
+                </h4>
+                
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1">
+                        <label className="text-xs font-medium text-gray-600 block mb-1">原始金額</label>
+                        <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="輸入金額"
+                            value={amount || ''}
+                            onChange={handleAmountChange}
+                            className={inputClasses}
+                        />
+                    </div>
+                    <div className="w-full sm:w-1/3">
+                        <label className="text-xs font-medium text-gray-600 block mb-1">原始貨幣</label>
+                        <select
+                            value={fromCurrency}
+                            onChange={(e) => setFromCurrency(e.target.value)}
+                            className={inputClasses}
+                        >
+                            {CURRENCY_OPTIONS.map(option => (
+                                <option key={option.code} value={option.code}>
+                                    {option.code} ({option.name})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="mt-4 p-3 bg-white border border-dashed border-indigo-300 rounded-xl">
+                    <p className="text-sm font-medium text-gray-500 mb-1">
+                        等值 {targetCurrencyName} ({baseCurrency})
+                    </p>
+                    <div className="flex items-center justify-between">
+                        <p className="text-3xl font-extrabold text-indigo-600">
+                            {loadingRate ? <Loader2 className="w-6 h-6 animate-spin text-indigo-500" /> : formatCurrency(convertedAmount, baseCurrency)}
+                        </p>
+                    </div>
+                    
+                    {(rate > 0) && fromCurrency !== baseCurrency && (
+                        <p className="text-xs text-gray-500 mt-2">
+                            目前匯率: 1 {fromCurrency} = {rate.toFixed(4)} {baseCurrency}
+                        </p>
+                    )}
+                    {rateError && (
+                         <div className="text-sm text-red-600 bg-red-100 p-2 rounded-lg flex items-center">
+                            <X className="w-4 h-4 mr-2" />
+                            {rateError}
+                        </div>
+                    )}
+                </div>
+
+                {/* 按鈕：將計算結果快速儲存為交易 */}
+                <button 
+                    onClick={() => setIsModalOpen(true)}
+                    disabled={convertedAmount <= 0}
+                    className={buttonClasses('bg-teal-500', 'hover:bg-teal-600')}
+                >
+                    <Plus className="w-5 h-5 mr-2" />
+                    新增交易紀錄 ({formatCurrency(convertedAmount, baseCurrency)})
+                </button>
+            </div>
+            
+            {/* 交易記錄列表 */}
+            <div className={`${cardClasses} p-4 sm:p-6 space-y-4`}>
+                <h4 className="text-lg font-semibold text-gray-700 flex items-center justify-between border-b pb-2">
+                    <div className="flex items-center">
+                        <TrendingDown className="w-5 h-5 mr-2 text-red-600" />
+                        詳細交易記錄
+                    </div>
+                    <button 
+                        onClick={() => setIsModalOpen(true)}
+                        className={secondaryButtonClasses}
+                    >
+                         <Plus className="w-4 h-4 mr-1" />
+                        新增
+                    </button>
+                </h4>
+                
+                {isTransactionsLoading ? (
+                    <LoadingScreen message="載入交易記錄中..." />
+                ) : transactions.length === 0 ? (
+                    <div className="text-center p-6 bg-gray-100 rounded-xl text-gray-500">
+                        <PiggyBank className="w-8 h-8 mx-auto mb-2" />
+                        <p>還沒有任何交易記錄。</p>
+                        <p>點擊「新增交易」開始記錄您的支出吧！</p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {transactions.map(t => <TransactionItem key={t.id} transaction={t} onDelete={handleDeleteTransaction} />)}
+                    </div>
+                )}
+            </div>
+
+            <AddTransactionModal 
+                isVisible={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={() => console.log("交易儲存成功")}
+                baseCurrency={baseCurrency}
+                tripId={tripId}
+                userId={userId}
+            />
+        </div>
+    );
+};
+
+const TransactionItem = ({ transaction, onDelete }) => {
+    const category = TRANSACTION_CATEGORIES.find(c => c.id === transaction.category) || TRANSACTION_CATEGORIES[5];
+    
+    return (
+        <div className={`flex items-center p-3 rounded-xl transition duration-150 border ${category.bg} hover:shadow-md`}>
+            <div className={`p-2 rounded-full mr-3 ${category.color} bg-white shadow-sm`}>
+                <category.icon className="w-5 h-5" />
+            </div>
+            
+            <div className="flex-grow min-w-0">
+                <p className="font-semibold truncate text-gray-900">{transaction.description}</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                    {category.name} | {formatCurrency(transaction.originalAmount, transaction.originalCurrency)} @ {transaction.exchangeRate.toFixed(4)}
+                </p>
+            </div>
+            
+            <div className="text-right ml-4 flex items-center space-x-2">
+                <div className="flex flex-col items-end">
+                    <p className={`font-bold text-lg text-red-600`}>
+                        {formatCurrency(transaction.convertedAmount, transaction.baseCurrency)}
+                    </p>
+                    <p className="text-xs text-gray-400">{formatDate(transaction.createdAt)}</p>
+                </div>
+                <button
+                    onClick={() => onDelete(transaction.id)}
+                    className="p-1 text-gray-400 hover:text-red-600 transition duration-150 rounded-full hover:bg-red-100"
+                >
+                    <Trash2 className="w-4 h-4" />
+                </button>
+            </div>
+        </div>
+    );
+};
+
+
+// 1. 行程 (Itinerary) - 保持不變
 const ItineraryContent = ({ tripId, userId, tripData }) => {
     const days = useMemo(() => {
         if (!tripData.startDate || !tripData.endDate) return [];
@@ -598,154 +1133,6 @@ const ItineraryContent = ({ tripId, userId, tripData }) => {
     );
 };
 
-// 2. 預算 (Budget) - 實現即時貨幣轉換 (最新功能)
-const BudgetContent = ({ baseCurrency }) => {
-    const [amount, setAmount] = useState(0);
-    const [fromCurrency, setFromCurrency] = useState('JPY'); // 預設為日圓
-    const [convertedAmount, setConvertedAmount] = useState(0);
-    const [rate, setRate] = useState(0);
-    const [loadingRate, setLoadingRate] = useState(false);
-    const [rateError, setRateError] = useState(null);
-
-    const targetCurrencyName = CURRENCY_OPTIONS.find(c => c.code === baseCurrency)?.name || baseCurrency;
-
-    const handleConvert = useCallback(async (currentAmount, currentFromCurrency) => {
-        if (currentAmount <= 0 || currentFromCurrency === baseCurrency) {
-            setConvertedAmount(currentAmount);
-            setRate(1);
-            setRateError(null);
-            return;
-        }
-
-        setLoadingRate(true);
-        setRateError(null);
-
-        try {
-            const exchangeRate = await fetchExchangeRate(currentFromCurrency, baseCurrency);
-            
-            if (exchangeRate > 0) {
-                const converted = currentAmount * exchangeRate;
-                setRate(exchangeRate);
-                setConvertedAmount(parseFloat(converted.toFixed(2)));
-            } else {
-                setRate(0);
-                setConvertedAmount(0);
-                setRateError(`無法取得 ${currentFromCurrency} 兌 ${baseCurrency} 的即時匯率。`);
-            }
-        } catch (e) {
-            setRate(0);
-            setConvertedAmount(0);
-            setRateError('獲取匯率時發生網路錯誤，請稍後重試。');
-            console.error(e);
-        } finally {
-            setLoadingRate(false);
-        }
-    }, [baseCurrency]);
-
-    useEffect(() => {
-        // 在組件載入或貨幣/金額改變時進行轉換
-        if (amount > 0) {
-            handleConvert(amount, fromCurrency);
-        } else {
-            setConvertedAmount(0);
-            setRate(0);
-            setRateError(null);
-        }
-    }, [amount, fromCurrency, baseCurrency, handleConvert]);
-
-    // 處理金額輸入
-    const handleAmountChange = (e) => {
-        const value = parseFloat(e.target.value);
-        setAmount(isNaN(value) ? 0 : value);
-    };
-
-
-    return (
-        <div className={`${cardClasses} space-y-6`}>
-            <h3 className="text-xl font-semibold text-gray-800 flex items-center mb-4">
-                <PiggyBank className="w-5 h-5 mr-2 text-indigo-600" />
-                預算管理 (結算貨幣: {baseCurrency})
-            </h3>
-            
-            {/* 匯率轉換區塊 */}
-            <div className="border border-indigo-200 p-4 rounded-xl bg-indigo-50 shadow-inner space-y-3">
-                <h4 className="text-lg font-bold text-indigo-700 flex items-center">
-                    <RefreshCw className="w-5 h-5 mr-2" />
-                    即時匯率轉換 (轉換為 {targetCurrencyName})
-                </h4>
-                
-                {/* 輸入與選擇 */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="flex-1">
-                        <label className="text-xs font-medium text-gray-600 block mb-1">消費金額</label>
-                        <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            placeholder="輸入金額"
-                            value={amount || ''}
-                            onChange={handleAmountChange}
-                            className={inputClasses}
-                        />
-                    </div>
-                    <div className="w-full sm:w-1/3">
-                        <label className="text-xs font-medium text-gray-600 block mb-1">消費貨幣</label>
-                        <select
-                            value={fromCurrency}
-                            onChange={(e) => setFromCurrency(e.target.value)}
-                            className={inputClasses}
-                        >
-                            {CURRENCY_OPTIONS.map(option => (
-                                <option key={option.code} value={option.code}>
-                                    {option.code} ({option.name})
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-
-                {/* 轉換結果 */}
-                <div className="mt-4 p-3 bg-white border border-dashed border-indigo-300 rounded-xl">
-                    <p className="text-sm font-medium text-gray-500 mb-1">
-                        等值 {targetCurrencyName} ({baseCurrency})
-                    </p>
-                    <div className="flex items-center justify-between">
-                        <p className="text-3xl font-extrabold text-indigo-600">
-                            {loadingRate ? <Loader2 className="w-6 h-6 animate-spin text-indigo-500" /> : convertedAmount.toLocaleString()}
-                        </p>
-                        <span className="text-xl font-bold text-indigo-600">{baseCurrency}</span>
-                    </div>
-                    
-                    {(rate > 0) && fromCurrency !== baseCurrency && (
-                        <p className="text-xs text-gray-500 mt-2">
-                            目前匯率: 1 {fromCurrency} = {rate.toFixed(4)} {baseCurrency}
-                        </p>
-                    )}
-                </div>
-
-                {rateError && (
-                     <div className="text-sm text-red-600 bg-red-100 p-2 rounded-lg flex items-center">
-                        <X className="w-4 h-4 mr-2" />
-                        {rateError}
-                    </div>
-                )}
-            </div>
-
-            {/* 交易記錄區塊 (佔位符) */}
-            <div className="pt-4 border-t">
-                <h4 className="text-lg font-semibold text-gray-700 mb-3">交易記錄 (總結)</h4>
-                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-md text-sm text-yellow-700 mb-4">
-                    <p className="font-medium">提醒:</p>
-                    <p>餐飲預算已超出 $500 {baseCurrency} (HKD)。</p>
-                </div>
-                <button className={buttonClasses('bg-indigo-600', 'hover:bg-indigo-700')}>
-                    <Calculator className="w-5 h-5 mr-2" />
-                    新增交易紀錄並儲存
-                </button>
-            </div>
-        </div>
-    );
-};
 
 // 3. 待辦清單 (Todo) - 保持不變
 const TodoContent = ({ tripId, userId, db }) => (
