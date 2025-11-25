@@ -3,12 +3,12 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { 
     getFirestore, doc, collection, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, 
-    query, orderBy
+    query, where, serverTimestamp
 } from 'firebase/firestore';
 import { 
     Home, Users, Briefcase, ListTodo, PiggyBank, MapPin, NotebookPen, Loader2, Plus, 
     Trash2, Save, X, Utensils, Bus, ShoppingBag, Bell, ChevronLeft, CalendarDays, 
-    Calculator, Clock, Check
+    Clock, Check, User, AlertTriangle
 } from 'lucide-react';
 
 // --- 全域變數和 Firebase 設定 ---
@@ -16,813 +16,805 @@ const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-// Tailwind CSS 輔助類別 (新的 Threads 風格)
-const primaryColor = 'indigo-600';
-const accentColor = 'teal-500';
+// 視圖狀態
+const VIEW_DASHBOARD = 'dashboard';
+const VIEW_TRIP_DETAIL = 'trip_detail';
+const VIEW_NOTIFICATIONS = 'notifications';
 
-// 針對手機螢幕優化的卡片和按鈕樣式
-const cardClasses = "bg-white p-5 rounded-2xl shadow-xl transition duration-300 border border-gray-100";
-const inputClasses = `w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-${primaryColor} focus:border-${primaryColor} transition duration-150`;
-const buttonPrimary = `bg-${primaryColor} text-white p-3 rounded-xl hover:bg-indigo-700 transition duration-150 flex items-center justify-center font-semibold`;
-const buttonSecondary = "bg-gray-100 text-gray-700 p-3 rounded-xl hover:bg-gray-200 transition duration-150 flex items-center justify-center";
-const iconClasses = "w-5 h-5 mr-2";
+// 顏色和樣式
+const cardClasses = "bg-white p-5 rounded-xl shadow-lg transition duration-300 border border-gray-100";
+const inputClasses = "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150";
+const buttonClasses = "py-2 px-4 rounded-lg font-semibold transition duration-150 shadow-md";
 
-// 圓角、藥丸形狀的 Tab 導航
-const tabClasses = (isActive) => 
-    `flex-1 py-2 px-1 text-center text-sm font-medium rounded-full transition duration-300 
-    ${isActive 
-        ? `bg-${primaryColor} text-white shadow-md` 
-        : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-600'}`;
+// 使用 debounce 函數來限制 Firestore 寫入操作的頻率
+const debounce = (func, delay) => {
+    let timeoutId;
+    return (...args) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            func.apply(null, args);
+        }, delay);
+    };
+};
 
-/**
- * 主要應用程式元件
- */
+// --- 主要應用程式組件 ---
 const App = () => {
+    // 1. 核心 Firebase 狀態
     const [db, setDb] = useState(null);
     const [auth, setAuth] = useState(null);
     const [userId, setUserId] = useState(null);
     const [isAuthReady, setIsAuthReady] = useState(false);
-    const [trips, setTrips] = useState([]);
+    
+    // 2. 應用程式視圖和資料狀態
+    const [currentView, setCurrentView] = useState(VIEW_DASHBOARD);
     const [selectedTripId, setSelectedTripId] = useState(null);
-    const [currentView, setCurrentView] = useState('dashboard');
+    const [trips, setTrips] = useState([]);
+    const [items, setItems] = useState([]); // 當前選定旅程的所有項目 (Todo, Expense, Note, Location)
+    const [notifications, setNotifications] = useState([]);
+    const [notificationCounts, setNotificationCounts] = useState({ chat: 0, system: 0, mention: 0 });
     const [loading, setLoading] = useState(true);
 
-    // 初始化 Firebase 和認證
+    // 3. 模態視窗狀態
+    const [isNewTripModalOpen, setIsNewTripModalOpen] = useState(false);
+    const [newTripTitle, setNewTripTitle] = useState('');
+    
+    // 4. 自定義 Alert 狀態
+    const [alertMessage, setAlertMessage] = useState(null);
+    const [alertType, setAlertType] = useState('success');
+
+    const alertUser = (message, type = 'success') => {
+        setAlertMessage(message);
+        setAlertType(type);
+        setTimeout(() => setAlertMessage(null), 3000);
+    };
+
+    // 5. Firebase 初始化與認證
     useEffect(() => {
         try {
             const app = initializeApp(firebaseConfig);
             const firestore = getFirestore(app);
-            const authInstance = getAuth(app);
+            const firebaseAuth = getAuth(app);
             setDb(firestore);
-            setAuth(authInstance);
+            setAuth(firebaseAuth);
 
-            const unsubscribe = onAuthStateChanged(authInstance, async (user) => {
+            const unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
                 if (user) {
                     setUserId(user.uid);
                 } else {
-                    try {
-                        if (initialAuthToken) {
-                            await signInWithCustomToken(authInstance, initialAuthToken);
-                        } else {
-                            await signInAnonymously(authInstance);
-                        }
-                    } catch (e) {
-                        console.error("Firebase Auth failed:", e);
+                    if (initialAuthToken) {
+                        signInWithCustomToken(firebaseAuth, initialAuthToken)
+                            .then(userCredential => setUserId(userCredential.user.uid))
+                            .catch(error => {
+                                console.error("Custom token sign-in failed, attempting anonymous sign-in:", error);
+                                signInAnonymously(firebaseAuth).then(userCredential => setUserId(userCredential.user.uid));
+                            });
+                    } else {
+                        signInAnonymously(firebaseAuth).then(userCredential => setUserId(userCredential.user.uid));
                     }
                 }
                 setIsAuthReady(true);
-                setLoading(false);
             });
 
             return () => unsubscribe();
         } catch (error) {
-            console.error("Failed to initialize Firebase:", error);
+            console.error("Firebase initialization failed:", error);
             setIsAuthReady(true);
-            setLoading(false);
         }
     }, []);
 
-    // 訂閱 trips 集合
+    // 6. Firestore 讀取：旅程資料 (Dashboard View)
     useEffect(() => {
-        if (!db || !isAuthReady || !userId) return;
+        if (!isAuthReady || !db || !userId || currentView !== VIEW_DASHBOARD) return;
 
-        const tripsRef = collection(db, 'artifacts', appId, 'public', 'data', 'trips');
-        const q = query(tripsRef);
+        const tripsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/trips`);
+        const qTrips = query(tripsCollectionRef); // 避免使用 orderBy
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const fetchedTrips = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            setTrips(fetchedTrips);
+        const unsubscribe = onSnapshot(qTrips, (snapshot) => {
+            // 在客戶端進行排序
+            const newTrips = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+                                           .sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+            setTrips(newTrips);
+            setLoading(false);
         }, (error) => {
-            console.error("Error fetching trips: ", error);
+            console.error("Failed to fetch trips:", error);
+            setLoading(false);
         });
 
         return () => unsubscribe();
-    }, [db, isAuthReady, userId]);
+    }, [isAuthReady, db, userId, currentView]);
 
-    // Firestore 輔助函數
-    const getTripCollectionRef = (tripId, collectionName) => 
-        collection(db, 'artifacts', appId, 'public', 'data', 'trips', tripId, collectionName);
+    // 7. Firestore 讀取：當前旅程項目 (Trip Detail View)
+    useEffect(() => {
+        if (!isAuthReady || !db || !userId || !selectedTripId || currentView !== VIEW_TRIP_DETAIL) return;
 
-    const getTripDocRef = (tripId, collectionName, docId) => 
-        doc(db, 'artifacts', appId, 'public', 'data', 'trips', tripId, collectionName, docId);
+        // 公有/協作資料路徑：/artifacts/{appId}/public/data/trips/{tripId}/items
+        const itemsCollectionRef = collection(db, `artifacts/${appId}/public/data/trips/${selectedTripId}/items`);
+        const qItems = query(itemsCollectionRef); // 避免使用 orderBy
 
-    // 載入中畫面
-    if (loading || !isAuthReady) {
+        const unsubscribe = onSnapshot(qItems, (snapshot) => {
+            const newItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+                                          .sort((a, b) => (a.order || 0) - (b.order || 0)); // 假設項目有 order 欄位
+            setItems(newItems);
+        }, (error) => {
+            console.error("Failed to fetch trip items:", error);
+        });
+
+        return () => unsubscribe();
+    }, [isAuthReady, db, userId, selectedTripId, currentView]);
+
+    // 8. Firestore 讀取：通知資料 (Notifications View)
+    useEffect(() => {
+        if (!isAuthReady || !db || !userId) return;
+        const notificationsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/notifications`);
+        const qNotifications = query(notificationsCollectionRef);
+
+        const unsubscribeNotifications = onSnapshot(qNotifications, (snapshot) => {
+            const newNotifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setNotifications(newNotifications);
+            const counts = newNotifications.reduce((acc, notif) => {
+                if (!notif.read) {
+                    acc[notif.type] = (acc[notif.type] || 0) + 1;
+                }
+                return acc;
+            }, { chat: 0, system: 0, mention: 0 });
+            setNotificationCounts(counts);
+        }, (error) => {
+            console.error("Failed to fetch notifications:", error);
+        });
+        return () => unsubscribeNotifications();
+    }, [isAuthReady, db, userId]);
+    
+    // 9. 旅程操作
+    const handleAddTrip = async () => {
+        if (!db || !userId || !newTripTitle.trim()) {
+            alertUser('旅程標題不能為空!', 'error');
+            return;
+        }
+
+        const tripsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/trips`);
+        
+        try {
+            await addDoc(tripsCollectionRef, {
+                title: newTripTitle.trim(),
+                createdAt: serverTimestamp(),
+                ownerId: userId,
+                // 初始化旅程項目，以確保協作文件存在
+                items: {} // 舊版結構，新版使用子集合
+            });
+            setIsNewTripModalOpen(false);
+            setNewTripTitle('');
+            alertUser('新旅程已成功建立。');
+        } catch (error) {
+            console.error("Failed to add new trip:", error);
+            alertUser('建立旅程失敗！', 'error');
+        }
+    };
+    
+    const handleDeleteTrip = async (tripId) => {
+        if (!db || !userId) return;
+        
+        const confirmed = window.confirm(`確定要刪除旅程 "${trips.find(t => t.id === tripId)?.title || '此旅程'}" 嗎？`);
+        if (!confirmed) return;
+
+        // 私有旅程文件
+        const tripDocRef = doc(db, `artifacts/${appId}/users/${userId}/trips`, tripId);
+        // 公有旅程項目子集合 (需要更複雜的批量刪除，這裡僅刪除旅程文件本身)
+        // const publicItemsRef = collection(db, `artifacts/${appId}/public/data/trips/${tripId}/items`);
+
+        try {
+            await deleteDoc(tripDocRef);
+            setSelectedTripId(null);
+            setCurrentView(VIEW_DASHBOARD);
+            alertUser('旅程已刪除。');
+        } catch (error) {
+            console.error("Failed to delete trip:", error);
+            alertUser('刪除旅程失敗！', 'error');
+        }
+    };
+
+    // 10. 旅程項目操作 (Todo, Expense, Note, Location, Itinerary)
+    const getTripItemRef = (tripId, itemId) => doc(db, `artifacts/${appId}/public/data/trips/${tripId}/items`, itemId);
+    const getTripItemsCollectionRef = (tripId) => collection(db, `artifacts/${appId}/public/data/trips/${tripId}/items`);
+
+    const saveItem = async (tripId, itemData) => {
+        if (!db || !userId) return;
+
+        const baseData = {
+            ...itemData,
+            updatedAt: serverTimestamp(),
+            editorId: userId,
+            type: itemData.type,
+        };
+
+        try {
+            if (itemData.id) {
+                // 更新現有項目
+                await updateDoc(getTripItemRef(tripId, itemData.id), baseData);
+                // alertUser('項目已更新。', 'success');
+            } else {
+                // 新增項目
+                await addDoc(getTripItemsCollectionRef(tripId), {
+                    ...baseData,
+                    createdAt: serverTimestamp(),
+                    order: items.length, // 簡單的順序
+                });
+                alertUser('新項目已新增。', 'success');
+            }
+        } catch (error) {
+            console.error("Failed to save item:", error);
+            alertUser('儲存項目失敗！', 'error');
+        }
+    };
+
+    const deleteItem = async (tripId, itemId) => {
+        if (!db || !userId) return;
+        
+        const confirmed = window.confirm('確定要刪除此項目嗎？');
+        if (!confirmed) return;
+
+        try {
+            await deleteDoc(getTripItemRef(tripId, itemId));
+            alertUser('項目已刪除。', 'success');
+        } catch (error) {
+            console.error("Failed to delete item:", error);
+            alertUser('刪除項目失敗！', 'error');
+        }
+    };
+    
+    const toggleTodo = (tripId, item) => {
+        saveItem(tripId, { ...item, completed: !item.completed });
+    };
+
+    // 11. 通知操作
+    const totalUnread = useMemo(() => Object.values(notificationCounts).reduce((sum, count) => sum + count, 0), [notificationCounts]);
+
+    const handleMarkAsRead = useCallback(async (notificationId) => {
+        if (!db || !userId) return;
+        const notifDocRef = doc(db, `artifacts/${appId}/users/${userId}/notifications`, notificationId);
+        try {
+            await updateDoc(notifDocRef, { read: true });
+        } catch (error) {
+            console.error("Failed to mark notification as read:", error);
+        }
+    }, [db, userId]);
+
+    const handleGenerateMockNotification = useCallback(async () => {
+        if (!db || !userId) return;
+        const types = ['chat', 'system', 'mention'];
+        const randomType = types[Math.floor(Math.random() * types.length)];
+        const messagesMap = {
+            chat: `用戶-${userId.substring(0, 4)} 傳來了一條新訊息。`,
+            system: '旅程文件已備份到雲端。',
+            mention: '有人在文件中提到了您。'
+        };
+
+        const notificationData = {
+            text: messagesMap[randomType],
+            type: randomType,
+            read: false,
+            timestamp: serverTimestamp(),
+        };
+
+        const notificationsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/notifications`);
+        try {
+            await addDoc(notificationsCollectionRef, notificationData);
+            alertUser('成功生成模擬通知！', 'success');
+        } catch (error) {
+            console.error("Failed to generate mock notification:", error);
+            alertUser('生成通知失敗！', 'error');
+        }
+    }, [db, userId]);
+
+
+    // --- 輔助組件 ---
+
+    // 儀表板視圖
+    const Dashboard = () => (
+        <div className="flex-1 w-full max-w-xl mx-auto pt-24 pb-20 px-4">
+            <h1 className="text-3xl font-bold mb-6 text-gray-900">我的旅程儀表板</h1>
+            
+            <button
+                onClick={() => setIsNewTripModalOpen(true)}
+                className={`${buttonClasses} w-full bg-indigo-600 text-white hover:bg-indigo-700 flex items-center justify-center space-x-2 mb-6`}
+            >
+                <Plus size={20} />
+                <span>新增旅程</span>
+            </button>
+
+            <div className="space-y-4">
+                {trips.length === 0 ? (
+                    <p className="text-center py-10 text-gray-500 bg-white rounded-xl shadow-md">
+                        目前沒有任何旅程。請點擊上方按鈕開始規劃！
+                    </p>
+                ) : (
+                    trips.map(trip => (
+                        <div
+                            key={trip.id}
+                            className={`flex justify-between items-center ${cardClasses} p-4 cursor-pointer hover:shadow-xl hover:scale-[1.01]`}
+                            onClick={() => {
+                                setSelectedTripId(trip.id);
+                                setCurrentView(VIEW_TRIP_DETAIL);
+                            }}
+                        >
+                            <div className="flex-1">
+                                <h2 className="text-xl font-semibold text-gray-800">{trip.title}</h2>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    建立於: {trip.createdAt ? new Date(trip.createdAt.seconds * 1000).toLocaleDateString('zh-TW') : 'N/A'}
+                                </p>
+                            </div>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleDeleteTrip(trip.id); }}
+                                className="ml-4 p-2 text-red-500 hover:bg-red-100 rounded-full transition"
+                                title="刪除旅程"
+                            >
+                                <Trash2 size={20} />
+                            </button>
+                        </div>
+                    ))
+                )}
+            </div>
+            <NewTripModal isOpen={isNewTripModalOpen} onClose={() => setIsNewTripModalOpen(false)} />
+        </div>
+    );
+    
+    // 新增旅程模態視窗
+    const NewTripModal = ({ isOpen, onClose }) => {
+        if (!isOpen) return null;
+        
         return (
-            <div className="flex items-center justify-center h-screen bg-slate-50">
-                <Loader2 className="animate-spin w-8 h-8 text-indigo-600" />
-                <p className="ml-2 text-gray-600">載入中...</p>
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className={`${cardClasses} w-full max-w-md`}>
+                    <h2 className="text-2xl font-bold mb-4">新增旅程</h2>
+                    <input
+                        type="text"
+                        placeholder="輸入旅程名稱 (例如: 2025 日本櫻花之旅)"
+                        value={newTripTitle}
+                        onChange={(e) => setNewTripTitle(e.target.value)}
+                        className={inputClasses}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddTrip()}
+                    />
+                    <div className="flex justify-end space-x-3 mt-6">
+                        <button onClick={onClose} className={`${buttonClasses} bg-gray-200 text-gray-700 hover:bg-gray-300`}>
+                            <X size={20} className="inline mr-1" />
+                            取消
+                        </button>
+                        <button onClick={handleAddTrip} className={`${buttonClasses} bg-indigo-600 text-white hover:bg-indigo-700`}>
+                            <Save size={20} className="inline mr-1" />
+                            儲存
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // 通知中心視圖
+    const NotificationsView = () => (
+        <div className="flex-1 w-full max-w-4xl pt-24 pb-20 px-4">
+            <h1 className="text-3xl font-bold mb-6 text-gray-900">通知中心</h1>
+            
+            <button
+                onClick={handleGenerateMockNotification}
+                className="w-full bg-indigo-100 text-indigo-700 py-3 px-4 rounded-lg hover:bg-indigo-200 transition duration-150 mb-6 shadow-md flex items-center justify-center space-x-2 font-medium"
+            >
+                <Plus size={20} />
+                <span>生成模擬通知 (測試功能)</span>
+            </button>
+            
+            <div className="space-y-4">
+                {notifications.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0)).map(notif => (
+                    <div
+                        key={notif.id}
+                        className={`p-4 rounded-xl flex items-start space-x-4 transition duration-150 shadow-sm border ${notif.read ? 'bg-white text-gray-500 border-gray-200' : 'bg-indigo-50 border-indigo-200 text-gray-800'}`}
+                    >
+                        <div className="mt-1 flex-shrink-0">
+                            {notif.read ? <Check size={20} className="text-green-500" /> : <Bell size={20} className="text-indigo-600 animate-pulse" />}
+                        </div>
+                        <div className="flex-1">
+                            <p className="font-semibold">{notif.text}</p>
+                            <span className="text-xs block mt-1">
+                                類型: <span className="capitalize font-mono">{notif.type}</span> |
+                                時間: {notif.timestamp ? new Date(notif.timestamp.seconds * 1000).toLocaleString('zh-TW') : 'N/A'}
+                            </span>
+                        </div>
+                        {!notif.read && (
+                            <button
+                                onClick={() => handleMarkAsRead(notif.id)}
+                                className="text-sm font-medium text-indigo-600 hover:text-indigo-800 whitespace-nowrap p-1 rounded hover:bg-indigo-100 transition flex-shrink-0"
+                            >
+                                標記為已讀
+                            </button>
+                        )}
+                    </div>
+                ))}
+                {notifications.length === 0 && (
+                    <p className="text-center py-10 text-gray-500 bg-white rounded-xl shadow-md">目前沒有任何通知。</p>
+                )}
+            </div>
+        </div>
+    );
+    
+    // 旅程詳情視圖 (包含所有 tabs)
+    const TripDetail = () => {
+        const trip = useMemo(() => trips.find(t => t.id === selectedTripId), [trips, selectedTripId]);
+        const [activeTab, setActiveTab] = useState('itinerary');
+        
+        // 旅程標題狀態 (用於編輯)
+        const [localTripTitle, setLocalTripTitle] = useState(trip?.title || '');
+        
+        useEffect(() => {
+            if (trip) setLocalTripTitle(trip.title);
+        }, [trip]);
+
+        // 旅程內容狀態 (行程編輯器)
+        const initialItinerary = useMemo(() => items.find(item => item.type === 'itinerary')?.content || '', [items]);
+        const [itineraryContent, setItineraryContent] = useState(initialItinerary);
+        const [status, setStatus] = useState(trip ? `最後編輯於: ${trip.updatedAt?.toDate().toLocaleTimeString('zh-TW') || 'N/A'}` : '載入中...');
+        
+        useEffect(() => {
+            setItineraryContent(initialItinerary);
+        }, [initialItinerary]);
+        
+        const currentItineraryItem = useMemo(() => items.find(item => item.type === 'itinerary'), [items]);
+        
+        // 儲存 Itinerary 內容
+        const saveItineraryContent = useCallback(async (content) => {
+            if (!selectedTripId) return;
+
+            const itemData = {
+                id: currentItineraryItem?.id, // 嘗試更新現有文件
+                type: 'itinerary',
+                content: content,
+            };
+            
+            try {
+                 await saveItem(selectedTripId, itemData);
+                 setStatus(`已自動儲存於 ${new Date().toLocaleTimeString('zh-TW')}`);
+            } catch (error) {
+                console.error("Failed to save itinerary:", error);
+                setStatus('儲存失敗！');
+            }
+        }, [selectedTripId, currentItineraryItem, saveItem]);
+        
+        const debouncedSaveItinerary = useMemo(() => debounce(saveItineraryContent, 1000), [saveItineraryContent]);
+
+        const handleItineraryChange = (e) => {
+            const newContent = e.target.value;
+            setItineraryContent(newContent);
+            setStatus('正在編輯中...');
+            debouncedSaveItinerary(newContent);
+        };
+        
+        // Tab 類別
+        const tabClasses = (isActive) => 
+            `flex-1 text-center py-3 px-2 text-sm md:text-base font-semibold border-b-2 transition duration-200 ${
+                isActive ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`;
+            
+        // 渲染項目列表
+        const renderItemList = (itemType, ItemComponent) => (
+            <div className="space-y-4">
+                <ItemAdder itemType={itemType} saveItem={saveItem} tripId={selectedTripId} />
+                {items.filter(item => item.type === itemType).map(item => (
+                    <ItemComponent key={item.id} item={item} tripId={selectedTripId} deleteItem={deleteItem} toggleTodo={toggleTodo} saveItem={saveItem} />
+                ))}
+                {items.filter(item => item.type === itemType).length === 0 && (
+                    <p className="text-center py-5 text-gray-500">尚無 {activeTab} 項目。</p>
+                )}
+            </div>
+        );
+
+        // Tab 內容組件
+        const TabContent = () => {
+            switch (activeTab) {
+                case 'itinerary':
+                    return (
+                         <div className="bg-white p-6 rounded-xl shadow-lg h-full min-h-[70vh] border border-gray-100 mt-6">
+                            <textarea
+                                value={itineraryContent}
+                                onChange={handleItineraryChange}
+                                className="w-full h-full text-lg font-serif leading-relaxed resize-none border-none focus:outline-none"
+                                placeholder="在此處規劃您的每日行程..."
+                                rows={25}
+                                disabled={loading}
+                            />
+                        </div>
+                    );
+                case 'todo':
+                    return renderItemList('todo', TodoItem);
+                case 'expense':
+                    return renderItemList('expense', ExpenseItem);
+                case 'note':
+                    return renderItemList('note', NoteItem);
+                case 'location':
+                    return renderItemList('location', LocationItem);
+                default:
+                    return <p className="text-center py-10 text-gray-500">請選擇一個分頁。</p>;
+            }
+        };
+
+        return (
+            <div className="flex-1 w-full max-w-4xl mx-auto pt-24 pb-20 px-4">
+                {/* 狀態列和標題編輯 */}
+                <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 mb-6">
+                     <input
+                        type="text"
+                        value={localTripTitle}
+                        onChange={(e) => {
+                             setLocalTripTitle(e.target.value);
+                             // 這裡省略 debounce 儲存旅程標題到 trips collection 的邏輯
+                        }}
+                        className="text-xl font-bold border-none focus:outline-none bg-transparent p-0 w-full mb-2"
+                        placeholder="旅程標題"
+                    />
+                    <p className="text-sm text-gray-500">{status}</p>
+                </div>
+
+                {/* Tab 導航 */}
+                <div className="flex justify-around bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                    {[
+                        { id: 'itinerary', name: '行程', icon: CalendarDays },
+                        { id: 'todo', name: '待辦', icon: ListTodo },
+                        { id: 'expense', name: '支出', icon: PiggyBank },
+                        { id: 'note', name: '筆記', icon: NotebookPen },
+                        { id: 'location', name: '地點', icon: MapPin },
+                    ].map(tab => (
+                        <button 
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={tabClasses(activeTab === tab.id)}
+                        >
+                            <tab.icon className="w-5 h-5 inline mr-1" />
+                            <span className="hidden sm:inline">{tab.name}</span>
+                        </button>
+                    ))}
+                </div>
+
+                {/* Tab 內容 */}
+                <div className="mt-4">
+                    <TabContent />
+                </div>
+            </div>
+        );
+    };
+
+    // --- 項目組件 (Item Components) ---
+
+    // 項目新增器
+    const ItemAdder = ({ itemType, saveItem, tripId }) => {
+        const [input, setInput] = useState('');
+        const [amount, setAmount] = useState(''); // 僅用於 expense
+        
+        const handleAddItem = () => {
+            if (!input.trim()) return;
+
+            let newItemData = { content: input.trim(), type: itemType };
+
+            if (itemType === 'todo') {
+                newItemData.completed = false;
+            } else if (itemType === 'expense') {
+                const numAmount = parseFloat(amount);
+                if (isNaN(numAmount) || numAmount <= 0) {
+                     alertUser('請輸入有效的支出金額。', 'error');
+                     return;
+                }
+                newItemData.amount = numAmount;
+                newItemData.currency = 'TWD'; // 預設幣別
+                newItemData.description = input.trim();
+            } else if (itemType === 'location') {
+                 newItemData.name = input.trim();
+                 newItemData.address = ''; // 待輸入
+                 newItemData.time = 'N/A';
+            }
+
+            saveItem(tripId, newItemData);
+            setInput('');
+            setAmount('');
+        };
+
+        return (
+            <div className={`${cardClasses} p-4 flex flex-col space-y-3`}>
+                <div className="flex space-x-2">
+                    {itemType === 'expense' && (
+                        <input
+                            type="number"
+                            placeholder="金額"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            className="w-1/4 p-3 border border-gray-300 rounded-lg"
+                        />
+                    )}
+                    <input
+                        type="text"
+                        placeholder={`新增${
+                            itemType === 'todo' ? '待辦事項' : 
+                            itemType === 'expense' ? '支出項目描述' :
+                            itemType === 'location' ? '地點名稱' : '筆記標題'
+                        }...`}
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
+                        className={itemType === 'expense' ? 'flex-1 p-3 border border-gray-300 rounded-lg' : inputClasses}
+                    />
+                    <button onClick={handleAddItem} className={`${buttonClasses} bg-green-500 text-white hover:bg-green-600 flex items-center`}>
+                        <Plus size={20} />
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    // 待辦事項組件
+    const TodoItem = ({ item, tripId, deleteItem, toggleTodo }) => (
+        <div className={`${cardClasses} p-4 flex items-center justify-between`}>
+            <div 
+                className={`flex items-center flex-1 cursor-pointer`}
+                onClick={() => toggleTodo(tripId, item)}
+            >
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition duration-150 ${item.completed ? 'bg-indigo-500 border-indigo-500' : 'bg-white border-gray-400'}`}>
+                    {item.completed && <Check size={16} className="text-white" />}
+                </div>
+                <span className={`ml-3 text-lg ${item.completed ? 'line-through text-gray-500' : 'text-gray-800'}`}>{item.content}</span>
+            </div>
+            <button onClick={() => deleteItem(tripId, item.id)} className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition">
+                <Trash2 size={20} />
+            </button>
+        </div>
+    );
+
+    // 支出項目組件
+    const ExpenseItem = ({ item, tripId, deleteItem }) => (
+        <div className={`${cardClasses} p-4 flex items-center justify-between`}>
+            <div className="flex-1">
+                <p className="text-xl font-bold text-gray-800">
+                    {item.currency || 'TWD'} {item.amount.toFixed(2)}
+                </p>
+                <p className="text-sm text-gray-500">{item.description}</p>
+            </div>
+            <button onClick={() => deleteItem(tripId, item.id)} className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition">
+                <Trash2 size={20} />
+            </button>
+        </div>
+    );
+
+    // 筆記組件
+    const NoteItem = ({ item, tripId, deleteItem }) => (
+        <div className={`${cardClasses} p-4`}>
+            <h3 className="text-lg font-semibold text-gray-800">{item.content}</h3>
+            <p className="text-sm text-gray-600 mt-2">{item.details || '尚未填寫筆記內容。'}</p>
+            <div className="flex justify-end mt-3">
+                <button onClick={() => deleteItem(tripId, item.id)} className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition">
+                    <Trash2 size={20} />
+                </button>
+            </div>
+        </div>
+    );
+    
+    // 地點組件
+    const LocationItem = ({ item, tripId, deleteItem }) => (
+        <div className={`${cardClasses} p-4 flex items-start justify-between`}>
+            <div className="flex items-center space-x-3">
+                <MapPin className="w-6 h-6 text-indigo-500 flex-shrink-0" />
+                <div className='flex-1'>
+                    <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
+                    <p className="text-sm text-gray-600 mt-1">{item.address || '尚未設定地址'}</p>
+                    <div className='flex items-center text-xs text-gray-500 mt-1'>
+                         <Clock size={14} className='mr-1' />
+                         <span>{item.time || 'N/A'}</span>
+                    </div>
+                </div>
+            </div>
+            <button onClick={() => deleteItem(tripId, item.id)} className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition">
+                <Trash2 size={20} />
+            </button>
+        </div>
+    );
+
+
+    // --- 渲染主介面 ---
+
+    // 簡潔的用戶頭像
+    const UserAvatar = ({ uid }) => (
+        <div 
+            className="h-8 w-8 bg-indigo-200 rounded-full flex items-center justify-center font-semibold text-indigo-700 text-xs shadow-md"
+            title={`當前用戶 ID: ${uid}`}
+        >
+            <User size={16} />
+        </div>
+    );
+
+    const tripTitle = useMemo(() => trips.find(t => t.id === selectedTripId)?.title || '旅程規劃', [trips, selectedTripId]);
+    
+    // 判斷主標題
+    const mainTitle = useMemo(() => {
+        if (currentView === VIEW_NOTIFICATIONS) return '通知中心';
+        if (currentView === VIEW_TRIP_DETAIL) return tripTitle;
+        return '我的旅程';
+    }, [currentView, tripTitle]);
+    
+    // 判斷狀態文字 (簡化)
+    const statusText = useMemo(() => {
+        if (currentView === VIEW_DASHBOARD) return `您已擁有 ${trips.length} 個旅程。用戶 ID: ${userId?.substring(0, 8)}...`;
+        if (currentView === VIEW_TRIP_DETAIL) return `協作中。最後編輯: ${new Date().toLocaleTimeString('zh-TW')}`;
+        return '系統狀態良好';
+    }, [currentView, trips.length, userId]);
+
+
+    if (!isAuthReady || loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-stone-50 text-gray-800">
+                <Loader2 className="animate-spin w-8 h-8 text-indigo-500" />
+                <p className="mt-4 text-lg font-medium">初始化中... (載入功能)</p>
             </div>
         );
     }
-    
-    // 處理行程新增 (Dashboard Logic)
-    const handleAddTrip = async (name) => {
-        if (!db || !userId || !name.trim()) return;
-        try {
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'trips'), {
-                name: name,
-                members: [userId],
-                createdAt: new Date(),
-                ownerId: userId,
-                notes: "",
-                lastActivity: new Date().toISOString(),
-            });
-        } catch (error) {
-            console.error("Error adding trip: ", error);
-        }
-    };
-
-    // 處理行程刪除 (Dashboard Logic)
-    const handleDeleteTrip = async (id) => {
-        if (!db || !window.confirm("確定要刪除這個行程嗎？")) return;
-        try {
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trips', id));
-        } catch (error) {
-            console.error("Error deleting trip: ", error);
-        }
-    };
-
-    // 導航到行程細節
-    const handleSelectTrip = (id) => {
-        setSelectedTripId(id);
-        setCurrentView('tripDetail');
-    };
-
-    // 儀表板組件 (Trip List) - 樣式更新
-    const Dashboard = () => {
-        const [newTripName, setNewTripName] = useState('');
-
-        return (
-            <div className="p-4 md:p-8 min-h-screen bg-slate-50">
-                <div className="max-w-4xl mx-auto">
-                    <h1 className="text-3xl font-extrabold text-gray-900 mb-6 flex items-center">
-                        <Home className={iconClasses} />
-                        旅程儀表板
-                    </h1>
-                    <p className="text-sm text-gray-500 mb-6">您的協作 ID: {userId.substring(0, 8)}...</p>
-
-                    <div className={`${cardClasses} mb-8 bg-indigo-50 border-indigo-200`}>
-                        <h2 className="text-xl font-bold mb-3 text-indigo-800">建立新行程</h2>
-                        <div className="flex space-x-2">
-                            <input
-                                type="text"
-                                placeholder="輸入旅程名稱 (例如: 東京美食之旅)"
-                                value={newTripName}
-                                onChange={(e) => setNewTripName(e.target.value)}
-                                className={inputClasses}
-                            />
-                            <button
-                                onClick={() => {
-                                    handleAddTrip(newTripName);
-                                    setNewTripName('');
-                                }}
-                                className={`${buttonPrimary} min-w-[100px]`}
-                                disabled={!newTripName.trim()}
-                            >
-                                <Plus className="w-5 h-5" /> 建立
-                            </button>
-                        </div>
-                    </div>
-
-                    <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                        <Briefcase className={iconClasses} />
-                        我的協作行程
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {trips.map(trip => (
-                            <div key={trip.id} className={`${cardClasses} flex flex-col justify-between hover:border-indigo-400`}>
-                                <div>
-                                    <h3 className="text-xl font-bold text-indigo-700 mb-2">{trip.name}</h3>
-                                    <p className="text-sm text-gray-500 mb-4">
-                                        成員: {trip.members?.length || 1} 人
-                                    </p>
-                                </div>
-                                <div className="flex justify-between items-center mt-4">
-                                    <button 
-                                        onClick={() => handleSelectTrip(trip.id)} 
-                                        className={`${buttonPrimary} px-4 py-2 text-sm`}
-                                    >
-                                        進入行程
-                                    </button>
-                                    <button 
-                                        onClick={() => handleDeleteTrip(trip.id)} 
-                                        className="text-red-500 hover:text-red-700 p-1 rounded-full"
-                                    >
-                                        <Trash2 className="w-5 h-5" />
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    // 行程詳細組件
-    const TripDetail = ({ tripId }) => {
-        const [tripData, setTripData] = useState(null);
-        const [loadingDetail, setLoadingDetail] = useState(true);
-        const [activeTab, setActiveTab] = useState('itinerary');
-        
-        // 子集合數據
-        const [itinerary, setItinerary] = useState([]);
-        const [tasks, setTasks] = useState([]);
-        const [expenses, setExpenses] = useState([]);
-        const [notes, setNotes] = useState('');
-
-        // 訂閱主行程數據和子集合 (功能與上次一致)
-        useEffect(() => {
-            if (!db || !tripId) return;
-
-            setLoadingDetail(true);
-            const tripDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'trips', tripId);
-            const unsubscribeTrip = onSnapshot(tripDocRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    setTripData({ id: docSnap.id, ...docSnap.data() });
-                } else {
-                    console.error('行程不存在或已被刪除。');
-                    setSelectedTripId(null);
-                    setCurrentView('dashboard');
-                }
-                setLoadingDetail(false);
-            }, (error) => console.error("Error fetching trip data:", error));
-
-            const unsubscribeItinerary = onSnapshot(
-                query(getTripCollectionRef(tripId, 'itinerary'), orderBy('date', 'asc')),
-                (snapshot) => { setItinerary(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))); }, 
-                (error) => console.error("Error fetching itinerary:", error));
-
-            const unsubscribeTasks = onSnapshot(
-                query(getTripCollectionRef(tripId, 'tasks')),
-                (snapshot) => { setTasks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))); }, 
-                (error) => console.error("Error fetching tasks:", error));
-
-            const unsubscribeExpenses = onSnapshot(
-                query(getTripCollectionRef(tripId, 'expenses'), orderBy('date', 'desc')),
-                (snapshot) => { setExpenses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))); }, 
-                (error) => console.error("Error fetching expenses:", error));
-            
-            const notesDocRef = getTripDocRef(tripId, 'notes', 'shared_note');
-            const unsubscribeNotes = onSnapshot(notesDocRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    setNotes(docSnap.data().content || '');
-                } else {
-                    setDoc(notesDocRef, { content: '' }, { merge: true });
-                    setNotes('');
-                }
-            }, (error) => console.error("Error fetching notes:", error));
-
-            return () => {
-                unsubscribeTrip();
-                unsubscribeItinerary();
-                unsubscribeTasks();
-                unsubscribeExpenses();
-                unsubscribeNotes();
-            };
-        }, [db, tripId]);
-
-
-        // --- 通知邏輯 (精簡) ---
-        // 標記為已讀 (每次進入或切換分頁時執行)
-        const markAsViewed = useCallback(async () => {
-            if (!db || !tripId || !tripData) return;
-            const tripDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'trips', tripId);
-            try {
-                await updateDoc(tripDocRef, {
-                    lastViewed: new Date().toISOString()
-                });
-            } catch (error) {
-                console.error("Error marking as viewed:", error);
-            }
-        }, [db, tripId, tripData]);
-        
-        useEffect(() => { markAsViewed(); }, [tripId, activeTab, markAsViewed]); 
-
-        const getNotificationCount = (collection) => {
-            if (!tripData || !tripData.lastActivity) return 0;
-            const lastViewedTime = new Date(tripData.lastViewed || 0).getTime();
-            
-            const newItems = collection.filter(item => {
-                const itemTime = item.updatedAt?.toDate().getTime() || item.createdAt?.toDate().getTime();
-                return itemTime > lastViewedTime;
-            });
-            return newItems.length > 0 ? 1 : 0;
-        };
-
-        const notificationCounts = {
-            tasks: getNotificationCount(tasks),
-            expenses: getNotificationCount(expenses),
-            itinerary: getNotificationCount(itinerary),
-        };
-        // --- End 通知邏輯 ---
-
-        // 載入中畫面
-        if (loadingDetail || !tripData) {
-            return (
-                <div className="flex items-center justify-center h-screen bg-slate-50">
-                    <Loader2 className="animate-spin w-8 h-8 text-indigo-600" />
-                    <p className="ml-2 text-gray-600">載入行程細節中...</p>
-                </div>
-            );
-        }
-
-        // --- 子組件：行程分頁 (ItineraryView) ---
-        const ItineraryView = () => {
-            const [newDate, setNewDate] = useState('');
-            const [newActivity, setNewActivity] = useState({ dateId: '', time: '', description: '', type: 'Sightseeing' });
-            const sortedItinerary = useMemo(() => {
-                return [...itinerary].sort((a, b) => new Date(a.date) - new Date(b.date));
-            }, [itinerary]);
-
-            const handleAddDate = async () => {
-                if (!db || !newDate) return;
-                if (sortedItinerary.some(item => item.date === newDate)) { alert('該日期已存在。'); return; }
-                try {
-                    await addDoc(getTripCollectionRef(tripId, 'itinerary'), { date: newDate, createdAt: new Date() });
-                    setNewDate('');
-                } catch (error) { console.error("Error adding date:", error); }
-            };
-
-            const handleAddActivity = async () => {
-                if (!db || !newActivity.dateId || !newActivity.description.trim()) return;
-                const itineraryItemRef = getTripDocRef(tripId, 'itinerary', newActivity.dateId);
-                try {
-                    await updateDoc(itineraryItemRef, {
-                        activities: [...(itinerary.find(d => d.id === newActivity.dateId)?.activities || []), {
-                            id: Date.now().toString(), time: newActivity.time, description: newActivity.description, type: newActivity.type, completed: false,
-                        }],
-                        updatedAt: new Date(),
-                    });
-                    setNewActivity({ dateId: '', time: '', description: '', type: 'Sightseeing' });
-                } catch (error) { console.error("Error adding activity:", error); }
-            };
-
-            const handleDeleteDate = async (dateId) => {
-                if (!db || !window.confirm("確定要刪除這天的所有行程細節嗎？")) return;
-                try { await deleteDoc(getTripDocRef(tripId, 'itinerary', dateId)); } 
-                catch (error) { console.error("Error deleting date:", error); }
-            };
-            
-            const handleDeleteActivity = async (dateId, activityId) => {
-                if (!db) return;
-                const itineraryItem = itinerary.find(d => d.id === dateId);
-                const updatedActivities = itineraryItem.activities.filter(a => a.id !== activityId);
-                try {
-                     await updateDoc(getTripDocRef(tripId, 'itinerary', dateId), {
-                        activities: updatedActivities, updatedAt: new Date(),
-                    });
-                } catch (error) { console.error("Error deleting activity:", error); }
-            };
-
-            const ActivityIcon = ({ type }) => {
-                switch (type) {
-                    case 'Food': return <Utensils className="w-4 h-4 text-orange-500 mr-1" />;
-                    case 'Transport': return <Bus className="w-4 h-4 text-blue-500 mr-1" />;
-                    case 'Shopping': return <ShoppingBag className="w-4 h-4 text-green-500 mr-1" />;
-                    default: return <Clock className="w-4 h-4 text-gray-500 mr-1" />;
-                }
-            };
-
-            return (
-                <div className="space-y-6">
-                    <div className={`${cardClasses} bg-indigo-50 border-indigo-200`}>
-                        <h3 className="text-lg font-bold mb-3 text-indigo-800 flex items-center">
-                            <Plus className={iconClasses} /> 新增行程細節
-                        </h3>
-                        {/* 新增日期 */}
-                        <div className="flex space-x-2 mb-4">
-                            <input
-                                type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)}
-                                className={inputClasses}
-                            />
-                            <button onClick={handleAddDate} className={`${buttonPrimary} min-w-[50px]`}><CalendarDays className="w-5 h-5" /></button>
-                        </div>
-                        
-                        {/* 新增活動 */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <select 
-                                value={newActivity.dateId} 
-                                onChange={(e) => setNewActivity({...newActivity, dateId: e.target.value})}
-                                className={`${inputClasses} col-span-2 md:col-span-1`}
-                            >
-                                <option value="">選擇日期...</option>
-                                {sortedItinerary.map(item => (<option key={item.id} value={item.id}>{item.date}</option>))}
-                            </select>
-                            <input
-                                type="time" value={newActivity.time} onChange={(e) => setNewActivity({...newActivity, time: e.target.value})}
-                                className={`${inputClasses} col-span-2 md:col-span-1`}
-                            />
-                             <select 
-                                value={newActivity.type} onChange={(e) => setNewActivity({...newActivity, type: e.target.value})}
-                                className={`${inputClasses} col-span-2 md:col-span-1`}
-                            >
-                                <option value="Sightseeing">觀光</option> <option value="Food">餐飲</option> 
-                                <option value="Transport">交通</option> <option value="Shopping">購物</option>
-                            </select>
-                            <input
-                                type="text" placeholder="活動描述 (例如: 10:00 參觀東京鐵塔)"
-                                value={newActivity.description} onChange={(e) => setNewActivity({...newActivity, description: e.target.value})}
-                                className={`${inputClasses} col-span-2 md:col-span-1`}
-                            />
-                        </div>
-                        <button onClick={handleAddActivity} className={`${buttonPrimary} w-full mt-3`}>
-                            <Plus className="w-5 h-5" /> 儲存活動
-                        </button>
-                    </div>
-
-                    <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                        <CalendarDays className={iconClasses} /> 每日行程概覽
-                    </h2>
-
-                    {sortedItinerary.map(day => (
-                        <div key={day.id} className={`${cardClasses} mb-4`}>
-                            <div className="flex justify-between items-center mb-4 border-b pb-3 border-gray-100">
-                                <h4 className="text-xl font-extrabold text-indigo-600">{day.date}</h4>
-                                <button onClick={() => handleDeleteDate(day.id)} className="text-red-400 hover:text-red-600 p-1 rounded-full">
-                                    <Trash2 className="w-5 h-5" />
-                                </button>
-                            </div>
-                            <ul className="space-y-4">
-                                {(day.activities || []).sort((a, b) => (a.time || "").localeCompare(b.time || "")).map(activity => (
-                                    <li key={activity.id} className="flex justify-between items-start text-gray-700 border-l-4 border-indigo-400 pl-4 py-1">
-                                        <div className="flex items-center">
-                                            <ActivityIcon type={activity.type} />
-                                            <div className="flex flex-col">
-                                                <span className="font-semibold text-sm">{activity.description}</span>
-                                                <span className="text-xs text-gray-400">{activity.time || '未定時間'}</span>
-                                            </div>
-                                        </div>
-                                        <button onClick={() => handleDeleteActivity(day.id, activity.id)} className="text-gray-400 hover:text-red-500 ml-2">
-                                            <X className="w-4 h-4" />
-                                        </button>
-                                    </li>
-                                ))}
-                                {(day.activities?.length === 0 || !day.activities) && (
-                                    <p className="text-gray-500 italic text-sm p-2">這天沒有活動。</p>
-                                )}
-                            </ul>
-                        </div>
-                    ))}
-                </div>
-            );
-        };
-
-        // --- 子組件：任務分頁 (TasksView) ---
-        const TasksView = () => {
-            const [newTask, setNewTask] = useState('');
-            const handleAddTask = async () => {
-                if (!db || !newTask.trim()) return;
-                try {
-                    await addDoc(getTripCollectionRef(tripId, 'tasks'), {
-                        description: newTask, completed: false, assignedTo: userId, 
-                        createdAt: new Date(), updatedAt: new Date(),
-                    });
-                    setNewTask('');
-                } catch (error) { console.error("Error adding task:", error); }
-            };
-
-            const handleToggleTask = async (task) => {
-                if (!db) return;
-                try {
-                    await updateDoc(getTripDocRef(tripId, 'tasks', task.id), {
-                        completed: !task.completed, updatedAt: new Date(),
-                    });
-                } catch (error) { console.error("Error updating task:", error); }
-            };
-            
-            const handleDeleteTask = async (taskId) => {
-                if (!db) return;
-                try { await deleteDoc(getTripDocRef(tripId, 'tasks', taskId)); } 
-                catch (error) { console.error("Error deleting task:", error); }
-            };
-
-            return (
-                <div className="space-y-6">
-                    <div className={`${cardClasses} bg-green-50 border-green-200`}>
-                        <h3 className="text-lg font-bold mb-3 text-green-800 flex items-center">
-                            <Plus className={iconClasses} /> 新增協作任務
-                        </h3>
-                        <div className="flex space-x-2">
-                            <input
-                                type="text" placeholder="例如: 預訂飯店或購買門票"
-                                value={newTask} onChange={(e) => setNewTask(e.target.value)}
-                                className={inputClasses}
-                            />
-                            <button onClick={handleAddTask} className={`bg-green-600 text-white p-3 rounded-xl hover:bg-green-700 transition duration-150 flex items-center justify-center`} disabled={!newTask.trim()}>
-                                <Plus className="w-5 h-5" />
-                            </button>
-                        </div>
-                    </div>
-
-                    <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                        <ListTodo className={iconClasses} /> 協作任務列表
-                    </h2>
-                    <div className="space-y-3">
-                        {tasks.sort((a, b) => a.completed - b.completed).map(task => (
-                            <div key={task.id} className={`flex items-center justify-between p-4 bg-white rounded-xl shadow-sm transition border-l-4 ${task.completed ? 'border-green-400' : 'border-red-400'}`}>
-                                <div className="flex items-center flex-1 min-w-0">
-                                    <button 
-                                        onClick={() => handleToggleTask(task)} 
-                                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition ${task.completed ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}
-                                    >
-                                        {task.completed && <Check className="w-4 h-4 text-white" />}
-                                    </button>
-                                    <span className={`ml-4 text-lg text-gray-700 truncate ${task.completed ? 'line-through text-gray-500 italic' : 'font-medium'}`}>
-                                        {task.description}
-                                    </span>
-                                </div>
-                                <button onClick={() => handleDeleteTask(task.id)} className="text-gray-400 hover:text-red-600 ml-4 p-1 rounded-full hover:bg-red-50">
-                                    <Trash2 className="w-5 h-5" />
-                                </button>
-                            </div>
-                        ))}
-                        {tasks.length === 0 && <p className="text-gray-500 italic p-4 text-center">目前清單是空的。</p>}
-                    </div>
-                </div>
-            );
-        };
-
-        // --- 子組件：預算分頁 (BudgetView) ---
-        const BudgetView = () => {
-            const [newExpense, setNewExpense] = useState({ description: '', amount: 0, date: new Date().toISOString().substring(0, 10), paidBy: userId });
-            const totalMembers = tripData.members.length > 0 ? tripData.members.length : 1;
-            const totalExpenses = expenses.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
-            const costPerPerson = totalExpenses / totalMembers;
-
-            const handleAddExpense = async () => {
-                if (!db || !newExpense.description.trim() || !newExpense.amount || parseFloat(newExpense.amount) <= 0) return;
-                try {
-                    await addDoc(getTripCollectionRef(tripId, 'expenses'), {
-                        description: newExpense.description, amount: parseFloat(newExpense.amount), date: newExpense.date,
-                        paidBy: userId, createdAt: new Date(),
-                    });
-                    setNewExpense({ description: '', amount: 0, date: new Date().toISOString().substring(0, 10), paidBy: userId });
-                } catch (error) { console.error("Error adding expense:", error); }
-            };
-            
-            const handleDeleteExpense = async (expenseId) => {
-                if (!db) return;
-                try { await deleteDoc(getTripDocRef(tripId, 'expenses', expenseId)); } 
-                catch (error) { console.error("Error deleting expense:", error); }
-            };
-
-            return (
-                <div className="space-y-6">
-                    <div className={`${cardClasses} bg-teal-50 border-teal-200`}>
-                        <h3 className="text-xl font-extrabold text-teal-800 mb-4 flex items-center">
-                            <Calculator className={iconClasses} /> 預算總覽
-                        </h3>
-                        <div className="grid grid-cols-3 gap-4 text-center">
-                            <div className="p-3 bg-white rounded-xl shadow-md">
-                                <p className="text-xs text-gray-500">總支出</p>
-                                <p className="text-xl font-extrabold text-teal-600">${totalExpenses.toFixed(0)}</p>
-                            </div>
-                            <div className="p-3 bg-white rounded-xl shadow-md">
-                                <p className="text-xs text-gray-500">人數</p>
-                                <p className="text-xl font-extrabold text-gray-800">{totalMembers}</p>
-                            </div>
-                            <div className="p-3 bg-white rounded-xl shadow-md">
-                                <p className="text-xs text-gray-500">平均分攤</p>
-                                <p className="text-xl font-extrabold text-indigo-600">${costPerPerson.toFixed(0)}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className={`${cardClasses}`}>
-                        <h3 className="text-lg font-bold mb-3 text-gray-700 flex items-center">
-                            <Plus className={iconClasses} /> 記錄新支出
-                        </h3>
-                        <div className="grid grid-cols-4 gap-3">
-                            <input type="text" placeholder="描述" value={newExpense.description}
-                                onChange={(e) => setNewExpense({...newExpense, description: e.target.value})}
-                                className={`${inputClasses} col-span-4 md:col-span-2`}
-                            />
-                            <input type="number" placeholder="金額 (TWD)" value={newExpense.amount || ''}
-                                onChange={(e) => setNewExpense({...newExpense, amount: e.target.value})}
-                                className={`${inputClasses} col-span-2 md:col-span-1`}
-                            />
-                            <input type="date" value={newExpense.date}
-                                onChange={(e) => setNewExpense({...newExpense, date: e.target.value})}
-                                className={`${inputClasses} col-span-2 md:col-span-1`}
-                            />
-                        </div>
-                        <button onClick={handleAddExpense} className={`${buttonPrimary} w-full mt-4`} disabled={!newExpense.description || parseFloat(newExpense.amount) <= 0}>
-                            <PiggyBank className="w-5 h-5" /> 儲存支出
-                        </button>
-                    </div>
-
-                    <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                        <ListTodo className={iconClasses} /> 支出明細
-                    </h2>
-                    <div className="space-y-3">
-                        {expenses.map(expense => (
-                            <div key={expense.id} className="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm transition border-l-4 border-red-400">
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-semibold text-gray-800 truncate">{expense.description}</p>
-                                    <p className="text-sm text-gray-500">日期: {expense.date} | 支付者: {expense.paidBy.substring(0, 8)}...</p>
-                                </div>
-                                <p className="text-xl font-bold text-red-600 ml-4">${expense.amount.toFixed(0)}</p>
-                                <button onClick={() => handleDeleteExpense(expense.id)} className="text-gray-400 hover:text-red-600 ml-4">
-                                    <Trash2 className="w-5 h-5" />
-                                </button>
-                            </div>
-                        ))}
-                        {expenses.length === 0 && <p className="text-gray-500 italic p-4 text-center">目前沒有支出記錄。</p>}
-                    </div>
-                </div>
-            );
-        };
-
-        // --- 子組件：筆記分頁 (NotesView) ---
-        const NotesView = () => {
-            const [localNotes, setLocalNotes] = useState(notes);
-            const [isSaving, setIsSaving] = useState(false);
-            
-            const handleChange = (e) => { setLocalNotes(e.target.value); };
-
-            const handleSaveNotes = async () => {
-                if (!db) return;
-                setIsSaving(true);
-                const notesDocRef = getTripDocRef(tripId, 'notes', 'shared_note');
-                try {
-                    await setDoc(notesDocRef, { 
-                        content: localNotes, updatedAt: new Date(), updatedBy: userId 
-                    });
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trips', tripId), {
-                        lastActivity: new Date().toISOString()
-                    });
-                } catch (error) { console.error("Error saving notes:", error); } 
-                finally { setIsSaving(false); }
-            };
-            
-            useEffect(() => { setLocalNotes(notes); }, [notes]);
-
-            return (
-                <div className={`${cardClasses}`}>
-                    <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                        <NotebookPen className={iconClasses} /> 共享記事本
-                    </h3>
-                    <textarea
-                        value={localNotes}
-                        onChange={handleChange}
-                        className={`${inputClasses} h-80 resize-none mb-4`}
-                        placeholder="在此輸入您的行程筆記、預定資訊或任何想分享的內容..."
-                    />
-                    <div className="flex justify-between items-center">
-                        <button onClick={handleSaveNotes} className={buttonPrimary} disabled={isSaving}>
-                            {isSaving ? (
-                                <Loader2 className="animate-spin w-5 h-5 mr-2" />
-                            ) : (
-                                <Save className="w-5 h-5 mr-2" />
-                            )}
-                            {isSaving ? '儲存中...' : '儲存變更'}
-                        </button>
-                        <p className="text-sm text-gray-500">
-                            最後更新: {tripData.lastActivity ? new Date(tripData.lastActivity).toLocaleTimeString('zh-TW') : 'N/A'}
-                        </p>
-                    </div>
-                </div>
-            );
-        };
-
-        // --- 子組件：地點/地圖分頁 (LocationView) ---
-        const LocationView = () => {
-            const [searchQuery, setSearchQuery] = useState('');
-            const [searchResults, setSearchResults] = useState([]);
-
-            const handleSearch = () => {
-                if (!searchQuery.trim()) return;
-                const mockResults = [
-                    { name: searchQuery + ' 飯店', address: '東京, 日本', type: '住宿' },
-                    { name: searchQuery + ' 景點', address: '京都, 日本', type: '景點' },
-                    { name: '附近餐廳: ' + searchQuery, address: '大阪, 日本', type: '餐飲' },
-                ];
-                setSearchResults(mockResults);
-                setSearchQuery('');
-            };
-
-            return (
-                <div className={`${cardClasses}`}>
-                    <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                        <MapPin className={iconClasses} /> 地點與地圖 (規劃中)
-                    </h3>
-                    
-                    <div className="mb-6">
-                        <h4 className="font-bold text-gray-700 mb-2">地點搜索</h4>
-                        <div className="flex space-x-2">
-                            <input
-                                type="text" placeholder="搜索地點、餐廳或景點名稱..."
-                                value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                                className={inputClasses}
-                            />
-                            <button onClick={handleSearch} className={`${buttonPrimary} min-w-[50px]`}>
-                                搜索
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="h-64 bg-gray-100 flex items-center justify-center rounded-xl mb-6 border-2 border-dashed border-gray-300">
-                        <p className="text-gray-500 font-medium">地圖顯示區 (需整合 Google Maps API)</p>
-                    </div>
-
-                    <h4 className="font-bold text-gray-700 mb-2">搜索結果</h4>
-                    <div className="space-y-3">
-                        {searchResults.map((result, index) => (
-                            <div key={index} className="p-3 bg-indigo-50 rounded-xl flex justify-between items-center shadow-sm border border-indigo-200">
-                                <div>
-                                    <p className="font-medium text-indigo-700">{result.name}</p>
-                                    <p className="text-sm text-gray-500">{result.address}</p>
-                                </div>
-                                <span className="text-xs bg-indigo-300 text-indigo-900 px-3 py-1 rounded-full font-semibold">{result.type}</span>
-                            </div>
-                        ))}
-                        {searchResults.length === 0 && <p className="text-gray-500 italic">請輸入關鍵字搜索地點。</p>}
-                    </div>
-                </div>
-            );
-        };
-
-
-        const renderContent = () => {
-            switch (activeTab) {
-                case 'itinerary': return <ItineraryView />;
-                case 'tasks': return <TasksView />;
-                case 'budget': return <BudgetView />;
-                case 'notes': return <NotesView />;
-                case 'location': return <LocationView />;
-                default: return <ItineraryView />;
-            }
-        };
-
-        return (
-            <div className="p-4 md:p-8 min-h-screen bg-slate-50">
-                <div className="max-w-5xl mx-auto">
-                    {/* 標題與返回按鈕 */}
-                    <div className="flex items-center mb-6">
-                        <button 
-                            onClick={() => setCurrentView('dashboard')} 
-                            className={`${buttonSecondary} p-2 mr-4`}
-                        >
-                            <ChevronLeft className="w-5 h-5" />
-                        </button>
-                        <h1 className="text-3xl font-extrabold text-gray-900 truncate flex-1">
-                            {tripData.name}
-                        </h1>
-                    </div>
-
-                    {/* 成員 & ID 顯示 (保持簡潔) */}
-                    <div className="flex justify-between items-center mb-6 text-sm text-gray-500">
-                        <div className="flex items-center space-x-2">
-                             <Users className="w-4 h-4 text-indigo-500" />
-                            <span className="font-semibold">{tripData.members?.length || 1} 位協作成員</span>
-                        </div>
-                        <p>您的 ID: <span className="font-mono text-gray-700">{userId.substring(0, 8)}...</span></p>
-                    </div>
-
-
-                    {/* 導航分頁 (新的藥丸樣式) */}
-                    <div className="flex bg-white p-2 rounded-full shadow-lg overflow-x-auto mb-8 sticky top-4 z-10 border border-gray-200">
-                        {[{ id: 'itinerary', name: '行程', icon: CalendarDays },
-                         { id: 'tasks', name: '任務', icon: ListTodo },
-                         { id: 'budget', name: '預算', icon: PiggyBank },
-                         { id: 'notes', name: '筆記', icon: NotebookPen },
-                         { id: 'location', name: '地點', icon: MapPin },
-                        ].map(tab => (
-                            <button 
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={tabClasses(activeTab === tab.id)}
-                            >
-                                <div className="flex items-center justify-center whitespace-nowrap">
-                                    <tab.icon className={`w-5 h-5 ${activeTab !== tab.id ? 'text-indigo-600' : 'text-white'} `} />
-                                    <span className="ml-1">{tab.name}</span>
-                                    {notificationCounts[tab.id] > 0 && (
-                                        <Bell className="w-4 h-4 ml-1 text-yellow-300 animate-pulse fill-yellow-300" />
-                                    )}
-                                </div>
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* 內容區塊 */}
-                    {renderContent()}
-                </div>
-            </div>
-        );
-    };
-
 
     return (
-        <div className="font-sans antialiased bg-slate-50 min-h-screen">
-            {currentView === 'dashboard' ? (
-                <Dashboard />
-            ) : (
-                <TripDetail tripId={selectedTripId} />
+        <div className="min-h-screen bg-stone-50 text-gray-800 flex flex-col items-center font-sans">
+            {/* 頂部 Header */}
+            <header className="fixed top-0 w-full bg-white border-b border-gray-200 shadow-sm z-20">
+                <div className="max-w-4xl mx-auto p-4 flex justify-between items-center">
+                    
+                    <div className='flex items-center space-x-2'>
+                        {/* 回到儀表板按鈕 */}
+                        {(currentView === VIEW_TRIP_DETAIL) && (
+                            <button 
+                                onClick={() => {
+                                    setSelectedTripId(null);
+                                    setCurrentView(VIEW_DASHBOARD);
+                                }}
+                                className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition"
+                                title="返回儀表板"
+                            >
+                                <ChevronLeft size={24} />
+                            </button>
+                        )}
+                        
+                        {/* 標題和狀態 */}
+                        <div className="flex flex-col cursor-pointer" onClick={() => {
+                            if (currentView !== VIEW_DASHBOARD) {
+                                setCurrentView(VIEW_DASHBOARD);
+                                setSelectedTripId(null);
+                            }
+                        }}>
+                            <h1 className="text-xl font-bold text-gray-800">{mainTitle}</h1>
+                            <p className="text-xs text-gray-500 mt-0.5">{statusText}</p>
+                        </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-4">
+                        {/* 通知按鈕 */}
+                        <button
+                            onClick={() => setCurrentView(VIEW_NOTIFICATIONS)}
+                            className={`relative p-2 rounded-full transition duration-150 ${currentView === VIEW_NOTIFICATIONS ? 'bg-gray-200 text-indigo-600' : 'text-gray-600 hover:bg-gray-100'}`}
+                            title="查看通知"
+                        >
+                            <Bell size={24} />
+                            {totalUnread > 0 && (
+                                <span className="absolute top-0 right-0 inline-flex items-center justify-center h-4 w-4 bg-red-600 rounded-full text-xs font-bold text-white ring-2 ring-white">
+                                    {totalUnread > 9 ? '9+' : totalUnread}
+                                </span>
+                            )}
+                        </button>
+                        {/* 用戶頭像 */}
+                        <UserAvatar uid={userId} />
+                    </div>
+                </div>
+            </header>
+
+            {/* 主要內容區 - 根據視圖切換 */}
+            <main className="flex-1 w-full pt-16">
+                {currentView === VIEW_DASHBOARD && <Dashboard />}
+                {currentView === VIEW_TRIP_DETAIL && selectedTripId && <TripDetail />}
+                {currentView === VIEW_NOTIFICATIONS && <NotificationsView />}
+            </main>
+            
+            {/* 自定義 Alert 訊息 */}
+            {alertMessage && (
+                <div className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-xl shadow-2xl transition duration-300 z-50 flex items-center space-x-2 ${alertType === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+                    {alertType === 'success' ? <Check size={20} /> : <AlertTriangle size={20} />}
+                    <span>{alertMessage}</span>
+                </div>
             )}
         </div>
     );
