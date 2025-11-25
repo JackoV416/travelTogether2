@@ -8,7 +8,7 @@ import {
     getFirestore, doc, onSnapshot, collection, query, where, getDocs, 
     addDoc, setDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, serverTimestamp 
 } from 'firebase/firestore';
-import { LogOut, Plus, Trash2, Users, Map, Calendar, X, Check, Send, UserCheck, ArrowLeft, Loader2 } from 'lucide-react';
+import { LogOut, Plus, Trash2, Users, Map, Calendar, X, Check, Send, UserCheck, ArrowLeft, Loader2, Edit2, Save } from 'lucide-react';
 
 // === GLOBALS and UTILITIES ===
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -51,7 +51,7 @@ const useUserStore = () => {
     return { userMap, fetchUserDisplayName };
 };
 
-// === CONFIRMATION MODAL COMPONENT (NEW) ===
+// === CONFIRMATION MODAL COMPONENT ===
 const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = '確認', cancelText = '取消' }) => {
     if (!isOpen) return null;
 
@@ -198,6 +198,19 @@ const App = () => {
             setLoading(false);
         }
     };
+    
+    // NEW: Function to update trip details (name, dates)
+    const updateTripDetails = async (tripId, updates) => {
+        if (!tripId) return;
+
+        // Optional: Add validation logic here for name/dates
+        
+        try {
+            await updateDoc(doc(db, getPublicCollectionPath('trips'), tripId), updates);
+        } catch (e) {
+            console.error("Error updating trip details: ", e);
+        }
+    };
 
     const toggleTripItemCompletion = async (itemId, isCompleted) => {
         if (!currentTrip || !userId) return;
@@ -235,7 +248,6 @@ const App = () => {
         }
     };
 
-    // NEW: Function to delete a single trip item
     const deleteTripItem = async (itemId) => {
         if (!currentTrip || !userId) return;
 
@@ -259,13 +271,8 @@ const App = () => {
         if (!currentTrip || !userId || currentTrip.ownerId !== userId) return;
         
         setLoading(true);
-        // Step 1: Find the target user ID by email (SIMULATED)
-        // In a real app, you'd query a 'user_profiles' collection by email to get their UID.
-        // For this demo, we can't reliably resolve email to UID, so we'll skip direct email resolution
-        // and just show a message, or assume a test UID (less secure).
-        
-        // Assuming the user types a valid UID for this demo:
-        const targetUID = email.trim(); // Simulating email input is actually a UID
+        // Simulating email input is actually a UID for this demo
+        const targetUID = email.trim(); 
         
         if (currentTrip.members.includes(targetUID)) {
             console.warn("User already a member.");
@@ -278,7 +285,7 @@ const App = () => {
                 members: arrayUnion(targetUID)
             });
             setInviteEmail('');
-            alertUser('成功邀請成員！'); // Using a simulated alert function
+            alertUser('成功邀請成員！');
         } catch (e) {
             console.error("Error inviting member: ", e);
         } finally {
@@ -286,7 +293,6 @@ const App = () => {
         }
     };
 
-    // NEW: Function to delete the entire trip
     const deleteTrip = async () => {
         if (!currentTrip || !userId || currentTrip.ownerId !== userId) return;
         
@@ -310,9 +316,8 @@ const App = () => {
 
     // Helper for simple UI feedback
     const alertUser = (message) => {
-        // In a real React app, you'd use a Toast/Snackbar component here
+        // Using placeholder alert for now, but should be replaced by modal/toast
         console.log("UI Alert:", message);
-        alert(message); // Using placeholder alert for now, but should be replaced by modal/toast
     };
 
     // --- View Components ---
@@ -433,6 +438,51 @@ const App = () => {
             </div>
         );
     };
+    
+    // NEW: Inline Editable Component
+    const InlineEdit = ({ children, isEditing, onToggleEdit, onSave, inputType = 'text', value, onChange, className = '', iconSize = 24 }) => {
+        if (isEditing) {
+            return (
+                <div className="flex items-center space-x-2 w-full">
+                    {inputType === 'text' && (
+                        <input
+                            type="text"
+                            value={value}
+                            onChange={onChange}
+                            className="flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-1 text-xl"
+                            autoFocus
+                        />
+                    )}
+                    {inputType === 'date' && (
+                         <input
+                            type="date"
+                            value={value}
+                            onChange={onChange}
+                            className="flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-1 text-xl"
+                            autoFocus
+                        />
+                    )}
+                    <button onClick={onSave} className="p-1 text-green-600 hover:text-green-800 transition">
+                        <Save size={iconSize} />
+                    </button>
+                </div>
+            );
+        }
+
+        return (
+            <div className="flex items-center space-x-2 group w-full">
+                <div className="flex-grow">{children}</div>
+                <button 
+                    onClick={onToggleEdit} 
+                    className="p-1 text-gray-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="編輯"
+                >
+                    <Edit2 size={iconSize} />
+                </button>
+            </div>
+        );
+    };
+
 
     const TripDetailView = () => {
         if (!currentTrip) {
@@ -449,6 +499,45 @@ const App = () => {
 
         const isOwner = currentTrip.ownerId === userId;
         const [newItemDescription, setNewItemDescription] = useState('');
+        
+        // NEW State for Inline Editing
+        const [isNameEditing, setIsNameEditing] = useState(false);
+        const [isDateEditing, setIsDateEditing] = useState(false);
+        const [editedName, setEditedName] = useState(currentTrip.name);
+        const [editedStartDate, setEditedStartDate] = useState(currentTrip.startDate);
+        const [editedEndDate, setEditedEndDate] = useState(currentTrip.endDate);
+        
+        // Update local state when trip prop changes (e.g., after initial load or remote change)
+        useEffect(() => {
+            setEditedName(currentTrip.name);
+            setEditedStartDate(currentTrip.startDate);
+            setEditedEndDate(currentTrip.endDate);
+        }, [currentTrip.name, currentTrip.startDate, currentTrip.endDate]);
+
+
+        const handleSaveName = () => {
+            if (editedName.trim() && editedName !== currentTrip.name) {
+                updateTripDetails(currentTrip.id, { name: editedName.trim() });
+            }
+            setIsNameEditing(false);
+        };
+
+        const handleSaveDates = () => {
+            if (editedStartDate && editedEndDate && 
+                (editedStartDate !== currentTrip.startDate || editedEndDate !== currentTrip.endDate)
+            ) {
+                // Simple validation: start date must not be after end date
+                if (new Date(editedStartDate) > new Date(editedEndDate)) {
+                    alertUser('開始日期不能晚於結束日期！');
+                    return;
+                }
+                updateTripDetails(currentTrip.id, { 
+                    startDate: editedStartDate, 
+                    endDate: editedEndDate 
+                });
+            }
+            setIsDateEditing(false);
+        };
 
         const handleAddItem = (e) => {
             e.preventDefault();
@@ -478,7 +567,6 @@ const App = () => {
                             由 {addedByDisplay} 新增
                         </span>
                         
-                        {/* NEW: Delete Item Button */}
                         <button
                             onClick={() => deleteTripItem(item.id)}
                             className="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 transition"
@@ -503,7 +591,6 @@ const App = () => {
                         返回清單
                     </button>
                     {isOwner && (
-                        /* NEW: Delete Trip Button */
                         <button
                             onClick={() => setIsDeleteModalOpen(true)}
                             className="flex items-center space-x-1 px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-150 text-sm font-semibold shadow-md shadow-red-300/50"
@@ -515,87 +602,119 @@ const App = () => {
                     )}
                 </header>
                 
-                {/* Trip Details */}
-                <div className="space-y-6">
+                {/* Trip Name (Inline Edit) */}
+                <InlineEdit
+                    isEditing={isNameEditing}
+                    onToggleEdit={() => setIsNameEditing(true)}
+                    onSave={handleSaveName}
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    className="mb-4"
+                    iconSize={28}
+                >
                     <h1 className="text-4xl font-extrabold text-gray-900 flex items-center">
-                        <Map size={32} className="text-indigo-600 mr-3" />
+                        <Map size={32} className="text-indigo-600 mr-3 shrink-0" />
                         {currentTrip.name}
                     </h1>
-                    <div className="flex flex-wrap gap-4 text-gray-600 text-lg">
-                        <span className="flex items-center"><Calendar size={18} className="mr-2 text-indigo-500" />{currentTrip.startDate} - {currentTrip.endDate}</span>
-                        <span className="flex items-center"><UserCheck size={18} className="mr-2 text-indigo-500" />所有者: {userMap[currentTrip.ownerId] || 'Loading...'}</span>
-                    </div>
+                </InlineEdit>
 
-                    {/* Member Management */}
-                    <div className="bg-white p-5 rounded-xl shadow-lg border border-gray-100">
-                        <h2 className="text-xl font-semibold text-gray-800 mb-3 flex items-center">
-                            <Users size={20} className="mr-2 text-indigo-600" />
-                            協作成員 ({currentTrip.members.length})
-                        </h2>
-                        <div className="flex flex-wrap gap-2 mb-4">
-                            {currentTrip.members.map(memberId => (
-                                <span key={memberId} className="px-3 py-1 text-sm bg-indigo-100 text-indigo-800 rounded-full font-medium">
-                                    {userMap[memberId] || memberId}
-                                </span>
-                            ))}
-                        </div>
-                        
-                        {isOwner && (
-                            <div className="mt-4">
-                                <h3 className="text-md font-medium text-gray-700 mb-2">邀請新成員 (輸入 UID)</h3>
-                                <div className="flex space-x-2">
-                                    <input
-                                        type="text"
-                                        placeholder="輸入用戶ID (UID)"
-                                        value={inviteEmail}
-                                        onChange={(e) => setInviteEmail(e.target.value)}
-                                        className="flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                    />
-                                    <button
-                                        onClick={() => inviteMember(inviteEmail)}
-                                        className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition disabled:opacity-50"
-                                        disabled={loading || !inviteEmail.trim()}
-                                    >
-                                        <Send size={16} className="mr-1" />
-                                        邀請
-                                    </button>
-                                </div>
+                <div className="flex flex-col sm:flex-row flex-wrap gap-4 text-gray-600 text-lg mb-6">
+                    {/* Dates (Inline Edit) */}
+                    <InlineEdit
+                        isEditing={isDateEditing}
+                        onToggleEdit={() => setIsDateEditing(true)}
+                        onSave={handleSaveDates}
+                        value={editedStartDate}
+                        onChange={(e) => {
+                            if (e.target.name === 'start_date') setEditedStartDate(e.target.value);
+                            if (e.target.name === 'end_date') setEditedEndDate(e.target.value);
+                        }}
+                        inputType="date"
+                        className="flex-1 min-w-1/3"
+                        iconSize={18}
+                    >
+                        <span className="flex items-center text-lg">
+                            <Calendar size={18} className="mr-2 text-indigo-500 shrink-0" />
+                            {currentTrip.startDate} - {currentTrip.endDate}
+                        </span>
+                    </InlineEdit>
+
+                    <span className="flex items-center text-gray-600 text-lg sm:ml-4">
+                        <UserCheck size={18} className="mr-2 text-indigo-500 shrink-0" />
+                        所有者: {userMap[currentTrip.ownerId] || 'Loading...'}
+                    </span>
+                </div>
+
+
+                {/* Member Management */}
+                <div className="bg-white p-5 rounded-xl shadow-lg border border-gray-100 mb-6">
+                    <h2 className="text-xl font-semibold text-gray-800 mb-3 flex items-center">
+                        <Users size={20} className="mr-2 text-indigo-600" />
+                        協作成員 ({currentTrip.members.length})
+                    </h2>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        {currentTrip.members.map(memberId => (
+                            <span key={memberId} className="px-3 py-1 text-sm bg-indigo-100 text-indigo-800 rounded-full font-medium">
+                                {userMap[memberId] || memberId}
+                            </span>
+                        ))}
+                    </div>
+                    
+                    {isOwner && (
+                        <div className="mt-4">
+                            <h3 className="text-md font-medium text-gray-700 mb-2">邀請新成員 (輸入 UID)</h3>
+                            <div className="flex space-x-2">
+                                <input
+                                    type="text"
+                                    placeholder="輸入用戶ID (UID)"
+                                    value={inviteEmail}
+                                    onChange={(e) => setInviteEmail(e.target.value)}
+                                    className="flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                                <button
+                                    onClick={() => inviteMember(inviteEmail)}
+                                    className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition disabled:opacity-50"
+                                    disabled={loading || !inviteEmail.trim()}
+                                >
+                                    <Send size={16} className="mr-1" />
+                                    邀請
+                                </button>
                             </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Trip Items / Planning List */}
+                <div className="bg-white p-5 rounded-xl shadow-lg border border-gray-100">
+                    <h2 className="text-xl font-semibold text-gray-800 mb-4">行程待辦清單</h2>
+                    <form onSubmit={handleAddItem} className="flex space-x-3 mb-6">
+                        <input
+                            type="text"
+                            placeholder="新增一個待辦或景點..."
+                            value={newItemDescription}
+                            onChange={(e) => setNewItemDescription(e.target.value)}
+                            className="flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            required
+                        />
+                        <button
+                            type="submit"
+                            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                        >
+                            <Plus size={18} className="mr-1" />
+                            新增
+                        </button>
+                    </form>
+
+                    <ul className="space-y-3">
+                        {currentTrip.items
+                            .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+                            .map(item => (
+                                <TripItem key={item.id} item={item} />
+                            ))}
+                        {currentTrip.items.length === 0 && (
+                            <p className="text-center text-gray-400 py-4">此行程還沒有任何規劃項目。</p>
                         )}
-                    </div>
-
-                    {/* Trip Items / Planning List */}
-                    <div className="bg-white p-5 rounded-xl shadow-lg border border-gray-100">
-                        <h2 className="text-xl font-semibold text-gray-800 mb-4">行程待辦清單</h2>
-                        <form onSubmit={handleAddItem} className="flex space-x-3 mb-6">
-                            <input
-                                type="text"
-                                placeholder="新增一個待辦或景點..."
-                                value={newItemDescription}
-                                onChange={(e) => setNewItemDescription(e.target.value)}
-                                className="flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                required
-                            />
-                            <button
-                                type="submit"
-                                className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-                            >
-                                <Plus size={18} className="mr-1" />
-                                新增
-                            </button>
-                        </form>
-
-                        <ul className="space-y-3">
-                            {currentTrip.items
-                                .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0)) // Sort by added time
-                                .map(item => (
-                                    <TripItem key={item.id} item={item} />
-                                ))}
-                            {currentTrip.items.length === 0 && (
-                                <p className="text-center text-gray-400 py-4">此行程還沒有任何規劃項目。</p>
-                            )}
-                        </ul>
-                    </div>
+                    </ul>
                 </div>
                 
                 {/* Confirmation Modal */}
