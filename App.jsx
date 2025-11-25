@@ -1,20 +1,20 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-import { 
-    getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc, 
-    query, serverTimestamp, where, getDocs, runTransaction
+import {
+    getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc,
+    query, orderBy, serverTimestamp, where, getDocs, runTransaction
 } from 'firebase/firestore';
-import { 
-    Home, Users, Briefcase, ListTodo, PiggyBank, MapPin, NotebookPen, Loader2, Plus, 
-    Trash2, Save, X, Utensils, Bus, ShoppingBag, Bell, ChevronLeft, CalendarDays, 
+import {
+    Home, Users, Briefcase, ListTodo, PiggyBank, MapPin, NotebookPen, Loader2, Plus,
+    Trash2, Save, X, Utensils, Bus, ShoppingBag, Bell, ChevronLeft, CalendarDays,
     Calculator, Clock, Check, Sun, Moon, LogOut, Map, Edit, AlignLeft, BookOpenText,
     User, Settings, ClipboardList, GripVertical, AlertTriangle, ChevronDown, ChevronUp,
     BarChart3
 } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid'; // 用於生成唯一 ID
 
 // --- 全域變數和 Firebase 設定 ---
-// 這些變數由 Canvas 環境提供
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
@@ -31,1145 +31,1530 @@ try {
 
 // Tailwind CSS 輔助類別
 const primaryColor = 'indigo-600';
-const accentColor = 'teal-500';
+const primaryBg = 'bg-indigo-600 hover:bg-indigo-700';
+const secondaryBg = 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600';
+const focusRing = 'focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500';
 
-// --- 輔助函式 ---
+// 顏色列表（用於支出圖表）
+const categoryColors = {
+    '餐飲': '#f87171', // Red 400
+    '交通': '#60a5fa', // Blue 400
+    '住宿': '#34d399', // Green 400
+    '購物': '#facc15', // Yellow 400
+    '門票/活動': '#a78bfa', // Violet 400
+    '其他': '#f472b6', // Pink 400
+};
 
-// 實時更新的訊息彈出視窗
+// ---------------------- 輔助功能元件 ----------------------
+
+/**
+ * 顯示通知或錯誤訊息的 Toast 元件
+ */
 const Toast = ({ message, type, onClose }) => {
-    const icon = type === 'success' ? <Check className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />;
+    const icon = type === 'success' ? <Check className="w-5 h-5 text-white" /> : <AlertTriangle className="w-5 h-5 text-white" />;
     const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            onClose();
-        }, 3000);
-        return () => clearTimeout(timer);
-    }, [onClose]);
-
     return (
-        <div className={`fixed bottom-5 right-5 z-50 p-4 rounded-lg shadow-xl text-white flex items-center space-x-3 ${bgColor} transition-opacity duration-300`}>
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-xl flex items-center space-x-3 transition-opacity duration-300 ${bgColor}`}>
             {icon}
-            <span className="font-medium">{message}</span>
-            <button onClick={onClose} className="p-1 rounded-full hover:bg-white/20">
+            <span className="text-white font-medium">{message}</span>
+            <button onClick={onClose} className="p-1 rounded-full text-white hover:bg-white hover:text-gray-900 transition-colors">
                 <X className="w-4 h-4" />
             </button>
         </div>
     );
 };
 
-// 簡單的模態對話框
-const Modal = ({ isOpen, title, children, onClose, footer }) => {
+/**
+ * 模態對話框元件
+ */
+const Modal = ({ isOpen, onClose, title, children }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-40 bg-black bg-opacity-50 flex justify-center items-center p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg mx-auto transform transition-all scale-100 opacity-100">
-                <div className="flex justify-between items-center p-5 border-b dark:border-gray-700">
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
-                        <X className="w-6 h-6" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 dark:bg-opacity-70" onClick={onClose}>
+            <div
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full transform transition-all duration-300 scale-100 opacity-100 overflow-hidden"
+                onClick={(e) => e.stopPropagation()} // 阻止點擊模態框內容時關閉
+            >
+                <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
+                    <h3 className="text-lg font-semibold dark:text-white">{title}</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                        <X className="w-5 h-5" />
                     </button>
                 </div>
-                <div className="p-6 max-h-[70vh] overflow-y-auto">
+                <div className="p-6">
                     {children}
                 </div>
-                {footer && (
-                    <div className="p-4 border-t dark:border-gray-700 flex justify-end space-x-3">
-                        {footer}
-                    </div>
-                )}
             </div>
         </div>
     );
 };
 
-// 格式化日期
-const formatDate = (timestamp) => {
-    if (!timestamp) return 'N/A';
-    if (timestamp.toDate) {
-        return timestamp.toDate().toLocaleDateString('zh-TW', { year: 'numeric', month: 'numeric', day: 'numeric' });
+/**
+ * Loading 元件
+ */
+const LoadingSpinner = ({ isDarkMode }) => (
+    <div className="flex justify-center items-center h-full min-h-[200px] p-8">
+        <Loader2 className={`w-8 h-8 animate-spin ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
+        <span className={`ml-3 text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>載入中...</span>
+    </div>
+);
+
+
+/**
+ * 預算條形圖 (替代 PieChart)
+ */
+const BudgetBarChart = ({ data }) => {
+    const total = data.reduce((sum, item) => sum + item.value, 0);
+
+    if (total === 0) {
+        return <p className="text-center text-gray-500 dark:text-gray-400 py-4">目前沒有支出數據。</p>;
     }
-    return new Date(timestamp).toLocaleDateString('zh-TW', { year: 'numeric', month: 'numeric', day: 'numeric' });
-};
 
-// --- 資料存取函式 (Firestore) ---
-
-// 取得使用者特定的集合路徑 (私有資料)
-const getUserCollectionRef = (collectionName, currentUserId) => {
-    if (!db || !currentUserId) return null;
-    return collection(db, 'artifacts', appId, 'users', currentUserId, collectionName);
-};
-
-// 取得公開行程集合路徑
-const getPublicCollectionRef = (collectionName) => {
-    if (!db) return null;
-    return collection(db, 'artifacts', appId, 'public', 'data', collectionName);
-};
-
-// 取得特定行程文件路徑
-const getTripDocRef = (tripId, currentUserId) => {
-    if (!db || !currentUserId || !tripId) return null;
-    // 假設行程資料統一存在使用者自己的私有空間
-    return doc(db, 'artifacts', appId, 'users', currentUserId, 'trips', tripId);
-};
-
-// --- React 元件 ---
-
-// 預算視覺化 (已移除 PieChart，改用簡單的進度條)
-const BudgetSummary = ({ trip, isDarkMode }) => {
-    const totalBudget = trip.budget || 0;
-    const spent = useMemo(() => {
-        let total = 0;
-        // 假設所有 dayPlan 項目都有 budget 屬性
-        trip.dayPlan?.forEach(day => {
-            day.items?.forEach(item => {
-                total += item.budget || 0;
-            });
-        });
-        return total;
-    }, [trip.dayPlan]);
-
-    const remaining = totalBudget - spent;
-    const percentageSpent = totalBudget > 0 ? (spent / totalBudget) * 100 : 0;
-    const isOverBudget = remaining < 0;
-
-    const progressBarColor = isOverBudget ? 'bg-red-500' : (percentageSpent > 75 ? 'bg-yellow-500' : `bg-${accentColor}`);
-
-    const cardClass = `p-6 rounded-xl shadow-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`;
-    const textColor = isDarkMode ? 'text-gray-100' : 'text-gray-800';
-    const labelColor = isDarkMode ? 'text-gray-400' : 'text-gray-500';
+    // Sort by value descending for better visual impact
+    const sortedData = [...data].sort((a, b) => b.value - a.value);
 
     return (
-        <div className={cardClass}>
-            <div className="flex items-center space-x-3 mb-4">
-                <PiggyBank className={`w-6 h-6 text-${primaryColor}`} />
-                <h2 className={`text-xl font-bold ${textColor}`}>預算總覽</h2>
-            </div>
-            
-            <div className="space-y-4">
-                <div className="flex justify-between text-sm font-medium">
-                    <span className={labelColor}>總預算:</span>
-                    <span className={textColor}>NT$ {totalBudget.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-sm font-medium">
-                    <span className={labelColor}>已花費:</span>
-                    <span className={textColor}>NT$ {spent.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-sm font-medium">
-                    <span className={labelColor}>剩餘預算:</span>
-                    <span className={isOverBudget ? 'text-red-500 font-bold' : textColor}>NT$ {Math.abs(remaining).toLocaleString()} {isOverBudget && "(超支)"}</span>
-                </div>
-            </div>
-
-            <div className="mt-6">
-                <p className={`text-sm font-medium mb-2 ${labelColor}`}>已花費 ({percentageSpent.toFixed(1)}%)</p>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                    <div 
-                        className={`h-3 rounded-full transition-all duration-500 ${progressBarColor}`} 
-                        style={{ width: `${Math.min(100, percentageSpent)}%` }} // 限制最多 100% 視覺寬度
-                    ></div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// 單一行程項目 (已移除拖曳句柄，改用上下箭頭進行排序)
-const DayPlanItem = ({ item, dayIndex, itemIndex, updateItem, deleteItem, moveItem, isDarkMode }) => {
-    const [isEditing, setIsEditing] = useState(false);
-    const [editForm, setEditForm] = useState(item);
-
-    const Icon = {
-        activity: Utensils,
-        accommodation: Home,
-        transport: Bus,
-        shopping: ShoppingBag,
-        misc: ListTodo,
-    }[item.type] || MapPin;
-
-    const handleSave = () => {
-        updateItem(dayIndex, itemIndex, editForm);
-        setIsEditing(false);
-    };
-
-    const cardClass = `p-4 rounded-lg shadow-md transition-all duration-300 flex items-start space-x-3 
-                       ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-200'}`;
-    const inputClass = "w-full p-2 border rounded-md dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100";
-    const labelClass = "text-sm font-medium text-gray-600 dark:text-gray-300 mb-1";
-    const actionButtonClass = "p-2 rounded-full transition-colors duration-200";
-
-    return (
-        <div className={cardClass}>
-            <div className={`p-2 rounded-full ${isDarkMode ? 'bg-indigo-900' : 'bg-indigo-100'} text-${primaryColor}`}>
-                <Icon className="w-5 h-5" />
-            </div>
-
-            <div className="flex-grow min-w-0 space-y-2">
-                {isEditing ? (
-                    <div className="space-y-3">
-                        <div>
-                            <label className={labelClass}>名稱</label>
-                            <input 
-                                type="text" 
-                                value={editForm.name} 
-                                onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                                className={inputClass}
-                            />
-                        </div>
-                        <div className="flex space-x-3">
-                            <div className="w-1/2">
-                                <label className={labelClass}>時間</label>
-                                <input 
-                                    type="time" 
-                                    value={editForm.time} 
-                                    onChange={(e) => setEditForm({...editForm, time: e.target.value})}
-                                    className={inputClass}
-                                />
-                            </div>
-                            <div className="w-1/2">
-                                <label className={labelClass}>預算 (NT$)</label>
-                                <input 
-                                    type="number" 
-                                    value={editForm.budget || 0} 
-                                    onChange={(e) => setEditForm({...editForm, budget: parseFloat(e.target.value) || 0})}
-                                    className={inputClass}
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className={labelClass}>類型</label>
-                            <select 
-                                value={editForm.type} 
-                                onChange={(e) => setEditForm({...editForm, type: e.target.value})}
-                                className={inputClass}
-                            >
-                                {['activity', 'accommodation', 'transport', 'shopping', 'misc'].map(type => (
-                                    <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label className={labelClass}>備註</label>
-                            <textarea 
-                                value={editForm.details} 
-                                onChange={(e) => setEditForm({...editForm, details: e.target.value})}
-                                className={inputClass}
-                                rows="2"
-                            />
-                        </div>
-                        <div className="flex space-x-2 justify-end">
-                            <button onClick={() => setIsEditing(false)} className={`flex items-center ${actionButtonClass} text-gray-500 hover:text-gray-700 dark:hover:text-gray-300`}>
-                                <X className="w-5 h-5" /> 取消
-                            </button>
-                            <button onClick={handleSave} className={`flex items-center ${actionButtonClass} bg-${primaryColor} text-white hover:bg-indigo-700`}>
-                                <Save className="w-5 h-5" /> 儲存
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="space-y-1">
-                        <h4 className={`font-semibold text-lg ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{item.name}</h4>
-                        <div className="flex items-center text-sm space-x-4 text-gray-500 dark:text-gray-400">
-                            <span className="flex items-center"><Clock className="w-4 h-4 mr-1" /> {item.time}</span>
-                            <span className="flex items-center"><PiggyBank className="w-4 h-4 mr-1" /> NT$ {item.budget?.toLocaleString() || 0}</span>
-                        </div>
-                        {item.details && (
-                            <p className="text-sm text-gray-600 dark:text-gray-300 pt-1">{item.details}</p>
-                        )}
-                    </div>
-                )}
-            </div>
-            
-            {!isEditing && (
-                <div className="flex flex-col space-y-1 ml-4 self-center">
-                    <button 
-                        onClick={() => moveItem(dayIndex, itemIndex, -1)} 
-                        className={`${actionButtonClass} text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600`}
-                        title="向上移動"
-                    >
-                        <ChevronUp className="w-5 h-5" />
-                    </button>
-                    <button 
-                        onClick={() => setIsEditing(true)} 
-                        className={`${actionButtonClass} text-${primaryColor} hover:bg-gray-100 dark:hover:bg-gray-600`}
-                        title="編輯"
-                    >
-                        <Edit className="w-5 h-5" />
-                    </button>
-                    <button 
-                        onClick={() => deleteItem(dayIndex, itemIndex)} 
-                        className={`${actionButtonClass} text-red-500 hover:bg-gray-100 dark:hover:bg-gray-600`}
-                        title="刪除"
-                    >
-                        <Trash2 className="w-5 h-5" />
-                    </button>
-                    <button 
-                        onClick={() => moveItem(dayIndex, itemIndex, 1)} 
-                        className={`${actionButtonClass} text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600`}
-                        title="向下移動"
-                    >
-                        <ChevronDown className="w-5 h-5" />
-                    </button>
-                </div>
-            )}
-        </div>
-    );
-};
-
-
-// 每日計畫 (已移除 react-beautiful-dnd 相關邏輯)
-const DayPlan = ({ day, dayIndex, updateTrip, tripId, userId, isDarkMode, trip }) => {
-    const [isAdding, setIsAdding] = useState(false);
-    const [newItem, setNewItem] = useState({ 
-        type: 'activity', 
-        name: '', 
-        time: '10:00', 
-        details: '', 
-        budget: 0 
-    });
-    const [showAddModal, setShowAddModal] = useState(false);
-    
-    // 儲存或更新單一項目
-    const handleUpdateItem = useCallback(async (dIndex, iIndex, updatedItem) => {
-        try {
-            const plan = [...trip.dayPlan];
-            plan[dIndex].items[iIndex] = updatedItem;
-            
-            const tripRef = getTripDocRef(tripId, userId);
-            await updateDoc(tripRef, { dayPlan: plan });
-        } catch (error) {
-            console.error("Error updating trip item:", error);
-        }
-    }, [tripId, userId, trip.dayPlan]);
-
-    // 刪除單一項目
-    const handleDeleteItem = useCallback(async (dIndex, iIndex) => {
-        if (!window.confirm("確定要刪除此行程項目嗎？")) return;
-        try {
-            const plan = [...trip.dayPlan];
-            plan[dIndex].items.splice(iIndex, 1);
-            
-            const tripRef = getTripDocRef(tripId, userId);
-            await updateDoc(tripRef, { dayPlan: plan });
-        } catch (error) {
-            console.error("Error deleting trip item:", error);
-        }
-    }, [tripId, userId, trip.dayPlan]);
-
-    // 移動單一項目 (取代拖曳排序)
-    const handleMoveItem = useCallback(async (dIndex, iIndex, direction) => {
-        const plan = [...trip.dayPlan];
-        const dayItems = plan[dIndex].items;
-        const newIndex = iIndex + direction;
-
-        if (newIndex >= 0 && newIndex < dayItems.length) {
-            // 交換位置
-            const [movedItem] = dayItems.splice(iIndex, 1);
-            dayItems.splice(newIndex, 0, movedItem);
-
-            try {
-                const tripRef = getTripDocRef(tripId, userId);
-                await updateDoc(tripRef, { dayPlan: plan });
-            } catch (error) {
-                console.error("Error moving trip item:", error);
-            }
-        }
-    }, [tripId, userId, trip.dayPlan]);
-
-    // 新增項目
-    const handleAddItem = async () => {
-        if (!newItem.name.trim()) return;
-
-        try {
-            const plan = [...trip.dayPlan];
-            plan[dayIndex].items = plan[dayIndex].items || [];
-            plan[dayIndex].items.push({...newItem, id: Date.now().toString()}); // 加上一個簡單的 id
-            
-            const tripRef = getTripDocRef(tripId, userId);
-            await updateDoc(tripRef, { dayPlan: plan });
-
-            setShowAddModal(false);
-            setNewItem({ 
-                type: 'activity', 
-                name: '', 
-                time: '10:00', 
-                details: '', 
-                budget: 0 
-            });
-        } catch (error) {
-            console.error("Error adding trip item:", error);
-        }
-    };
-
-    const inputClass = "w-full p-2 border rounded-md dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100";
-    const labelClass = "text-sm font-medium text-gray-600 dark:text-gray-300 mb-1 block";
-
-    return (
-        <div className={`p-4 rounded-xl shadow-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-            <div className="flex justify-between items-center mb-4">
-                <h3 className={`text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-                    第 {dayIndex + 1} 天 - {formatDate(day.date)}
-                </h3>
-                <button 
-                    onClick={() => setShowAddModal(true)}
-                    className={`p-2 rounded-full text-white bg-${accentColor} hover:bg-teal-600 transition duration-150`}
-                    title="新增項目"
-                >
-                    <Plus className="w-5 h-5" />
-                </button>
-            </div>
-
-            <div className="space-y-4">
-                {(day.items || []).length === 0 ? (
-                    <p className="text-gray-500 dark:text-gray-400 italic">這天還沒有規劃任何行程。</p>
-                ) : (
-                    (day.items || []).map((item, iIndex) => (
-                        <DayPlanItem
-                            key={item.id || iIndex} // 使用 ID 作為 key
-                            item={item}
-                            dayIndex={dayIndex}
-                            itemIndex={iIndex}
-                            updateItem={handleUpdateItem}
-                            deleteItem={handleDeleteItem}
-                            moveItem={handleMoveItem}
-                            isDarkMode={isDarkMode}
-                        />
-                    ))
-                )}
-            </div>
-            
-            <Modal isOpen={showAddModal} title="新增行程項目" onClose={() => setShowAddModal(false)}
-                footer={
-                    <button onClick={handleAddItem} className={`px-4 py-2 rounded-lg bg-${primaryColor} text-white font-medium hover:bg-indigo-700`}>
-                        <Plus className="w-5 h-5 inline mr-2" /> 新增
-                    </button>
-                }
-            >
-                <div className="space-y-4">
-                    <div>
-                        <label className={labelClass}>名稱 (必填)</label>
-                        <input 
-                            type="text" 
-                            value={newItem.name} 
-                            onChange={(e) => setNewItem({...newItem, name: e.target.value})}
-                            className={inputClass}
-                            placeholder="活動名稱或地點"
-                        />
-                    </div>
-                    <div className="flex space-x-3">
-                        <div className="w-1/2">
-                            <label className={labelClass}>時間</label>
-                            <input 
-                                type="time" 
-                                value={newItem.time} 
-                                onChange={(e) => setNewItem({...newItem, time: e.target.value})}
-                                className={inputClass}
-                            />
-                        </div>
-                        <div className="w-1/2">
-                            <label className={labelClass}>預算 (NT$)</label>
-                            <input 
-                                type="number" 
-                                value={newItem.budget} 
-                                onChange={(e) => setNewItem({...newItem, budget: parseFloat(e.target.value) || 0})}
-                                className={inputClass}
-                            />
-                        </div>
-                    </div>
-                    <div>
-                        <label className={labelClass}>類型</label>
-                        <select 
-                            value={newItem.type} 
-                            onChange={(e) => setNewItem({...newItem, type: e.target.value})}
-                            className={inputClass}
-                        >
-                            <option value="activity">活動/景點</option>
-                            <option value="accommodation">住宿</option>
-                            <option value="transport">交通</option>
-                            <option value="shopping">購物</option>
-                            <option value="misc">其他</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className={labelClass}>備註</label>
-                        <textarea 
-                            value={newItem.details} 
-                            onChange={(e) => setNewItem({...newItem, details: e.target.value})}
-                            className={inputClass}
-                            rows="3"
-                        />
-                    </div>
-                </div>
-            </Modal>
-        </div>
-    );
-};
-
-
-// 新增行程表單
-const NewTripForm = ({ userId, onClose, onTripCreated, isDarkMode }) => {
-    const [name, setName] = useState('');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [budget, setBudget] = useState(0);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!name || !startDate || !endDate) {
-            setError('請填寫所有必填欄位 (名稱、開始日期、結束日期)');
-            return;
-        }
-
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-
-        if (start > end) {
-            setError('開始日期不能晚於結束日期');
-            return;
-        }
-
-        setIsLoading(true);
-        setError(null);
-
-        try {
-            const tripCollectionRef = getUserCollectionRef('trips', userId);
-            if (!tripCollectionRef) throw new Error("Firestore reference is null.");
-
-            // 產生每日計畫
-            const days = [];
-            let currentDate = new Date(start);
-            while (currentDate <= end) {
-                days.push({
-                    date: currentDate.toISOString().split('T')[0], // 儲存為 YYYY-MM-DD 格式
-                    items: [],
-                });
-                currentDate.setDate(currentDate.getDate() + 1);
-            }
-
-            const newTrip = {
-                name,
-                startDate: startDate,
-                endDate: endDate,
-                budget: parseFloat(budget) || 0,
-                ownerId: userId,
-                dayPlan: days,
-                createdAt: serverTimestamp(),
-                sharedWith: [], // 協作名單
-            };
-
-            await addDoc(tripCollectionRef, newTrip);
-            onTripCreated('success', '行程新增成功！');
-            onClose();
-
-        } catch (err) {
-            console.error("Error creating new trip:", err);
-            setError(`新增行程失敗: ${err.message}`);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const inputClass = "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 transition duration-150";
-    const labelClass = "text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block";
-
-    return (
-        <form onSubmit={handleSubmit} className="space-y-5">
-            {error && (
-                <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center">
-                    <AlertTriangle className="w-5 h-5 mr-2" />
-                    {error}
-                </div>
-            )}
-            <div>
-                <label htmlFor="name" className={labelClass}>行程名稱 *</label>
-                <input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className={inputClass}
-                    placeholder="例如：日本關西十日遊"
-                />
-            </div>
-            <div className="flex space-x-4">
-                <div className="w-1/2">
-                    <label htmlFor="startDate" className={labelClass}>開始日期 *</label>
-                    <input
-                        id="startDate"
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className={inputClass}
-                    />
-                </div>
-                <div className="w-1/2">
-                    <label htmlFor="endDate" className={labelClass}>結束日期 *</label>
-                    <input
-                        id="endDate"
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className={inputClass}
-                    />
-                </div>
-            </div>
-            <div>
-                <label htmlFor="budget" className={labelClass}>總預算 (NT$)</label>
-                <input
-                    id="budget"
-                    type="number"
-                    value={budget}
-                    onChange={(e) => setBudget(e.target.value)}
-                    className={inputClass}
-                    placeholder="輸入總預算金額"
-                    min="0"
-                />
-            </div>
-            <button
-                type="submit"
-                className={`w-full flex items-center justify-center px-4 py-3 rounded-xl font-semibold text-lg bg-${primaryColor} text-white hover:bg-indigo-700 transition duration-150 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                disabled={isLoading}
-            >
-                {isLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                ) : (
-                    <Plus className="w-5 h-5 mr-2" />
-                )}
-                建立行程
-            </button>
-        </form>
-    );
-};
-
-// 儀表板 (Dashboard)
-const Dashboard = ({ onSelectTrip, trips, userId, authReady, isDarkMode, toggleDarkMode, onTutorialStart }) => {
-    const [showNewTripModal, setShowNewTripModal] = useState(false);
-    const [toast, setToast] = useState(null);
-
-    const sortedTrips = useMemo(() => {
-        if (!trips) return [];
-        // 客戶端排序，以開始日期降序
-        return [...trips].sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
-    }, [trips]);
-
-    const handleTripCreated = (type, message) => {
-        setToast({ type, message });
-    };
-
-    const handleDeleteTrip = async (tripId, tripName) => {
-        if (!window.confirm(`確定要刪除行程 "${tripName}" 嗎？此操作不可逆。`)) return;
-
-        try {
-            const tripRef = getTripDocRef(tripId, userId);
-            await deleteDoc(tripRef);
-            handleTripCreated('success', `行程 "${tripName}" 已成功刪除。`);
-        } catch (error) {
-            console.error("Error deleting trip:", error);
-            handleTripCreated('error', '刪除行程失敗。');
-        }
-    };
-
-    const Card = ({ children, className = '' }) => (
-        <div className={`rounded-xl shadow-lg p-6 transition-all duration-300 ${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'} ${className}`}>
-            {children}
-        </div>
-    );
-    
-    const TripCard = ({ trip }) => {
-        const totalDays = Math.max(1, (new Date(trip.endDate) - new Date(trip.startDate)) / (1000 * 60 * 60 * 24) + 1);
-
-        return (
-            <Card className="hover:shadow-xl cursor-pointer flex flex-col justify-between" onClick={() => onSelectTrip(trip.id)}>
-                <div>
-                    <div className="flex items-center justify-between mb-2">
-                        <h3 className={`text-xl font-bold truncate ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{trip.name}</h3>
-                        <div className="flex items-center space-x-2">
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300">
-                                {totalDays} 天
+        <div className="space-y-4 pt-2">
+            {sortedData.map((item, index) => {
+                const percentage = (item.value / total) * 100;
+                return (
+                    <div key={index} className="flex flex-col">
+                        <div className="flex justify-between text-sm mb-1">
+                            <span className="font-medium dark:text-gray-200 flex items-center">
+                                <span className="w-3 h-3 rounded-full mr-2 flex-shrink-0" style={{ backgroundColor: item.color }}></span>
+                                {item.title}
                             </span>
+                            <span className="font-semibold dark:text-white">${item.value.toFixed(0)} ({percentage.toFixed(1)}%)</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                            <div
+                                className="h-2 rounded-full transition-all duration-500 ease-out"
+                                style={{
+                                    width: `${percentage}%`,
+                                    backgroundColor: item.color
+                                }}
+                                title={`${item.title}: $${item.value.toFixed(0)} (${percentage.toFixed(1)}%)`}
+                            ></div>
                         </div>
                     </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 flex items-center space-x-3">
-                        <CalendarDays className="w-4 h-4" />
-                        <span>{formatDate(trip.startDate)} - {formatDate(trip.endDate)}</span>
-                    </p>
-                    <p className="text-sm font-medium flex items-center text-gray-700 dark:text-gray-300">
-                        <PiggyBank className="w-4 h-4 mr-2" />
-                        預算: NT$ {trip.budget?.toLocaleString() || 0}
-                    </p>
-                </div>
-                
-                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-end space-x-2">
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); handleDeleteTrip(trip.id, trip.name); }}
-                        className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-gray-700 rounded-full transition"
-                        title="刪除行程"
-                    >
-                        <Trash2 className="w-5 h-5" />
-                    </button>
-                </div>
-            </Card>
-        );
-    };
-
-    return (
-        <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-8">
-            <Header 
-                title="旅遊儀表板" 
-                userId={userId} 
-                isDarkMode={isDarkMode} 
-                toggleDarkMode={toggleDarkMode}
-                onTutorialStart={onTutorialStart}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="md:col-span-2">
-                    <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>我的行程</h2>
-                    <button
-                        onClick={() => setShowNewTripModal(true)}
-                        className={`w-full sm:w-auto flex items-center justify-center px-4 py-3 rounded-xl font-semibold bg-${primaryColor} text-white hover:bg-indigo-700 transition duration-150 mb-6`}
-                    >
-                        <Plus className="w-5 h-5 mr-2" />
-                        新增旅遊行程
-                    </button>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {sortedTrips.length === 0 ? (
-                            <div className="md:col-span-2 p-10 text-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl">
-                                <Map className="w-10 h-10 mx-auto text-gray-400 mb-3" />
-                                <p className="text-gray-500 dark:text-gray-400">尚未建立任何行程。點擊上方按鈕開始規劃！</p>
-                            </div>
-                        ) : (
-                            sortedTrips.map(trip => <TripCard key={trip.id} trip={trip} />)
-                        )}
-                    </div>
-                </Card>
-                
-                <div className="space-y-6">
-                    <Card>
-                        <div className="flex items-center space-x-3 mb-3">
-                            <Briefcase className={`w-6 h-6 text-${primaryColor}`} />
-                            <h2 className={`text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>行程統計</h2>
-                        </div>
-                        <p className="text-3xl font-extrabold text-${primaryColor} dark:text-indigo-400">{trips.length}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">總行程數</p>
-                    </Card>
-                    
-                    <Card>
-                        <div className="flex items-center space-x-3 mb-3">
-                            <Users className={`w-6 h-6 text-${accentColor}`} />
-                            <h2 className={`text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>協作狀態</h2>
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
-                            此應用程式支援與其他使用者分享行程（尚未實作協作介面）。
-                        </p>
-                    </Card>
-                </div>
-            </div>
-
-            <Modal isOpen={showNewTripModal} title="建立新的旅遊行程" onClose={() => setShowNewTripModal(false)}>
-                <NewTripForm 
-                    userId={userId} 
-                    onClose={() => setShowNewTripModal(false)} 
-                    onTripCreated={handleTripCreated}
-                    isDarkMode={isDarkMode}
-                />
-            </Modal>
-            
-            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+                );
+            })}
         </div>
     );
 };
 
-// 行程詳情 (TripDetail)
-const TripDetail = ({ tripId, onBack, userId, authReady, isDarkMode }) => {
-    const [trip, setTrip] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
+// ---------------------- Firebase 資料存取路徑 ----------------------
 
-    // 實時監聽單一行程文件
-    useEffect(() => {
-        if (!authReady || !userId || !tripId) return;
+/**
+ * 取得特定行程的私有資料集合路徑
+ * @param {string} collectionName 集合名稱 (e.g., 'itinerary', 'tasks', 'budget')
+ * @param {string} tripId 行程 ID
+ * @param {string} userId 使用者 ID
+ */
+const getPrivateTripCollectionPath = (collectionName, tripId, userId) => (
+    `artifacts/${appId}/users/${userId}/trips/${tripId}/${collectionName}`
+);
 
-        const tripRef = getTripDocRef(tripId, userId);
-        if (!tripRef) {
-            setError("無效的行程參考。");
-            setIsLoading(false);
-            return;
-        }
+/**
+ * 取得公開行程文件路徑 (所有使用者都可以讀取和寫入)
+ * @param {string} tripId 行程 ID
+ */
+const getPublicTripDocPath = (tripId) => (
+    `artifacts/${appId}/public/data/trips/${tripId}`
+);
 
-        setIsLoading(true);
-        const unsubscribe = onSnapshot(tripRef, (docSnap) => {
-            if (docSnap.exists()) {
-                setTrip({ id: docSnap.id, ...docSnap.data() });
-                setError(null);
-            } else {
-                setError("找不到該行程。");
-                setTrip(null);
-            }
-            setIsLoading(false);
-        }, (err) => {
-            console.error("Firestore snapshot error:", err);
-            setError(`載入行程時發生錯誤: ${err.message}`);
-            setIsLoading(false);
-        });
+/**
+ * 取得行程集合路徑
+ */
+const getTripsCollectionPath = () => (
+    `artifacts/${appId}/public/data/trips`
+);
 
-        return () => unsubscribe();
-    }, [authReady, userId, tripId]);
+// ---------------------- 核心元件 ----------------------
 
-    // 更新整個行程文件（主要用於規劃編輯）
-    const updateTrip = useCallback(async (updates) => {
-        if (!tripId) return;
-        try {
-            const tripRef = getTripDocRef(tripId, userId);
-            await updateDoc(tripRef, updates);
-            // 由於使用 onSnapshot，這裡不需要手動更新 state
-        } catch (err) {
-            console.error("Error updating trip:", err);
-        }
-    }, [tripId, userId]);
-
-    const handleEditBudget = async () => {
-        const newBudgetStr = window.prompt("輸入新的總預算金額 (NT$):", trip.budget || 0);
-        const newBudget = parseFloat(newBudgetStr);
-        if (newBudgetStr !== null && !isNaN(newBudget) && newBudget >= 0) {
-            await updateTrip({ budget: newBudget });
-        } else if (newBudgetStr !== null) {
-            alert("請輸入有效的正數金額。");
-        }
-    };
-    
-    // 處理日期的編輯，目前僅支援修改預算
-    // 複雜的日期修改會影響 dayPlan 結構，暫時不提供
-    const handleEditDates = async () => {
-        alert("目前暫不支援直接修改行程日期。如需修改，請重新建立行程。");
-    };
-
-    if (isLoading) {
-        return (
-            <div className="min-h-screen flex justify-center items-center">
-                <Loader2 className={`w-10 h-10 animate-spin text-${primaryColor}`} />
-                <span className="ml-4 text-lg text-gray-600 dark:text-gray-300">載入行程詳情中...</span>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="p-8 text-center text-red-500">
-                <AlertTriangle className="w-10 h-10 mx-auto mb-4" />
-                <p className="text-xl">{error}</p>
-                <button onClick={onBack} className={`mt-6 px-4 py-2 rounded-lg bg-${primaryColor} text-white hover:bg-indigo-700 transition`}>
-                    <ChevronLeft className="w-5 h-5 inline mr-2" /> 返回儀表板
-                </button>
-            </div>
-        );
-    }
-
-    if (!trip) return null;
-
+/**
+ * 應用程式主 Header
+ */
+const Header = ({ title, userId, isDarkMode, toggleDarkMode, onBack, onTutorialStart }) => {
     return (
-        <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-8">
-            <button onClick={onBack} className="flex items-center text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition mb-6">
-                <ChevronLeft className="w-5 h-5 mr-1" /> 返回儀表板
-            </button>
-            
-            <header className={`rounded-xl shadow-lg p-6 flex flex-col md:flex-row justify-between items-start md:items-center ${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-                <div className="mb-4 md:mb-0">
-                    <h1 className={`text-3xl font-extrabold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{trip.name}</h1>
-                    <p className="text-md text-gray-500 dark:text-gray-400 mt-1 flex items-center">
-                        <CalendarDays className="w-4 h-4 mr-2" />
-                        {formatDate(trip.startDate)} - {formatDate(trip.endDate)} 
-                        <button onClick={handleEditDates} title="編輯日期" className="ml-2 text-${accentColor} hover:text-teal-600">
-                            <Edit className="w-4 h-4" />
-                        </button>
-                    </p>
-                    <p className="text-md font-medium text-gray-600 dark:text-gray-300 mt-1 flex items-center">
-                        <PiggyBank className="w-4 h-4 mr-2" />
-                        總預算: NT$ {trip.budget?.toLocaleString() || 0}
-                        <button onClick={handleEditBudget} title="編輯預算" className="ml-2 text-${accentColor} hover:text-teal-600">
-                            <Edit className="w-4 h-4" />
-                        </button>
-                    </p>
-                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
-                        行程 ID (協作識別碼): <span className="font-mono text-xs p-1 rounded bg-gray-100 dark:bg-gray-700">{tripId}</span>
-                    </p>
-                </div>
-                
-                {/* 協作區塊 - 保持精簡 */}
-                <div className="flex items-center space-x-3 text-sm text-gray-500 dark:text-gray-400">
-                    <Users className="w-4 h-4" />
-                    <span>協作者: {trip.sharedWith?.length || 0} 人 (僅顯示擁有者)</span>
-                </div>
-            </header>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                {/* 預算側邊欄 */}
-                <div className="lg:col-span-1 space-y-6">
-                    <BudgetSummary trip={trip} isDarkMode={isDarkMode} />
-                    
-                    {/* 其他資訊卡 */}
-                    <div className={`p-6 rounded-xl shadow-lg ${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-                        <div className="flex items-center space-x-3 mb-3">
-                            <NotebookPen className={`w-6 h-6 text-${accentColor}`} />
-                            <h2 className={`text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>行程備註</h2>
-                        </div>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">此處為行程規劃的整體備註區。</p>
-                        {/* 這裡可以添加備註編輯功能 */}
-                    </div>
-                </div>
-
-                {/* 每日計畫主區塊 */}
-                <div className="lg:col-span-3 space-y-8">
-                    <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'} border-b pb-2 border-gray-200 dark:border-gray-700`}>每日詳細行程</h2>
-                    {(trip.dayPlan || []).map((day, index) => (
-                        <DayPlan 
-                            key={index}
-                            day={day}
-                            dayIndex={index}
-                            tripId={tripId}
-                            userId={userId}
-                            isDarkMode={isDarkMode}
-                            trip={trip} // 傳遞整個 trip 以便更新 dayPlan 陣列
-                        />
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// 應用程式頂部導航
-const Header = ({ title, userId, isDarkMode, toggleDarkMode, onTutorialStart, onBack }) => {
-    const defaultTitle = "協作旅遊規劃";
-    const userDisplayId = userId ? `${userId.substring(0, 4)}...` : 'Guest'; // 保持全ID顯示的規則，但這裡可能過長，所以只顯示部分
-
-    return (
-        <header className={`sticky top-0 z-30 shadow-md ${isDarkMode ? 'bg-gray-900 border-b border-gray-700' : 'bg-white border-b border-gray-200'}`}>
-            <div className="max-w-7xl mx-auto p-4 flex justify-between items-center">
+        <header className="sticky top-0 z-10 bg-white dark:bg-gray-950 shadow-md">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
                 <div className="flex items-center space-x-4">
                     {onBack && (
-                        <button onClick={onBack} className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">
+                        <button
+                            onClick={onBack}
+                            className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            aria-label="返回"
+                        >
                             <ChevronLeft className="w-6 h-6" />
                         </button>
                     )}
-                    <h1 className={`text-2xl font-extrabold text-${primaryColor} dark:text-indigo-400 flex items-center`}>
-                        <MapPin className="w-6 h-6 mr-2" />
-                        {title || defaultTitle}
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
+                        <MapPin className="w-6 h-6 text-indigo-500" />
+                        <span>{title}</span>
                     </h1>
                 </div>
-                
-                <nav className="flex items-center space-x-4">
-                    <button 
-                        onClick={onTutorialStart} 
-                        className={`text-sm font-medium px-3 py-1 rounded-full ${isDarkMode ? 'bg-indigo-700 text-white' : 'bg-indigo-50 text-indigo-700'} hover:opacity-80 transition hidden sm:inline-flex`}
+
+                <div className="flex items-center space-x-3">
+                    <button
+                        onClick={onTutorialStart}
+                        className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors hidden sm:block"
+                        title="應用程式教學"
                     >
-                        <BookOpenText className="w-4 h-4 mr-2" /> 應用程式教學
+                        <BookOpenText className="w-6 h-6" />
                     </button>
-                    <button onClick={toggleDarkMode} className="p-2 rounded-full text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition">
-                        {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                    <button
+                        onClick={toggleDarkMode}
+                        className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        title={isDarkMode ? "切換至淺色模式" : "切換至深色模式"}
+                    >
+                        {isDarkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
                     </button>
-                    <div className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center border border-gray-200 dark:border-gray-700 rounded-full px-3 py-1">
-                        <User className="w-4 h-4 mr-1.5 text-${accentColor}" />
-                        <span className="hidden sm:inline">User ID: </span>
-                        <span className="font-mono text-xs">{userId || 'Loading...'}</span>
+                    <div className="text-sm font-mono text-gray-500 dark:text-gray-400 truncate max-w-[120px] sm:max-w-full" title={`用戶 ID: ${userId}`}>
+                        <User className="w-5 h-5 inline mr-1" />
+                        {userId.substring(0, 8)}...
                     </div>
-                </nav>
+                </div>
             </div>
         </header>
     );
 };
 
-// 教學視圖 (TutorialView)
-const TutorialView = ({ onBack, isDarkMode }) => {
-    const sections = [
-        {
-            title: "1. 儀表板總覽",
-            content: "這是您的起始頁面。您可以在這裡看到所有已建立的行程列表，以及新增行程的按鈕。",
-            icon: Home,
-        },
-        {
-            title: "2. 建立新行程",
-            content: "點擊『新增旅遊行程』按鈕，填寫行程名稱、開始/結束日期及總預算即可建立。系統會自動為您生成每日計畫表。",
-            icon: Plus,
-        },
-        {
-            title: "3. 行程詳情與規劃",
-            content: "點擊任一行程卡片進入詳情頁。左側是預算總覽和資訊卡；右側是每日的詳細行程表 (Day Plan)。",
-            icon: Map,
-        },
-        {
-            title: "4. 編輯每日項目",
-            content: "在每日行程中，點擊 <Plus className='w-4 h-4 inline-block mx-1' /> 按鈕新增項目。已有的項目可以點擊 <Edit className='w-4 h-4 inline-block mx-1' /> 編輯，並使用 <ChevronUp className='w-4 h-4 inline-block mx-1' /> 和 <ChevronDown className='w-4 h-4 inline-block mx-1' /> 調整順序。",
-            icon: ClipboardList,
-        },
-        {
-            title: "5. 資料持久化與協作",
-            content: "所有資料都儲存在您的專屬 Firebase Firestore 資料庫中。雖然目前協作介面尚未完成，但應用程式結構已為未來的協作功能（例如共享行程 ID）預留空間。",
-            icon: Users,
-        },
-    ];
+/**
+ * 行程卡片
+ */
+const TripCard = ({ trip, onSelectTrip, isDarkMode }) => {
+    const tripDuration = useMemo(() => {
+        if (!trip.startDate || !trip.endDate) return '日期未定';
+        const start = new Date(trip.startDate);
+        const end = new Date(trip.endDate);
+        const diffTime = Math.abs(end - start);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        return `${trip.startDate.substring(5)} - ${trip.endDate.substring(5)} (${diffDays} 天)`;
+    }, [trip.startDate, trip.endDate]);
 
-    const cardClass = `p-6 rounded-xl shadow-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`;
+    const cardClass = isDarkMode
+        ? "bg-gray-800 hover:bg-gray-700 border-gray-700"
+        : "bg-white hover:bg-gray-50 border-gray-200";
 
     return (
-        <div className="p-4 sm:p-8 max-w-4xl mx-auto space-y-6">
-            <button onClick={onBack} className="flex items-center text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition mb-6">
-                <ChevronLeft className="w-5 h-5 mr-1" /> 返回儀表板
-            </button>
-            
-            <h1 className={`text-3xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'} mb-6`}>應用程式快速入門指南</h1>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {sections.map((section, index) => (
-                    <div key={index} className={cardClass}>
-                        <div className="flex items-center space-x-3 mb-3">
-                            <section.icon className={`w-6 h-6 text-${primaryColor}`} />
-                            <h2 className={`text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{section.title}</h2>
-                        </div>
-                        <p className="text-gray-600 dark:text-gray-300 text-sm">{section.content}</p>
-                    </div>
-                ))}
-            </div>
-
-            <div className={`mt-8 p-6 ${cardClass}`}>
-                <h2 className={`text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'} mb-3`}>關於此應用程式</h2>
-                <p className="text-gray-600 dark:text-gray-300 text-sm">
-                    此應用程式旨在提供一個單一頁面的 React 解決方案，用於協同規劃旅遊行程。所有資料使用 Firebase Firestore 實時儲存與更新。
+        <div
+            className={`cursor-pointer border rounded-xl shadow-lg transition-all duration-300 transform hover:scale-[1.02] ${cardClass}`}
+            onClick={() => onSelectTrip(trip.id)}
+        >
+            <div className="p-6">
+                <h3 className="text-xl font-bold mb-2 truncate dark:text-white">{trip.name}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 flex items-center">
+                    <CalendarDays className="w-4 h-4 mr-2 text-indigo-500" />
+                    {tripDuration}
                 </p>
-                <p className="text-gray-600 dark:text-gray-300 text-sm mt-2">
-                    **注意：** 由於環境限制，複雜的外部函式庫（如拖曳排序或進階圖表）已使用原生 React/JS 邏輯代替。
-                </p>
+                <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600 dark:text-gray-300 font-medium">成員: {trip.members?.length || 1} 人</span>
+                    <button
+                        className={`text-sm font-semibold text-white py-1 px-3 rounded-full transition-colors ${primaryBg} shadow-md`}
+                        onClick={(e) => { e.stopPropagation(); onSelectTrip(trip.id); }}
+                    >
+                        查看詳情
+                    </button>
+                </div>
             </div>
         </div>
     );
 };
 
-// --- 主要應用程式元件 ---
+/**
+ * 創建行程模態框
+ */
+const CreateTripModal = ({ isOpen, onClose, userId, authReady, showToast }) => {
+    const [name, setName] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleCreateTrip = useCallback(async (e) => {
+        e.preventDefault();
+        if (!authReady || !db || !name || !startDate || !endDate) {
+            showToast('error', '請填寫所有欄位並確保登入。');
+            return;
+        }
+
+        if (new Date(startDate) > new Date(endDate)) {
+            showToast('error', '出發日期不能晚於結束日期。');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const tripsCollection = collection(db, getTripsCollectionPath());
+            await addDoc(tripsCollection, {
+                name,
+                startDate,
+                endDate,
+                ownerId: userId,
+                members: [{ id: userId, name: '我' }],
+                itinerary: { days: [] },
+                tasks: [],
+                budget: { currency: 'TWD', expenses: [] },
+                createdAt: serverTimestamp(),
+            });
+            showToast('success', '行程建立成功！');
+            onClose();
+        } catch (e) {
+            console.error("Error adding document: ", e);
+            showToast('error', '建立行程失敗，請稍後再試。');
+        } finally {
+            setIsLoading(false);
+            setName('');
+            setStartDate('');
+            setEndDate('');
+        }
+    }, [authReady, db, name, startDate, endDate, userId, onClose, showToast]);
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="建立新行程">
+            <form onSubmit={handleCreateTrip} className="space-y-4">
+                <div>
+                    <label htmlFor="tripName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">行程名稱</label>
+                    <input
+                        id="tripName"
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="例如：日本東京五日遊"
+                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-indigo-500 transition-colors"
+                        required
+                    />
+                </div>
+                <div className="flex space-x-4">
+                    <div className="flex-1">
+                        <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">出發日期</label>
+                        <input
+                            id="startDate"
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 transition-colors"
+                            required
+                        />
+                    </div>
+                    <div className="flex-1">
+                        <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">結束日期</label>
+                        <input
+                            id="endDate"
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 transition-colors"
+                            required
+                        />
+                    </div>
+                </div>
+                <button
+                    type="submit"
+                    disabled={isLoading}
+                    className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-colors ${primaryBg} ${focusRing} flex justify-center items-center disabled:opacity-50`}
+                >
+                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
+                    建立行程
+                </button>
+            </form>
+        </Modal>
+    );
+};
+
+/**
+ * 儀表板 (Dashboard)
+ */
+const Dashboard = ({ onSelectTrip, trips, userId, authReady, isDarkMode, toggleDarkMode, onTutorialStart }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [toast, setToast] = useState(null);
+
+    const showToast = useCallback((type, message) => {
+        setToast({ type, message });
+        setTimeout(() => setToast(null), 3000);
+    }, []);
+
+    // 過濾行程：只顯示用戶是成員或建立者的行程
+    const userTrips = useMemo(() => {
+        if (!userId) return [];
+        return trips.filter(trip => trip.members?.some(member => member.id === userId) || trip.ownerId === userId);
+    }, [trips, userId]);
+
+    return (
+        <div className={`min-h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-slate-50'}`}>
+            <Header
+                title="旅遊規劃儀表板"
+                userId={userId}
+                isDarkMode={isDarkMode}
+                toggleDarkMode={toggleDarkMode}
+                onTutorialStart={onTutorialStart}
+            />
+
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {authReady ? (
+                    <div className="space-y-8">
+                        {/* 頂部操作區 */}
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">我的行程</h2>
+                            <button
+                                onClick={() => setIsModalOpen(true)}
+                                className={`flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full shadow-sm text-white ${primaryBg} ${focusRing} transition-all duration-150`}
+                            >
+                                <Plus className="w-5 h-5 mr-1" />
+                                建立新行程
+                            </button>
+                        </div>
+
+                        {/* 行程列表 */}
+                        {userTrips.length === 0 ? (
+                            <div className="text-center p-10 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl">
+                                <Map className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                                <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">還沒有任何行程</h3>
+                                <p className="text-gray-500 dark:text-gray-400">點擊上方按鈕開始規劃您的第一次旅行！</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {userTrips.map(trip => (
+                                    <TripCard
+                                        key={trip.id}
+                                        trip={trip}
+                                        onSelectTrip={onSelectTrip}
+                                        isDarkMode={isDarkMode}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <LoadingSpinner isDarkMode={isDarkMode} />
+                )}
+            </main>
+
+            <CreateTripModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                userId={userId}
+                authReady={authReady}
+                showToast={showToast}
+            />
+            {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+        </div>
+    );
+};
+
+/**
+ * 行程詳細頁面
+ */
+const TripDetail = ({ tripId, onBack, userId, authReady, isDarkMode }) => {
+    const [trip, setTrip] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('itinerary');
+    const [toast, setToast] = useState(null);
+
+    const showToast = useCallback((type, message) => {
+        setToast({ type, message });
+        setTimeout(() => setToast(null), 3000);
+    }, []);
+
+    // 實時監聽行程數據
+    useEffect(() => {
+        if (!authReady || !db || !tripId) return;
+
+        const tripRef = doc(db, getPublicTripDocPath(tripId));
+        setIsLoading(true);
+
+        const unsubscribe = onSnapshot(tripRef, (docSnap) => {
+            if (docSnap.exists()) {
+                setTrip({ id: docSnap.id, ...docSnap.data() });
+            } else {
+                console.log("No such trip document!");
+                setTrip(null);
+                onBack(); // 如果行程被刪除，則返回儀表板
+            }
+            setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching trip data: ", error);
+            showToast('error', '載入行程數據失敗。');
+            setIsLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [authReady, db, tripId, onBack, showToast]);
+
+    if (isLoading) {
+        return (
+            <div className={`min-h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-slate-50'}`}>
+                <Header title="行程規劃" userId={userId} onBack={onBack} isDarkMode={isDarkMode} />
+                <LoadingSpinner isDarkMode={isDarkMode} />
+            </div>
+        );
+    }
+
+    if (!trip) {
+        return null; // 應該被 onBack() 處理
+    }
+
+    const { name, startDate, endDate, ownerId } = trip;
+
+    // 計算行程天數
+    const days = useMemo(() => {
+        if (!startDate || !endDate) return [];
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        let current = new Date(start);
+        const dateArray = [];
+        while (current <= end) {
+            dateArray.push(current.toISOString().substring(0, 10));
+            current.setDate(current.getDate() + 1);
+        }
+        return dateArray;
+    }, [startDate, endDate]);
+
+    // 檢查用戶是否為行程成員
+    const isMember = trip.members?.some(m => m.id === userId);
+
+    // ------------------- 行程規劃 (Itinerary) 邏輯 -------------------
+
+    const ItinerarySection = () => {
+        const [isAddDayModalOpen, setIsAddDayModalOpen] = useState(false);
+        const [newItemModal, setNewItemModal] = useState({ isOpen: false, dayIndex: null });
+        const [newItemName, setNewItemName] = useState('');
+        const [newItemTime, setNewItemTime] = useState('');
+        const [newItemType, setNewItemType] = useState('MapPin');
+
+        const itineraryDays = trip.itinerary?.days || [];
+
+        // 確保行程天數和數據結構一致
+        const structuredItinerary = useMemo(() => {
+            return days.map((dateStr, index) => {
+                const existingDay = itineraryDays.find(d => d.date === dateStr);
+                return {
+                    date: dateStr,
+                    dayNumber: index + 1,
+                    items: existingDay?.items || [],
+                };
+            });
+        }, [days, itineraryDays]);
+
+        // 新增行程項目
+        const handleAddItem = useCallback(async (dayIndex) => {
+            if (!authReady || !db || !newItemName || newItemModal.dayIndex === null) return;
+            const targetDay = structuredItinerary[dayIndex];
+
+            try {
+                const tripRef = doc(db, getPublicTripDocPath(tripId));
+                const newItem = {
+                    id: uuidv4(),
+                    name: newItemName,
+                    time: newItemTime || null,
+                    type: newItemType,
+                    createdAt: new Date().toISOString(),
+                };
+
+                const newItems = [...targetDay.items, newItem];
+                const newDays = structuredItinerary.map((day, index) =>
+                    index === dayIndex ? { ...day, items: newItems } : day
+                );
+
+                const itineraryUpdate = { days: newDays.map(({ date, items }) => ({ date, items })) };
+
+                await updateDoc(tripRef, { itinerary: itineraryUpdate });
+                showToast('success', '行程項目新增成功！');
+
+                setNewItemModal({ isOpen: false, dayIndex: null });
+                setNewItemName('');
+                setNewItemTime('');
+                setNewItemType('MapPin');
+            } catch (e) {
+                console.error("Error adding itinerary item: ", e);
+                showToast('error', '新增行程項目失敗。');
+            }
+        }, [authReady, db, tripId, newItemName, newItemTime, newItemType, newItemModal.dayIndex, structuredItinerary, showToast]);
+
+        // 刪除行程項目
+        const handleDeleteItem = useCallback(async (dayIndex, itemId) => {
+            if (!authReady || !db || !window.confirm('確定要刪除此行程項目嗎？')) return;
+
+            try {
+                const tripRef = doc(db, getPublicTripDocPath(tripId));
+                const targetDay = structuredItinerary[dayIndex];
+
+                const newItems = targetDay.items.filter(item => item.id !== itemId);
+                const newDays = structuredItinerary.map((day, index) =>
+                    index === dayIndex ? { ...day, items: newItems } : day
+                );
+
+                const itineraryUpdate = { days: newDays.map(({ date, items }) => ({ date, items })) };
+                await updateDoc(tripRef, { itinerary: itineraryUpdate });
+                showToast('success', '行程項目刪除成功！');
+            } catch (e) {
+                console.error("Error deleting itinerary item: ", e);
+                showToast('error', '刪除行程項目失敗。');
+            }
+        }, [authReady, db, tripId, structuredItinerary, showToast]);
+
+        // 移動行程項目 (替代 D&D)
+        const moveItineraryItem = useCallback(async (dayIndex, itemIndex, direction) => {
+            if (!db || !authReady) return;
+
+            try {
+                const tripRef = doc(db, getPublicTripDocPath(tripId));
+
+                await runTransaction(db, async (transaction) => {
+                    const tripDoc = await transaction.get(tripRef);
+                    if (!tripDoc.exists()) {
+                        throw new Error("Trip does not exist!");
+                    }
+
+                    const tripData = tripDoc.data();
+                    const days = tripData.itinerary?.days || [];
+                    const dayToUpdate = days.findIndex(d => d.date === structuredItinerary[dayIndex].date);
+
+                    if (dayToUpdate === -1) return;
+
+                    const dayItems = days[dayToUpdate].items;
+                    const newIndex = itemIndex + direction;
+
+                    if (newIndex >= 0 && newIndex < dayItems.length) {
+                        const newItems = [...dayItems];
+                        // Swap elements
+                        [newItems[itemIndex], newItems[newIndex]] = [newItems[newIndex], newItems[itemIndex]];
+
+                        const newDays = [...days];
+                        newDays[dayToUpdate] = { ...newDays[dayToUpdate], items: newItems };
+
+                        transaction.update(tripRef, { itinerary: { days: newDays } });
+                        showToast('success', '行程項目移動成功！');
+                    }
+                });
+            } catch (e) {
+                console.error("Error moving itinerary item: ", e);
+                showToast('error', '移動行程項目失敗。');
+            }
+        }, [db, authReady, tripId, structuredItinerary, showToast]);
+
+
+        // 圖示映射
+        const iconMap = {
+            MapPin: MapPin, Utensils: Utensils, Bus: Bus, ShoppingBag: ShoppingBag, Bell: Bell, NotebookPen: NotebookPen
+        };
+        const ItemIcon = iconMap[newItemType] || MapPin;
+
+        const renderItineraryItem = (item, dayIndex, itemIndex, totalItems) => {
+            const IconComponent = iconMap[item.type] || MapPin;
+
+            return (
+                <div
+                    key={item.id}
+                    className="flex items-start p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 space-x-3 transition-shadow duration-200"
+                >
+                    <div className="flex-shrink-0 pt-1">
+                        <IconComponent className="w-5 h-5 text-indigo-500" />
+                    </div>
+                    <div className="flex-grow">
+                        <p className="text-lg font-semibold dark:text-white">{item.name}</p>
+                        {item.time && <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center"><Clock className="w-3 h-3 mr-1" /> {item.time}</p>}
+                    </div>
+                    {isMember && (
+                        <div className="flex flex-col space-y-1">
+                            {/* 上移按鈕 */}
+                            <button
+                                onClick={() => moveItineraryItem(dayIndex, itemIndex, -1)}
+                                disabled={itemIndex === 0}
+                                className="p-1 rounded-full text-gray-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-gray-400 transition-colors"
+                                title="上移"
+                            >
+                                <ChevronUp className="w-4 h-4" />
+                            </button>
+                            {/* 下移按鈕 */}
+                            <button
+                                onClick={() => moveItineraryItem(dayIndex, itemIndex, 1)}
+                                disabled={itemIndex === totalItems - 1}
+                                className="p-1 rounded-full text-gray-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-gray-400 transition-colors"
+                                title="下移"
+                            >
+                                <ChevronDown className="w-4 h-4" />
+                            </button>
+                            {/* 刪除按鈕 */}
+                            <button
+                                onClick={() => handleDeleteItem(dayIndex, item.id)}
+                                className="p-1 rounded-full text-red-400 hover:text-red-600 transition-colors"
+                                title="刪除"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        return (
+            <div className="pt-6 space-y-8">
+                {structuredItinerary.map((day, dayIndex) => (
+                    <div key={day.date} className="relative">
+                        <h3 className="text-xl font-bold mb-4 p-3 bg-indigo-50 dark:bg-gray-800 rounded-lg text-gray-800 dark:text-white sticky top-[68px] z-5">
+                            第 {day.dayNumber} 天: {day.date}
+                        </h3>
+                        <div className="relative border-l-4 border-indigo-200 dark:border-indigo-800 ml-5">
+                            {day.items.length === 0 ? (
+                                <div className="ml-8 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-500 dark:text-gray-400">
+                                    此日無行程。
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {day.items.map((item, itemIndex) => (
+                                        <div key={item.id} className="relative ml-8">
+                                            {/* 時間軸圓點 */}
+                                            <div className="absolute -left-10 top-0 mt-2 w-4 h-4 bg-indigo-600 rounded-full border-4 border-white dark:border-gray-900 shadow-lg"></div>
+                                            {renderItineraryItem(item, dayIndex, itemIndex, day.items.length)}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {isMember && (
+                                <button
+                                    onClick={() => setNewItemModal({ isOpen: true, dayIndex })}
+                                    className="mt-4 ml-8 flex items-center px-4 py-2 text-sm font-medium rounded-full text-white bg-indigo-500 hover:bg-indigo-600 transition-colors shadow-md"
+                                >
+                                    <Plus className="w-4 h-4 mr-1" />
+                                    新增項目
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                ))}
+
+                {/* 新增行程項目 Modal */}
+                <Modal
+                    isOpen={newItemModal.isOpen}
+                    onClose={() => setNewItemModal({ isOpen: false, dayIndex: null })}
+                    title={`新增項目到 第 ${newItemModal.dayIndex !== null ? structuredItinerary[newItemModal.dayIndex]?.dayNumber : ''} 天`}
+                >
+                    <form onSubmit={(e) => { e.preventDefault(); handleAddItem(newItemModal.dayIndex); }} className="space-y-4">
+                        <div>
+                            <label htmlFor="itemName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">項目名稱/地點</label>
+                            <input
+                                id="itemName"
+                                type="text"
+                                value={newItemName}
+                                onChange={(e) => setNewItemName(e.target.value)}
+                                className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:text-white"
+                                required
+                                placeholder="例如：東京迪士尼樂園"
+                            />
+                        </div>
+                        <div className="flex space-x-4">
+                            <div className="flex-1">
+                                <label htmlFor="itemTime" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">時間 (選填)</label>
+                                <input
+                                    id="itemTime"
+                                    type="time"
+                                    value={newItemTime}
+                                    onChange={(e) => setNewItemTime(e.target.value)}
+                                    className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:text-white"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label htmlFor="itemType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">類型</label>
+                                <select
+                                    id="itemType"
+                                    value={newItemType}
+                                    onChange={(e) => setNewItemType(e.target.value)}
+                                    className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:text-white"
+                                >
+                                    {Object.keys(iconMap).map(key => (
+                                        <option key={key} value={key}>{key}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <button
+                            type="submit"
+                            className={`w-full py-3 px-4 rounded-lg font-semibold text-white ${primaryBg} ${focusRing} flex justify-center items-center`}
+                        >
+                            <Plus className="w-5 h-5 mr-2" />
+                            確認新增
+                        </button>
+                    </form>
+                </Modal>
+            </div>
+        );
+    };
+
+    // ------------------- 待辦事項 (Tasks) 邏輯 -------------------
+
+    const TasksSection = () => {
+        const [newTaskName, setNewTaskName] = useState('');
+        const tasks = trip.tasks || [];
+
+        // 新增待辦事項
+        const handleAddTask = useCallback(async (e) => {
+            e.preventDefault();
+            if (!authReady || !db || !newTaskName.trim()) return;
+
+            try {
+                const tripRef = doc(db, getPublicTripDocPath(tripId));
+                const newTask = {
+                    id: uuidv4(),
+                    name: newTaskName,
+                    isCompleted: false,
+                    assignedTo: null, // 暫時不處理指派人
+                    createdAt: serverTimestamp(),
+                };
+
+                await updateDoc(tripRef, {
+                    tasks: [...tasks, newTask]
+                });
+                showToast('success', '待辦事項新增成功！');
+                setNewTaskName('');
+            } catch (e) {
+                console.error("Error adding task: ", e);
+                showToast('error', '新增待辦事項失敗。');
+            }
+        }, [authReady, db, tripId, newTaskName, tasks, showToast]);
+
+        // 切換待辦事項狀態
+        const handleToggleTask = useCallback(async (taskId) => {
+            if (!authReady || !db) return;
+
+            try {
+                const tripRef = doc(db, getPublicTripDocPath(tripId));
+                const taskToUpdate = tasks.find(t => t.id === taskId);
+
+                if (!taskToUpdate) return;
+
+                const updatedTasks = tasks.map(t =>
+                    t.id === taskId ? { ...t, isCompleted: !t.isCompleted } : t
+                );
+
+                await updateDoc(tripRef, { tasks: updatedTasks });
+                showToast('success', '待辦事項狀態已更新。');
+            } catch (e) {
+                console.error("Error toggling task: ", e);
+                showToast('error', '更新待辦事項狀態失敗。');
+            }
+        }, [authReady, db, tripId, tasks, showToast]);
+
+        // 刪除待辦事項
+        const handleDeleteTask = useCallback(async (taskId) => {
+            if (!authReady || !db || !window.confirm('確定要刪除此待辦事項嗎？')) return;
+
+            try {
+                const tripRef = doc(db, getPublicTripDocPath(tripId));
+                const updatedTasks = tasks.filter(t => t.id !== taskId);
+
+                await updateDoc(tripRef, { tasks: updatedTasks });
+                showToast('success', '待辦事項刪除成功！');
+            } catch (e) {
+                console.error("Error deleting task: ", e);
+                showToast('error', '刪除待辦事項失敗。');
+            }
+        }, [authReady, db, tripId, tasks, showToast]);
+
+        const pendingTasks = tasks.filter(t => !t.isCompleted);
+        const completedTasks = tasks.filter(t => t.isCompleted);
+
+        return (
+            <div className="pt-6 space-y-6">
+                {isMember && (
+                    <form onSubmit={handleAddTask} className="flex space-x-2 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md">
+                        <input
+                            type="text"
+                            value={newTaskName}
+                            onChange={(e) => setNewTaskName(e.target.value)}
+                            placeholder="輸入新的待辦事項..."
+                            className="flex-grow p-3 border rounded-lg dark:bg-gray-700 dark:text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-indigo-500 transition-colors"
+                            required
+                        />
+                        <button
+                            type="submit"
+                            className={`px-4 py-3 rounded-lg font-semibold text-white ${primaryBg} ${focusRing} flex items-center`}
+                        >
+                            <Plus className="w-5 h-5" />
+                        </button>
+                    </form>
+                )}
+
+                {/* 待處理事項 */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <ClipboardList className="w-6 h-6 mr-2 text-indigo-500" />
+                        待處理 ({pendingTasks.length})
+                    </h3>
+                    <div className="space-y-3">
+                        {pendingTasks.length === 0 ? (
+                            <p className="text-gray-500 dark:text-gray-400">太棒了！所有事項都已完成。</p>
+                        ) : (
+                            pendingTasks.map(task => (
+                                <div key={task.id} className="flex items-center justify-between p-3 border-b dark:border-gray-700 last:border-b-0">
+                                    <div className="flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={task.isCompleted}
+                                            onChange={() => handleToggleTask(task.id)}
+                                            className="w-5 h-5 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600 cursor-pointer"
+                                            disabled={!isMember}
+                                        />
+                                        <span className="ml-3 text-gray-900 dark:text-white">{task.name}</span>
+                                    </div>
+                                    {isMember && (
+                                        <button
+                                            onClick={() => handleDeleteTask(task.id)}
+                                            className="p-1 rounded-full text-red-400 hover:text-red-600 transition-colors"
+                                            title="刪除"
+                                        >
+                                            <Trash2 className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+
+                {/* 已完成事項 */}
+                {completedTasks.length > 0 && (
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                            <Check className="w-6 h-6 mr-2 text-green-500" />
+                            已完成 ({completedTasks.length})
+                        </h3>
+                        <div className="space-y-3">
+                            {completedTasks.map(task => (
+                                <div key={task.id} className="flex items-center justify-between p-3 border-b dark:border-gray-700 last:border-b-0 opacity-60">
+                                    <div className="flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={task.isCompleted}
+                                            onChange={() => handleToggleTask(task.id)}
+                                            className="w-5 h-5 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600 cursor-pointer"
+                                            disabled={!isMember}
+                                        />
+                                        <span className="ml-3 text-gray-900 dark:text-white line-through">{task.name}</span>
+                                    </div>
+                                    {isMember && (
+                                        <button
+                                            onClick={() => handleDeleteTask(task.id)}
+                                            className="p-1 rounded-full text-red-400 hover:text-red-600 transition-colors"
+                                            title="刪除"
+                                        >
+                                            <Trash2 className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    // ------------------- 預算 (Budget) 邏輯 -------------------
+
+    const BudgetSection = () => {
+        const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
+        const [newExpense, setNewExpense] = useState({ name: '', amount: 0, category: '餐飲' });
+        const expenses = trip.budget?.expenses || [];
+
+        const categories = Object.keys(categoryColors);
+
+        // 處理新增支出
+        const handleAddExpense = useCallback(async (e) => {
+            e.preventDefault();
+            if (!authReady || !db || !newExpense.name || newExpense.amount <= 0) return;
+
+            try {
+                const tripRef = doc(db, getPublicTripDocPath(tripId));
+                const expense = {
+                    id: uuidv4(),
+                    name: newExpense.name,
+                    amount: Number(newExpense.amount),
+                    category: newExpense.category,
+                    paidBy: userId, // 假設是當前用戶支付
+                    createdAt: serverTimestamp(),
+                };
+
+                await updateDoc(tripRef, {
+                    'budget.expenses': [...expenses, expense]
+                });
+                showToast('success', '支出新增成功！');
+                setNewExpense({ name: '', amount: 0, category: categories[0] });
+                setIsAddExpenseModalOpen(false);
+            } catch (e) {
+                console.error("Error adding expense: ", e);
+                showToast('error', '新增支出失敗。');
+            }
+        }, [authReady, db, tripId, newExpense, expenses, categories, userId, showToast]);
+
+        // 處理刪除支出
+        const handleDeleteExpense = useCallback(async (expenseId) => {
+            if (!authReady || !db || !window.confirm('確定要刪除此筆支出嗎？')) return;
+
+            try {
+                const tripRef = doc(db, getPublicTripDocPath(tripId));
+                const updatedExpenses = expenses.filter(e => e.id !== expenseId);
+
+                await updateDoc(tripRef, { 'budget.expenses': updatedExpenses });
+                showToast('success', '支出刪除成功！');
+            } catch (e) {
+                console.error("Error deleting expense: ", e);
+                showToast('error', '刪除支出失敗。');
+            }
+        }, [authReady, db, tripId, expenses, showToast]);
+
+        // 計算總支出和按類別分組的數據
+        const expenseSummary = useMemo(() => {
+            const summary = {};
+            let total = 0;
+
+            expenses.forEach(expense => {
+                total += expense.amount;
+                summary[expense.category] = (summary[expense.category] || 0) + expense.amount;
+            });
+
+            const chartData = Object.entries(summary).map(([category, value]) => ({
+                title: category,
+                value: value,
+                color: categoryColors[category] || categoryColors['其他'],
+            }));
+
+            return { total, chartData };
+        }, [expenses]);
+
+        return (
+            <div className="pt-6 space-y-6">
+                <div className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md">
+                    <h3 className="text-xl font-bold dark:text-white">總支出：</h3>
+                    <span className="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">${expenseSummary.total.toFixed(0)} {trip.budget?.currency || 'TWD'}</span>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* 支出分佈圖 (替代 Pie Chart) */}
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                            <BarChart3 className="w-5 h-5 mr-2 text-indigo-500" />
+                            支出類別分佈
+                        </h3>
+                        <BudgetBarChart data={expenseSummary.chartData} />
+                    </div>
+
+                    {/* 支出列表 */}
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
+                                <PiggyBank className="w-6 h-6 mr-2 text-indigo-500" />
+                                所有支出 ({expenses.length})
+                            </h3>
+                            {isMember && (
+                                <button
+                                    onClick={() => setIsAddExpenseModalOpen(true)}
+                                    className={`flex items-center px-3 py-1 text-sm font-medium rounded-full text-white bg-indigo-500 hover:bg-indigo-600 transition-colors shadow-md`}
+                                >
+                                    <Plus className="w-4 h-4 mr-1" />
+                                    記一筆
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                            {expenses.length === 0 ? (
+                                <p className="text-gray-500 dark:text-gray-400">尚未記錄任何支出。</p>
+                            ) : (
+                                expenses.slice().sort((a, b) => b.createdAt?.toMillis ? b.createdAt.toMillis() - a.createdAt.toMillis() : (new Date(b.createdAt) - new Date(a.createdAt))).map(expense => (
+                                    <div key={expense.id} className="flex justify-between items-center p-3 border-b dark:border-gray-700">
+                                        <div className="flex items-center space-x-3">
+                                            <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: categoryColors[expense.category] || categoryColors['其他'] }}></div>
+                                            <div>
+                                                <p className="font-medium dark:text-white">{expense.name}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">{expense.category}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center space-x-3">
+                                            <span className="font-semibold text-lg text-gray-800 dark:text-gray-200">
+                                                ${expense.amount.toFixed(0)}
+                                            </span>
+                                            {isMember && (
+                                                <button
+                                                    onClick={() => handleDeleteExpense(expense.id)}
+                                                    className="p-1 rounded-full text-red-400 hover:text-red-600 transition-colors"
+                                                    title="刪除"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* 新增支出 Modal */}
+                <Modal
+                    isOpen={isAddExpenseModalOpen}
+                    onClose={() => setIsAddExpenseModalOpen(false)}
+                    title="記錄新支出"
+                >
+                    <form onSubmit={handleAddExpense} className="space-y-4">
+                        <div>
+                            <label htmlFor="expenseName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">支出項目</label>
+                            <input
+                                id="expenseName"
+                                type="text"
+                                value={newExpense.name}
+                                onChange={(e) => setNewExpense({ ...newExpense, name: e.target.value })}
+                                placeholder="例如：晚餐費用"
+                                className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:text-white"
+                                required
+                            />
+                        </div>
+                        <div className="flex space-x-4">
+                            <div className="flex-1">
+                                <label htmlFor="expenseAmount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">金額 ({trip.budget?.currency || 'TWD'})</label>
+                                <input
+                                    id="expenseAmount"
+                                    type="number"
+                                    min="0.01"
+                                    step="0.01"
+                                    value={newExpense.amount}
+                                    onChange={(e) => setNewExpense({ ...newExpense, amount: Number(e.target.value) })}
+                                    className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:text-white"
+                                    required
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label htmlFor="expenseCategory" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">類別</label>
+                                <select
+                                    id="expenseCategory"
+                                    value={newExpense.category}
+                                    onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}
+                                    className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:text-white"
+                                >
+                                    {categories.map(cat => (
+                                        <option key={cat} value={cat}>{cat}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <button
+                            type="submit"
+                            className={`w-full py-3 px-4 rounded-lg font-semibold text-white ${primaryBg} ${focusRing} flex justify-center items-center`}
+                        >
+                            <Save className="w-5 h-5 mr-2" />
+                            記錄支出
+                        </button>
+                    </form>
+                </Modal>
+            </div>
+        );
+    };
+
+    // ------------------- 成員 (Members) 邏輯 -------------------
+
+    const MembersSection = () => {
+        const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+        const [newMemberId, setNewMemberId] = useState('');
+        const members = trip.members || [];
+        const isOwner = ownerId === userId;
+
+        // 處理新增成員
+        const handleAddMember = useCallback(async (e) => {
+            e.preventDefault();
+            if (!authReady || !db || !newMemberId.trim()) return;
+
+            try {
+                const tripRef = doc(db, getPublicTripDocPath(tripId));
+                const newMember = { id: newMemberId.trim(), name: `新成員 (${newMemberId.substring(0, 4)}...)` };
+
+                // 防止重複添加
+                if (members.some(m => m.id === newMemberId.trim())) {
+                    showToast('error', '此成員已在行程中。');
+                    return;
+                }
+
+                await updateDoc(tripRef, {
+                    members: [...members, newMember]
+                });
+                showToast('success', '成員新增成功！');
+                setNewMemberId('');
+                setIsAddMemberModalOpen(false);
+            } catch (e) {
+                console.error("Error adding member: ", e);
+                showToast('error', '新增成員失敗。');
+            }
+        }, [authReady, db, tripId, newMemberId, members, showToast]);
+
+        // 處理移除成員
+        const handleRemoveMember = useCallback(async (memberId) => {
+            if (!authReady || !db || memberId === ownerId || !window.confirm('確定要移除此成員嗎？')) return;
+
+            try {
+                const tripRef = doc(db, getPublicTripDocPath(tripId));
+                const updatedMembers = members.filter(m => m.id !== memberId);
+
+                await updateDoc(tripRef, { members: updatedMembers });
+                showToast('success', '成員移除成功！');
+            } catch (e) {
+                console.error("Error removing member: ", e);
+                showToast('error', '移除成員失敗。');
+            }
+        }, [authReady, db, tripId, members, ownerId, showToast]);
+
+        return (
+            <div className="pt-6 space-y-6">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
+                            <Users className="w-6 h-6 mr-2 text-indigo-500" />
+                            行程成員 ({members.length})
+                        </h3>
+                        {isOwner && (
+                            <button
+                                onClick={() => setIsAddMemberModalOpen(true)}
+                                className={`flex items-center px-3 py-1 text-sm font-medium rounded-full text-white bg-indigo-500 hover:bg-indigo-600 transition-colors shadow-md`}
+                            >
+                                <Plus className="w-4 h-4 mr-1" />
+                                新增成員
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="space-y-3">
+                        {members.map(member => (
+                            <div key={member.id} className="flex items-center justify-between p-3 border-b dark:border-gray-700 last:border-b-0">
+                                <div className="flex items-center space-x-3">
+                                    <User className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                                    <div>
+                                        <p className="font-medium dark:text-white">{member.name}</p>
+                                        <p className="text-xs font-mono text-gray-500 dark:text-gray-400" title={`用戶 ID: ${member.id}`}>{member.id}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    {member.id === ownerId && <span className="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full font-semibold">擁有者</span>}
+                                    {member.id === userId && <span className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-full font-semibold">你</span>}
+                                    {isOwner && member.id !== ownerId && (
+                                        <button
+                                            onClick={() => handleRemoveMember(member.id)}
+                                            className="p-1 rounded-full text-red-400 hover:text-red-600 transition-colors"
+                                            title="移除成員"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* 新增成員 Modal */}
+                <Modal
+                    isOpen={isAddMemberModalOpen}
+                    onClose={() => setIsAddMemberModalOpen(false)}
+                    title="邀請新成員"
+                >
+                    <form onSubmit={handleAddMember} className="space-y-4">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">請輸入您想邀請成員的完整用戶 ID (可在其儀表板右上角找到)。</p>
+                        <div>
+                            <label htmlFor="memberId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">成員 ID</label>
+                            <input
+                                id="memberId"
+                                type="text"
+                                value={newMemberId}
+                                onChange={(e) => setNewMemberId(e.target.value)}
+                                placeholder="輸入用戶 ID"
+                                className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:text-white font-mono"
+                                required
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            className={`w-full py-3 px-4 rounded-lg font-semibold text-white ${primaryBg} ${focusRing} flex justify-center items-center`}
+                        >
+                            <Plus className="w-5 h-5 mr-2" />
+                            新增成員
+                        </button>
+                    </form>
+                </Modal>
+            </div>
+        );
+    };
+
+    // ------------------- 渲染主結構 -------------------
+
+    const TabButton = ({ tab, icon: Icon, label }) => (
+        <button
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 flex flex-col sm:flex-row items-center justify-center p-3 sm:p-4 text-sm font-medium rounded-t-lg transition-colors ${
+                activeTab === tab
+                    ? 'bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900'
+            }`}
+        >
+            <Icon className="w-5 h-5 sm:mr-2 mb-1 sm:mb-0" />
+            <span>{label}</span>
+        </button>
+    );
+
+    const activeComponent = useMemo(() => {
+        switch (activeTab) {
+            case 'itinerary':
+                return <ItinerarySection />;
+            case 'tasks':
+                return <TasksSection />;
+            case 'budget':
+                return <BudgetSection />;
+            default:
+                return <ItinerarySection />;
+        }
+    }, [activeTab, trip]); // 依賴 trip 確保數據更新
+
+    return (
+        <div className={`min-h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-slate-50'}`}>
+            <Header title={name} userId={userId} onBack={onBack} isDarkMode={isDarkMode} />
+
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                {/* 行程資訊卡 */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+                    <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">{name}</h2>
+                    <p className="text-md text-gray-600 dark:text-gray-400 flex items-center space-x-4">
+                        <CalendarDays className="w-5 h-5 text-indigo-500" />
+                        <span>{startDate} 到 {endDate} ({days.length} 天)</span>
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">由 <span className="font-semibold">{trip.members?.find(m => m.id === ownerId)?.name || ownerId.substring(0, 8) + '...'}</span> 建立</p>
+                </div>
+
+                {/* 標籤頁導航 */}
+                <div className="bg-white dark:bg-gray-800 rounded-t-xl shadow-md border-b dark:border-gray-700 sticky top-[68px] z-10">
+                    <nav className="flex space-x-1">
+                        <TabButton tab="itinerary" icon={Map} label="行程" />
+                        <TabButton tab="tasks" icon={ListTodo} label="待辦" />
+                        <TabButton tab="budget" icon={Calculator} label="預算" />
+                        <TabButton tab="members" icon={Users} label="成員" />
+                    </nav>
+                </div>
+
+                {/* 內容區域 */}
+                <div className="py-4">
+                    {activeComponent}
+                </div>
+            </main>
+
+            {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+        </div>
+    );
+};
+
+
+/**
+ * 教學頁面
+ */
+const TutorialView = ({ onBack, isDarkMode }) => {
+    const tutorialSteps = [
+        {
+            title: "歡迎使用旅遊規劃器",
+            icon: Home,
+            content: "這是一個協同旅遊規劃應用程式，您可以與朋友或家人一起規劃行程、分配任務和管理預算。所有數據都將實時同步。",
+        },
+        {
+            title: "建立新行程",
+            icon: Plus,
+            content: "在『儀表板』頁面點擊右下角的『建立新行程』按鈕。只需輸入行程名稱、出發日期和結束日期即可開始。",
+        },
+        {
+            title: "行程安排 (Itinerary)",
+            icon: Map,
+            content: "在『行程規劃』標籤中，您可以為每一天新增地點、活動或預訂項目。我們使用上下箭頭按鈕來調整行程項目的順序。",
+        },
+        {
+            title: "待辦事項 (Tasks)",
+            icon: ListTodo,
+            content: "在『待辦』標籤中，您可以新增和管理所有旅行前的準備工作。勾選方框標記為已完成，方便您追蹤進度。",
+        },
+        {
+            title: "預算追蹤 (Budget)",
+            icon: Calculator,
+            content: "在『預算』標籤中，您可以記錄每一筆支出，並按類別查看支出分佈。您可以看到誰支付了什麼，以利於後續的費用結算。",
+        },
+        {
+            title: "協同合作 (Members)",
+            icon: Users,
+            content: "在『成員』標籤中，您可以透過輸入其他用戶的 ID 來邀請他們加入您的行程，與您共同編輯和查看所有規劃內容。",
+        }
+    ];
+
+    const containerClass = isDarkMode
+        ? "bg-gray-800 text-gray-200"
+        : "bg-white text-gray-800";
+
+    return (
+        <div className="p-8 max-w-4xl mx-auto">
+            <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-8 border-b pb-4 border-indigo-200 dark:border-indigo-700">應用程式教學</h2>
+
+            <div className="space-y-8">
+                {tutorialSteps.map((step, index) => (
+                    <div key={index} className={`flex p-6 rounded-xl shadow-lg transition-shadow duration-300 ${containerClass}`}>
+                        <div className="flex-shrink-0 mr-6">
+                            <step.icon className="w-8 h-8 text-indigo-500" />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-bold mb-2 flex items-center">
+                                {step.title}
+                            </h3>
+                            <p className="text-gray-600 dark:text-gray-300">{step.content}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="mt-10 flex justify-center">
+                <button
+                    onClick={onBack}
+                    className={`flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-lg text-white ${primaryBg} ${focusRing} transition-all duration-150`}
+                >
+                    <ChevronLeft className="w-5 h-5 mr-2" />
+                    返回儀表板
+                </button>
+            </div>
+        </div>
+    );
+};
+
+
+/**
+ * 主應用程式元件
+ */
 const App = () => {
-    const [userId, setUserId] = useState(null);
     const [authReady, setAuthReady] = useState(false);
+    const [userId, setUserId] = useState(null);
     const [trips, setTrips] = useState([]);
-    const [isDarkMode, setIsDarkMode] = useState(false);
     const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'tripDetail', 'tutorial'
     const [selectedTripId, setSelectedTripId] = useState(null);
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+        // 嘗試從 localStorage 載入主題設定
+        const savedTheme = localStorage.getItem('theme');
+        return savedTheme === 'dark';
+    });
 
-    // 黑暗模式切換
-    const toggleDarkMode = useCallback(() => {
-        setIsDarkMode(prev => !prev);
-    }, []);
-    
-    // 初始化 Firebase 認證和資料監聽
+    // ------------------- 主題切換 -------------------
+
     useEffect(() => {
-        // 1. 認證初始化
-        const initializeAuth = async () => {
+        // 根據 isDarkMode 狀態設定或移除 dark 類別
+        const htmlElement = document.documentElement;
+        if (isDarkMode) {
+            htmlElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            htmlElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        }
+    }, [isDarkMode]);
+
+    const toggleDarkMode = useCallback(() => {
+        setIsDarkMode(prevMode => !prevMode);
+    }, []);
+
+    // ------------------- Firebase 認證 -------------------
+
+    useEffect(() => {
+        const handleAuth = async () => {
             try {
-                // 優先使用自訂 token 登入 (Canvas 環境)
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
-                    // 如果沒有 token，則匿名登入
                     await signInAnonymously(auth);
                 }
             } catch (error) {
-                console.error("Authentication failed:", error);
+                console.error("Firebase Auth Error:", error);
             }
         };
 
-        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                setUserId(user.uid);
-            } else {
-                // Should not happen if signInAnonymously is successful, but for safety
-                setUserId(null); 
-            }
-            setAuthReady(true);
-        });
+        if (auth) {
+            const unsubscribe = onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    setUserId(user.uid);
+                } else {
+                    setUserId(null);
+                }
+                setAuthReady(true);
+            });
 
-        // 檢查並執行認證
-        if (!auth.currentUser) {
-            initializeAuth();
+            handleAuth();
+            return () => unsubscribe();
         } else {
-            setAuthReady(true);
-            setUserId(auth.currentUser.uid);
+            setAuthReady(false);
         }
-
-        return () => unsubscribeAuth();
     }, []);
 
-    // 2. 資料監聽 (僅在認證完成後執行)
-    useEffect(() => {
-        if (!authReady || !userId) return;
+    // ------------------- 數據訂閱 (行程列表) -------------------
 
-        const collectionRef = getUserCollectionRef('trips', userId);
-        if (!collectionRef) return;
-        
-        // 移除 orderBy，在客戶端排序
-        const q = query(collectionRef);
+    useEffect(() => {
+        if (!authReady || !db || !userId) return;
+
+        // 查詢所有公開行程（供協作）
+        const tripsColRef = collection(db, getTripsCollectionPath());
+        const q = query(tripsColRef, orderBy('createdAt', 'desc'));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const fetchedTrips = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
+                // 處理 serverTimestamp 轉換
+                createdAt: doc.data().createdAt?.toDate()?.toISOString() || null,
             }));
             setTrips(fetchedTrips);
         }, (error) => {
-            console.error("Error fetching trips:", error);
+            console.error("Error fetching trips: ", error);
+            // 這裡不使用 toast 以避免 Dashboard 載入時出錯
         });
 
         return () => unsubscribe();
-    }, [authReady, userId]);
+    }, [authReady, db, userId]); // 依賴 authReady 和 userId
 
-    // 視圖切換
+    // ------------------- 視圖切換邏輯 -------------------
+
     const handleSelectTrip = useCallback((tripId) => {
         setSelectedTripId(tripId);
         setCurrentView('tripDetail');
     }, []);
 
     const handleBackToDashboard = useCallback(() => {
-        setCurrentView('dashboard');
         setSelectedTripId(null);
+        setCurrentView('dashboard');
     }, []);
-    
+
     const handleStartTutorial = useCallback(() => {
         setCurrentView('tutorial');
-        setSelectedTripId(null);
     }, []);
 
-    if (!authReady) {
-        return (
-            <div className="min-h-screen flex justify-center items-center bg-slate-50 dark:bg-slate-900">
-                <Loader2 className={`w-10 h-10 animate-spin text-${primaryColor}`} />
-                <span className={`ml-4 text-lg text-gray-600 dark:text-gray-300`}>載入應用程式與認證中...</span>
-            </div>
-        );
-    }
+    // ------------------- 渲染 -------------------
 
     return (
-        <div className={`font-sans antialiased min-h-screen ${isDarkMode ? 'dark' : ''} text-gray-800 dark:text-gray-100`}>
+        <div className={`app-container ${isDarkMode ? 'dark' : ''}`}>
             {currentView === 'dashboard' && (
-                <div className="bg-slate-50 dark:bg-gray-900 min-h-screen">
-                    <Dashboard 
-                        onSelectTrip={handleSelectTrip} 
-                        trips={trips} 
-                        userId={userId} 
-                        authReady={authReady}
-                        isDarkMode={isDarkMode}
-                        toggleDarkMode={toggleDarkMode}
-                        onTutorialStart={handleStartTutorial} // 新增教學入口
-                    />
-                </div>
+                <Dashboard
+                    onSelectTrip={handleSelectTrip}
+                    trips={trips}
+                    userId={userId}
+                    authReady={authReady}
+                    isDarkMode={isDarkMode}
+                    toggleDarkMode={toggleDarkMode}
+                    onTutorialStart={handleStartTutorial} // 新增教學入口
+                />
             )}
-            
+
             {currentView === 'tripDetail' && (
                 // TripDetail 已經在內部處理自己的 Header
-                <TripDetail 
-                    tripId={selectedTripId} 
-                    onBack={handleBackToDashboard} 
-                    userId={userId} 
+                <TripDetail
+                    tripId={selectedTripId}
+                    onBack={handleBackToDashboard}
+                    userId={userId}
                     authReady={authReady}
                     isDarkMode={isDarkMode}
                 />
@@ -1178,15 +1563,15 @@ const App = () => {
             {currentView === 'tutorial' && (
                 <div className="bg-slate-50 dark:bg-gray-900 min-h-screen">
                     {/* 教學頁面的 Header 包含返回功能 */}
-                    <Header 
-                        title="應用程式教學" 
+                    <Header
+                        title="應用程式教學"
                         onBack={handleBackToDashboard} // 返回儀表板
-                        userId={userId} 
-                        isDarkMode={isDarkMode} 
+                        userId={userId}
+                        isDarkMode={isDarkMode}
                         toggleDarkMode={toggleDarkMode}
                     />
-                    <TutorialView 
-                        onBack={handleBackToDashboard} 
+                    <TutorialView
+                        onBack={handleBackToDashboard}
                         isDarkMode={isDarkMode}
                     />
                 </div>
