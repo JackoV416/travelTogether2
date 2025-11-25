@@ -16,7 +16,7 @@
     "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.23.0",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
     "react-minimal-pie-chart": "^8.4.0"
   },
   "devDependencies": {
