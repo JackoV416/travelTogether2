@@ -1,0 +1,19 @@
+{
+  "build": {
+    "env": {
+      "NODE_OPTIONS": "--max-old-space-size=4096"
+    }
+  },
+  "cracoConfig": {
+    "webpack": {
+      "configure": {
+        // 增加 Webpack chunk size warning limit 到 1000 KB (1 MB)
+        "performance": {
+          "hints": "warning",
+          "maxEntrypointSize": 1000000,
+          "maxAssetSize": 1000000
+        }
+      }
+    }
+  }
+}
