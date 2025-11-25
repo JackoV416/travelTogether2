@@ -21,17 +21,10 @@ const getPrivateUserCollectionPath = (userId, collectionName) =>
 const getPublicCollectionPath = (collectionName) => 
     `artifacts/${appId}/public/data/${collectionName}`;
 
-// Debounce function (prevents rapid function calls)
-const debounce = (func, delay) => {
-    let timeoutId;
-    return (...args) => {
-        if (timeoutId) clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => func.apply(null, args), delay);
-    };
+// Helper for simple UI feedback (replace with Toast/Modal in production)
+const alertUser = (message) => {
+    console.log("UI Alert:", message);
 };
-
-// === FIREBASE CONTEXT ===
-let app, db, auth;
 
 // A simple utility for state management (using a placeholder for user data)
 const useUserStore = () => {
@@ -58,8 +51,10 @@ const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel, confir
     const isDanger = type === 'danger';
     const confirmButtonClass = isDanger 
         ? "bg-red-600 hover:bg-red-700 shadow-red-300/50"
-        : "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-300/50";
-    const titleClass = isDanger ? "text-red-600" : "text-indigo-600";
+        : (type === 'warning' 
+            ? "bg-gray-600 hover:bg-gray-700 shadow-gray-300/50"
+            : "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-300/50");
+    const titleClass = isDanger ? "text-red-600" : (type === 'warning' ? "text-gray-600" : "text-indigo-600");
     
     return (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-70 z-50 flex justify-center items-center p-4">
@@ -90,6 +85,110 @@ const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel, confir
     );
 };
 
+
+// === TRIP ITEM COMPONENT (WITH INLINE EDITING) ===
+const TripItem = ({ item, userMap, toggleCompletion, deleteItem, updateDescription }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedDescription, setEditedDescription] = useState(item.description);
+    
+    // Reset editedDescription if the item description changes externally (e.g., another user edits)
+    useEffect(() => {
+        setEditedDescription(item.description);
+    }, [item.description]);
+
+    const handleSave = () => {
+        if (editedDescription.trim() && editedDescription !== item.description) {
+            updateDescription(item.id, editedDescription);
+        }
+        setIsEditing(false);
+    };
+
+    const handleKeyDown = (e) => {
+        // Prevent form submission on Enter, save changes instead
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSave();
+        }
+        // Cancel editing on Escape
+        if (e.key === 'Escape') {
+            setEditedDescription(item.description);
+            setIsEditing(false);
+        }
+    };
+    
+    const addedByDisplay = userMap[item.addedBy] || item.addedBy.substring(0, 6);
+    
+    return (
+        <li className="flex items-start justify-between p-3 bg-gray-50 rounded-lg shadow-sm hover:bg-white transition duration-200 group">
+            <div className="flex items-start flex-grow min-w-0">
+                {/* Completion Checkbox */}
+                <input
+                    type="checkbox"
+                    checked={item.completed}
+                    onChange={() => toggleCompletion(item.id, item.completed)}
+                    className="form-checkbox h-5 w-5 text-indigo-600 rounded mt-1 mr-3 focus:ring-indigo-500 shrink-0"
+                />
+                
+                {/* Description - Editable or Display */}
+                {isEditing ? (
+                    <div className="flex items-center space-x-2 w-full">
+                        <input
+                            type="text"
+                            value={editedDescription}
+                            onChange={(e) => setEditedDescription(e.target.value)}
+                            // Save on blur if the focus moves away
+                            onBlur={handleSave} 
+                            onKeyDown={handleKeyDown}
+                            className="flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-1 text-sm"
+                            autoFocus
+                        />
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); handleSave(); }} 
+                            className="p-1 text-green-600 hover:text-green-800 transition shrink-0"
+                            title="儲存變更"
+                        >
+                            <Save size={18} />
+                        </button>
+                    </div>
+                ) : (
+                    <div className={`flex items-center w-full min-w-0 pr-4 `}>
+                        <span 
+                            className={`text-gray-800 flex-grow break-words text-sm cursor-pointer hover:text-indigo-600 transition min-w-0 ${item.completed ? 'line-through text-gray-500' : ''}`}
+                            onClick={() => setIsEditing(true)}
+                        >
+                            {item.description}
+                        </span>
+                        {/* Edit Button - Visible on hover */}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
+                            className="ml-2 p-1 text-gray-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                            title="編輯項目"
+                        >
+                            <Edit2 size={16} />
+                        </button>
+                    </div>
+                )}
+            </div>
+            
+            {/* Metadata and Delete Button */}
+            <div className="flex items-center space-x-2 shrink-0 ml-4">
+                <span className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full whitespace-nowrap">
+                    由 {addedByDisplay} 新增
+                </span>
+                
+                <button
+                    onClick={() => deleteItem(item.id)}
+                    className="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 transition"
+                    title="刪除此項目"
+                >
+                    <Trash2 size={16} />
+                </button>
+            </div>
+        </li>
+    );
+};
+
+
 // === MAIN APP COMPONENT ===
 const App = () => {
     const [isAuthReady, setIsAuthReady] = useState(false);
@@ -101,16 +200,17 @@ const App = () => {
     const [inviteEmail, setInviteEmail] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Modal state for deletions/removals
+    // Modal state for deletions/removals/leaving
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [memberToRemove, setMemberToRemove] = useState(null); 
     const [isRemoveMemberModalOpen, setIsRemoveMemberModalOpen] = useState(false);
-    // NEW: State for leaving trip
     const [isLeaveTripModalOpen, setIsLeaveTripModalOpen] = useState(false);
 
     const { userMap, fetchUserDisplayName } = useUserStore();
 
     // --- Firebase Initialization and Auth ---
+    let app, db, auth; // Re-declare locally to avoid scope issues in useEffect
+
     useEffect(() => {
         if (Object.keys(firebaseConfig).length === 0) {
             console.error("Firebase config is missing.");
@@ -157,8 +257,16 @@ const App = () => {
     useEffect(() => {
         if (!isAuthReady || !userId) return;
 
+        // Ensure db and auth are accessible after auth is ready
+        if (!window.firebaseApp) {
+            window.firebaseApp = initializeApp(firebaseConfig);
+            window.db = getFirestore(window.firebaseApp);
+            window.auth = getAuth(window.firebaseApp);
+        }
+        const currentDb = window.db;
+
         const q = query(
-            collection(db, getPublicCollectionPath('trips')),
+            collection(currentDb, getPublicCollectionPath('trips')),
             where('members', 'array-contains', userId)
         );
 
@@ -187,11 +295,20 @@ const App = () => {
     
     // --- Data Manipulation Functions ---
 
+    // Utility function to get the current Firestore instance
+    const getDb = useCallback(() => {
+        if (!window.db) {
+            window.firebaseApp = initializeApp(firebaseConfig);
+            window.db = getFirestore(window.firebaseApp);
+        }
+        return window.db;
+    }, []);
+
     const createNewTrip = async (name, startDate, endDate) => {
         if (!userId) return;
         setLoading(true);
         try {
-            const docRef = await addDoc(collection(db, getPublicCollectionPath('trips')), {
+            await addDoc(collection(getDb(), getPublicCollectionPath('trips')), {
                 name,
                 startDate,
                 endDate,
@@ -200,8 +317,7 @@ const App = () => {
                 items: [],
                 timestamp: serverTimestamp()
             });
-            setSelectedTripId(docRef.id);
-            setView('TripDetail');
+            setView('Home');
         } catch (e) {
             console.error("Error adding document: ", e);
         } finally {
@@ -213,7 +329,7 @@ const App = () => {
         if (!tripId) return;
         
         try {
-            await updateDoc(doc(db, getPublicCollectionPath('trips'), tripId), updates);
+            await updateDoc(doc(getDb(), getPublicCollectionPath('trips'), tripId), updates);
         } catch (e) {
             console.error("Error updating trip details: ", e);
         }
@@ -227,13 +343,36 @@ const App = () => {
                 item.id === itemId ? { ...item, completed: !isCompleted } : item
             );
 
-            await updateDoc(doc(db, getPublicCollectionPath('trips'), currentTrip.id), {
+            await updateDoc(doc(getDb(), getPublicCollectionPath('trips'), currentTrip.id), {
                 items: updatedItems
             });
         } catch (e) {
             console.error("Error updating item completion: ", e);
         }
     };
+    
+    // NEW: Function to update an item's description
+    const updateTripItemDescription = async (itemId, newDescription) => {
+        if (!currentTrip || !userId || !newDescription.trim()) {
+            alertUser("項目描述不能為空。");
+            return;
+        }
+
+        try {
+            const updatedItems = currentTrip.items.map(item =>
+                item.id === itemId ? { ...item, description: newDescription.trim() } : item
+            );
+
+            await updateDoc(doc(getDb(), getPublicCollectionPath('trips'), currentTrip.id), {
+                items: updatedItems
+            });
+            alertUser("項目已成功更新。");
+        } catch (e) {
+            console.error("Error updating item description: ", e);
+            alertUser("更新項目失敗。");
+        }
+    };
+
 
     const addTripItem = async (description) => {
         if (!currentTrip || !userId) return;
@@ -247,7 +386,7 @@ const App = () => {
         };
 
         try {
-            await updateDoc(doc(db, getPublicCollectionPath('trips'), currentTrip.id), {
+            await updateDoc(doc(getDb(), getPublicCollectionPath('trips'), currentTrip.id), {
                 items: arrayUnion(newItem)
             });
         } catch (e) {
@@ -259,13 +398,14 @@ const App = () => {
         if (!currentTrip || !userId) return;
 
         try {
+            // Find the item object to remove it correctly using arrayRemove
             const itemToRemove = currentTrip.items.find(item => item.id === itemId);
             if (!itemToRemove) {
                 console.warn("Item not found to remove.");
                 return;
             }
             
-            await updateDoc(doc(db, getPublicCollectionPath('trips'), currentTrip.id), {
+            await updateDoc(doc(getDb(), getPublicCollectionPath('trips'), currentTrip.id), {
                 items: arrayRemove(itemToRemove)
             });
 
@@ -288,7 +428,7 @@ const App = () => {
         }
 
         try {
-            await updateDoc(doc(db, getPublicCollectionPath('trips'), currentTrip.id), {
+            await updateDoc(doc(getDb(), getPublicCollectionPath('trips'), currentTrip.id), {
                 members: arrayUnion(targetUID)
             });
             setInviteEmail('');
@@ -311,7 +451,7 @@ const App = () => {
         }
         
         try {
-            await updateDoc(doc(db, getPublicCollectionPath('trips'), currentTrip.id), {
+            await updateDoc(doc(getDb(), getPublicCollectionPath('trips'), currentTrip.id), {
                 members: arrayRemove(memberId)
             });
             setMemberToRemove(null);
@@ -322,7 +462,7 @@ const App = () => {
         }
     };
     
-    // NEW: Function for a non-owner member to leave the trip
+    // Function for a non-owner member to leave the trip
     const leaveTrip = async () => {
         if (!currentTrip || !userId) return;
         
@@ -333,7 +473,7 @@ const App = () => {
         }
 
         try {
-            await updateDoc(doc(db, getPublicCollectionPath('trips'), currentTrip.id), {
+            await updateDoc(doc(getDb(), getPublicCollectionPath('trips'), currentTrip.id), {
                 members: arrayRemove(userId)
             });
             
@@ -355,7 +495,7 @@ const App = () => {
         setLoading(true);
 
         try {
-            await deleteDoc(doc(db, getPublicCollectionPath('trips'), currentTrip.id));
+            await deleteDoc(doc(getDb(), getPublicCollectionPath('trips'), currentTrip.id));
             
             // Redirect back to home after deletion
             setSelectedTripId(null);
@@ -369,11 +509,6 @@ const App = () => {
         }
     };
 
-    // Helper for simple UI feedback
-    const alertUser = (message) => {
-        // Using console log as placeholder for better UI feedback (Toast/Modal)
-        console.log("UI Alert:", message);
-    };
 
     // --- View Components ---
 
@@ -494,7 +629,7 @@ const App = () => {
         );
     };
     
-    // Inline Editable Component
+    // Inline Editable Component for Trip Details
     const InlineEdit = ({ children, isEditing, onToggleEdit, onSave, inputType = 'text', value, onChange, className = '', iconSize = 24 }) => {
         if (isEditing) {
             // Check if both start/end dates are being edited together
@@ -567,7 +702,7 @@ const App = () => {
         
         const [newItemDescription, setNewItemDescription] = useState('');
         
-        // State for Inline Editing
+        // State for Inline Editing (Trip Metadata)
         const [isNameEditing, setIsNameEditing] = useState(false);
         const [isDateEditing, setIsDateEditing] = useState(false);
         const [editedName, setEditedName] = useState(currentTrip.name);
@@ -632,37 +767,6 @@ const App = () => {
             setIsRemoveMemberModalOpen(true);
         };
 
-        const TripItem = ({ item }) => {
-            const addedByDisplay = userMap[item.addedBy] || item.addedBy.substring(0, 6);
-            return (
-                <li className="flex items-start justify-between p-3 bg-gray-50 rounded-lg shadow-sm hover:bg-white transition duration-200">
-                    <div className="flex items-start flex-grow">
-                        <input
-                            type="checkbox"
-                            checked={item.completed}
-                            onChange={() => toggleTripItemCompletion(item.id, item.completed)}
-                            className="form-checkbox h-5 w-5 text-indigo-600 rounded mt-1 mr-3 focus:ring-indigo-500"
-                        />
-                        <span className={`text-gray-800 flex-grow break-words pr-4 ${item.completed ? 'line-through text-gray-500' : ''}`}>
-                            {item.description}
-                        </span>
-                    </div>
-                    <div className="flex items-center space-x-2 shrink-0">
-                        <span className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full whitespace-nowrap">
-                            由 {addedByDisplay} 新增
-                        </span>
-                        
-                        <button
-                            onClick={() => deleteTripItem(item.id)}
-                            className="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 transition"
-                            title="刪除此項目"
-                        >
-                            <Trash2 size={16} />
-                        </button>
-                    </div>
-                </li>
-            );
-        };
         
         return (
             <div className="p-4 sm:p-8">
@@ -829,7 +933,14 @@ const App = () => {
                         {currentTrip.items
                             .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
                             .map(item => (
-                                <TripItem key={item.id} item={item} />
+                                <TripItem 
+                                    key={item.id} 
+                                    item={item} 
+                                    userMap={userMap}
+                                    toggleCompletion={toggleTripItemCompletion}
+                                    deleteItem={deleteTripItem}
+                                    updateDescription={updateTripItemDescription} // 新增的編輯函數
+                                />
                             ))}
                         {currentTrip.items.length === 0 && (
                             <p className="text-center text-gray-400 py-4">此行程還沒有任何規劃項目。</p>
@@ -858,7 +969,7 @@ const App = () => {
                     type="danger"
                 />
                 
-                {/* NEW: Confirmation Modal for leaving trip */}
+                {/* Confirmation Modal for leaving trip */}
                 <ConfirmationModal
                     isOpen={isLeaveTripModalOpen}
                     title="確認退出行程"
@@ -866,7 +977,7 @@ const App = () => {
                     onConfirm={leaveTrip}
                     onCancel={() => setIsLeaveTripModalOpen(false)}
                     confirmText="確認退出"
-                    type="warning" // Added a new type for visual difference
+                    type="warning" 
                 />
             </div>
         );
@@ -882,6 +993,15 @@ const App = () => {
                 </div>
             );
         }
+
+        const currentAuth = window.auth;
+        const handleSignOut = async () => {
+            if (currentAuth) {
+                await signOut(currentAuth);
+                // After signing out, sign in anonymously to keep the app functional
+                await signInAnonymously(currentAuth); 
+            }
+        };
 
         switch (view) {
             case 'Home':
@@ -904,9 +1024,15 @@ const App = () => {
                         {userEmail} (UID: {userId || 'N/A'})
                     </span>
                     <button
-                        onClick={() => signOut(auth)}
+                        onClick={async () => {
+                            // Ensure auth object is available before signing out
+                            if (window.auth) {
+                                await signOut(window.auth);
+                                await signInAnonymously(window.auth);
+                            }
+                        }}
                         className="flex items-center space-x-1 px-3 py-1 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm"
-                        title="登出"
+                        title="登出並匿名登入"
                     >
                         <LogOut size={16} />
                         <span className="hidden sm:inline">登出</span>
