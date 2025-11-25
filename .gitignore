@@ -1,2 +1,9 @@
-環境變數
+dependencies
+
+/node_modules
+/dist
+
+dotenv
+
 .env
+.env.*
