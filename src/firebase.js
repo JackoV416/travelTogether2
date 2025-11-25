@@ -1,31 +1,40 @@
-// src/firebase.js - 從環境變量讀取配置
+// src/utils/firebase.js
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
+import { getFirestore, setLogLevel } from 'firebase/firestore';
 
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
-
-// ***********************************************
-// 從環境變量讀取配置
-const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.REACT_APP_FIREBASE_APP_ID,
-  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
-};
-// ***********************************************
+// 確保全域變數存在
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
 // 初始化 Firebase
 const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
 
-// 導出服務
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-// 導出 Storage 服務
-export const storage = getStorage(app)
+// 設定日誌級別 (用於調試)
+setLogLevel('debug');
 
-// 注意：如果您的專案使用其他 Firebase 服務（如 Storage），
-// 請確保也在此處初始化並導出它們。
+/**
+ * 處理初始認證邏輯：使用自定義 Token 或匿名登入。
+ */
+async function handleInitialAuth() {
+    try {
+        if (initialAuthToken) {
+            // 使用提供的自定義 token 登入
+            await signInWithCustomToken(auth, initialAuthToken);
+        } else {
+            // 如果 token 不存在，則匿名登入
+            await signInAnonymously(auth);
+        }
+        console.log("Firebase Auth initialized successfully.");
+    } catch (error) {
+        console.error("Firebase Auth initialization failed:", error);
+    }
+}
+
+// 在應用程式啟動時執行初始認證
+handleInitialAuth();
+
+export { app, db, auth, onAuthStateChanged, firebaseSignOut as signOut, appId };
