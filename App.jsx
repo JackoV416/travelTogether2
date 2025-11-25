@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from 'firebase/auth'; // 增加 signOut
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { 
     getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc, 
-    query, orderBy, serverTimestamp, where, getDocs, runTransaction, arrayUnion, arrayRemove
+    query, orderBy, serverTimestamp, where, getDocs, runTransaction
 } from 'firebase/firestore';
 import { 
     Home, Users, Briefcase, ListTodo, PiggyBank, MapPin, NotebookPen, Loader2, Plus, 
     Trash2, Save, X, Utensils, Bus, ShoppingBag, Bell, ChevronLeft, CalendarDays, 
     Calculator, Clock, Check, Sun, Moon, LogOut, Map, Edit, AlignLeft, BookOpenText,
-    User, Settings, ClipboardList, GripVertical, AlertTriangle, Bot, Users2, UserPlus, XCircle
+    User, Settings, ClipboardList, GripVertical, AlertTriangle
 } from 'lucide-react';
 
 // --- 全域變數和 Firebase 設定 ---
@@ -31,1095 +31,743 @@ try {
 const primaryColor = 'indigo-600';
 const accentColor = 'teal-500';
 
-// 針對手機螢幕優化的卡片和按鈕樣式
 const cardClasses = "bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-xl transition duration-300 border border-gray-100 dark:border-gray-700";
-const inputClasses = `w-full p-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-xl focus:ring-2 focus:ring-${primaryColor.split('-')[0]}-500 focus:border-transparent transition`;
-const buttonClasses = (color, disabled) => 
-    `w-full font-semibold py-3 px-4 rounded-xl transition duration-200 shadow-md ${disabled ? 'bg-gray-400 cursor-not-allowed' : 
-    `bg-${color.split('-')[0]}-600 hover:bg-${color.split('-')[0]}-700 text-white focus:outline-none focus:ring-4 focus:ring-${color.split('-')[0]}-300 active:scale-[0.98]`}`;
+const inputClasses = `w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-${primaryColor}/50 focus:border-${primaryColor} dark:bg-gray-700 dark:text-white transition duration-200`;
+const buttonClasses = (isActive = false, isAccent = false) => 
+    `w-full text-center py-3 px-4 rounded-xl font-bold transition duration-300 shadow-md ${
+        isActive 
+        ? `bg-${primaryColor} text-white shadow-${primaryColor}/40 hover:bg-${primaryColor}/90`
+        : isAccent
+        ? `bg-${accentColor} text-white shadow-${accentColor}/40 hover:bg-${accentColor}/90`
+        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+    }`;
 
-// 應用程式主體顏色
-const bgClasses = "bg-slate-50 dark:bg-gray-900";
-const textClasses = "text-gray-800 dark:text-gray-100";
-const subTextClasses = "text-gray-500 dark:text-gray-400";
+const tabClasses = (isActive) => 
+    `relative p-2 flex-1 flex flex-col items-center rounded-xl transition duration-300 ${
+        isActive 
+        ? `bg-${primaryColor} text-white shadow-lg shadow-${primaryColor}/50` 
+        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+    }`;
 
+// --- Firestore 路徑輔助函式 ---
 
-/**
- * 處理指數退避的 fetch 請求，專門用於 LLM API 呼叫
- * @param {string} url - API 網址
- * @param {object} options - Fetch 選項
- * @param {number} maxRetries - 最大重試次數
- * @returns {Promise<Response>}
- */
-const fetchWithExponentialBackoff = async (url, options, maxRetries = 5) => {
-    for (let i = 0; i < maxRetries; i++) {
-        try {
-            const response = await fetch(url, options);
-            if (response.status === 429 && i < maxRetries - 1) {
-                const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
-                await new Promise(resolve => setTimeout(resolve, delay));
-                continue;
-            }
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response;
-        } catch (error) {
-            if (i === maxRetries - 1) throw error;
-        }
-    }
-};
+// 私人資料路徑: /artifacts/{appId}/users/{userId}/{collectionName}
+const getPrivateCollectionPath = (userId, collectionName) => 
+    `artifacts/${appId}/users/${userId}/${collectionName}`;
 
-// --- Firebase Hooks 與 Context ---
+// 公共/協作資料路徑: /artifacts/{appId}/public/data/{collectionName}
+const getPublicCollectionPath = (collectionName) => 
+    `artifacts/${appId}/public/data/${collectionName}`;
 
-/**
- * 檢查是否為 Manager (Trip 編輯者列表中的第一個用戶)
- * @param {object} trip - 行程資料
- * @param {string} userId - 當前用戶ID
- * @returns {boolean}
- */
-const isTripManager = (trip, userId) => {
-    return trip && trip.editors && trip.editors.length > 0 && trip.editors[0] === userId;
-};
+const getTripCollectionRef = (userId) => collection(db, getPrivateCollectionPath(userId, 'trips'));
+const getTripDocRef = (userId, tripId) => doc(db, getPrivateCollectionPath(userId, 'trips'), tripId);
 
+// 行程詳細資料子集合
+const getSubCollectionRef = (tripId, collectionName) => 
+    collection(db, `artifacts/${appId}/public/data/trips/${tripId}/${collectionName}`);
 
-// --- UI 組件 ---
+// --- 共用 UI 元件 ---
 
-/**
- * 通用 Header 組件，包含主題切換、用戶資訊和登出
- */
-const Header = React.memo(({ title, userId, isDarkMode, toggleDarkMode, onTutorialStart, currentUserInfo, handleLogout }) => {
-    const avatarUrl = currentUserInfo?.photoURL;
-    const displayName = currentUserInfo?.displayName || '用戶';
-    const userInitial = displayName.charAt(0).toUpperCase();
+const Header = ({ title, userId, isDarkMode, toggleDarkMode, onTutorialStart }) => {
+    const handleLogout = () => {
+        // Firebase 登出邏輯 (對於自定義Token，通常是重新載入或清除session)
+        // 在這個模擬環境中，我們只顯示訊息
+        console.log("Logout function triggered. In this environment, we just log the action.");
+        // 如果是標準認證，會是: signOut(auth);
+    };
 
     return (
-        <header className="sticky top-0 z-10 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-md transition-colors duration-300">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-                <h1 className={`text-xl font-bold ${textClasses}`}>{title}</h1>
-                <div className="flex items-center space-x-4">
-                    
-                    {/* 教學按鈕 */}
+        <div className={`sticky top-0 z-10 p-4 shadow-md ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <div className="flex justify-between items-center max-w-4xl mx-auto">
+                <h1 className="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 flex items-center">
+                    <Map className="w-6 h-6 mr-2" />
+                    {title}
+                </h1>
+                <div className="flex items-center space-x-3">
                     <button 
-                        onClick={onTutorialStart}
-                        className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 ${subTextClasses}`}
-                        title="應用程式教學"
+                        onClick={onTutorialStart} 
+                        className={`p-2 rounded-full transition duration-200 ${isDarkMode ? 'text-indigo-400 hover:bg-gray-700' : 'text-indigo-600 hover:bg-gray-100'}`}
+                        aria-label="應用程式教學"
                     >
                         <BookOpenText className="w-5 h-5" />
                     </button>
-
-                    {/* 主題切換按鈕 */}
                     <button 
-                        onClick={toggleDarkMode}
-                        className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 ${subTextClasses}`}
-                        title={isDarkMode ? '切換為白天模式' : '切換為夜間模式'}
+                        onClick={toggleDarkMode} 
+                        className={`p-2 rounded-full transition duration-200 ${isDarkMode ? 'text-yellow-400 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
+                        aria-label="切換深色模式"
                     >
                         {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                     </button>
-
-                    {/* 用戶頭像與登出菜單 */}
-                    <div className="relative group">
-                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-indigo-500 text-white font-semibold text-sm shadow-md cursor-pointer ring-2 ring-indigo-300 dark:ring-indigo-500">
-                            {avatarUrl ? (
-                                <img src={avatarUrl} alt="Avatar" className="w-full h-full rounded-full object-cover" />
-                            ) : (
-                                userInitial
-                            )}
-                        </div>
-                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform scale-95 group-hover:scale-100 z-50">
-                            <div className={`p-3 border-b dark:border-gray-600 ${textClasses}`}>
-                                <p className="font-semibold truncate">{displayName}</p>
-                                <p className={`text-xs break-all ${subTextClasses}`}>ID: {userId}</p>
-                            </div>
-                            <button
-                                onClick={handleLogout}
-                                className="flex items-center w-full px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-600 rounded-b-lg"
-                            >
-                                <LogOut className="w-4 h-4 mr-2" />
-                                登出
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
-    );
-});
-
-
-/**
- * 協作者管理組件 (新的功能)
- */
-const CollaboratorManager = React.memo(({ trip, userId, authReady }) => {
-    const [newUserId, setNewUserId] = useState('');
-    const [message, setMessage] = useState('');
-    const [isManaging, setIsManaging] = useState(false);
-    
-    // 檢查當前用戶是否為行程管理者 (editors 列表中的第一個)
-    const isManager = isTripManager(trip, userId);
-
-    if (!authReady || !trip) return <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />;
-
-    const tripRef = doc(db, `/artifacts/${appId}/public/data/trips`, trip.id);
-
-    const handleAddCollaborator = async () => {
-        if (!newUserId || newUserId === userId) {
-            setMessage('請輸入有效的用戶ID，且不能是您自己。');
-            return;
-        }
-
-        try {
-            await updateDoc(tripRef, {
-                editors: arrayUnion(newUserId.trim())
-            });
-            setMessage(`用戶 ${newUserId.trim()} 已成功加入協作。`);
-            setNewUserId('');
-        } catch (error) {
-            console.error("Error adding collaborator:", error);
-            setMessage(`新增協作者失敗: ${error.message}`);
-        }
-    };
-
-    const handleRemoveCollaborator = async (targetId) => {
-        if (targetId === userId) {
-            setMessage('您不能將自己從編輯者列表中移除。');
-            return;
-        }
-        if (targetId === trip.editors[0]) {
-            setMessage('您不能移除行程管理者。請先轉移管理權限。');
-            return;
-        }
-
-        try {
-            await updateDoc(tripRef, {
-                editors: arrayRemove(targetId)
-            });
-            setMessage(`用戶 ${targetId} 已被移除。`);
-        } catch (error) {
-            console.error("Error removing collaborator:", error);
-            setMessage(`移除協作者失敗: ${error.message}`);
-        }
-    };
-
-    return (
-        <div className={`mt-4 ${cardClasses}`}>
-            <h3 className={`text-lg font-semibold mb-4 flex items-center ${textClasses}`}>
-                <Users2 className="w-5 h-5 mr-2 text-indigo-500" />
-                協作者管理
-            </h3>
-
-            {isManager ? (
-                <div>
-                    <div className="flex space-x-2 mb-4">
-                        <input
-                            type="text"
-                            value={newUserId}
-                            onChange={(e) => setNewUserId(e.target.value.trim())}
-                            placeholder="輸入協作者的用戶ID (UID)"
-                            className={`${inputClasses} flex-grow`}
-                        />
+                    <div className="flex items-center text-sm font-medium border border-gray-300 dark:border-gray-600 rounded-full pl-3 pr-2 py-1">
+                        <User className="w-4 h-4 mr-1 text-gray-500 dark:text-gray-400" />
+                        <span className="truncate w-24 dark:text-gray-200">ID: {userId.substring(0, 8)}...</span>
                         <button 
-                            onClick={handleAddCollaborator}
-                            disabled={!newUserId}
-                            className={buttonClasses('teal', !newUserId || newUserId === userId)}
+                            onClick={handleLogout} 
+                            className="ml-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition"
+                            aria-label="登出"
                         >
-                            <UserPlus className="w-5 h-5" />
+                            <LogOut className="w-4 h-4" />
                         </button>
                     </div>
-                    {message && <p className={`text-sm mb-4 p-2 rounded-lg ${message.includes('失敗') ? 'bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-400' : 'bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-400'}`}>{message}</p>}
-                </div>
-            ) : (
-                <p className="text-orange-500 dark:text-orange-400 mb-4 flex items-start">
-                    <AlertTriangle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
-                    您不是此行程的管理者，無法新增或移除協作者。
-                </p>
-            )}
-
-            <h4 className={`font-medium mb-3 ${textClasses}`}>當前協作者 ({trip.editors.length})</h4>
-            <ul className="space-y-2">
-                {trip.editors.map((editorId) => (
-                    <li key={editorId} className={`flex items-center justify-between p-3 rounded-xl ${editorId === userId ? 'bg-indigo-50 dark:bg-indigo-900/30' : 'bg-gray-50 dark:bg-gray-700'}`}>
-                        <div className="flex items-center">
-                            <User className="w-4 h-4 mr-2 text-indigo-500" />
-                            <span className="break-all text-sm font-mono">{editorId}</span>
-                            {editorId === userId && <span className="ml-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-200 text-indigo-800 dark:bg-indigo-700 dark:text-indigo-100">您</span>}
-                            {editorId === trip.managerId && <span className="ml-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-green-200 text-green-800 dark:bg-green-700 dark:text-green-100">管理員</span>}
-                        </div>
-                        {isManager && editorId !== trip.managerId && (
-                            <button
-                                onClick={() => handleRemoveCollaborator(editorId)}
-                                className="p-1 text-red-500 hover:text-red-700 dark:hover:text-red-300 transition"
-                                title="移除協作者"
-                            >
-                                <XCircle className="w-5 h-5" />
-                            </button>
-                        )}
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-});
-
-
-/**
- * AI 建議行程組件 (新的功能)
- */
-const AIAssistant = React.memo(({ trip, userId, onPlanGenerated }) => {
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [aiPlan, setAiPlan] = useState(null);
-    const [error, setError] = useState(null);
-
-    const handleGenerateAIPlan = async () => {
-        setIsGenerating(true);
-        setAiPlan(null);
-        setError(null);
-
-        const tripInfo = `
-            行程名稱: ${trip.name}
-            目的地: ${trip.destination}
-            開始日期: ${trip.startDate}
-            結束日期: ${trip.endDate}
-            總天數: ${calculateDuration(trip.startDate, trip.endDate) + 1} 天
-            目前的待辦事項: ${trip.todos?.map(t => t.name).join(', ') || '無'}
-            目前的筆記: ${trip.notes || '無'}
-        `;
-        
-        const systemPrompt = "您是一位世界級的旅遊規劃專家。請根據用戶提供的旅遊資訊，設計一份為期完整的、充滿吸引力的旅遊建議行程，用 Markdown 格式清晰呈現。行程需包含每日安排（例如：上午、下午、晚上），涵蓋景點、美食和可能的交通方式。請用繁體中文回覆，並確保內容實用且易於閱讀。";
-        const userQuery = `請為以下行程資訊生成一份詳細的旅遊建議行程。請務必包含每一天的行程規劃，且不要添加任何引言或結語，只需提供完整的 Markdown 格式行程表。行程資訊：\n${tripInfo}`;
-        const apiKey = ""; // Canvas runtime will inject the key if needed
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-
-        const payload = {
-            contents: [{ parts: [{ text: userQuery }] }],
-            systemInstruction: {
-                parts: [{ text: systemPrompt }]
-            },
-        };
-
-        try {
-            const response = await fetchWithExponentialBackoff(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            
-            const result = await response.json();
-            const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '未能生成有效的行程建議，請重試或更換提示。';
-            setAiPlan(text);
-        } catch (err) {
-            console.error("AI generation failed:", err);
-            setError("生成 AI 行程建議失敗，請檢查網絡或稍後重試。");
-        } finally {
-            setIsGenerating(false);
-        }
-    };
-
-    return (
-        <div className={`mt-4 ${cardClasses}`}>
-            <h3 className={`text-lg font-semibold mb-4 flex items-center ${textClasses}`}>
-                <Bot className="w-5 h-5 mr-2 text-teal-500" />
-                AI 旅遊助理
-            </h3>
-
-            <button
-                onClick={handleGenerateAIPlan}
-                disabled={isGenerating}
-                className={buttonClasses('teal', isGenerating)}
-            >
-                {isGenerating ? (
-                    <span className="flex items-center justify-center">
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        生成中... 請稍候
-                    </span>
-                ) : (
-                    '💡 點擊生成 AI 建議行程'
-                )}
-            </button>
-            
-            {(aiPlan || error) && (
-                <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                    {error ? (
-                        <p className="text-red-500 flex items-center"><AlertTriangle className="w-4 h-4 mr-2" /> {error}</p>
-                    ) : (
-                        <div>
-                            <h4 className="font-semibold mb-2 text-indigo-500">AI 行程建議</h4>
-                            <pre className={`whitespace-pre-wrap font-sans text-sm p-3 rounded-lg border dark:border-gray-600 max-h-96 overflow-y-auto ${subTextClasses}`}>
-                                {aiPlan}
-                            </pre>
-                            <button
-                                onClick={() => onPlanGenerated(aiPlan)}
-                                className={`${buttonClasses('indigo', false)} mt-3 py-2 text-sm`}
-                            >
-                                <Plus className="w-4 h-4 mr-1 inline-block" /> 儲存至筆記
-                            </button>
-                        </div>
-                    )}
-                </div>
-            )}
-        </div>
-    );
-});
-
-
-// ... (原有的 calculateDuration 和 formatDate 函數)
-
-const calculateDuration = (startDate, endDate) => {
-    if (!startDate || !endDate) return 0;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = Math.abs(end - start);
-    // 增加 1 天處理，因為行程天數是包含開始和結束日期的
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-    return diffDays;
-};
-
-const formatDate = (dateString) => {
-    if (!dateString) return '未定';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'numeric', day: 'numeric' });
-};
-
-
-/**
- * Todo List 組件 (新增提醒功能)
- */
-const TodoList = React.memo(({ tripId, todos, userId, isDarkMode }) => {
-    const [newItem, setNewItem] = useState('');
-    const [newDueDate, setNewDueDate] = useState(''); // 新增日期欄位
-    const [showDueDatePicker, setShowDueDatePicker] = useState(false);
-
-    if (!tripId) return <div className={subTextClasses}>請先選擇一個行程。</div>;
-
-    const todoCollectionRef = collection(db, `/artifacts/${appId}/public/data/trips/${tripId}/todos`);
-
-    const handleAddTodo = async () => {
-        if (newItem.trim() === '') return;
-        
-        try {
-            await addDoc(todoCollectionRef, {
-                name: newItem.trim(),
-                completed: false,
-                createdAt: serverTimestamp(),
-                dueDate: newDueDate || null, // 儲存日期
-                reminderSet: !!newDueDate, // 如果有日期，則預設設定提醒
-                creatorId: userId,
-            });
-            setNewItem('');
-            setNewDueDate('');
-            setShowDueDatePicker(false);
-        } catch (error) {
-            console.error("Error adding todo:", error);
-        }
-    };
-
-    const handleToggleCompleted = useCallback(async (todo) => {
-        const todoRef = doc(db, `/artifacts/${appId}/public/data/trips/${tripId}/todos`, todo.id);
-        await updateDoc(todoRef, { completed: !todo.completed });
-    }, [tripId]);
-    
-    // 新增提醒切換
-    const handleToggleReminder = useCallback(async (todo) => {
-        const todoRef = doc(db, `/artifacts/${appId}/public/data/trips/${tripId}/todos`, todo.id);
-        const newReminderState = !todo.reminderSet;
-        if (newReminderState && !todo.dueDate) {
-            alert("請先設定截止日期才能設定提醒。"); // 簡易提示，實際應用應使用 Modal
-            return;
-        }
-        await updateDoc(todoRef, { reminderSet: newReminderState });
-    }, [tripId]);
-
-    const handleDeleteTodo = useCallback(async (id) => {
-        const todoRef = doc(db, `/artifacts/${appId}/public/data/trips/${tripId}/todos`, id);
-        await deleteDoc(todoRef);
-    }, [tripId]);
-
-    // 提醒分類
-    const now = new Date();
-    const isOverdue = (dateString) => dateString && new Date(dateString) < now;
-
-    const pendingTodos = todos.filter(t => !t.completed);
-    const completedTodos = todos.filter(t => t.completed);
-
-    const ReminderSection = ({ title, items, isOverdueList = false }) => (
-        <div className="mt-6">
-            <h4 className={`font-semibold text-base mb-2 flex items-center ${isOverdueList ? 'text-red-500' : 'text-indigo-500'}`}>
-                {isOverdueList ? <AlertTriangle className="w-4 h-4 mr-2" /> : <Bell className="w-4 h-4 mr-2" />}
-                {title} ({items.length})
-            </h4>
-            <ul className="space-y-3">
-                {items.map(todo => (
-                    <li key={todo.id} className={`flex items-start p-3 rounded-xl transition duration-150 ${todo.completed ? 'bg-gray-100 dark:bg-gray-700 opacity-60' : 'bg-white dark:bg-gray-800 shadow-sm border dark:border-gray-700'}`}>
-                        <div className="flex-grow flex items-center min-w-0">
-                            <button
-                                onClick={() => handleToggleCompleted(todo)}
-                                className={`flex-shrink-0 w-6 h-6 rounded-full border-2 mr-3 transition duration-200 ${todo.completed ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-gray-300 dark:border-gray-500 text-transparent hover:bg-indigo-100 dark:hover:bg-gray-600'}`}
-                                title={todo.completed ? '標記為未完成' : '標記為已完成'}
-                            >
-                                {todo.completed && <Check className="w-4 h-4 mx-auto" />}
-                            </button>
-                            <div className="flex-grow min-w-0">
-                                <span className={`block font-medium truncate ${todo.completed ? 'line-through' : textClasses}`}>{todo.name}</span>
-                                {todo.dueDate && (
-                                    <div className={`flex items-center space-x-2 text-xs mt-1 ${isOverdue(todo.dueDate) && !todo.completed ? 'text-red-500 dark:text-red-400 font-semibold' : subTextClasses}`}>
-                                        <CalendarDays className="w-3 h-3" />
-                                        <span>截止日: {formatDate(todo.dueDate)}</span>
-                                        {isOverdue(todo.dueDate) && !todo.completed && <span className="text-red-600 dark:text-red-400">(已逾期)</span>}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        
-                        {/* 提醒切換按鈕 */}
-                        <div className="flex-shrink-0 flex items-center space-x-2 ml-4">
-                            <button
-                                onClick={() => handleToggleReminder(todo)}
-                                disabled={!todo.dueDate}
-                                className={`p-1 rounded-full transition ${todo.reminderSet ? 'text-yellow-500 bg-yellow-100 dark:bg-yellow-900/50' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
-                                title={todo.reminderSet ? '已設定提醒' : '設定提醒 (需有截止日)'}
-                            >
-                                <Bell className="w-4 h-4 fill-current" />
-                            </button>
-
-                            <button
-                                onClick={() => handleDeleteTodo(todo.id)}
-                                className="p-1 text-gray-400 hover:text-red-500 transition"
-                                title="刪除待辦事項"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-
-
-    // 根據提醒狀態和逾期時間分類待辦事項
-    const reminderItems = pendingTodos.filter(t => t.reminderSet);
-    const overdueReminders = reminderItems.filter(t => isOverdue(t.dueDate));
-    const upcomingReminders = reminderItems.filter(t => !isOverdue(t.dueDate));
-    const generalTodos = pendingTodos.filter(t => !t.reminderSet);
-
-
-    return (
-        <div className={`p-4 ${bgClasses}`}>
-            <div className={`max-w-xl mx-auto ${textClasses}`}>
-                {/* 新增待辦事項 */}
-                <div className={`mb-6 p-4 rounded-xl shadow-lg border-t-4 border-indigo-500 ${cardClasses}`}>
-                    <div className="flex space-x-2">
-                        <input
-                            type="text"
-                            value={newItem}
-                            onChange={(e) => setNewItem(e.target.value)}
-                            placeholder="新增一個待辦事項..."
-                            className={`${inputClasses} flex-grow`}
-                            onKeyPress={(e) => e.key === 'Enter' && handleAddTodo()}
-                        />
-                        <button
-                            onClick={() => setShowDueDatePicker(!showDueDatePicker)}
-                            className={`p-3 rounded-xl transition ${showDueDatePicker ? 'bg-indigo-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-100 dark:hover:bg-gray-600'}`}
-                            title="設定截止日期"
-                        >
-                            <CalendarDays className="w-6 h-6" />
-                        </button>
-                        <button
-                            onClick={handleAddTodo}
-                            disabled={newItem.trim() === ''}
-                            className={buttonClasses('indigo', newItem.trim() === '') + ' w-auto px-4'}
-                        >
-                            <Plus className="w-6 h-6" />
-                        </button>
-                    </div>
-                    {showDueDatePicker && (
-                        <div className="mt-3">
-                            <input
-                                type="date"
-                                value={newDueDate}
-                                onChange={(e) => setNewDueDate(e.target.value)}
-                                className={inputClasses}
-                            />
-                        </div>
-                    )}
-                </div>
-
-                {/* 提醒和待辦分類顯示 */}
-                <div className="space-y-8">
-                    {/* 逾期提醒 (最高優先級) */}
-                    {overdueReminders.length > 0 && (
-                        <ReminderSection 
-                            title="🚨 逾期提醒" 
-                            items={overdueReminders} 
-                            isOverdueList={true} 
-                        />
-                    )}
-
-                    {/* 即將到來提醒 */}
-                    {upcomingReminders.length > 0 && (
-                        <ReminderSection 
-                            title="🔔 即將到來提醒" 
-                            items={upcomingReminders} 
-                            isOverdueList={false} 
-                        />
-                    )}
-
-                    {/* 一般待辦事項 */}
-                    {generalTodos.length > 0 && (
-                        <ReminderSection 
-                            title="📋 一般待辦事項" 
-                            items={generalTodos} 
-                            isOverdueList={false} 
-                        />
-                    )}
-
-                    {/* 已完成事項 */}
-                    {completedTodos.length > 0 && (
-                        <div className="mt-6 border-t pt-4 border-gray-200 dark:border-gray-700">
-                            <h4 className={`font-semibold text-base mb-2 text-green-500`}>
-                                <Check className="w-4 h-4 mr-2 inline-block" />
-                                已完成 ({completedTodos.length})
-                            </h4>
-                            <ul className="space-y-3">
-                                {completedTodos.map(todo => (
-                                     <li key={todo.id} className="flex items-start p-3 rounded-xl bg-gray-100 dark:bg-gray-700 opacity-60 transition duration-150">
-                                         <div className="flex-grow flex items-center min-w-0">
-                                             <button
-                                                onClick={() => handleToggleCompleted(todo)}
-                                                className="flex-shrink-0 w-6 h-6 rounded-full border-2 mr-3 bg-green-500 border-green-500 text-white"
-                                            >
-                                                <Check className="w-4 h-4 mx-auto" />
-                                            </button>
-                                            <span className={`block font-medium truncate line-through ${subTextClasses}`}>{todo.name}</span>
-                                        </div>
-                                         <button
-                                            onClick={() => handleDeleteTodo(todo.id)}
-                                            className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 transition ml-4"
-                                            title="刪除待辦事項"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-                    
-                    {todos.length === 0 && <p className={`text-center py-8 ${subTextClasses}`}>此行程尚未有任何待辦事項。盡情規劃吧！</p>}
                 </div>
             </div>
         </div>
     );
-});
+};
 
-
-/**
- * 行程詳情主組件
- */
-const TripDetail = ({ tripId, onBack, userId, authReady, isDarkMode }) => {
-    const [trip, setTrip] = useState(null);
-    const [todos, setTodos] = useState([]);
-    const [activeTab, setActiveTab] = useState('itinerary');
-    const [isEditingNotes, setIsEditingNotes] = useState(false);
-    const [tempNotes, setTempNotes] = useState('');
-    const notesTimeoutRef = useRef(null);
-
-    // 獲取行程數據 (Public Path + editors 驗證)
-    useEffect(() => {
-        if (!authReady || !tripId) return;
-
-        const tripRef = doc(db, `/artifacts/${appId}/public/data/trips`, tripId);
-        const unsubscribeTrip = onSnapshot(tripRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const tripData = { id: docSnap.id, ...docSnap.data() };
-                // 檢查用戶是否為編輯者
-                if (tripData.editors && tripData.editors.includes(userId)) {
-                    setTrip(tripData);
-                    setTempNotes(tripData.notes || '');
-                } else {
-                    console.error("Access Denied: User is not an editor of this trip.");
-                    alert("您沒有權限編輯此行程，已自動跳轉回儀表板。");
-                    onBack();
-                }
-            } else {
-                console.log("Trip document not found.");
-                onBack(); // 回到儀表板
-            }
-        }, (error) => {
-            console.error("Error fetching trip document:", error);
-            alert(`載入行程失敗: ${error.message}`);
-            onBack();
-        });
-
-        const todoCollectionRef = collection(db, `/artifacts/${appId}/public/data/trips/${tripId}/todos`);
-        // 注意：這裡不使用 orderBy，避免Firestore索引問題，改為客戶端排序
-        const q = query(todoCollectionRef); 
-        const unsubscribeTodos = onSnapshot(q, (snapshot) => {
-            const todosData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            // 在客戶端排序，未完成在前，已完成在後
-            todosData.sort((a, b) => {
-                if (a.completed !== b.completed) {
-                    return a.completed ? 1 : -1; // 未完成在前
-                }
-                return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0); // 否則按創建時間倒序
-            });
-            setTodos(todosData);
-        }, (error) => {
-            console.error("Error fetching todos:", error);
-        });
-
-        return () => {
-            unsubscribeTrip();
-            unsubscribeTodos();
-        };
-    }, [tripId, userId, authReady, onBack]);
-
-    // 處理筆記自動儲存
-    const handleNotesChange = (e) => {
-        const newNotes = e.target.value;
-        setTempNotes(newNotes);
-        
-        if (notesTimeoutRef.current) {
-            clearTimeout(notesTimeoutRef.current);
-        }
-
-        notesTimeoutRef.current = setTimeout(async () => {
-            if (trip) {
-                const tripRef = doc(db, `/artifacts/${appId}/public/data/trips`, trip.id);
-                try {
-                    await updateDoc(tripRef, { notes: newNotes });
-                    console.log("Notes autosaved.");
-                } catch (error) {
-                    console.error("Error saving notes:", error);
-                }
-            }
-        }, 1500); // 1.5秒後自動儲存
-    };
-    
-    // 將 AI 生成的內容加入筆記
-    const handleAICopyToNotes = useCallback(async (aiPlan) => {
-        const newNotes = (trip?.notes || '') + '\n\n---\n\n## AI 建議行程\n\n' + aiPlan;
-        setTempNotes(newNotes);
-        const tripRef = doc(db, `/artifacts/${appId}/public/data/trips`, trip.id);
-        try {
-            await updateDoc(tripRef, { notes: newNotes });
-            alert("AI 行程已成功儲存到筆記中。");
-            setActiveTab('notes'); // 切換到筆記頁面
-        } catch (error) {
-            console.error("Error saving AI plan to notes:", error);
-            alert("儲存 AI 行程到筆記失敗。");
-        }
-    }, [trip]);
-
-
-    const tabClasses = (isActive) => 
-        `flex-1 py-3 px-1 text-center font-medium rounded-t-xl transition duration-150 flex items-center justify-center ${
-            isActive 
-            ? `bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 border-b-4 border-indigo-600 dark:border-indigo-400`
-            : `bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600`
-        }`;
-
-    const renderContent = () => {
-        if (!trip) return null;
-
-        switch (activeTab) {
-            case 'itinerary':
-                return (
-                    <div className="space-y-6">
-                        <AIAssistant trip={trip} userId={userId} onPlanGenerated={handleAICopyToNotes} />
-                        <div className={`mt-4 ${cardClasses}`}>
-                            <h3 className={`text-lg font-semibold mb-3 ${textClasses}`}>基本資訊</h3>
-                            <p className={subTextClasses}>目的地: <span className="font-medium text-indigo-500">{trip.destination}</span></p>
-                            <p className={subTextClasses}>日期: {formatDate(trip.startDate)} - {formatDate(trip.endDate)}</p>
-                            <p className={subTextClasses}>總天數: <span className="font-medium text-indigo-500">{calculateDuration(trip.startDate, trip.endDate) + 1}</span> 天</p>
-                        </div>
-                        {/* 這裡可以擴展為日曆/日程規劃功能 */}
-                        <div className={`mt-4 ${cardClasses}`}>
-                            <h3 className={`text-lg font-semibold mb-3 ${textClasses}`}>詳細日程 (功能尚未完善)</h3>
-                            <p className={subTextClasses}>您可以透過新增筆記來規劃每日的詳細行程。</p>
-                        </div>
-                    </div>
-                );
-            case 'todos':
-                return <TodoList tripId={tripId} todos={todos} userId={userId} isDarkMode={isDarkMode} />;
-            case 'notes':
-                return (
-                    <div className={`mt-4 ${cardClasses}`}>
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className={`text-lg font-semibold ${textClasses}`}>筆記與規劃</h3>
-                            <button
-                                onClick={() => setIsEditingNotes(!isEditingNotes)}
-                                className={`p-2 rounded-full transition ${isEditingNotes ? 'bg-red-100 text-red-500 dark:bg-red-900/50 dark:text-red-400' : 'bg-indigo-100 text-indigo-500 dark:bg-indigo-900/50 dark:text-indigo-400'} hover:opacity-80`}
-                                title={isEditingNotes ? '取消編輯' : '編輯筆記'}
-                            >
-                                {isEditingNotes ? <X className="w-5 h-5" /> : <Edit className="w-5 h-5" />}
-                            </button>
-                        </div>
-                        <textarea
-                            value={tempNotes}
-                            onChange={handleNotesChange}
-                            rows={15}
-                            placeholder="在這裡寫下您的旅行筆記、想法和詳細規劃..."
-                            disabled={!isEditingNotes}
-                            className={`${inputClasses} resize-none ${isEditingNotes ? 'opacity-100' : 'opacity-75 cursor-default'}`}
-                        />
-                        {!isEditingNotes && <p className={`mt-3 text-sm ${subTextClasses}`}>點擊右上角的編輯按鈕開始編輯。</p>}
-                    </div>
-                );
-            case 'collaborators':
-                return <CollaboratorManager trip={trip} userId={userId} authReady={authReady} />;
-            default:
-                return null;
-        }
-    };
-
-    if (!trip) {
-        return (
-            <div className={`flex flex-col items-center justify-center min-h-screen ${bgClasses}`}>
-                <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
-                <p className={`mt-4 text-lg ${textClasses}`}>載入行程詳情中...</p>
-            </div>
-        );
-    }
-    
-    // 計算提醒數量 (未完成 & 設定提醒 & 逾期)
-    const now = new Date();
-    const isOverdue = (dateString) => dateString && new Date(dateString) < now;
-    const pendingReminders = todos.filter(t => !t.completed && t.reminderSet && isOverdue(t.dueDate)).length;
-
-
+const Modal = ({ title, children, onClose }) => {
     return (
-        <div className={`min-h-screen ${bgClasses}`}>
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-12">
-                {/* 行程標題與返回按鈕 */}
-                <div className="flex items-center justify-between mb-6">
-                    <button onClick={onBack} className={`flex items-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 transition`}>
-                        <ChevronLeft className="w-6 h-6 mr-1" />
-                        <span className="text-lg font-medium">返回儀表板</span>
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+            <div className={`max-w-md w-full ${cardClasses} transform transition-all scale-100`}>
+                <div className="flex justify-between items-center mb-4 pb-2 border-b dark:border-gray-700">
+                    <h3 className="text-xl font-bold dark:text-white">{title}</h3>
+                    <button onClick={onClose} className="text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400">
+                        <X className="w-6 h-6" />
                     </button>
-                    <h2 className={`text-2xl font-bold truncate max-w-[70%] ${textClasses}`}>{trip.name}</h2>
                 </div>
-
-                {/* 導航標籤 */}
-                <div className="flex space-x-2 border-b border-gray-200 dark:border-gray-700 mb-6">
-                    {[
-                        { id: 'itinerary', name: '行程總覽', icon: CalendarDays },
-                        { id: 'todos', name: '待辦與提醒', icon: ListTodo },
-                        { id: 'notes', name: '筆記', icon: NotebookPen },
-                        { id: 'collaborators', name: '協作者', icon: Users2 },
-                    ].map(tab => (
-                        <button 
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={tabClasses(activeTab === tab.id)}
-                        >
-                            <div className="flex items-center justify-center whitespace-nowrap">
-                                <tab.icon className={`w-5 h-5 ${activeTab !== tab.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-indigo-600 dark:text-indigo-400'} `} />
-                                <span className="ml-1">{tab.name}</span>
-                                {tab.id === 'todos' && pendingReminders > 0 && (
-                                    <span className="ml-2 w-5 h-5 text-xs font-bold rounded-full bg-red-500 text-white flex items-center justify-center animate-pulse">{pendingReminders}</span>
-                                )}
-                            </div>
-                        </button>
-                    ))}
-                </div>
-
-                {/* 內容區塊 */}
-                {renderContent()}
+                {children}
             </div>
         </div>
     );
 };
 
+// --- TripDetail Components (子頁面) ---
 
-/**
- * 儀表板組件
- */
-const Dashboard = ({ onSelectTrip, trips, userId, authReady, isDarkMode, toggleDarkMode, onTutorialStart, currentUserInfo, handleLogout }) => {
-    const [newTripName, setNewTripName] = useState('');
-    const [newTripDestination, setNewTripDestination] = useState('');
-    const [newTripStartDate, setNewTripStartDate] = useState('');
-    const [newTripEndDate, setNewTripEndDate] = useState('');
-    const [showNewTripModal, setShowNewTripModal] = useState(false);
-    
-    // 計算總的逾期提醒數量
-    const totalOverdueReminders = useMemo(() => {
-        let count = 0;
-        const now = new Date();
-        const isOverdue = (dateString) => dateString && new Date(dateString) < now;
-        
-        trips.forEach(trip => {
-            if (trip.todos) {
-                trip.todos.forEach(todo => {
-                    if (!todo.completed && todo.reminderSet && isOverdue(todo.dueDate)) {
-                        count++;
-                    }
-                });
-            }
+const LoadingIndicator = ({ isDarkMode }) => (
+    <div className="flex justify-center items-center py-10">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600 dark:text-indigo-400" />
+        <span className={`ml-3 text-lg font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>資料載入中...</span>
+    </div>
+);
+
+// [1. 行程概覽] - 協作使用者列表
+const CollaborationView = ({ tripId, userId, isDarkMode }) => {
+    const [collaborators, setCollaborators] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!tripId) return;
+
+        const collabRef = getSubCollectionRef(tripId, 'collaborators');
+        const q = query(collabRef);
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setCollaborators(list);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching collaborators: ", error);
+            setLoading(false);
         });
-        return count;
-    }, [trips]);
 
+        return () => unsubscribe();
+    }, [tripId]);
 
-    const handleCreateTrip = async () => {
-        if (!newTripName.trim() || !newTripDestination.trim() || !newTripStartDate || !newTripEndDate) {
-            alert('請填寫所有行程資訊。');
-            return;
-        }
-
-        try {
-            const tripsCollectionRef = collection(db, `/artifacts/${appId}/public/data/trips`);
-            
-            // 使用 runTransaction 確保資料一致性，但這裡我們只是新增，簡單的 addDoc 即可
-            const newTripRef = await addDoc(tripsCollectionRef, {
-                name: newTripName.trim(),
-                destination: newTripDestination.trim(),
-                startDate: new Date(newTripStartDate).toISOString().split('T')[0], // 確保格式一致
-                endDate: new Date(newTripEndDate).toISOString().split('T')[0],
-                createdAt: serverTimestamp(),
-                // 協作資訊
-                editors: [userId], // 創建者自動成為第一個編輯者
-                managerId: userId, // 創建者為管理員
-                // 額外欄位
-                notes: '',
-            });
-
-            console.log("New trip added with ID:", newTripRef.id);
-            // 清空表單並關閉 Modal
-            setNewTripName('');
-            setNewTripDestination('');
-            setNewTripStartDate('');
-            setNewTripEndDate('');
-            setShowNewTripModal(false);
-            onSelectTrip(newTripRef.id); // 立即跳轉到新行程詳情
-        } catch (error) {
-            console.error("Error creating new trip:", error);
-            alert(`創建行程失敗: ${error.message}`);
-        }
+    const handleAddCollaborator = () => {
+        // 由於我們使用匿名/自定義Token認證，無法直接添加真實使用者
+        // 在此模擬一個使用者加入
+        const newUserId = `user-${Math.random().toString(36).substring(2, 9)}`;
+        const collabRef = getSubCollectionRef(tripId, 'collaborators');
+        addDoc(collabRef, {
+            userId: newUserId,
+            name: `Guest ${newUserId.substring(0, 4)}`,
+            joinedAt: serverTimestamp(),
+            role: 'Editor'
+        }).catch(e => console.error("Error adding collaborator: ", e));
     };
 
-    const handleDeleteTrip = async (id, tripName) => {
-        if (window.confirm(`確定要刪除行程「${tripName}」及其所有資料嗎？此操作不可逆轉。`)) {
-            try {
-                // 刪除行程文件
-                const tripRef = doc(db, `/artifacts/${appId}/public/data/trips`, id);
-                await deleteDoc(tripRef);
-
-                // 實際應用中還需要刪除子集合 (todos, budgets, etc.)，但為保持單一檔案的簡潔性，這裡僅刪除主文件。
-                // 在 Firestore 安全規則的保護下，子集合通常不會被未經授權的用戶訪問。
-                console.log(`Trip ${id} deleted.`);
-            } catch (error) {
-                console.error("Error deleting trip:", error);
-                alert(`刪除行程失敗: ${error.message}`);
-            }
-        }
-    };
-
-    const TripCard = ({ trip }) => (
-        <div className={`p-4 rounded-xl shadow-lg border-l-4 border-indigo-500 hover:shadow-2xl transition duration-300 ${cardClasses}`}>
-            <div 
-                onClick={() => onSelectTrip(trip.id)} 
-                className="cursor-pointer"
-            >
-                <div className="flex items-center justify-between">
-                    <h3 className={`text-xl font-bold truncate ${textClasses}`}>{trip.name}</h3>
-                    {trip.editors.length > 1 && (
-                        <div className="flex items-center text-xs text-green-600 dark:text-green-400">
-                            <Users className="w-4 h-4 mr-1" />
-                            {trip.editors.length} 人協作
-                        </div>
-                    )}
-                </div>
-                <p className={`mt-2 flex items-center ${subTextClasses}`}>
-                    <MapPin className="w-4 h-4 mr-2 text-indigo-500" />
-                    目的地: <span className="font-medium ml-1 text-indigo-500 dark:text-indigo-400">{trip.destination}</span>
-                </p>
-                <p className={`flex items-center ${subTextClasses}`}>
-                    <CalendarDays className="w-4 h-4 mr-2" />
-                    日期: {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
-                </p>
-            </div>
-
-            <div className="mt-4 flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
-                <p className={`text-sm ${subTextClasses}`}>
-                    管理者: <span className="font-mono text-xs break-all">{trip.managerId === userId ? '您' : trip.managerId.substring(0, 8) + '...'}</span>
-                </p>
-                <button
-                    onClick={(e) => { e.stopPropagation(); handleDeleteTrip(trip.id, trip.name); }}
-                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 rounded-full transition"
-                    title="刪除行程"
+    return (
+        <div className={cardClasses}>
+            <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center">
+                    <Users className="w-5 h-5 mr-2 text-indigo-600 dark:text-indigo-400" />
+                    協作夥伴
+                </h3>
+                <button 
+                    onClick={handleAddCollaborator} 
+                    className={buttonClasses(false, true) + " !w-auto !px-4 !py-2 flex items-center text-sm"}
                 >
-                    <Trash2 className="w-5 h-5" />
+                    <Plus className="w-4 h-4 mr-1" /> 邀請夥伴 (模擬)
                 </button>
             </div>
+            {loading ? <LoadingIndicator isDarkMode={isDarkMode} /> : (
+                <ul className="space-y-3">
+                    {collaborators.map(collab => (
+                        <li 
+                            key={collab.id} 
+                            className={`flex justify-between items-center p-3 rounded-lg ${collab.userId === userId ? 'bg-indigo-50 dark:bg-indigo-900 border-indigo-300' : 'bg-gray-50 dark:bg-gray-700 border-gray-200'} border transition duration-150`}
+                        >
+                            <div className="flex items-center">
+                                <User className={`w-5 h-5 mr-3 ${collab.userId === userId ? 'text-indigo-600' : 'text-gray-500 dark:text-gray-400'}`} />
+                                <div>
+                                    <p className="font-semibold dark:text-white">
+                                        {collab.userId === userId ? '您 (Owner)' : collab.name || `User ${collab.userId.substring(0, 4)}...`}
+                                    </p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">{collab.role}</p>
+                                </div>
+                            </div>
+                            {collab.userId === userId && <span className="text-xs text-indigo-500 dark:text-indigo-300 font-medium">本人</span>}
+                        </li>
+                    ))}
+                </ul>
+            )}
+            {collaborators.length === 0 && !loading && (
+                 <p className="text-center text-gray-500 dark:text-gray-400 italic py-4">目前沒有協作夥伴。</p>
+            )}
         </div>
     );
+};
 
-    const Modal = ({ show, onClose, title, children }) => {
-        if (!show) return null;
-        return (
-            <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 flex items-center justify-center p-4" onClick={onClose}>
-                <div className={`w-full max-w-md ${cardClasses}`} onClick={e => e.stopPropagation()}>
-                    <div className="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-gray-700 mb-4">
-                        <h3 className={`text-xl font-bold ${textClasses}`}>{title}</h3>
-                        <button onClick={onClose} className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">
-                            <X className="w-6 h-6" />
-                        </button>
-                    </div>
-                    {children}
-                </div>
-            </div>
-        );
+// [2. 行程規劃] - 顯示/新增活動
+const ItineraryView = ({ tripId, isDarkMode }) => {
+    const [activities, setActivities] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [isAdding, setIsAdding] = useState(false);
+    const [newActivity, setNewActivity] = useState({
+        name: '',
+        date: '',
+        time: '',
+        type: 'Sightseeing', // Default type
+    });
+
+    const activityTypes = [
+        { name: '觀光', icon: MapPin, value: 'Sightseeing' },
+        { name: '餐飲', icon: Utensils, value: 'Food' },
+        { name: '交通', icon: Bus, value: 'Transport' },
+        { name: '購物', icon: ShoppingBag, value: 'Shopping' },
+        { name: '其他', icon: Edit, value: 'Other' },
+    ];
+
+    useEffect(() => {
+        if (!tripId) return;
+
+        const activitiesRef = getSubCollectionRef(tripId, 'activities');
+        // 依照日期和時間排序
+        const q = query(activitiesRef, orderBy('date', 'asc'), orderBy('time', 'asc'));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setActivities(list);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching activities: ", error);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [tripId]);
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setNewActivity(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleAddActivity = async () => {
+        if (!newActivity.name || !newActivity.date) return;
+
+        const activitiesRef = getSubCollectionRef(tripId, 'activities');
+        try {
+            await addDoc(activitiesRef, {
+                ...newActivity,
+                createdAt: serverTimestamp(),
+            });
+            setNewActivity({ name: '', date: '', time: '', type: 'Sightseeing' });
+            setIsAdding(false);
+        } catch (e) {
+            console.error("Error adding activity: ", e);
+        }
+    };
+
+    const handleDeleteActivity = async (id) => {
+        if (!window.confirm('確定要刪除此行程活動嗎？')) return;
+        
+        const docRef = doc(getSubCollectionRef(tripId, 'activities'), id);
+        try {
+            await deleteDoc(docRef);
+        } catch (e) {
+            console.error("Error deleting activity: ", e);
+        }
+    };
+
+    const groupedActivities = activities.reduce((acc, activity) => {
+        const dateKey = activity.date || '未定日期';
+        if (!acc[dateKey]) {
+            acc[dateKey] = [];
+        }
+        acc[dateKey].push(activity);
+        return acc;
+    }, {});
+
     return (
-        <div className={`min-h-screen ${bgClasses}`}>
-            {/* 這裡不再包含 Header，因為 Header 被移到 App 主體以提供全局登出 */}
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <h2 className={`text-3xl font-extrabold mb-6 ${textClasses} flex items-center`}>
-                    <Home className="w-7 h-7 mr-3 text-indigo-600 dark:text-indigo-400" />
-                    我的旅遊儀表板
-                </h2>
-
-                {/* 提醒總覽 */}
-                {totalOverdueReminders > 0 && (
-                    <div className="mb-6 p-4 rounded-xl border border-red-300 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 flex items-center shadow-lg">
-                        <AlertTriangle className="w-6 h-6 mr-3 flex-shrink-0" />
-                        <p className="font-semibold">
-                            您有 <span className="text-xl font-extrabold">{totalOverdueReminders}</span> 項已逾期的重要提醒，請進入行程查看！
-                        </p>
-                    </div>
-                )}
-
-
-                <div className="mb-8 flex justify-end">
-                    <button
-                        onClick={() => setShowNewTripModal(true)}
-                        className={buttonClasses('indigo', false) + ' w-auto px-6 py-3 flex items-center'}
+        <div className="space-y-6">
+            <div className={cardClasses}>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center">
+                        <CalendarDays className="w-5 h-5 mr-2 text-indigo-600 dark:text-indigo-400" />
+                        行程活動
+                    </h3>
+                    <button 
+                        onClick={() => setIsAdding(true)} 
+                        className={buttonClasses(true, true) + " !w-auto !px-4 !py-2 flex items-center text-sm"}
                     >
-                        <Plus className="w-5 h-5 mr-2" />
-                        創建新行程
+                        <Plus className="w-4 h-4 mr-1" /> 新增活動
                     </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {trips.length > 0 ? (
-                        trips.map(trip => <TripCard key={trip.id} trip={trip} />)
+                {loading ? <LoadingIndicator isDarkMode={isDarkMode} /> : (
+                    Object.keys(groupedActivities).length === 0 ? (
+                        <p className="text-center text-gray-500 dark:text-gray-400 italic py-4">此行程尚未新增任何活動。</p>
                     ) : (
-                        <p className={`md:col-span-2 text-center py-12 text-lg ${subTextClasses}`}>
-                            尚未有任何行程，點擊上方按鈕創建您的第一次旅程吧！
-                        </p>
+                        <div className="space-y-6">
+                            {Object.keys(groupedActivities).map(date => (
+                                <div key={date} className="border-l-4 border-indigo-500 dark:border-indigo-400 pl-4">
+                                    <h4 className="text-lg font-extrabold mb-3 text-indigo-600 dark:text-indigo-400">{date}</h4>
+                                    <div className="space-y-4">
+                                        {groupedActivities[date].map((activity, index) => {
+                                            const TypeIcon = activityTypes.find(t => t.value === activity.type)?.icon || MapPin;
+                                            return (
+                                                <div 
+                                                    key={activity.id} 
+                                                    className={`p-4 rounded-xl shadow-md flex justify-between items-start ${isDarkMode ? 'bg-gray-700' : 'bg-white'} transition duration-150`}
+                                                >
+                                                    <div className="flex items-start">
+                                                        <TypeIcon className="w-5 h-5 mr-3 mt-1 text-teal-500 dark:text-teal-400 flex-shrink-0" />
+                                                        <div>
+                                                            <p className="font-bold dark:text-white">{activity.name}</p>
+                                                            <div className="text-sm text-gray-600 dark:text-gray-400 mt-1 flex items-center space-x-3">
+                                                                {activity.time && (
+                                                                    <span className="flex items-center"><Clock className="w-4 h-4 mr-1" /> {activity.time}</span>
+                                                                )}
+                                                                <span className="bg-teal-100 dark:bg-teal-800 text-teal-800 dark:text-teal-200 text-xs font-medium px-2 py-0.5 rounded-full">{activityTypes.find(t => t.value === activity.type)?.name || '未知'}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => handleDeleteActivity(activity.id)} 
+                                                        className="text-gray-400 hover:text-red-500 p-1 rounded-full transition duration-150 flex-shrink-0"
+                                                        aria-label="刪除活動"
+                                                    >
+                                                        <Trash2 className="w-5 h-5" />
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )
+                )}
+            </div>
+
+            {isAdding && (
+                <Modal title="新增行程活動" onClose={() => setIsAdding(false)}>
+                    <div className="space-y-4">
+                        <input
+                            type="text"
+                            name="name"
+                            value={newActivity.name}
+                            onChange={handleInputChange}
+                            placeholder="活動名稱 (e.g. 參觀故宮博物院)"
+                            className={inputClasses}
+                        />
+                        <div className="flex space-x-4">
+                            <input
+                                type="date"
+                                name="date"
+                                value={newActivity.date}
+                                onChange={handleInputChange}
+                                className={inputClasses + " flex-1"}
+                            />
+                            <input
+                                type="time"
+                                name="time"
+                                value={newActivity.time}
+                                onChange={handleInputChange}
+                                className={inputClasses + " flex-1"}
+                            />
+                        </div>
+                        <select
+                            name="type"
+                            value={newActivity.type}
+                            onChange={handleInputChange}
+                            className={inputClasses}
+                        >
+                            {activityTypes.map(type => (
+                                <option key={type.value} value={type.value}>{type.name}</option>
+                            ))}
+                        </select>
+                        <button 
+                            onClick={handleAddActivity} 
+                            disabled={!newActivity.name || !newActivity.date}
+                            className={buttonClasses(true, true) + " !mt-6"}
+                        >
+                            <Save className="w-5 h-5 mr-2" /> 儲存活動
+                        </button>
+                    </div>
+                </Modal>
+            )}
+        </div>
+    );
+};
+
+
+// --- TripDetail 主要元件 ---
+
+const TripDetail = ({ tripId, onBack, userId, authReady, isDarkMode }) => {
+    const [trip, setTrip] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('collaboration'); // 預設為協作
+    const [notificationCounts, setNotificationCounts] = useState({ collaboration: 0, itinerary: 0, budget: 0, todo: 0, notes: 0, location: 0 });
+
+    const pages = useMemo(() => ({
+        collaboration: { name: '協作', icon: Users, component: CollaborationView },
+        itinerary: { name: '行程', icon: Map, component: ItineraryView },
+        // ... 其他頁面可以在此處擴充
+    }), []);
+
+    // 1. 載入行程基本資料
+    useEffect(() => {
+        if (!authReady || !userId || !tripId) return;
+
+        const docRef = getTripDocRef(userId, tripId);
+        const unsubscribe = onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                setTrip({ id: docSnap.id, ...docSnap.data() });
+            } else {
+                setTrip(null);
+                console.error("Trip not found");
+            }
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching trip:", error);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [authReady, userId, tripId]);
+
+    // 2. 渲染內容
+    const renderContent = () => {
+        if (!trip) return <p className="text-center py-10 text-xl text-red-500 dark:text-red-400"><AlertTriangle className="inline w-6 h-6 mr-2" />行程資料載入失敗或不存在。</p>;
+
+        const CurrentComponent = pages[activeTab]?.component;
+        if (!CurrentComponent) return null;
+
+        return (
+            <CurrentComponent 
+                tripId={tripId} 
+                userId={userId} 
+                isDarkMode={isDarkMode} 
+            />
+        );
+    };
+
+    if (loading) {
+        return <LoadingIndicator isDarkMode={isDarkMode} />;
+    }
+
+    const tripDetailClasses = `max-w-4xl mx-auto p-4 sm:p-6 min-h-screen ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-slate-50 text-gray-800'}`;
+
+    return (
+        <div className={tripDetailClasses}>
+            {/* 返回儀表板按鈕 */}
+            <button 
+                onClick={onBack} 
+                className={`flex items-center text-lg font-medium mb-6 transition duration-200 ${isDarkMode ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`}
+                aria-label="返回儀表板"
+            >
+                <ChevronLeft className="w-6 h-6 mr-1" />
+                返回總覽
+            </button>
+
+            {/* 行程標題卡片 */}
+            <div className={`${cardClasses} mb-6`}>
+                <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">{trip?.name || '未知行程'}</h2>
+                <p className="text-lg text-gray-600 dark:text-gray-400">
+                    <CalendarDays className="inline w-5 h-5 mr-1 text-teal-500" /> 
+                    {trip?.startDate || '日期未定'} - {trip?.endDate || '日期未定'}
+                </p>
+            </div>
+
+            {/* Tab Navigation (已修正 JSX 語法錯誤) */}
+            <div className={`flex justify-around p-2 mb-6 rounded-2xl shadow-inner ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                {Object.keys(pages).map(pageKey => {
+                    const IconComponent = pages[pageKey].icon; // 正確地提取 component
+                    return (
+                        <button
+                            key={pageKey}
+                            onClick={() => setActiveTab(pageKey)}
+                            className={tabClasses(activeTab === pageKey)}
+                        >
+                            <IconComponent className={`w-6 h-6 mx-auto mb-1 ${activeTab === pageKey ? 'text-white' : 'text-indigo-600 dark:text-indigo-300'}`} />
+                            <span className={`text-xs font-semibold ${activeTab === pageKey ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>{pages[pageKey].name}</span>
+                            {notificationCounts[pageKey] > 0 && (
+                                <div className="absolute top-0 right-0 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                    {notificationCounts[pageKey]}
+                                </div>
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* 內容區塊 */}
+            {renderContent()}
+        </div>
+    );
+};
+
+
+// --- Dashboard 元件 ---
+
+const Dashboard = ({ onSelectTrip, trips, userId, authReady, isDarkMode, toggleDarkMode, onTutorialStart }) => {
+    const [isAddingTrip, setIsAddingTrip] = useState(false);
+    const [newTripName, setNewTripName] = useState('');
+    const [newTripStartDate, setNewTripStartDate] = useState('');
+    const [newTripEndDate, setNewTripEndDate] = useState('');
+
+    const handleAddTrip = async () => {
+        if (!newTripName || !newTripStartDate) return;
+
+        const tripRef = getTripCollectionRef(userId);
+        try {
+            await addDoc(tripRef, {
+                name: newTripName,
+                startDate: newTripStartDate,
+                endDate: newTripEndDate || null,
+                createdAt: serverTimestamp(),
+                ownerId: userId,
+            });
+            setNewTripName('');
+            setNewTripStartDate('');
+            setNewTripEndDate('');
+            setIsAddingTrip(false);
+        } catch (e) {
+            console.error("Error adding document: ", e);
+        }
+    };
+
+    const handleDeleteTrip = async (id) => {
+        if (!window.confirm('確定要刪除此行程嗎？')) return;
+
+        // 刪除私人行程文件
+        const tripDocRef = getTripDocRef(userId, id);
+        try {
+            await deleteDoc(tripDocRef);
+
+            // 這裡可以選擇性地清理公共子集合數據，但為了保持代碼簡潔，暫時省略。
+            // 實際應用中需要額外邏輯來批量刪除子集合數據。
+
+        } catch (e) {
+            console.error("Error deleting trip: ", e);
+        }
+    };
+
+    return (
+        <div className="min-h-screen">
+            <Header 
+                title="旅遊協作儀表板" 
+                userId={userId} 
+                isDarkMode={isDarkMode} 
+                toggleDarkMode={toggleDarkMode}
+                onTutorialStart={onTutorialStart}
+            />
+            <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
+                <div className="flex justify-between items-center">
+                    <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">我的行程</h2>
+                    <button 
+                        onClick={() => setIsAddingTrip(true)} 
+                        className={buttonClasses(true, true) + " !w-auto !px-4 !py-2 flex items-center shadow-indigo-400/50"}
+                    >
+                        <Plus className="w-5 h-5 mr-1" /> 建立新行程
+                    </button>
+                </div>
+
+                <div className={`${cardClasses} p-4 sm:p-6`}>
+                    <h3 className="text-xl font-bold mb-4 border-b dark:border-gray-700 pb-2 text-indigo-600 dark:text-indigo-400">
+                        <ClipboardList className="inline w-5 h-5 mr-2" />
+                        所有行程列表 ({trips.length})
+                    </h3>
+                    
+                    {trips.length === 0 ? (
+                        <p className="text-center text-gray-500 dark:text-gray-400 italic py-4">您尚未建立任何行程。</p>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {trips.map(trip => (
+                                <div 
+                                    key={trip.id} 
+                                    className={`relative p-5 rounded-xl shadow-lg cursor-pointer transition duration-300 hover:shadow-xl hover:scale-[1.01] ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-white hover:bg-gray-50'}`}
+                                    onClick={() => onSelectTrip(trip.id)}
+                                >
+                                    <h4 className="text-xl font-bold dark:text-white mb-1 truncate">{trip.name}</h4>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                                        <CalendarDays className="w-4 h-4 mr-1 text-teal-500" />
+                                        {trip.startDate} {trip.endDate ? ` - ${trip.endDate}` : ''}
+                                    </p>
+                                    <div className="mt-3 text-xs font-medium text-gray-400 dark:text-gray-500">
+                                        建立於: {trip.createdAt?.toDate().toLocaleDateString() || 'N/A'}
+                                    </div>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleDeleteTrip(trip.id); }}
+                                        className="absolute top-3 right-3 text-red-400 hover:text-red-600 dark:hover:text-red-300 p-1 rounded-full bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                                        aria-label={`刪除行程 ${trip.name}`}
+                                    >
+                                        <Trash2 className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
                     )}
                 </div>
 
-                {/* 創建新行程 Modal */}
-                <Modal 
-                    show={showNewTripModal} 
-                    onClose={() => setShowNewTripModal(false)} 
-                    title="創建新行程"
-                >
+                {/* 應用程式資訊 */}
+                 <div className={`${cardClasses} text-center text-sm text-gray-500 dark:text-gray-400`}>
+                    <p>應用程式 ID: {appId}</p>
+                    <p className='mt-1'>所有行程資料儲存於 <span className="font-mono text-xs bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded">Firestore 公共與私人集合</span> 中。</p>
+                </div>
+            </div>
+
+            {isAddingTrip && (
+                <Modal title="建立新行程" onClose={() => setIsAddingTrip(false)}>
                     <div className="space-y-4">
                         <input
                             type="text"
                             value={newTripName}
                             onChange={(e) => setNewTripName(e.target.value)}
-                            placeholder="行程名稱 (例如: 2025 日本關西之旅)"
+                            placeholder="行程名稱 (e.g. 日本東京五日遊)"
                             className={inputClasses}
                         />
-                        <input
-                            type="text"
-                            value={newTripDestination}
-                            onChange={(e) => setNewTripDestination(e.target.value)}
-                            placeholder="目的地 (例如: 大阪、京都)"
-                            className={inputClasses}
-                        />
-                        <p className={subTextClasses}>開始日期:</p>
-                        <input
-                            type="date"
-                            value={newTripStartDate}
-                            onChange={(e) => setNewTripStartDate(e.target.value)}
-                            className={inputClasses}
-                        />
-                        <p className={subTextClasses}>結束日期:</p>
-                        <input
-                            type="date"
-                            value={newTripEndDate}
-                            onChange={(e) => setNewTripEndDate(e.target.value)}
-                            className={inputClasses}
-                        />
-                        <button
-                            onClick={handleCreateTrip}
-                            className={buttonClasses('indigo', !newTripName || !newTripDestination || !newTripStartDate || !newTripEndDate)}
-                            disabled={!newTripName || !newTripDestination || !newTripStartDate || !newTripEndDate}
+                        <div className="flex space-x-4">
+                            <input
+                                type="date"
+                                value={newTripStartDate}
+                                onChange={(e) => setNewTripStartDate(e.target.value)}
+                                className={inputClasses + " flex-1"}
+                                required
+                            />
+                            <input
+                                type="date"
+                                value={newTripEndDate}
+                                onChange={(e) => setNewTripEndDate(e.target.value)}
+                                className={inputClasses + " flex-1"}
+                                placeholder="結束日期 (可選)"
+                            />
+                        </div>
+                        <button 
+                            onClick={handleAddTrip} 
+                            disabled={!newTripName || !newTripStartDate}
+                            className={buttonClasses(true, true)}
                         >
-                            <Save className="w-5 h-5 mr-2 inline-block" />
-                            確認創建
+                            <Plus className="w-5 h-5 mr-2" /> 建立行程
                         </button>
                     </div>
                 </Modal>
+            )}
+        </div>
+    );
+};
+
+// --- 教學元件 ---
+const TutorialView = ({ onBack, isDarkMode }) => {
+    const steps = [
+        { 
+            title: "歡迎來到旅遊協作應用程式", 
+            description: "這是一個基於 Firebase Firestore 的協作式旅遊規劃工具。", 
+            icon: Home 
+        },
+        { 
+            title: "儀表板總覽", 
+            description: "您可以在這裡建立、查看和管理您的所有行程。所有行程都與您的使用者 ID 相關聯。", 
+            icon: ClipboardList 
+        },
+        { 
+            title: "協作功能", 
+            description: "進入行程後，您可以邀請協作夥伴（模擬）一起規劃，所有行程數據都儲存在一個共享的公共集合中。", 
+            icon: Users 
+        },
+        { 
+            title: "行程規劃", 
+            description: "在 '行程' 頁面中，您可以新增包含日期、時間和類型（觀光、餐飲、交通等）的活動，並會自動按日期排序。", 
+            icon: Map 
+        },
+        { 
+            title: "深色模式", 
+            description: "點擊右上角的月亮/太陽圖標，隨時切換深色或淺色主題。", 
+            icon: Sun 
+        },
+        { 
+            title: "開始使用", 
+            description: "點擊下方的按鈕返回，開始建立您的第一個行程吧！", 
+            icon: Check 
+        },
+    ];
+
+    const cardBg = isDarkMode ? 'bg-gray-800' : 'bg-white';
+    const textPrimary = isDarkMode ? 'text-indigo-400' : 'text-indigo-600';
+
+    return (
+        <div className={`max-w-4xl mx-auto p-4 sm:p-6 min-h-screen ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-slate-50 text-gray-800'}`}>
+            <button 
+                onClick={onBack} 
+                className={`flex items-center text-lg font-medium mb-8 transition duration-200 ${isDarkMode ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'}`}
+                aria-label="返回"
+            >
+                <ChevronLeft className="w-6 h-6 mr-1" />
+                返回儀表板
+            </button>
+            <h2 className="text-4xl font-extrabold mb-8 text-center text-indigo-600 dark:text-indigo-400">應用程式教學</h2>
+            
+            <div className="space-y-6">
+                {steps.map((step, index) => {
+                    const IconComponent = step.icon;
+                    return (
+                        <div 
+                            key={index} 
+                            className={`${cardClasses} flex items-start p-5 ${cardBg}`}
+                        >
+                            <div className={`flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full mr-4 ${textPrimary} bg-indigo-50 dark:bg-indigo-900`}>
+                                <IconComponent className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold dark:text-white mb-1 flex items-center">
+                                    <span className="mr-2 text-indigo-500 dark:text-indigo-300">{index + 1}.</span> {step.title}
+                                </h3>
+                                <p className="text-gray-600 dark:text-gray-400">{step.description}</p>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <div className="mt-10">
+                <button 
+                    onClick={onBack} 
+                    className={buttonClasses(true, true)}
+                >
+                    <Check className="w-5 h-5 mr-2" /> 開始您的旅程
+                </button>
             </div>
         </div>
     );
 };
 
 
-/**
- * 教學視圖組件
- */
-const TutorialView = React.memo(({ onBack, isDarkMode }) => {
-    const tutorialContent = [
-        { title: "總覽", icon: Home, content: "這是您的旅遊儀表板，所有行程一目瞭然。" },
-        { title: "多用戶協作", icon: Users2, content: "進入行程詳情頁面後，點擊「協作者」標籤，您可以使用其他用戶的 UID (ID: 後的長字串) 來邀請他們一同編輯您的行程。只有行程的管理者（創建者）能新增和移除協作者。" },
-        { title: "AI 建議行程", icon: Bot, content: "在「行程總覽」頁籤下，您可以點擊按鈕呼叫 AI 旅遊助理，根據您的日期和目的地生成一個詳細的建議行程。生成的內容可直接儲存到筆記中。" },
-        { title: "提醒功能", icon: Bell, content: "在「待辦與提醒」頁籤下，您可以為待辦事項設定截止日期，並將其標記為「提醒」。系統會追蹤已逾期的提醒並在儀表板和標籤上顯示數量，確保您不會錯過重要事項。" },
-        { title: "用戶與登出", icon: LogOut, content: "右上角是您的頭像和用戶 ID。您可以隨時點擊登出按鈕來退出當前登入狀態。" },
-        { title: "主題切換", icon: Sun, content: "您可以隨時切換白天或夜間模式，以獲得更舒適的視覺體驗。" },
-    ];
+// --- App 主要元件 ---
 
-    return (
-        <div className={`min-h-screen ${bgClasses}`}>
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <button onClick={onBack} className={`mb-6 flex items-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 transition`}>
-                    <ChevronLeft className="w-6 h-6 mr-1" />
-                    <span className="text-lg font-medium">返回</span>
-                </button>
-                <h2 className={`text-3xl font-extrabold mb-8 text-center ${textClasses}`}>
-                    <BookOpenText className="w-8 h-8 mr-3 inline-block text-indigo-600 dark:text-indigo-400" />
-                    應用程式使用教學
-                </h2>
-                
-                <div className="space-y-6">
-                    {tutorialContent.map((item, index) => (
-                        <div key={index} className={cardClasses}>
-                            <h3 className={`text-xl font-semibold mb-2 flex items-center text-indigo-600 dark:text-indigo-400`}>
-                                <item.icon className="w-6 h-6 mr-3" />
-                                {item.title}
-                            </h3>
-                            <p className={subTextClasses}>{item.content}</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-});
-
-
-/**
- * 主應用程式組件
- */
 const App = () => {
-    const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' | 'tripDetail' | 'tutorial'
-    const [selectedTripId, setSelectedTripId] = useState(null);
-    const [trips, setTrips] = useState([]);
-    const [authReady, setAuthReady] = useState(false);
     const [userId, setUserId] = useState(null);
-    const [currentUserInfo, setCurrentUserInfo] = useState(null); // 用於頭像和登出
-    const [isDarkMode, setIsDarkMode] = useState(true);
+    const [authReady, setAuthReady] = useState(false);
+    const [trips, setTrips] = useState([]);
+    const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' or 'tripDetail' or 'tutorial'
+    const [selectedTripId, setSelectedTripId] = useState(null);
+    const [isDarkMode, setIsDarkMode] = useState(false); // 深色模式狀態
 
-    // Firebase 認證和初始化
+    // 認證與 Firebase 監聽
     useEffect(() => {
-        const initAuth = async () => {
+        if (!auth) return;
+        
+        const authenticate = async () => {
             try {
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
@@ -1127,152 +775,98 @@ const App = () => {
                     await signInAnonymously(auth);
                 }
             } catch (error) {
-                console.error("Authentication failed:", error);
+                console.error("Firebase authentication error:", error);
             }
         };
 
-        // 監聽認證狀態變化
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user) {
                 setUserId(user.uid);
-                setCurrentUserInfo({
-                    displayName: user.displayName || `用戶 ${user.uid.substring(0, 4)}`,
-                    photoURL: user.photoURL,
-                });
+                setAuthReady(true);
             } else {
                 setUserId(null);
-                setCurrentUserInfo(null);
+                setAuthReady(false);
             }
-            setAuthReady(true);
         });
 
-        initAuth();
+        authenticate();
         return () => unsubscribe();
     }, []);
 
-    // 獲取所有行程數據 (使用 where('editors', 'array-contains', userId) 實現協作訪問)
+    // 監聽行程列表
     useEffect(() => {
-        if (!authReady || !userId) {
-            setTrips([]);
-            return;
-        }
+        if (!authReady || !userId) return;
 
-        const tripsCollectionRef = collection(db, `/artifacts/${appId}/public/data/trips`);
-        // 查詢當前用戶 ID 存在於 editors 數組中的行程
-        const q = query(
-            tripsCollectionRef,
-            where('editors', 'array-contains', userId)
-            // 這裡不再使用 orderBy('createdAt', 'desc') 以避免潛在的索引問題
-        );
+        const tripsQuery = query(getTripCollectionRef(userId), orderBy('createdAt', 'desc'));
 
-        const unsubscribe = onSnapshot(q, async (snapshot) => {
-            const tripsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            // 為了獲取每個行程的 Todos 數量，需要額外查詢，這會增加讀取次數。
-            // 這裡採用優化做法: 在 TripDetail 頁面監聽 Todos，在 Dashboard 僅顯示主要資訊。
-            // 但為了實現總提醒數，我們必須在 Dashboard 層次獲取 todos
-            
-            // 由於複雜的嵌套 onSnapshot 會導致大量的 Firestore 讀取和潛在的性能問題，
-            // 這裡將「總提醒數」的計算依賴於一個預先在 trip 結構中同步的欄位 (例如 trip.overdueRemindersCount) 
-            // 或是從 TripDetail 返回時更新數據。
-            
-            // 為了保持單一文件和簡單性，我們會在 Dashboard 組件中對 trips 數組進行處理。
-            // 這裡先設定主要行程數據，待 Dashboard 處理 todos 數據。
-
-            // 獲取 todos 子集合的資料 (一個較昂貴的操作)
-            const tripsWithTodos = await Promise.all(tripsData.map(async (trip) => {
-                const todosRef = collection(db, `/artifacts/${appId}/public/data/trips/${trip.id}/todos`);
-                const todosSnapshot = await getDocs(todosRef); // 使用 getDocs 而非 onSnapshot
-                const todos = todosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                return { ...trip, todos };
+        const unsubscribe = onSnapshot(tripsQuery, (snapshot) => {
+            const tripsList = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
             }));
-
-            setTrips(tripsWithTodos);
-
+            setTrips(tripsList);
         }, (error) => {
             console.error("Error fetching trips:", error);
-            alert(`載入行程列表失敗: ${error.message}`);
         });
 
         return () => unsubscribe();
     }, [authReady, userId]);
 
-    // 主題切換
-    const toggleDarkMode = useCallback(() => {
-        setIsDarkMode(prev => !prev);
-    }, []);
-
+    // 處理行程選擇
     const handleSelectTrip = useCallback((tripId) => {
         setSelectedTripId(tripId);
         setCurrentView('tripDetail');
     }, []);
 
+    // 返回儀表板
     const handleBackToDashboard = useCallback(() => {
         setCurrentView('dashboard');
         setSelectedTripId(null);
     }, []);
-
+    
+    // 進入教學頁面
     const handleStartTutorial = useCallback(() => {
         setCurrentView('tutorial');
     }, []);
 
-    const handleLogout = useCallback(async () => {
-        try {
-            await signOut(auth);
-            // 登出後，onAuthStateChanged 會將 userId 設為 null，並觸發重新登入匿名用戶
-            setCurrentView('dashboard');
-            setSelectedTripId(null);
-        } catch (error) {
-            console.error("Logout failed:", error);
-            alert("登出失敗，請檢查網絡。");
-        }
+    // 切換深色模式
+    const toggleDarkMode = useCallback(() => {
+        setIsDarkMode(prev => !prev);
     }, []);
-
 
     if (!authReady) {
         return (
             <div className="min-h-screen flex justify-center items-center bg-slate-50 dark:bg-slate-900">
-                <Loader2 className="w-10 h-10 animate-spin text-indigo-600 dark:text-indigo-400" />
-                <span className={`ml-4 text-lg ${textClasses}`}>載入應用程式與認證中...</span>
+                <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
+                <span className="ml-4 text-lg text-indigo-600 dark:text-indigo-400">載入應用程式與認證中...</span>
             </div>
         );
     }
-    
-    // 渲染 Header
-    const renderHeader = () => (
-        <Header 
-            title={currentView === 'dashboard' ? '旅遊協作儀表板' : (currentView === 'tutorial' ? '應用程式教學' : '行程規劃')}
-            userId={userId} 
-            isDarkMode={isDarkMode} 
-            toggleDarkMode={toggleDarkMode}
-            onTutorialStart={handleStartTutorial}
-            currentUserInfo={currentUserInfo}
-            handleLogout={handleLogout}
-        />
-    );
 
-
+    // 主應用程式結構
     return (
-        <div className={`font-sans antialiased min-h-screen ${isDarkMode ? 'dark' : ''} ${bgClasses} ${textClasses}`}>
+        <div className={`font-sans antialiased min-h-screen ${isDarkMode ? 'dark bg-gray-900 text-gray-100' : 'bg-slate-50 text-gray-800'}`}>
+            {currentView === 'dashboard' && (
+                <Dashboard 
+                    onSelectTrip={handleSelectTrip} 
+                    trips={trips} 
+                    userId={userId} 
+                    authReady={authReady}
+                    isDarkMode={isDarkMode}
+                    toggleDarkMode={toggleDarkMode}
+                    onTutorialStart={handleStartTutorial} // 新增教學入口
+                />
+            )}
             
-            {renderHeader()}
-            
-            <main>
-                {currentView === 'dashboard' && (
-                    <Dashboard 
-                        onSelectTrip={handleSelectTrip} 
-                        trips={trips} 
+            {currentView === 'tripDetail' && (
+                <div className="bg-slate-50 dark:bg-gray-900 min-h-screen">
+                    <Header 
+                        title="行程規劃" 
                         userId={userId} 
-                        authReady={authReady}
-                        isDarkMode={isDarkMode}
+                        isDarkMode={isDarkMode} 
                         toggleDarkMode={toggleDarkMode}
                         onTutorialStart={handleStartTutorial}
-                        currentUserInfo={currentUserInfo}
-                        handleLogout={handleLogout}
                     />
-                )}
-                
-                {currentView === 'tripDetail' && (
                     <TripDetail 
                         tripId={selectedTripId} 
                         onBack={handleBackToDashboard} 
@@ -1280,15 +874,24 @@ const App = () => {
                         authReady={authReady}
                         isDarkMode={isDarkMode}
                     />
-                )}
+                </div>
+            )}
 
-                {currentView === 'tutorial' && (
+            {currentView === 'tutorial' && (
+                <div className="bg-slate-50 dark:bg-gray-900 min-h-screen">
+                    <Header 
+                        title="應用程式教學" 
+                        userId={userId} 
+                        isDarkMode={isDarkMode} 
+                        toggleDarkMode={toggleDarkMode}
+                        onTutorialStart={handleStartTutorial}
+                    />
                     <TutorialView 
                         onBack={handleBackToDashboard} 
                         isDarkMode={isDarkMode}
                     />
-                )}
-            </main>
+                </div>
+            )}
         </div>
     );
 };
