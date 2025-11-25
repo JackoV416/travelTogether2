@@ -1,24 +1,12 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { VitePWA } from 'vite-plugin-pwa'
-// vite.config.js
-
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
-  
-  // ======================================
-  // 🎯 調整 Build 配置以抑制大檔案警告
-  // ======================================
-  build: {
-    // 將警告限制從預設 500kB 提高到 1000kB (1MB)
-    // 這樣做可以消除警告，但不會真正優化檔案大小
-    chunkSizeWarningLimit: 1000, 
-    // 您也可以嘗試將其設置為 2000 (2MB) 或更高，直到警告消失
-  },
+  plugins: [
+    react(),
+    // Vercel 部署失敗的主要原因：VitePWA 插件必須作為陣列元素放在這裡
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
@@ -44,6 +32,18 @@ export default defineConfig({
       }
     })
   ],
-})
+  
+  // ======================================
+  // 🎯 調整 Build 配置以抑制大檔案警告
+  // ======================================
+  build: {
+    // 將警告限制從預設 500kB 提高到 1000kB (1MB)
+    chunkSizeWarningLimit: 1000,
+  },
 
-
+  // 推薦加上 server 配置，確保在容器環境中能正確啟動
+  server: {
+    host: '0.0.0.0', 
+    port: 5173
+  }
+});
