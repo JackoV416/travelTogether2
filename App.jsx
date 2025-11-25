@@ -8,7 +8,7 @@ import {
     getFirestore, doc, onSnapshot, collection, query, where, getDocs, 
     addDoc, setDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, serverTimestamp 
 } from 'firebase/firestore';
-import { LogOut, Plus, Trash2, Users, Map, Calendar, X, Check, Send, UserCheck, ArrowLeft, Loader2, Edit2, Save } from 'lucide-react';
+import { LogOut, Plus, Trash2, Users, Map, Calendar, X, Check, Send, UserCheck, ArrowLeft, Loader2, Edit2, Save, UserX } from 'lucide-react';
 
 // === GLOBALS and UTILITIES ===
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -52,14 +52,20 @@ const useUserStore = () => {
 };
 
 // === CONFIRMATION MODAL COMPONENT ===
-const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = '確認', cancelText = '取消' }) => {
+const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = '確認', cancelText = '取消', type = 'danger' }) => {
     if (!isOpen) return null;
 
+    const isDanger = type === 'danger';
+    const confirmButtonClass = isDanger 
+        ? "bg-red-600 hover:bg-red-700 shadow-red-300/50"
+        : "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-300/50";
+    const titleClass = isDanger ? "text-red-600" : "text-indigo-600";
+    
     return (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-70 z-50 flex justify-center items-center p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 transform transition-all">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-bold text-red-600">{title}</h3>
+                    <h3 className={`text-xl font-bold ${titleClass}`}>{title}</h3>
                     <button onClick={onCancel} className="text-gray-400 hover:text-gray-600">
                         <X size={20} />
                     </button>
@@ -74,7 +80,7 @@ const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel, confir
                     </button>
                     <button
                         onClick={onConfirm}
-                        className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition duration-150 shadow-md shadow-red-300/50"
+                        className={`px-4 py-2 text-sm font-semibold text-white rounded-lg transition duration-150 shadow-md ${confirmButtonClass}`}
                     >
                         {confirmText}
                     </button>
@@ -95,8 +101,11 @@ const App = () => {
     const [inviteEmail, setInviteEmail] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Modal state for trip deletion
+    // Modal state for deletions
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    // NEW: State for removing a specific member
+    const [memberToRemove, setMemberToRemove] = useState(null); 
+    const [isRemoveMemberModalOpen, setIsRemoveMemberModalOpen] = useState(false);
 
     const { userMap, fetchUserDisplayName } = useUserStore();
 
@@ -199,11 +208,8 @@ const App = () => {
         }
     };
     
-    // NEW: Function to update trip details (name, dates)
     const updateTripDetails = async (tripId, updates) => {
         if (!tripId) return;
-
-        // Optional: Add validation logic here for name/dates
         
         try {
             await updateDoc(doc(db, getPublicCollectionPath('trips'), tripId), updates);
@@ -275,7 +281,7 @@ const App = () => {
         const targetUID = email.trim(); 
         
         if (currentTrip.members.includes(targetUID)) {
-            console.warn("User already a member.");
+            alertUser("該用戶已是行程成員。");
             setLoading(false);
             return;
         }
@@ -290,6 +296,29 @@ const App = () => {
             console.error("Error inviting member: ", e);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // NEW: Function to remove a member from the trip
+    const removeMember = async (memberId) => {
+        if (!currentTrip || !userId || currentTrip.ownerId !== userId) {
+            alertUser("您沒有權限執行此操作。");
+            return;
+        }
+        if (memberId === userId) {
+            alertUser("您不能移除行程所有者！");
+            return;
+        }
+        
+        try {
+            await updateDoc(doc(db, getPublicCollectionPath('trips'), currentTrip.id), {
+                members: arrayRemove(memberId)
+            });
+            setMemberToRemove(null);
+            setIsRemoveMemberModalOpen(false);
+            alertUser(`已成功移除成員 ${userMap[memberId] || memberId}。`);
+        } catch (e) {
+            console.error("Error removing member: ", e);
         }
     };
 
@@ -316,7 +345,7 @@ const App = () => {
 
     // Helper for simple UI feedback
     const alertUser = (message) => {
-        // Using placeholder alert for now, but should be replaced by modal/toast
+        // Using console log as placeholder for better UI feedback (Toast/Modal)
         console.log("UI Alert:", message);
     };
 
@@ -439,26 +468,36 @@ const App = () => {
         );
     };
     
-    // NEW: Inline Editable Component
+    // Inline Editable Component
     const InlineEdit = ({ children, isEditing, onToggleEdit, onSave, inputType = 'text', value, onChange, className = '', iconSize = 24 }) => {
         if (isEditing) {
+            // Check if both start/end dates are being edited together
+            const isDateRange = inputType === 'date' && Array.isArray(value) && value.length === 2;
+
             return (
                 <div className="flex items-center space-x-2 w-full">
-                    {inputType === 'text' && (
+                    {isDateRange ? (
+                        <>
+                            <input
+                                type="date"
+                                value={value[0]}
+                                onChange={(e) => onChange(e, 'start_date')}
+                                className="flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-1 text-xl"
+                                autoFocus
+                            />
+                            <input
+                                type="date"
+                                value={value[1]}
+                                onChange={(e) => onChange(e, 'end_date')}
+                                className="flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-1 text-xl"
+                            />
+                        </>
+                    ) : (
                         <input
-                            type="text"
+                            type={inputType}
                             value={value}
                             onChange={onChange}
-                            className="flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-1 text-xl"
-                            autoFocus
-                        />
-                    )}
-                    {inputType === 'date' && (
-                         <input
-                            type="date"
-                            value={value}
-                            onChange={onChange}
-                            className="flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-1 text-xl"
+                            className={`flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-1 ${inputType === 'date' ? 'text-lg' : 'text-xl'}`}
                             autoFocus
                         />
                     )}
@@ -470,11 +509,11 @@ const App = () => {
         }
 
         return (
-            <div className="flex items-center space-x-2 group w-full">
+            <div className={`flex items-center space-x-2 group w-full ${className}`}>
                 <div className="flex-grow">{children}</div>
                 <button 
                     onClick={onToggleEdit} 
-                    className="p-1 text-gray-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="p-1 text-gray-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                     title="編輯"
                 >
                     <Edit2 size={iconSize} />
@@ -500,14 +539,14 @@ const App = () => {
         const isOwner = currentTrip.ownerId === userId;
         const [newItemDescription, setNewItemDescription] = useState('');
         
-        // NEW State for Inline Editing
+        // State for Inline Editing
         const [isNameEditing, setIsNameEditing] = useState(false);
         const [isDateEditing, setIsDateEditing] = useState(false);
         const [editedName, setEditedName] = useState(currentTrip.name);
         const [editedStartDate, setEditedStartDate] = useState(currentTrip.startDate);
         const [editedEndDate, setEditedEndDate] = useState(currentTrip.endDate);
         
-        // Update local state when trip prop changes (e.g., after initial load or remote change)
+        // Update local state when trip prop changes
         useEffect(() => {
             setEditedName(currentTrip.name);
             setEditedStartDate(currentTrip.startDate);
@@ -520,6 +559,14 @@ const App = () => {
                 updateTripDetails(currentTrip.id, { name: editedName.trim() });
             }
             setIsNameEditing(false);
+        };
+
+        const handleDateChange = (e, type) => {
+            if (type === 'start_date') {
+                setEditedStartDate(e.target.value);
+            } else if (type === 'end_date') {
+                setEditedEndDate(e.target.value);
+            }
         };
 
         const handleSaveDates = () => {
@@ -545,6 +592,16 @@ const App = () => {
                 addTripItem(newItemDescription);
                 setNewItemDescription('');
             }
+        };
+        
+        // Handler for opening the remove member modal
+        const handleRemoveMemberClick = (memberId) => {
+            if (memberId === currentTrip.ownerId) {
+                alertUser("不能移除行程所有者。");
+                return;
+            }
+            setMemberToRemove(memberId);
+            setIsRemoveMemberModalOpen(true);
         };
 
         const TripItem = ({ item }) => {
@@ -609,7 +666,6 @@ const App = () => {
                     onSave={handleSaveName}
                     value={editedName}
                     onChange={(e) => setEditedName(e.target.value)}
-                    className="mb-4"
                     iconSize={28}
                 >
                     <h1 className="text-4xl font-extrabold text-gray-900 flex items-center">
@@ -624,11 +680,8 @@ const App = () => {
                         isEditing={isDateEditing}
                         onToggleEdit={() => setIsDateEditing(true)}
                         onSave={handleSaveDates}
-                        value={editedStartDate}
-                        onChange={(e) => {
-                            if (e.target.name === 'start_date') setEditedStartDate(e.target.value);
-                            if (e.target.name === 'end_date') setEditedEndDate(e.target.value);
-                        }}
+                        value={[editedStartDate, editedEndDate]}
+                        onChange={handleDateChange}
                         inputType="date"
                         className="flex-1 min-w-1/3"
                         iconSize={18}
@@ -653,11 +706,38 @@ const App = () => {
                         協作成員 ({currentTrip.members.length})
                     </h2>
                     <div className="flex flex-wrap gap-2 mb-4">
-                        {currentTrip.members.map(memberId => (
-                            <span key={memberId} className="px-3 py-1 text-sm bg-indigo-100 text-indigo-800 rounded-full font-medium">
-                                {userMap[memberId] || memberId}
-                            </span>
-                        ))}
+                        {currentTrip.members.map(memberId => {
+                            const displayName = userMap[memberId] || memberId;
+                            const isCurrentUser = memberId === userId;
+                            const isTripOwner = memberId === currentTrip.ownerId;
+                            
+                            return (
+                                <span 
+                                    key={memberId} 
+                                    className={`
+                                        px-3 py-1 text-sm rounded-full font-medium flex items-center group
+                                        ${isTripOwner 
+                                            ? 'bg-purple-100 text-purple-800 border border-purple-300' 
+                                            : 'bg-indigo-100 text-indigo-800'
+                                        }
+                                    `}
+                                >
+                                    {displayName}
+                                    {isTripOwner && <span className="ml-1 text-xs font-bold">(所有者)</span>}
+                                    
+                                    {/* NEW: Remove Member Button (Only for Owner, cannot remove self/owner) */}
+                                    {isOwner && !isTripOwner && (
+                                        <button
+                                            onClick={() => handleRemoveMemberClick(memberId)}
+                                            className="ml-2 text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-200 transition opacity-80"
+                                            title={`移除 ${displayName}`}
+                                        >
+                                            <UserX size={14} />
+                                        </button>
+                                    )}
+                                </span>
+                            );
+                        })}
                     </div>
                     
                     {isOwner && (
@@ -717,7 +797,7 @@ const App = () => {
                     </ul>
                 </div>
                 
-                {/* Confirmation Modal */}
+                {/* Confirmation Modal for deleting trip */}
                 <ConfirmationModal
                     isOpen={isDeleteModalOpen}
                     title="確認刪除行程"
@@ -725,6 +805,17 @@ const App = () => {
                     onConfirm={deleteTrip}
                     onCancel={() => setIsDeleteModalOpen(false)}
                     confirmText="永久刪除"
+                />
+                
+                {/* NEW: Confirmation Modal for removing member */}
+                <ConfirmationModal
+                    isOpen={isRemoveMemberModalOpen}
+                    title="確認移除成員"
+                    message={`您確定要將成員「${userMap[memberToRemove] || memberToRemove}」從行程中移除嗎？他們將無法再存取此行程。`}
+                    onConfirm={() => removeMember(memberToRemove)}
+                    onCancel={() => { setMemberToRemove(null); setIsRemoveMemberModalOpen(false); }}
+                    confirmText="移除成員"
+                    type="danger"
                 />
             </div>
         );
