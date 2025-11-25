@@ -276,6 +276,7 @@ const Dashboard = ({ setCurrentView, setSelectedTripId }) => {
         } catch (e) {
             console.error("建立行程失敗:", e);
             // 改用自定義彈窗或訊息
+            // NOTE: 使用者可能會要求在首頁顯示債務，但目前的首頁(Dashboard)不載入所有交易，故此處先省略Dashboard上的債務卡片
             alert("建立行程失敗，請稍後再試。"); 
         }
     };
@@ -422,7 +423,6 @@ const TripCard = ({ trip, onDelete, onNavigate }) => {
 };
 
 // --- Trip Detail Component ---
-// ... (Trip Detail Component 保持不變)
 const TripDetail = ({ tripId, setCurrentView }) => {
     const { userId, isAuthReady, db } = useAppState();
     const [tripData, setTripData] = useState(null);
@@ -461,6 +461,7 @@ const TripDetail = ({ tripId, setCurrentView }) => {
 
     // 模擬計算通知數量
     useEffect(() => {
+        // 在實務中，這裡會根據未結清的債務數量來決定 budget 的通知計數
         setNotificationCounts({
             itinerary: 0,
             budget: 1, 
@@ -481,16 +482,19 @@ const TripDetail = ({ tripId, setCurrentView }) => {
     const renderContent = useCallback(() => {
         if (!tripData) return <div className="text-center p-8">載入中...</div>;
 
+        // 我們將使用一個固定的同伴名稱來示範債務功能
+        const coTravelerName = '同伴'; 
+
         switch (activeTab) {
             case 'itinerary':
                 return <ItineraryContent tripId={tripId} userId={userId} db={db} tripData={tripData} />;
             case 'budget':
-                // 傳遞所有必要的 props 給 BudgetContent
                 return <BudgetContent 
                     tripId={tripId} 
                     userId={userId} 
                     db={db} 
-                    baseCurrency={tripData.baseCurrency} 
+                    baseCurrency={tripData.baseCurrency}
+                    coTravelerName={coTravelerName} // 傳遞同伴名稱
                 />;
             case 'todo':
                 return <TodoContent tripId={tripId} userId={userId} db={db} />;
@@ -577,7 +581,7 @@ const TripDetail = ({ tripId, setCurrentView }) => {
 
 // --- Budget Transaction Modal Component ---
 
-const AddTransactionModal = ({ isVisible, onClose, onSave, baseCurrency, tripId, userId }) => {
+const AddTransactionModal = ({ isVisible, onClose, onSave, baseCurrency, tripId, userId, coTravelerName }) => {
     const defaultCurrency = CURRENCY_OPTIONS.find(c => c.code !== baseCurrency) || CURRENCY_OPTIONS[0];
     
     const [amount, setAmount] = useState(0);
@@ -589,6 +593,11 @@ const AddTransactionModal = ({ isVisible, onClose, onSave, baseCurrency, tripId,
     const [loadingRate, setLoadingRate] = useState(false);
     const [rateError, setRateError] = useState(null);
     const [saveLoading, setSaveLoading] = useState(false);
+    
+    // NEW DEBT STATES
+    const [paidBy, setPaidBy] = useState('self'); // 'self', 'coTraveler'
+    const [splitType, setSplitType] = useState('full-me'); // 'full-me', 'full-coTraveler', 'split-50/50'
+
 
     // 重置所有狀態
     const resetForm = useCallback(() => {
@@ -600,6 +609,8 @@ const AddTransactionModal = ({ isVisible, onClose, onSave, baseCurrency, tripId,
         setRate(0);
         setRateError(null);
         setSaveLoading(false);
+        setPaidBy('self'); // Reset payment fields
+        setSplitType('full-me');
     }, [defaultCurrency.code]);
 
     useEffect(() => {
@@ -672,6 +683,9 @@ const AddTransactionModal = ({ isVisible, onClose, onSave, baseCurrency, tripId,
             createdAt: serverTimestamp(), // 使用 Firestore 伺服器時間戳
             tripId: tripId,
             userId: userId,
+            // NEW DEBT FIELDS
+            paidBy: paidBy,
+            splitType: splitType,
         };
 
         try {
@@ -768,6 +782,50 @@ const AddTransactionModal = ({ isVisible, onClose, onSave, baseCurrency, tripId,
                         </div>
                     </div>
 
+                    {/* 誰付的錢？ */}
+                    <div>
+                        <label className="text-sm font-medium text-gray-700 block mb-1">誰付了這筆款項？</label>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setPaidBy('self')}
+                                className={`flex-1 px-3 py-2 rounded-xl text-sm font-medium border transition duration-150 ${paidBy === 'self' ? 'bg-indigo-600 text-white shadow-md border-indigo-600' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}`}
+                            >
+                                我 (Self)
+                            </button>
+                            <button
+                                onClick={() => setPaidBy('coTraveler')}
+                                className={`flex-1 px-3 py-2 rounded-xl text-sm font-medium border transition duration-150 ${paidBy === 'coTraveler' ? 'bg-indigo-600 text-white shadow-md border-indigo-600' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}`}
+                            >
+                                {coTravelerName} (Other)
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* 如何分攤？ */}
+                    <div>
+                        <label className="text-sm font-medium text-gray-700 block mb-1">如何分攤費用？</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            <button
+                                onClick={() => setSplitType('full-me')}
+                                className={`px-3 py-2 rounded-xl text-xs font-medium border transition duration-150 ${splitType === 'full-me' ? 'bg-teal-500 text-white shadow-md border-teal-500' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}`}
+                            >
+                                {paidBy === 'self' ? '我獨自承擔' : `${coTravelerName} 獨自承擔`}
+                            </button>
+                            <button
+                                onClick={() => setSplitType('full-coTraveler')}
+                                className={`px-3 py-2 rounded-xl text-xs font-medium border transition duration-150 ${splitType === 'full-coTraveler' ? 'bg-teal-500 text-white shadow-md border-teal-500' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}`}
+                            >
+                                {paidBy === 'self' ? `${coTravelerName} 獨自承擔` : '我獨自承擔'}
+                            </button>
+                            <button
+                                onClick={() => setSplitType('split-50/50')}
+                                className={`px-3 py-2 rounded-xl text-xs font-medium border transition duration-150 ${splitType === 'split-50/50' ? 'bg-red-500 text-white shadow-md border-red-500' : 'bg-gray-100 text-gray-700 border-gray-700 hover:bg-gray-200'}`}
+                            >
+                                平均分攤 (50/50)
+                            </button>
+                        </div>
+                    </div>
+
                     {/* 轉換結果顯示 */}
                     <div className="mt-4 p-3 bg-indigo-50 border border-dashed border-indigo-300 rounded-xl">
                         <p className="text-sm font-medium text-gray-600 mb-1">
@@ -807,9 +865,68 @@ const AddTransactionModal = ({ isVisible, onClose, onSave, baseCurrency, tripId,
     );
 };
 
+// --- 債務結算卡片 ---
+const DebtSummaryCard = ({ debtSummary, baseCurrency, coTravelerName }) => {
+    const { totalIOwe, totalOwedToMe, netSettlement } = debtSummary;
+    
+    // 檢查是否已結清 (小於 $0.01 視為結清)
+    const isSettled = Math.abs(netSettlement) < 0.01;
+    
+    // 判斷最終誰欠誰
+    let netMessage;
+    let netClasses;
+
+    if (isSettled) {
+        netMessage = "已結清 (無需結算)";
+        netClasses = "bg-green-100 text-green-700 border-green-300";
+    } else if (netSettlement > 0) {
+        // netSettlement > 0 意味著 totalOwedToMe > totalIOwe
+        netMessage = `${coTravelerName} 應付給我 ${formatCurrency(netSettlement, baseCurrency)}`;
+        netClasses = "bg-green-100 text-green-700 border-green-300";
+    } else {
+        // netSettlement < 0 意味著 totalIOwe > totalOwedToMe
+        netMessage = `我應付給 ${coTravelerName} ${formatCurrency(Math.abs(netSettlement), baseCurrency)}`;
+        netClasses = "bg-red-100 text-red-700 border-red-300";
+    }
+    
+    return (
+        <div className={`${cardClasses} p-4 sm:p-6 border border-gray-200 shadow-md`}>
+            <h4 className="text-lg font-bold text-gray-700 flex items-center mb-3">
+                <HandCoins className="w-5 h-5 mr-2 text-indigo-600" />
+                債務結算概覽 (與 {coTravelerName})
+            </h4>
+            
+            <div className="grid grid-cols-2 gap-4 text-center border-b pb-3 mb-3">
+                <div className="p-3 bg-red-50 rounded-xl">
+                    <p className="text-xs font-medium text-red-700">我欠 {coTravelerName}</p>
+                    <p className="text-xl font-bold text-red-600">
+                        {formatCurrency(totalIOwe, baseCurrency)}
+                    </p>
+                </div>
+                <div className="p-3 bg-green-50 rounded-xl">
+                    <p className="text-xs font-medium text-green-700">{coTravelerName} 欠我</p>
+                    <p className="text-xl font-bold text-green-600">
+                        {formatCurrency(totalOwedToMe, baseCurrency)}
+                    </p>
+                </div>
+            </div>
+
+            <div className={`p-3 rounded-xl font-bold text-center ${netClasses} border`}>
+                <p className="text-sm">最終結算：</p>
+                <p className="text-lg mt-1">{netMessage}</p>
+            </div>
+            
+            <button className={`${secondaryButtonClasses} mt-4 text-sm w-full bg-gray-300 hover:bg-gray-400`}>
+                <Check className="w-4 h-4 mr-1" />
+                標記為已結算 (手動清零)
+            </button>
+        </div>
+    );
+};
+
 
 // 2. 預算 (Budget) - 實現即時貨幣轉換和交易記錄
-const BudgetContent = ({ tripId, userId, db, baseCurrency }) => {
+const BudgetContent = ({ tripId, userId, db, baseCurrency, coTravelerName }) => {
     const [transactions, setTransactions] = useState([]);
     const [isTransactionsLoading, setIsTransactionsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -833,6 +950,9 @@ const BudgetContent = ({ tripId, userId, db, baseCurrency }) => {
                     id: doc.id,
                     ...docData,
                     createdAt: docData.createdAt ? new Date(docData.createdAt.seconds * 1000) : new Date(),
+                    // 新增的預設值，防止舊資料出錯
+                    paidBy: docData.paidBy || 'self', 
+                    splitType: docData.splitType || 'full-me',
                 };
             });
             setTransactions(data);
@@ -849,6 +969,36 @@ const BudgetContent = ({ tripId, userId, db, baseCurrency }) => {
     // 計算總支出
     const totalSpent = useMemo(() => {
         return transactions.reduce((sum, t) => sum + t.convertedAmount, 0);
+    }, [transactions]);
+    
+    // NEW: 計算債務
+    const debtSummary = useMemo(() => {
+        let totalIOwe = 0; // 我欠同伴多少錢
+        let totalOwedToMe = 0; // 同伴欠我多少錢 (同伴欠我的)
+
+        transactions.forEach(t => {
+            // 只計算平均分攤的交易
+            if (t.splitType === 'split-50/50') {
+                const halfAmount = t.convertedAmount / 2;
+
+                if (t.paidBy === 'self') {
+                    // 我付的，同伴欠我一半 (Owed To Me)
+                    totalOwedToMe += halfAmount;
+                } else if (t.paidBy === 'coTraveler') {
+                    // 同伴付的，我欠同伴一半 (I Owe)
+                    totalIOwe += halfAmount;
+                }
+            }
+        });
+
+        // 淨結算 (正值: 同伴欠我; 負值: 我欠同伴)
+        const netSettlement = totalOwedToMe - totalIOwe;
+
+        return {
+            totalIOwe: parseFloat(totalIOwe.toFixed(2)),
+            totalOwedToMe: parseFloat(totalOwedToMe.toFixed(2)),
+            netSettlement: parseFloat(netSettlement.toFixed(2)),
+        };
     }, [transactions]);
 
 
@@ -934,10 +1084,13 @@ const BudgetContent = ({ tripId, userId, db, baseCurrency }) => {
                     {formatCurrency(totalSpent, baseCurrency)}
                 </p>
                 <p className="text-xs text-gray-500 mt-2">
-                    {transactions.length} 筆記錄
+                    {transactions.length} 筆記錄 | 協作者: {coTravelerName}
                 </p>
             </div>
             
+            {/* NEW: 債務概覽卡片 */}
+            <DebtSummaryCard debtSummary={debtSummary} baseCurrency={baseCurrency} coTravelerName={coTravelerName} />
+
             {/* 匯率轉換區塊 (計算器) */}
             <div className={`${cardClasses} border border-indigo-200 shadow-lg space-y-3`}>
                 <h4 className="text-lg font-bold text-indigo-700 flex items-center">
@@ -997,7 +1150,7 @@ const BudgetContent = ({ tripId, userId, db, baseCurrency }) => {
                     )}
                 </div>
 
-                {/* 按鈕：將計算結果快速儲存為交易 */}
+                {/* 按鈕：新增交易 */}
                 <button 
                     onClick={() => setIsModalOpen(true)}
                     disabled={convertedAmount <= 0}
@@ -1034,7 +1187,7 @@ const BudgetContent = ({ tripId, userId, db, baseCurrency }) => {
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        {transactions.map(t => <TransactionItem key={t.id} transaction={t} onDelete={handleDeleteTransaction} />)}
+                        {transactions.map(t => <TransactionItem key={t.id} transaction={t} onDelete={handleDeleteTransaction} coTravelerName={coTravelerName} />)}
                     </div>
                 )}
             </div>
@@ -1046,14 +1199,25 @@ const BudgetContent = ({ tripId, userId, db, baseCurrency }) => {
                 baseCurrency={baseCurrency}
                 tripId={tripId}
                 userId={userId}
+                coTravelerName={coTravelerName} // 傳遞同伴名稱給 Modal
             />
         </div>
     );
 };
 
-const TransactionItem = ({ transaction, onDelete }) => {
+const TransactionItem = ({ transaction, onDelete, coTravelerName }) => {
     const category = TRANSACTION_CATEGORIES.find(c => c.id === transaction.category) || TRANSACTION_CATEGORIES[5];
     
+    // 顯示分攤資訊
+    let splitInfo = '';
+    if (transaction.splitType === 'split-50/50') {
+        splitInfo = transaction.paidBy === 'self' ? `[我付/50-50] ${coTravelerName}欠我一半` : `[同伴付/50-50] 我欠${coTravelerName}一半`;
+    } else if (transaction.paidBy === 'self') {
+        splitInfo = transaction.splitType === 'full-me' ? '[我獨付/我承擔]' : `[我獨付/${coTravelerName}承擔]`;
+    } else { // paidBy === 'coTraveler'
+        splitInfo = transaction.splitType === 'full-me' ? `[同伴獨付/我承擔]` : `[同伴獨付/${coTravelerName}承擔]`;
+    }
+
     return (
         <div className={`flex items-center p-3 rounded-xl transition duration-150 border ${category.bg} hover:shadow-md`}>
             <div className={`p-2 rounded-full mr-3 ${category.color} bg-white shadow-sm`}>
@@ -1062,9 +1226,11 @@ const TransactionItem = ({ transaction, onDelete }) => {
             
             <div className="flex-grow min-w-0">
                 <p className="font-semibold truncate text-gray-900">{transaction.description}</p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                    {category.name} | {formatCurrency(transaction.originalAmount, transaction.originalCurrency)} @ {transaction.exchangeRate.toFixed(4)}
+                <p className="text-xs text-gray-500 mt-0.5 flex items-center">
+                    {category.name} | {formatCurrency(transaction.originalAmount, transaction.originalCurrency)} 
+                    <span className="ml-2 font-medium text-indigo-500 hidden sm:inline-block">({splitInfo})</span>
                 </p>
+                <p className="text-xs font-medium text-indigo-500 sm:hidden">{splitInfo}</p>
             </div>
             
             <div className="text-right ml-4 flex items-center space-x-2">
@@ -1235,7 +1401,7 @@ const App = () => {
     useEffect(() => {
         if (trips.length > 0 && selectedTripId === null) {
             setSelectedTripId(trips[0].id);
-            setCurrentView('trip-detail');
+            // setCurrentView('trip-detail'); // 保持在 dashboard 讓使用者選擇
         } else if (trips.length === 0) {
             setCurrentView('dashboard');
         }
