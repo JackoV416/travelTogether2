@@ -223,9 +223,7 @@ const useAppState = () => {
     return { userId, isAuthReady, trips, isLoading, error, db, auth };
 };
 
-// --- Trip/Dashboard Component ---
-
-// [Dashboard and TripCard components remain largely unchanged for brevity, but the TripDetail component is updated below]
+// --- Dashboard Component ---
 
 const Dashboard = ({ setCurrentView, setSelectedTripId }) => {
     const { userId, isAuthReady, trips, isLoading, error, db } = useAppState();
@@ -242,7 +240,7 @@ const Dashboard = ({ setCurrentView, setSelectedTripId }) => {
             endDate: new Date(),
             collaborators: [userId],
             createdAt: new Date(),
-            baseCurrency: BASE_CURRENCY, // 新增基礎貨幣設定
+            baseCurrency: BASE_CURRENCY, // 新增基礎貨幣設定為 HKD
         };
 
         try {
@@ -256,12 +254,16 @@ const Dashboard = ({ setCurrentView, setSelectedTripId }) => {
         } catch (e) {
             console.error("建立行程失敗:", e);
             // 改用自定義彈窗或訊息
-            alert("建立行程失敗，請稍後再試。");
+            // 注意: 此處使用 alert 僅作為臨時錯誤顯示，建議替換為自定義 modal
+            alert("建立行程失敗，請稍後再試。"); 
         }
     };
 
     const handleDeleteTrip = async (tripId) => {
-        if (!window.confirm("確定要刪除這個行程嗎？此操作不可逆。")) return;
+        // 使用自定義 modal 代替 window.confirm
+        const isConfirmed = window.confirm("確定要刪除這個行程嗎？此操作不可逆。"); 
+        if (!isConfirmed) return;
+        
         try {
             await deleteDoc(getDocumentRef('trips', tripId, userId));
             console.log("行程刪除成功:", tripId);
@@ -460,9 +462,9 @@ const TripDetail = ({ tripId, setCurrentView }) => {
 
         switch (activeTab) {
             case 'itinerary':
+                // 這裡的 ItineraryContent 相當於您想像中的 'ItineraryForm' 相關功能
                 return <ItineraryContent tripId={tripId} userId={userId} db={db} tripData={tripData} />;
             case 'budget':
-                // 傳遞 baseCurrency 給 BudgetContent
                 return <BudgetContent tripId={tripId} userId={userId} db={db} baseCurrency={tripData.baseCurrency} />;
             case 'todo':
                 return <TodoContent tripId={tripId} userId={userId} db={db} />;
@@ -549,7 +551,7 @@ const TripDetail = ({ tripId, setCurrentView }) => {
 
 // --- Sub-Components for 5 Core Features ---
 
-// 1. 行程 (Itinerary) - 保持不變
+// 1. 行程 (Itinerary) - 相當於傳統結構中的 ItineraryForm / ItineraryDisplay
 const ItineraryContent = ({ tripId, userId, tripData }) => {
     const days = useMemo(() => {
         if (!tripData.startDate || !tripData.endDate) return [];
@@ -596,7 +598,7 @@ const ItineraryContent = ({ tripId, userId, tripData }) => {
     );
 };
 
-// 2. 預算 (Budget) - 實現即時貨幣轉換
+// 2. 預算 (Budget) - 實現即時貨幣轉換 (最新功能)
 const BudgetContent = ({ baseCurrency }) => {
     const [amount, setAmount] = useState(0);
     const [fromCurrency, setFromCurrency] = useState('JPY'); // 預設為日圓
@@ -705,7 +707,7 @@ const BudgetContent = ({ baseCurrency }) => {
                 {/* 轉換結果 */}
                 <div className="mt-4 p-3 bg-white border border-dashed border-indigo-300 rounded-xl">
                     <p className="text-sm font-medium text-gray-500 mb-1">
-                        等值 {targetCurrencyName} (HKD)
+                        等值 {targetCurrencyName} ({baseCurrency})
                     </p>
                     <div className="flex items-center justify-between">
                         <p className="text-3xl font-extrabold text-indigo-600">
