@@ -8,7 +8,7 @@ import {
     getFirestore, doc, onSnapshot, collection, query, where, getDocs, 
     addDoc, setDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, serverTimestamp 
 } from 'firebase/firestore';
-import { LogOut, Plus, Trash2, Users, Map, Calendar, X, Check, Send, UserCheck, ArrowLeft, Loader2, Edit2, Save, UserX, LogOut as LogOutIcon } from 'lucide-react';
+import { LogOut, Plus, Trash2, Users, Map, Calendar, X, Check, Send, UserCheck, ArrowLeft, Loader2, Edit2, Save, UserX, LogOut as LogOutIcon, User } from 'lucide-react';
 
 // === GLOBALS and UTILITIES ===
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -86,8 +86,8 @@ const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel, confir
 };
 
 
-// === TRIP ITEM COMPONENT (WITH INLINE EDITING) ===
-const TripItem = ({ item, userMap, toggleCompletion, deleteItem, updateDescription }) => {
+// === TRIP ITEM COMPONENT (WITH INLINE EDITING AND ASSIGNMENT) ===
+const TripItem = ({ item, userMap, members, toggleCompletion, deleteItem, updateDescription, updateAssignment }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editedDescription, setEditedDescription] = useState(item.description);
     
@@ -117,10 +117,18 @@ const TripItem = ({ item, userMap, toggleCompletion, deleteItem, updateDescripti
     };
     
     const addedByDisplay = userMap[item.addedBy] || item.addedBy.substring(0, 6);
-    
+    const assignedToDisplay = item.assignedTo ? (userMap[item.assignedTo] || item.assignedTo.substring(0, 6)) : '未指派';
+
+    const handleAssignmentChange = (e) => {
+        const selectedUid = e.target.value === 'null' ? null : e.target.value;
+        updateAssignment(item.id, selectedUid);
+    };
+
     return (
-        <li className="flex items-start justify-between p-3 bg-gray-50 rounded-lg shadow-sm hover:bg-white transition duration-200 group">
-            <div className="flex items-start flex-grow min-w-0">
+        <li className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-gray-50 rounded-lg shadow-sm hover:bg-white transition duration-200 group">
+            
+            {/* Left Side: Checkbox, Description, Edit */}
+            <div className="flex items-start flex-grow min-w-0 w-full sm:w-auto mb-2 sm:mb-0">
                 {/* Completion Checkbox */}
                 <input
                     type="checkbox"
@@ -170,15 +178,36 @@ const TripItem = ({ item, userMap, toggleCompletion, deleteItem, updateDescripti
                 )}
             </div>
             
-            {/* Metadata and Delete Button */}
-            <div className="flex items-center space-x-2 shrink-0 ml-4">
+            {/* Right Side: Assignment, Added By, Delete */}
+            <div className="flex flex-wrap items-center space-x-3 text-xs shrink-0 sm:ml-4 mt-2 sm:mt-0 w-full sm:w-auto justify-end">
+                
+                {/* Assignment Dropdown */}
+                <div className="flex items-center space-x-1 bg-white p-1 rounded-md shadow-inner border border-indigo-200">
+                    <User size={14} className="text-indigo-500" />
+                    <select
+                        value={item.assignedTo || 'null'}
+                        onChange={handleAssignmentChange}
+                        className="bg-transparent text-indigo-800 font-medium text-xs border-none focus:ring-0 p-0 pr-1"
+                        title="指派給..."
+                    >
+                        <option value="null">未指派</option>
+                        {members.map(memberId => (
+                            <option key={memberId} value={memberId}>
+                                {userMap[memberId] || memberId.substring(0, 6)}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                
+                {/* Added By Tag */}
                 <span className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full whitespace-nowrap">
                     由 {addedByDisplay} 新增
                 </span>
                 
+                {/* Delete Button */}
                 <button
                     onClick={() => deleteItem(item.id)}
-                    className="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 transition"
+                    className="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 transition shrink-0"
                     title="刪除此項目"
                 >
                     <Trash2 size={16} />
@@ -251,7 +280,7 @@ const App = () => {
         });
 
         return () => unsubscribe();
-    }, []);
+    }, [initialAuthToken]); // Added initialAuthToken to dependency array for clarity
 
     // --- Data Fetching (Trips) ---
     useEffect(() => {
@@ -351,7 +380,7 @@ const App = () => {
         }
     };
     
-    // NEW: Function to update an item's description
+    // Function to update an item's description
     const updateTripItemDescription = async (itemId, newDescription) => {
         if (!currentTrip || !userId || !newDescription.trim()) {
             alertUser("項目描述不能為空。");
@@ -372,6 +401,24 @@ const App = () => {
             alertUser("更新項目失敗。");
         }
     };
+    
+    // NEW: Function to update an item's assignment
+    const updateTripItemAssignment = async (itemId, newAssignedTo) => {
+        if (!currentTrip || !userId) return;
+
+        try {
+            const updatedItems = currentTrip.items.map(item =>
+                item.id === itemId ? { ...item, assignedTo: newAssignedTo } : item
+            );
+
+            await updateDoc(doc(getDb(), getPublicCollectionPath('trips'), currentTrip.id), {
+                items: updatedItems
+            });
+        } catch (e) {
+            console.error("Error updating item assignment: ", e);
+            alertUser("更新項目指派失敗。");
+        }
+    };
 
 
     const addTripItem = async (description) => {
@@ -381,6 +428,7 @@ const App = () => {
             id: crypto.randomUUID(),
             description: description.trim(),
             completed: false,
+            assignedTo: null, // NEW: Initialize as null
             addedBy: userId,
             timestamp: Date.now()
         };
@@ -405,6 +453,8 @@ const App = () => {
                 return;
             }
             
+            // To ensure arrayRemove works, we must find the exact object reference.
+            // Since we rely on onSnapshot to keep currentTrip up to date, this should work.
             await updateDoc(doc(getDb(), getPublicCollectionPath('trips'), currentTrip.id), {
                 items: arrayRemove(itemToRemove)
             });
@@ -454,6 +504,17 @@ const App = () => {
             await updateDoc(doc(getDb(), getPublicCollectionPath('trips'), currentTrip.id), {
                 members: arrayRemove(memberId)
             });
+            
+            // Unassign all items assigned to this member upon removal
+            const updatedItems = currentTrip.items.map(item => 
+                item.assignedTo === memberId ? { ...item, assignedTo: null } : item
+            );
+            
+            await updateDoc(doc(getDb(), getPublicCollectionPath('trips'), currentTrip.id), {
+                items: updatedItems
+            });
+
+
             setMemberToRemove(null);
             setIsRemoveMemberModalOpen(false);
             alertUser(`已成功移除成員 ${userMap[memberId] || memberId}。`);
@@ -475,6 +536,15 @@ const App = () => {
         try {
             await updateDoc(doc(getDb(), getPublicCollectionPath('trips'), currentTrip.id), {
                 members: arrayRemove(userId)
+            });
+            
+            // Unassign all items assigned to the leaving user
+            const updatedItems = currentTrip.items.map(item => 
+                item.assignedTo === userId ? { ...item, assignedTo: null } : item
+            );
+            
+            await updateDoc(doc(getDb(), getPublicCollectionPath('trips'), currentTrip.id), {
+                items: updatedItems
             });
             
             // Redirect back to home after leaving
@@ -937,9 +1007,11 @@ const App = () => {
                                     key={item.id} 
                                     item={item} 
                                     userMap={userMap}
+                                    members={currentTrip.members} // Pass members list for assignment dropdown
                                     toggleCompletion={toggleTripItemCompletion}
                                     deleteItem={deleteTripItem}
-                                    updateDescription={updateTripItemDescription} // 新增的編輯函數
+                                    updateDescription={updateTripItemDescription}
+                                    updateAssignment={updateTripItemAssignment} // Pass assignment update function
                                 />
                             ))}
                         {currentTrip.items.length === 0 && (
