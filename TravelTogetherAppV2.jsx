@@ -16,12 +16,12 @@ import {
 
 // --- Firebase 設定 ---
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY", // <-- 必須
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com", // <-- 必須
-    projectId: "YOUR_PROJECT_ID", // <-- 必須
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID" // <-- 必須
+    apiKey: "process.env.VITE_FIREBASE_API_KEY", // <-- 必須
+    authDomain: "process.env.VITE_FIREBASE_AUTH_DOMAIN", // <-- 必須
+    projectId: "process.env.VITE_FIREBASE_PROJECT_ID", // <-- 必須
+    storageBucket: "process.env.VITE_FIREBASE_STORAGE_BUCKET",
+    messagingSenderId: "process.env.VITE_FIREBASE_MESSAGING_SENDER_ID",
+    appId: "process.env.VITE_FIREBASE_APP_ID" // <-- 必須
 };
 
 // 初始化 Firebase 服務
