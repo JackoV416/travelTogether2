@@ -3,16 +3,5 @@
     "env": {
       "NODE_OPTIONS": "--max-old-space-size=4096"
     }
-  },
-  "cracoConfig": {
-    "webpack": {
-      "configure": {
-        "performance": {
-          "hints": "warning",
-          "maxEntrypointSize": 1000000,
-          "maxAssetSize": 1000000
-        }
-      }
-    }
   }
 }
