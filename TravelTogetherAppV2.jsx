@@ -14,11 +14,15 @@ import {
     User, UserPlus, Sun, Moon, AlertTriangle, BookOpenText, Check, Clock, Edit, Send
 } from 'lucide-react';
 
-// --- 全域變數和 Firebase 設定 ---
-// 此處使用 Canvas 環境提供的全域變數
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+// --- Firebase 設定 ---
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY", // <-- 必須
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com", // <-- 必須
+    projectId: "YOUR_PROJECT_ID", // <-- 必須
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID" // <-- 必須
+};
 
 // 初始化 Firebase 服務
 let app, db, auth;
