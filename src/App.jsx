@@ -16,37 +16,46 @@ import {
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-let firebaseConfig = {};
-try {
-    // 讀取並解析全域 Firebase 配置字串
-    if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-        firebaseConfig = JSON.parse(__firebase_config);
-    } else {
-        console.warn("警告：全域變數 __firebase_config 缺失或為空。Firebase 初始化將跳過。");
-    }
-} catch (e) {
-    console.error("錯誤：解析 __firebase_config 失敗，請檢查 JSON 格式。", e);
-}
+// 設定日誌級別，有助於除錯
+setLogLevel('debug');
 
-// 初始化 Firebase (確保只執行一次)
+// 初始化 Firebase 實例
 let app = null;
 let db = null;
 let auth = null;
 
+let firebaseConfig = {};
+const configString = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+
+// 1. 解析配置字串
 try {
-    if (firebaseConfig.projectId) {
+    if (configString) {
+        firebaseConfig = JSON.parse(configString);
+        console.log("Firebase 配置字串解析成功。");
+    } else {
+        console.warn("警告：全域變數 __firebase_config 缺失或為空。Firebase 將無法初始化。");
+    }
+} catch (e) {
+    console.error("錯誤：解析 __firebase_config 失敗，JSON 格式無效。", e);
+    // 配置失敗，確保 firebaseConfig 保持空或無效
+}
+
+// 2. 執行 Firebase 初始化
+if (firebaseConfig && firebaseConfig.projectId) {
+    try {
         app = initializeApp(firebaseConfig);
         db = getFirestore(app);
         auth = getAuth(app);
-        
-        setLogLevel('debug');
         console.log("Firebase 服務初始化成功。Project ID:", firebaseConfig.projectId);
-    } else {
-        console.error("Firebase 初始化失敗：配置缺少 projectId。請確認環境變數正確傳入。");
+    } catch (error) {
+        console.error("Firebase 服務初始化時發生例外錯誤：", error);
+        // 初始化失敗時，確保所有實例設為 null
+        app = db = auth = null; 
     }
-} catch (error) {
-    console.error("Firebase 服務初始化時發生例外錯誤：", error);
+} else {
+    console.error("Firebase 初始化失敗：配置中缺少有效的 projectId，或配置字串缺失/無效。");
 }
+
 
 /**
  * 處理初始認證邏輯：使用自定義 Token 或匿名登入。
@@ -62,6 +71,7 @@ async function performInitialAuth(authInstance, token) {
         } else {
             await signInAnonymously(authInstance);
         }
+        console.log("Firebase Auth 登入成功。");
     } catch (error) {
         console.error("Firebase Auth 登入失敗：", error);
     }
@@ -104,11 +114,9 @@ const Header = ({ title, onBack, userId, isDarkMode, toggleDarkMode }) => (
  * 旅行儀表板 (Dashboard)
  */
 const Dashboard = ({ onSelectTrip, trips, onTutorialStart }) => {
-    // 範例：新增一個旅行計劃
     const handleAddTrip = async () => {
         if (!db || !auth.currentUser) {
-            console.error("Firestore 或用戶未準備好。");
-            // 可以在 UI 上顯示一個警告訊息
+            console.error("Firestore 或用戶未準備好。無法新增旅行。");
             return;
         }
 
@@ -135,7 +143,8 @@ const Dashboard = ({ onSelectTrip, trips, onTutorialStart }) => {
             
             <div className="flex justify-between items-center mb-4 space-x-2">
                 <button onClick={handleAddTrip} 
-                        className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-lg flex items-center shadow-lg transition">
+                        disabled={!db}
+                        className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white p-3 rounded-lg flex items-center shadow-lg transition">
                     <Plus size={20} className="mr-2"/> 新增旅行計劃
                 </button>
                 <button onClick={onTutorialStart} 
@@ -170,7 +179,7 @@ const Dashboard = ({ onSelectTrip, trips, onTutorialStart }) => {
 /**
  * 旅行細節頁面 (TripDetail)
  */
-const TripDetail = ({ tripId, onBack, userId, isDarkMode }) => (
+const TripDetail = ({ tripId }) => (
     <div className="min-h-screen">
         <div className="p-8">
             <h2 className="text-3xl font-semibold mb-4">旅行 {tripId.substring(0, 6)}... 的詳細資訊</h2>
@@ -223,9 +232,9 @@ const App = () => {
 
     // 認證和初始化效果
     useEffect(() => {
-        // 1. 檢查 Firebase 實例是否成功初始化
-        if (!auth || !db) {
-            console.error("Firebase 服務未準備好。請檢查初始化邏輯。");
+        // 1. 檢查 Firebase Auth 實例是否成功初始化
+        if (!auth) {
+            console.error("Firebase Auth 服務未準備好，跳過登入。");
             setAuthReady(true); 
             return;
         }
@@ -240,17 +249,21 @@ const App = () => {
             } else {
                 setUserId('');
             }
-            setAuthReady(true); // 無論登入與否，都標記為認證流程已完成
+            // 無論登入與否，都標記為認證流程已完成
+            setAuthReady(true); 
         });
 
-        // 清理 function
         return () => unsubscribe();
-    }, []); // 空依賴陣列確保只在元件掛載時執行一次
+    }, []); // 僅在元件掛載時執行一次
 
     // Firestore 資料監聽
     useEffect(() => {
         // 只有在認證流程完成、取得 userId 且 db 實例存在時才開始監聽
         if (!authReady || !userId || !db) {
+            if (authReady) {
+                // authReady 已經是 true，但 db 缺失，可能是配置錯誤
+                console.warn("未開始 Firestore 監聽: Auth Ready, 但 DB 實例缺失或 userId 未定。", { dbExists: !!db, userId });
+            }
             return;
         }
 
@@ -278,7 +291,6 @@ const App = () => {
             console.error("Firestore 監聽器發生錯誤:", error);
         });
 
-        // 清理 function
         return () => unsubscribe();
     }, [authReady, userId]); // 依賴於認證狀態和 userId
 
@@ -308,7 +320,7 @@ const App = () => {
         );
     }
     
-    // 渲染 Firebase 錯誤提示
+    // 渲染 Firebase 錯誤提示 (如果 authReady 且 db 仍為 null)
     if (!db) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-100 p-8">
