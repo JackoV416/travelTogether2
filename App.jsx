@@ -8,7 +8,7 @@ import {
     getFirestore, doc, onSnapshot, collection, query, where, getDocs, 
     addDoc, setDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, serverTimestamp 
 } from 'firebase/firestore';
-import { LogOut, Plus, Trash2, Users, Map, Calendar, X, Check, Send, UserCheck, ArrowLeft, Loader2, Edit2, Save, UserX } from 'lucide-react';
+import { LogOut, Plus, Trash2, Users, Map, Calendar, X, Check, Send, UserCheck, ArrowLeft, Loader2, Edit2, Save, UserX, LogOut as LogOutIcon } from 'lucide-react';
 
 // === GLOBALS and UTILITIES ===
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -101,11 +101,12 @@ const App = () => {
     const [inviteEmail, setInviteEmail] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Modal state for deletions
+    // Modal state for deletions/removals
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    // NEW: State for removing a specific member
     const [memberToRemove, setMemberToRemove] = useState(null); 
     const [isRemoveMemberModalOpen, setIsRemoveMemberModalOpen] = useState(false);
+    // NEW: State for leaving trip
+    const [isLeaveTripModalOpen, setIsLeaveTripModalOpen] = useState(false);
 
     const { userMap, fetchUserDisplayName } = useUserStore();
 
@@ -299,14 +300,13 @@ const App = () => {
         }
     };
 
-    // NEW: Function to remove a member from the trip
     const removeMember = async (memberId) => {
         if (!currentTrip || !userId || currentTrip.ownerId !== userId) {
             alertUser("您沒有權限執行此操作。");
             return;
         }
-        if (memberId === userId) {
-            alertUser("您不能移除行程所有者！");
+        if (memberId === currentTrip.ownerId) {
+            alertUser("不能移除行程所有者！");
             return;
         }
         
@@ -321,6 +321,32 @@ const App = () => {
             console.error("Error removing member: ", e);
         }
     };
+    
+    // NEW: Function for a non-owner member to leave the trip
+    const leaveTrip = async () => {
+        if (!currentTrip || !userId) return;
+        
+        if (userId === currentTrip.ownerId) {
+            alertUser("行程所有者不能使用此功能退出。請先轉讓所有權或刪除行程。");
+            setIsLeaveTripModalOpen(false);
+            return;
+        }
+
+        try {
+            await updateDoc(doc(db, getPublicCollectionPath('trips'), currentTrip.id), {
+                members: arrayRemove(userId)
+            });
+            
+            // Redirect back to home after leaving
+            setSelectedTripId(null);
+            setView('Home');
+            setIsLeaveTripModalOpen(false);
+            alertUser(`已成功退出行程「${currentTrip.name}」。`);
+        } catch (e) {
+            console.error("Error leaving trip: ", e);
+        }
+    };
+
 
     const deleteTrip = async () => {
         if (!currentTrip || !userId || currentTrip.ownerId !== userId) return;
@@ -537,6 +563,8 @@ const App = () => {
         }
 
         const isOwner = currentTrip.ownerId === userId;
+        const isMember = currentTrip.members.includes(userId);
+        
         const [newItemDescription, setNewItemDescription] = useState('');
         
         // State for Inline Editing
@@ -638,7 +666,7 @@ const App = () => {
         
         return (
             <div className="p-4 sm:p-8">
-                {/* Back and Delete Header */}
+                {/* Back and Action Header */}
                 <header className="flex justify-between items-start pb-4 border-b border-gray-200 mb-6">
                     <button 
                         onClick={() => { setView('Home'); setSelectedTripId(null); }}
@@ -647,7 +675,9 @@ const App = () => {
                         <ArrowLeft size={20} className="mr-2" />
                         返回清單
                     </button>
-                    {isOwner && (
+                    
+                    {/* Action Buttons: Delete (Owner) or Leave (Member) */}
+                    {isOwner ? (
                         <button
                             onClick={() => setIsDeleteModalOpen(true)}
                             className="flex items-center space-x-1 px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-150 text-sm font-semibold shadow-md shadow-red-300/50"
@@ -656,6 +686,17 @@ const App = () => {
                             <Trash2 size={16} />
                             <span>刪除整個行程</span>
                         </button>
+                    ) : (
+                        isMember && (
+                            <button
+                                onClick={() => setIsLeaveTripModalOpen(true)}
+                                className="flex items-center space-x-1 px-3 py-1 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition duration-150 text-sm font-semibold shadow-md shadow-gray-300/50"
+                                disabled={loading}
+                            >
+                                <LogOutIcon size={16} />
+                                <span>退出行程</span>
+                            </button>
+                        )
                     )}
                 </header>
                 
@@ -708,7 +749,6 @@ const App = () => {
                     <div className="flex flex-wrap gap-2 mb-4">
                         {currentTrip.members.map(memberId => {
                             const displayName = userMap[memberId] || memberId;
-                            const isCurrentUser = memberId === userId;
                             const isTripOwner = memberId === currentTrip.ownerId;
                             
                             return (
@@ -725,7 +765,7 @@ const App = () => {
                                     {displayName}
                                     {isTripOwner && <span className="ml-1 text-xs font-bold">(所有者)</span>}
                                     
-                                    {/* NEW: Remove Member Button (Only for Owner, cannot remove self/owner) */}
+                                    {/* Remove Member Button (Only for Owner, cannot remove self/owner) */}
                                     {isOwner && !isTripOwner && (
                                         <button
                                             onClick={() => handleRemoveMemberClick(memberId)}
@@ -807,7 +847,7 @@ const App = () => {
                     confirmText="永久刪除"
                 />
                 
-                {/* NEW: Confirmation Modal for removing member */}
+                {/* Confirmation Modal for removing member */}
                 <ConfirmationModal
                     isOpen={isRemoveMemberModalOpen}
                     title="確認移除成員"
@@ -816,6 +856,17 @@ const App = () => {
                     onCancel={() => { setMemberToRemove(null); setIsRemoveMemberModalOpen(false); }}
                     confirmText="移除成員"
                     type="danger"
+                />
+                
+                {/* NEW: Confirmation Modal for leaving trip */}
+                <ConfirmationModal
+                    isOpen={isLeaveTripModalOpen}
+                    title="確認退出行程"
+                    message={`您確定要退出行程「${currentTrip.name}」嗎？退出後您將無法再看到此行程及其內容。`}
+                    onConfirm={leaveTrip}
+                    onCancel={() => setIsLeaveTripModalOpen(false)}
+                    confirmText="確認退出"
+                    type="warning" // Added a new type for visual difference
                 />
             </div>
         );
