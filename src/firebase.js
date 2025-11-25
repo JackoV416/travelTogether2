@@ -3,14 +3,16 @@ import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, 
 import { getFirestore, setLogLevel } from 'firebase/firestore';
 
 // --- 1. 全域變數定義 (Canvas/Immersive 環境要求) ---
-// 確保讀取 appId 和 Auth Token
+// __app_id 也是一個由平台提供的全域變數
 export const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 export const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-// 必須將字串形式的 __firebase_config 轉換為 JSON 物件
+// ****** 關鍵部分：從全域變數 __firebase_config 讀取配置 ******
 let firebaseConfig = {};
 try {
-    if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+    // 這一行讀取了平台提供的字串形式的 Firebase 配置
+    if (typeof __firebase_config !== 'undefined' && __firebase_config) { 
+        // 這一行將字串轉換為 JavaScript 物件，其中就包含 projectId、apiKey 等
         firebaseConfig = JSON.parse(__firebase_config);
     } else {
         console.warn("警告：全域變數 __firebase_config 缺失或為空。Firebase 初始化將跳過。");
@@ -26,8 +28,9 @@ let db = null;
 let auth = null;
 
 try {
-    // 關鍵檢查：確保配置中至少有 projectId，這是修復您之前錯誤的關鍵
+    // 檢查配置是否成功讀取 (例如是否有 projectId)
     if (firebaseConfig.projectId) {
+        // 使用讀取到的 firebaseConfig 物件來初始化 Firebase 應用程式
         app = initializeApp(firebaseConfig);
         db = getFirestore(app);
         auth = getAuth(app);
