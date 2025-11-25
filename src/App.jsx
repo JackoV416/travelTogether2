@@ -12,15 +12,19 @@ import {
     User, Settings, ClipboardList, GripVertical, AlertTriangle, ChevronDown, ChevronUp
 } from 'lucide-react';
 
-// --- 全域變數和 Firebase 設定 ---
+// --- 全域變數和 Firebase 設定 (修正區塊) ---
 // 確保全域變數存在並被正確解析
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-// 初始化 Firebase (確保只執行一次)
+// 初始化 Firebase (確保只執行一次，並包含錯誤處理)
 let app, db, auth;
 try {
+    // 檢查配置是否有效，防止缺少 projectId 的錯誤
+    if (!firebaseConfig.projectId) {
+         throw new Error("Firebase configuration is missing projectId. Cannot initialize.");
+    }
     app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     auth = getAuth(app);
@@ -28,7 +32,8 @@ try {
     // 設定 Firebase 偵錯日誌級別 (Firestore 最佳實踐)
     setLogLevel('debug'); 
 } catch (error) {
-    console.error("Firebase 初始化失敗:", error);
+    // 如果配置無效或初始化失敗，將錯誤印出
+    console.error("Firebase 初始化失敗 (projectId 錯誤或配置問題):", error.message || error);
 }
 
 // --- Firestore 路徑工具函數 ---
@@ -47,7 +52,7 @@ const getUserCollectionRef = (userId, collectionName) => {
     return collection(db, 'artifacts', appId, 'users', userId, collectionName);
 };
 
-// --- 通用元件 (介面保留) ---
+// --- 通用元件 (介面和功能完全保留) ---
 
 const LoadingSpinner = ({ text = "載入中..." }) => (
     <div className="flex flex-col items-center justify-center p-8">
@@ -124,7 +129,8 @@ const Dashboard = ({ onSelectTrip, trips, userId, authReady, isDarkMode, toggleD
 
     // 功能保留：創建新旅行
     const handleCreate = async () => {
-        if (!newTripName.trim() || !userId) return;
+        // 只有在 db 和 userId 都準備好時才能執行寫入操作
+        if (!newTripName.trim() || !userId || !db) return;
         setIsAdding(true);
         try {
             const tripData = {
@@ -151,6 +157,7 @@ const Dashboard = ({ onSelectTrip, trips, userId, authReady, isDarkMode, toggleD
     
     // 使用自訂 UI 替代 window.confirm/alert
     const handleDeleteClick = (tripId) => {
+        // 警告：這是一個臨時的替代方案，實際應用中應使用客製化 Modal UI
         if (window.confirm("確定要永久刪除此旅行計畫嗎？")) { 
             onDeleteTrip(tripId);
         }
@@ -253,7 +260,7 @@ const TripDetail = ({ tripId, onBack, userId, authReady, isDarkMode }) => {
 
     // 功能保留：實時監聽單個旅行文檔
     useEffect(() => {
-        if (!authReady || !userId || !tripId) return;
+        if (!authReady || !userId || !tripId || !db) return;
 
         try {
             const docRef = doc(getUserCollectionRef(userId, 'trips'), tripId);
@@ -281,7 +288,7 @@ const TripDetail = ({ tripId, onBack, userId, authReady, isDarkMode }) => {
 
     // 功能保留：更新單個字段
     const handleUpdate = async (field, value) => {
-        if (!userId || !tripId) return;
+        if (!userId || !tripId || !db) return;
         try {
             const docRef = doc(getUserCollectionRef(userId, 'trips'), tripId);
             await updateDoc(docRef, { [field]: value });
@@ -393,6 +400,7 @@ const App = () => {
     // 2. Firebase 身份驗證與狀態管理 (修正區塊)
     useEffect(() => {
         if (!auth) {
+            // 如果 auth 沒有初始化成功 (例如配置錯誤)，直接跳過
             setAuthReady(true);
             return;
         }
@@ -415,6 +423,7 @@ const App = () => {
                     console.error("Firebase 身份驗證失敗:", error);
                 }
             }
+            // 無論登入結果如何，都標記驗證流程已準備就緒
             setAuthReady(true); 
         });
 
@@ -423,7 +432,8 @@ const App = () => {
 
     // 3. 實時資料訂閱 (Trips) (功能保留與修正)
     useEffect(() => {
-        if (!authReady || !userId) {
+        // 只有在驗證完成、拿到 userId 且 db 實例存在時才開始訂閱
+        if (!authReady || !userId || !db) {
             setTrips([]);
             return;
         }
@@ -470,7 +480,7 @@ const App = () => {
     }, []);
 
     const handleDeleteTrip = async (tripId) => {
-        if (!userId) return;
+        if (!userId || !db) return;
 
         try {
             const tripDocRef = doc(getUserCollectionRef(userId, 'trips'), tripId);
@@ -490,6 +500,19 @@ const App = () => {
         return (
             <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-gray-900">
                 <LoadingSpinner text="應用程式初始化中..." />
+            </div>
+        );
+    }
+    
+    // 如果 Firebase 初始化失敗 (例如配置錯誤)，顯示錯誤訊息
+    if (!db || !auth) {
+        return (
+            <div className="p-10 text-center dark:text-white min-h-screen bg-slate-50 dark:bg-gray-900">
+                <AlertTriangle className="w-10 h-10 mx-auto mb-3 text-red-500" />
+                <h2 className="text-xl font-bold text-red-500">Firebase 服務無法使用</h2>
+                <p className="text-gray-500 dark:text-gray-400 mt-2">
+                    請檢查 Firebase 配置 (`__firebase_config`) 是否正確。
+                </p>
             </div>
         );
     }
