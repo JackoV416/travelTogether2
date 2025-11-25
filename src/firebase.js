@@ -2,35 +2,74 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { getFirestore, setLogLevel } from 'firebase/firestore';
 
-// --- Canvas 環境變數後備 (僅用於本運行環境) ---
+// --- 1. 全域變數定義 (Canvas/Immersive 環境要求) ---
+// 確保讀取 appId 和 Auth Token
 export const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 export const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-// 從全域變數讀取後備配置 (在標準專案中，您會刪除這整個區塊)
-let _CANVAS_GLOBAL_CONFIG = {};
+// 必須將字串形式的 __firebase_config 轉換為 JSON 物件
+let firebaseConfig = {};
 try {
-    _CANVAS_GLOBAL_CONFIG = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+    if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+        firebaseConfig = JSON.parse(__firebase_config);
+    } else {
+        console.warn("警告：全域變數 __firebase_config 缺失或為空。Firebase 初始化將跳過。");
+    }
 } catch (e) {
-    console.error("錯誤: __firebase_config JSON 解析失敗。使用空配置。", e);
+    console.error("錯誤：解析 __firebase_config 失敗，請檢查 JSON 格式。", e);
 }
 
 
-// --- 核心配置：從 process.env 讀取，並使用全域配置作為後備 ---
-// **在您的實際專案中，如果 .env 設置正確，您只需使用 process.env.REACT_APP_...**
+// --- 2. 初始化 Firebase 服務 ---
+let app = null;
+let db = null;
+let auth = null;
 
-const firebaseConfig = {
-    // 這是常見的 React 環境變數命名慣例 (REACT_APP_)
-    apiKey: process.env.REACT_APP_FIREBASE_API_KEY || _CANVAS_GLOBAL_CONFIG.apiKey,
-    authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || _CANVAS_GLOBAL_CONFIG.authDomain,
-    projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || _CANVAS_GLOBAL_CONFIG.projectId,
-    storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || _CANVAS_GLOBAL_CONFIG.storageBucket,
-    messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || _CANVAS_GLOBAL_CONFIG.messagingSenderId,
-    appId: process.env.REACT_APP_FIREBASE_APP_ID || _CANVAS_GLOBAL_CONFIG.appId,
-    measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID || _CANVAS_GLOBAL_CONFIG.measurementId,
-};
+try {
+    // 關鍵檢查：確保配置中至少有 projectId，這是修復您之前錯誤的關鍵
+    if (firebaseConfig.projectId) {
+        app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        
+        setLogLevel('debug');
+        console.log("Firebase 服務初始化成功。Project ID:", firebaseConfig.projectId);
+    } else {
+        const errorMsg = "Firebase 初始化失敗：配置缺少 projectId。請確認環境變數正確傳入。";
+        console.error(errorMsg);
+    }
 
-// 檢查配置是否包含最小必要欄位
-if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-    console.warn("警告: Firebase 配置缺少 'apiKey' 或 'projectId'。應用程式可能無法正常初始化。");
-    console.error("Firebase Config:", firebaseConfig);
+} catch (error) {
+    console.error("Firebase 服務初始化時發生例外錯誤：", error);
 }
+
+// 導出初始化後的實例
+export { app, db, auth };
+
+/**
+ * 處理初始認證邏輯：使用自定義 Token 或匿名登入。
+ *
+ * @param {import('firebase/auth').Auth} authInstance Firebase Auth 實例。
+ * @param {string | null} token 提供的自定義認證 Token。
+ * @returns {Promise<void>}
+ */
+export async function performInitialAuth(authInstance, token) {
+    if (!authInstance) {
+        console.warn("Firebase Auth 實例未初始化 (auth 為 null)，跳過登入。");
+        return;
+    }
+    try {
+        if (token) {
+            await signInWithCustomToken(authInstance, token);
+            console.log("Firebase Auth: 使用自定義 Token 登入成功。");
+        } else {
+            await signInAnonymously(authInstance);
+            console.log("Firebase Auth: 匿名登入成功。");
+        }
+    } catch (error) {
+        console.error("Firebase Auth 登入失敗：", error);
+    }
+}
+
+// 導出其他常用的 Firebase Auth 相關函式
+export { onAuthStateChanged, firebaseSignOut as signOut };
