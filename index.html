@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <!-- 確保網頁在不同裝置上都能正確響應 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旅遊規劃應用程式 | Travel Planner</title>
+    
+    <!-- 載入 Tailwind CSS 框架 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 載入 React 和 ReactDOM 函式庫 (開發版本) -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- 載入 Babel 轉譯器，用於處理 JSX 語法 -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- 基本樣式設置，確保 Inter 字體和背景顏色 -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0;
+            padding: 0;
+            /* 預設為淺色背景 */
+            background-color: #f1f5f9; 
+            min-height: 100vh;
+        }
+        /* 確保全域深色模式類別能應用到 body/root */
+        .dark body {
+             background-color: #111827; /* Tailwind gray-900 */
+        }
+    </style>
+</head>
+<body>
+    <!-- React 應用程式將會渲染到這個 ID 為 'root' 的 div 中 -->
+    <div id="root"></div>
+    
+    <!-- 載入 React 應用程式的進入點 (main.jsx 或 App.jsx) -->
+    <!-- 使用 type="text/babel" 讓 Babel 轉譯器處理 JSX 語法和 ES 模塊語法 -->
+    <!-- 由於您的 App.jsx 已經包含了所有邏輯，我們可以將其直接作為進入點載入 -->
+    <script type="text/babel" data-type="module" src="./App.jsx"></script>
+</body>
+</html>
