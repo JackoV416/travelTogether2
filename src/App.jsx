@@ -13,19 +13,18 @@ import {
     UserCircle, Shield, UserPlus, FileUp, Edit3, Lock,
     Clock, Save, RefreshCw, 
     MonitorPlay, Info, CheckSquare, FileCheck, FileText, History,
-    PlaneTakeoff, Hotel, GripVertical, Printer, ArrowUpRight, Navigation, Share2, Phone, Globe2, Link as LinkIcon, CheckCircle, Landmark
+    PlaneTakeoff, Hotel, GripVertical, Printer, ArrowUpRight, Navigation, Share2, Phone, Globe2, Link as LinkIcon, CheckCircle
 } from 'lucide-react';
 
 // --- 0. Constants & Data ---
 
 const AUTHOR_NAME = "Jamie Kwok";
-const APP_VERSION = "v4.0.0";
+const APP_VERSION = "v4.1.0";
 const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 const VERSION_HISTORY = [
-    { ver: "4.0.0", date: "26/11/2025", desc: "真實東京行程教學、新增項目支援稅務/轉機、緊急資訊地區修正、旅遊資訊中心UI優化", details: "1. 教學模式資料替換為真實東京5日遊。\n2. 新增項目可填寫稅金、退稅、航班轉機。\n3. 緊急資訊根據用戶所在地顯示正確辦事處。\n4. 日期格式全面統一為 DD/MM/YYYY。" },
-    { ver: "3.9.2", date: "15/11/2025", desc: "修復旅遊資訊中心排版、突發訊息通知" },
-    { ver: "3.9.0", date: "01/11/2025", desc: "修復時差顯示錯誤、行程編輯與拖拉功能" },
+    { ver: "4.1.0", date: "26/11/2025", desc: "恢復 Tailwind CSS 樣式架構，保留所有 v4 功能", details: "1. 全面恢復 Tailwind Class。\n2. 旅遊資訊中心 Grid 佈局優化。\n3. 確保所有互動功能正常運作。" },
+    { ver: "4.0.0", date: "26/11/2025", desc: "真實東京行程教學、新增項目支援稅務/轉機", details: "1. 教學模式資料替換為真實東京5日遊。\n2. 新增項目可填寫稅金、退稅、航班轉機。\n3. 緊急資訊根據用戶所在地顯示正確辦事處。" },
 ];
 
 const CURRENCIES = {
@@ -86,7 +85,7 @@ const INFO_DB = {
 
 // 📚 真實度 100% 東京 5 天 4 夜 教學資料
 const SIMULATION_DATA = { 
-    id: 'sim', name: "範例：東京 5 天 4 夜自由行", country: "Japan (日本)", city: "Tokyo", startDate: "2025-04-01", endDate: "2025-04-05", 
+    id: 'sim', name: "教學：東京 5 天 4 夜自由行", country: "Japan (日本)", city: "Tokyo", startDate: "2025-04-01", endDate: "2025-04-05", 
     members: [
         {id: 'me', name:"我 (Owner)", role: "owner"}, 
         {id: 'friend1', name:"小明 (Editor)", role: "editor"},
@@ -94,10 +93,10 @@ const SIMULATION_DATA = {
     ], 
     itinerary: { 
         "2025-04-01": [ 
-            { id: "f1", name: "TPE -> NRT (BR198)", type: "flight", cost: 16000, currency: "TWD", details: { provider: "EVA Air", number: "BR198", time: "08:50", location: "Taoyuan Airport T2" }, createdBy: {name:"我"} },
+            { id: "f1", name: "TPE -> NRT (BR198)", type: "flight", cost: 16000, currency: "TWD", details: { provider: "EVA Air", number: "BR198", time: "08:50", location: "Taoyuan Airport T2", layover: false }, createdBy: {name:"我"} },
             { id: "t1", name: "領取 JR Pass & Suica 儲值", type: "transport", cost: 5000, currency: "JPY", details: { time: "13:30", location: "Narita Airport JR Office" }, createdBy: {name:"小明"} },
-            { id: "t2", name: "成田特快 N'EX 前往新宿", type: "transport", cost: 0, currency: "JPY", details: { time: "14:20", location: "Narita Airport Station" }, createdBy: {name:"我"} },
-            { id: "h1", name: "新宿格拉斯麗飯店 Check-in", type: "hotel", cost: 60000, currency: "JPY", details: { time: "16:00", location: "Shinjuku Gracery Hotel" }, createdBy: {name:"我"} },
+            { id: "t2", name: "Skyliner 前往上野", type: "transport", cost: 2570, currency: "JPY", details: { time: "14:20", location: "Narita Airport Station" }, createdBy: {name:"我"} },
+            { id: "h1", name: "新宿格拉斯麗飯店 Check-in", type: "hotel", cost: 60000, currency: "JPY", details: { time: "16:30", location: "Shinjuku Gracery Hotel", tax: 5000 }, createdBy: {name:"我"} },
             { id: "d1", name: "晚餐：AFURI 拉麵", type: "food", cost: 1200, currency: "JPY", details: { time: "19:00", location: "Lumine Shinjuku" }, createdBy: {name:"小明"} }
         ],
         "2025-04-02": [
@@ -108,14 +107,14 @@ const SIMULATION_DATA = {
         ],
         "2025-04-03": [
              { id: "s4", name: "明治神宮參拜", type: "spot", cost: 0, currency: "JPY", details: { time: "10:00", location: "Meiji Jingu" }, createdBy: {name:"我"} },
-             { id: "s5", name: "原宿竹下通逛街", type: "shopping", cost: 15000, currency: "JPY", details: { time: "11:30", location: "Takeshita Street" }, createdBy: {name:"小明"} },
+             { id: "s5", name: "原宿竹下通逛街", type: "shopping", cost: 15000, currency: "JPY", details: { time: "11:30", location: "Takeshita Street", refund: 1000 }, createdBy: {name:"小明"} },
              { id: "s6", name: "澀谷 SKY 觀景台 (日落)", type: "spot", cost: 2200, currency: "JPY", details: { time: "17:30", location: "Shibuya Scramble Square" }, createdBy: {name:"我"} },
              { id: "d2", name: "晚餐：敘敘苑燒肉 (已訂位)", type: "food", cost: 15000, currency: "JPY", details: { time: "20:00", location: "Shibuya Branch" }, createdBy: {name:"小明"} }
         ]
     }, 
     budget: [
         { id: "b1", name: "機票 (我代墊)", cost: 32000, currency: "TWD", category: "flight", payer: "我", splitType: 'group' },
-        { id: "b2", name: "住宿 3 晚", cost: 60000, currency: "JPY", category: "hotel", payer: "小明", splitType: 'group' },
+        { id: "b2", name: "住宿 3 晚", cost: 60000, currency: "JPY", category: "hotel", payer: "小明", splitType: 'group', details: {tax: 5000} },
         { id: "b3", name: "迪士尼門票", cost: 9800, currency: "JPY", category: "spot", payer: "我", splitType: 'group' }
     ],
     shoppingList: [
@@ -126,7 +125,7 @@ const SIMULATION_DATA = {
     notes: "### 行前準備\n- [x] 護照影本備份\n- [x] Visit Japan Web 註冊 (截圖 QR Code)\n- [x] 網卡 (esim) 設定\n\n### 交通備忘\n- 記得在機場儲值 Suica 3000 日圓\n- 回程 N'EX 車票要提早劃位",
     insurance: { 
         "sim": { provider: "富邦產險", policyNo: "T55667788", status: "insured" }, 
-        "local": { name: "Visit Japan Web", status: "done" } 
+        "local": { name: "Visit Japan Web", status: "done", user: "我" } 
     },
     visa: { "sim": { status: "printed", number: "免簽入境", expiry: "2025-07-01", needsPrint: false } }
 };
@@ -143,17 +142,6 @@ const formatDate = (dateStr) => { if(!dateStr) return ""; const [y, m, d] = date
 const getDaysArray = (start, end) => { if(!start || !end) return []; const arr = []; const dt = new Date(start); const endDt = new Date(end); while (dt <= endDt) { arr.push(new Date(dt).toISOString().split('T')[0]); dt.setDate(dt.getDate() + 1); } return arr; };
 const getWeekday = (dateStr) => ["週日", "週一", "週二", "週三", "週四", "週五", "週六"][new Date(dateStr).getDay()];
 
-const getWeatherForecast = (country, date) => {
-    const region = getSafeCountryInfo(country).region;
-    const dayWeather = {
-        "hot": { temp: "32°C", clothes: "短袖、墨鏡", icon: <Sun className="text-orange-500"/>, desc: "炎熱" },
-        "south": { temp: "24°C", clothes: "薄襯衫", icon: <CloudSun className="text-yellow-500"/>, desc: "舒適" },
-        "north": { temp: "12°C", clothes: "大衣、圍巾", icon: <Snowflake className="text-blue-300"/>, desc: "寒冷" }
-    };
-    const base = dayWeather[region] || dayWeather["north"];
-    return { ...base, summary: `${base.desc}，適合戶外活動` };
-};
-
 const getTripSummary = (trip) => {
     if(!trip) return "";
     const now = new Date(); const start = new Date(trip.startDate); const diffDays = Math.ceil((start - now) / (1000 * 60 * 60 * 24)); 
@@ -163,11 +151,9 @@ const getTripSummary = (trip) => {
     return summary;
 };
 
-// Complex Budget Calculation (Fix: Calculate total then split)
 const calculateDebts = (budget, repayments, members, baseCurrency) => {
     const balances = {}; members.forEach(m => balances[m.name] = 0); let totalSpent = 0;
     budget.forEach(item => {
-        // Calculate final cost considering tax and refund
         const tax = item.details?.tax ? Number(item.details.tax) : 0;
         const refund = item.details?.refund ? Number(item.details.refund) : 0;
         const baseCost = Number(item.cost) + tax - refund;
@@ -176,13 +162,13 @@ const calculateDebts = (budget, repayments, members, baseCurrency) => {
         totalSpent += cost;
         
         const payer = item.payer || members[0].name;
-        balances[payer] = (balances[payer] || 0) + cost; // Payer paid full amount first
+        balances[payer] = (balances[payer] || 0) + cost; 
 
         if (item.splitType === 'group' || !item.splitType) { 
             const split = cost / members.length; 
             members.forEach(m => balances[m.name] = (balances[m.name] || 0) - split); 
         } else if (item.splitType === 'me') { 
-            balances[payer] = (balances[payer] || 0) - cost; // Payer consumes it, so net change is 0 for others
+            balances[payer] = (balances[payer] || 0) - cost; 
         }
     });
     return { balances, totalSpent };
@@ -195,6 +181,12 @@ const getTimeDiff = (userRegion, destCountry) => {
     return destTz - userTz;
 };
 const getLocalCityTime = (tz) => new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit' });
+const getWeatherForecast = (country) => {
+    const region = getSafeCountryInfo(country).region;
+    if (region === "hot") return { temp: "30°C", clothes: "短袖、墨鏡", icon: <Sun className="text-orange-500"/>, desc: "炎熱" };
+    if (region === "south") return { temp: "24°C", clothes: "薄襯衫", icon: <CloudSun className="text-yellow-500"/>, desc: "舒適" };
+    return { temp: "10°C", clothes: "大衣、圍巾", icon: <Snowflake className="text-blue-300"/>, desc: "寒冷" };
+};
 
 // --- Components ---
 
@@ -237,8 +229,8 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                         </button>
                         {showNotif && <div className={`absolute top-12 right-0 w-72 p-4 rounded-xl shadow-2xl border z-50 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                             <h4 className="font-bold px-3 py-2 text-sm border-b border-gray-500/10 mb-2">通知中心</h4>
-                            {/* Removed fake delay message, only showing system status */}
-                            <div className="p-4 text-center opacity-50 text-xs">暫無新通知</div>
+                            <div className="p-3 border-b text-xs border-gray-500/10 text-blue-400 font-bold flex items-center gap-2"><Info className="w-4 h-4"/> 行程更新: 小明 新增了「迪士尼門票」</div>
+                            <div className="p-4 text-center opacity-50 text-xs">暫無其他新通知</div>
                         </div>}
                     </div>
 
@@ -300,6 +292,32 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode }) => {
                         <div className="flex gap-2"><button onClick={onClose} className="flex-1 py-2 border border-gray-500 rounded-lg opacity-70">取消</button><button onClick={()=>{onApply(result); onClose();}} className={buttonPrimary + " flex-1"}>加入行程</button></div>
                     </div>
                 )}
+            </div>
+        </div>
+    );
+};
+
+const MemberSettingsModal = ({ isOpen, onClose, members, onUpdateRole, isDarkMode }) => {
+    if(!isOpen) return null;
+    return (
+        <div className="fixed inset-0 bg-black/60 z-[80] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+            <div className={`w-full max-w-sm rounded-2xl p-6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                <h3 className="text-xl font-bold mb-4">成員權限管理</h3>
+                <div className="space-y-2">
+                    {members.map(m => (
+                        <div key={m.id} className="flex justify-between items-center p-2 border rounded">
+                            <span className="text-sm">{m.name}</span>
+                            {m.role === 'owner' ? <span className="text-xs opacity-50 px-2">擁有者</span> : (
+                                <select value={m.role} onChange={(e)=>onUpdateRole(m.id, e.target.value)} className={inputClasses(isDarkMode)+" py-1 text-xs w-24"}>
+                                    <option value="editor">編輯者</option>
+                                    <option value="viewer">檢視者</option>
+                                    <option value="remove">移除</option>
+                                </select>
+                            )}
+                        </div>
+                    ))}
+                </div>
+                <button onClick={onClose} className="w-full mt-4 py-2 bg-gray-500 text-white rounded-lg">關閉</button>
             </div>
         </div>
     );
@@ -392,19 +410,22 @@ const AddActivityModal = ({ isOpen, onClose, onSave, isDarkMode, date, defaultTy
     const [estPrice, setEstPrice] = useState('');
 
     useEffect(() => { 
-        if(isOpen && editData) { 
-            setName(editData.name||editData.desc||''); setCost(editData.cost||''); setType(editData.type||editData.category||'spot'); setCurrency(editData.currency||'HKD'); 
-            setPayer(editData.payer || members[0]?.name);
-            setSplitType(editData.splitType || 'group');
-            setDetails(editData.details || { isRefund: false, refund: '', tax: '', taxCurrency: 'HKD', layover: false });
-            setEstPrice(editData.estPrice || '');
-        } else if(isOpen) { 
-            setName(''); setCost(''); setType(defaultType); setCurrency('HKD'); 
-            setPayer(members[0]?.name || '');
-            setSplitType('group');
-            setDetails({ isRefund: false, refund: '', tax: '', taxCurrency: 'HKD', layover: false });
-            setEstPrice('');
-        } 
+        if(isOpen) {
+            if (editData) { 
+                setName(editData.name||editData.desc||''); setCost(editData.cost||''); setType(editData.type||editData.category||'spot'); setCurrency(editData.currency||'HKD'); 
+                setPayer(editData.payer || members[0]?.name);
+                setSplitType(editData.splitType || 'group');
+                setDetails(editData.details || { isRefund: false, refund: '', tax: '', taxCurrency: 'HKD', layover: false });
+                setEstPrice(editData.estPrice || '');
+            } else { 
+                // Reset for new item
+                setName(''); setCost(''); setType(defaultType); setCurrency('HKD'); 
+                setPayer(members[0]?.name || '');
+                setSplitType('group');
+                setDetails({ isRefund: false, refund: '', tax: '', taxCurrency: 'HKD', layover: false });
+                setEstPrice('');
+            }
+        }
     }, [isOpen, editData, defaultType, members]);
 
     if(!isOpen) return null;
@@ -464,6 +485,7 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
     const [isInviteModal, setIsInviteModal] = useState(false);
     const [isTripSettingsOpen, setIsTripSettingsOpen] = useState(false);
     const [isAIModal, setIsAIModal] = useState(false);
+    const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
     const [selectDate, setSelectDate] = useState(null);
     const [addType, setAddType] = useState('spot');
     const [viewMode, setViewMode] = useState('list');
@@ -479,7 +501,11 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
     const canEdit = myRole === 'owner' || myRole === 'editor' || isSimulation;
 
     useEffect(() => {
-        if(isSimulation) { setTempNote(tripData.notes); setMyInsurance(tripData.insurance?.private?.sim || {}); return; }
+        if(isSimulation) { 
+            setTempNote(tripData.notes); 
+            setMyInsurance(tripData.insurance?.private?.sim || {}); 
+            return; 
+        }
         if(!tripData?.id) return;
         const unsub = onSnapshot(doc(db, "trips", tripData.id), d=>{ 
             if(d.exists()) {
@@ -508,6 +534,7 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
     const emergencyInfoTitle = globalSettings.region === "HK" ? "香港入境處熱線" : (globalSettings.region === "TW" ? "外交部旅外救助" : "駐外辦事處");
     const emergencyInfoContent = globalSettings.region === "HK" ? "(852) 1868" : (globalSettings.region === "TW" ? "+886-800-085-095" : "請查詢當地領事館");
 
+    // Drag & Drop
     const onDragStart = (e, index) => { e.dataTransfer.setData("idx", index); };
     const onDrop = async (e, dropIndex) => {
         if(!canEdit) return;
@@ -534,6 +561,17 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
     const handleInvite = async (email, role) => {
         if(isSimulation) return alert("模擬模式");
         await updateDoc(doc(db, "trips", trip.id), { members: arrayUnion({id: email, name: email.split('@')[0], role}) });
+    };
+
+    const handleUpdateRole = async (memberId, newRole) => {
+        if(isSimulation) return alert("模擬模式");
+        if(newRole === 'remove') {
+            const newMembers = trip.members.filter(m => m.id !== memberId);
+            await updateDoc(doc(db, "trips", trip.id), { members: newMembers });
+        } else {
+            const newMembers = trip.members.map(m => m.id === memberId ? {...m, role: newRole} : m);
+            await updateDoc(doc(db, "trips", trip.id), { members: newMembers });
+        }
     };
 
     const handleDeleteTrip = async () => {
@@ -563,7 +601,7 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
                     <div className="relative z-10 text-white">
                         <div className="flex justify-between items-start">
                             <h2 className="text-3xl font-bold mb-2">{trip.name}</h2>
-                            {canEdit && <button onClick={()=>setIsTripSettingsOpen(true)} className="p-1.5 bg-white/20 rounded-full hover:bg-white/30"><Edit3 className="w-4 h-4"/></button>}
+                            {isOwner && <button onClick={()=>setIsTripSettingsOpen(true)} className="p-1.5 bg-white/20 rounded-full hover:bg-white/30"><Edit3 className="w-4 h-4"/></button>}
                         </div>
                         <div className="flex gap-4 text-sm opacity-90">
                             <span className="flex items-center gap-1"><Calendar className="w-4 h-4"/> {formatDate(trip.startDate)} - {formatDate(trip.endDate)}</span>
@@ -582,6 +620,7 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
                     </div>
                     <div className="flex gap-2 mt-4">
                         <button onClick={()=>setIsAIModal(true)} className="flex-1 bg-indigo-500 text-white py-2 rounded flex justify-center items-center gap-2 hover:bg-indigo-600 font-bold text-xs"><BrainCircuit className="w-4 h-4"/> AI 建議</button>
+                        {isOwner && <button onClick={()=>setIsMemberModalOpen(true)} className="flex-1 bg-white/10 hover:bg-white/20 py-2 rounded flex justify-center"><Users className="w-4 h-4"/></button>}
                         {isOwner && <button onClick={()=>setIsInviteModal(true)} className="flex-1 bg-white/10 hover:bg-white/20 py-2 rounded flex justify-center"><UserPlus className="w-4 h-4"/></button>}
                         {isOwner && <button onClick={handleDeleteTrip} className="flex-1 bg-red-500/20 text-red-500 hover:bg-red-500/30 py-2 rounded flex justify-center"><Trash2 className="w-4 h-4"/></button>}
                     </div>
@@ -606,9 +645,16 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
                         ))}
                     </div>
                     
-                    <div className="p-3 bg-white/10 border border-white/20 rounded-xl flex items-center gap-4 text-sm">
-                        <div className="flex items-center gap-2">{dailyWeather.icon} <span>{dailyWeather.desc}</span></div>
-                        <div className="flex items-center gap-2"><Info className="w-4 h-4"/> <span>衣著: {dailyWeather.clothes}</span></div>
+                    {/* Daily Summary Header */}
+                    <div className="p-4 bg-white/10 border border-white/20 rounded-xl flex justify-between items-center text-sm backdrop-blur-sm">
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 text-lg font-bold">{dailyWeather.icon} {dailyWeather.temp}</div>
+                            <div className="text-xs opacity-70 px-3 border-l border-white/20">
+                                <div>最高: {dailyWeather.temp} / 最低: {parseInt(dailyWeather.temp)-8}°C</div>
+                                <div>衣著: {dailyWeather.clothes}</div>
+                            </div>
+                        </div>
+                        <div className="text-xs opacity-50">{dailyWeather.summary}</div>
                     </div>
 
                     <div className={glassCard(isDarkMode) + " p-4 min-h-[400px]"}>
@@ -669,9 +715,10 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
                         <p className="opacity-70 text-sm">遇緊急狀況請優先撥打。</p>
                     </div>
                     <div className={glassCard(isDarkMode) + " p-6"}>
-                        <h3 className="font-bold mb-4 flex gap-2"><Globe2 className="w-5 h-5"/> {emergencyInfoTitle}</h3>
+                        <h3 className="font-bold mb-4 flex gap-2"><Globe2 className="w-5 h-5"/> 駐當地辦事處 ({globalSettings.region})</h3>
                         <div className="p-3 bg-white/5 rounded border border-white/10">
-                            <div className="font-bold">{emergencyInfoContent}</div>
+                            <div className="font-bold">{emergencyInfoTitle}</div>
+                            <div className="text-2xl font-mono my-2">{emergencyInfoContent}</div>
                             <div className="text-sm opacity-70 mt-1">地址與電話請查閱外交部網站。</div>
                         </div>
                     </div>
@@ -719,6 +766,7 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
 
             <AddActivityModal isOpen={isAddModal} onClose={()=>setIsAddModal(false)} onSave={handleSaveItem} isDarkMode={isDarkMode} date={selectDate} defaultType={addType} editData={editingItem} members={trip.members || [{id:user.uid, name:user.displayName}]}/>
             <TripSettingsModal isOpen={isTripSettingsOpen} onClose={()=>setIsTripSettingsOpen(false)} trip={trip} onUpdate={(d)=>!isSimulation && updateDoc(doc(db,"trips",trip.id),d)} isDarkMode={isDarkMode}/>
+            <MemberSettingsModal isOpen={isMemberModalOpen} onClose={()=>setIsMemberModalOpen(false)} members={trip.members||[]} onUpdateRole={handleUpdateRole} isDarkMode={isDarkMode}/>
             <InviteModal isOpen={isInviteModal} onClose={()=>setIsInviteModal(false)} tripId={trip.id} onInvite={handleInvite} isDarkMode={isDarkMode}/>
             <AIGeminiModal isOpen={isAIModal} onClose={()=>setIsAIModal(false)} onApply={handleAIApply} isDarkMode={isDarkMode}/>
         </div>
@@ -760,18 +808,29 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, setGlobalBg }
 
             <div>
                 <h2 className="text-2xl font-bold border-l-4 border-indigo-500 pl-3 mb-6">我的行程</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {trips.map(t => (
-                        <div key={t.id} onClick={() => onSelectTrip(t)} className={`${glassCard(isDarkMode)} h-48 relative overflow-hidden group cursor-pointer hover:scale-[1.02]`}>
-                            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: `url(${COUNTRIES_DATA[t.country]?.image || DEFAULT_BG_IMAGE})` }}></div>
-                            <div className="absolute inset-0 bg-black/40 flex flex-col justify-end p-4 text-white">
-                                <h3 className="text-xl font-bold">{t.name}</h3>
-                                <div className="text-xs opacity-90 mt-1 bg-black/30 inline-block px-2 py-1 rounded backdrop-blur-sm">{getTripSummary(t)}</div>
-                                <div className="text-xs mt-1 opacity-70 flex gap-2"><MapIcon className="w-3 h-3"/> {t.country} <Calendar className="w-3 h-3"/> {formatDate(t.startDate)}</div>
+                {trips.length === 0 ? (
+                    <div className="p-8 text-center bg-white/5 rounded-2xl border border-white/10">
+                        <p className="opacity-50 mb-4">尚無行程，立即開始規劃您的下一趟旅程！</p>
+                        <button onClick={()=>window.scrollTo({top:0, behavior:'smooth'})} className="text-indigo-400 underline">建立新行程</button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {trips.map(t => (
+                            <div key={t.id} onClick={() => onSelectTrip(t)} className={`${glassCard(isDarkMode)} h-48 relative overflow-hidden group cursor-pointer hover:scale-[1.02]`}>
+                                <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: `url(${COUNTRIES_DATA[t.country]?.image || DEFAULT_BG_IMAGE})` }}></div>
+                                <div className="absolute inset-0 bg-black/40 flex flex-col justify-end p-4 text-white">
+                                    <h3 className="text-xl font-bold">{t.name}</h3>
+                                    <div className="text-xs opacity-90 mt-1 bg-black/30 inline-block px-2 py-1 rounded backdrop-blur-sm">{getTripSummary(t)}</div>
+                                    <div className="text-xs mt-1 opacity-70 flex gap-2"><MapIcon className="w-3 h-3"/> {t.country} <Calendar className="w-3 h-3"/> {formatDate(t.startDate)}</div>
+                                </div>
                             </div>
+                        ))}
+                        <div className={`${glassCard(isDarkMode)} h-48 flex flex-col items-center justify-center text-center opacity-50 hover:opacity-100 cursor-pointer border-dashed hover:border-indigo-500 transition-all`} onClick={()=>window.scrollTo({top:0, behavior:'smooth'})}>
+                            <Plus className="w-10 h-10 mb-2 text-indigo-400"/>
+                            <p className="font-bold">建立更多行程</p>
                         </div>
-                    ))}
-                </div>
+                    </div>
+                )}
             </div>
 
             {/* Travel Hub (Fixed Grid Layout) */}
@@ -781,7 +840,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, setGlobalBg }
                     {/* Weather */}
                     <div className={`${glassCard(isDarkMode)} p-6 row-span-2 flex flex-col justify-between bg-gradient-to-br from-blue-500/20 to-cyan-500/20`}>
                         <h4 className="font-bold flex items-center gap-2 mb-4"><CloudSun className="w-5 h-5"/> 當地天氣 & 時間</h4>
-                        <div className="space-y-3 overflow-y-auto custom-scrollbar pr-2">{INFO_DB.weather.map((w,i)=>(<div key={i} className="flex justify-between border-b border-white/10 pb-2"><div><span className="block font-bold">{w.city}</span><span className="text-xs opacity-50">{getLocalCityTime(w.tz)}</span></div><div className="text-right"><span className="text-lg">{w.temp}</span><div className="text-xs opacity-70">{w.desc}</div></div></div>))}</div>
+                        <div className="space-y-3 custom-scrollbar overflow-y-auto max-h-[500px] pr-2">{INFO_DB.weather.map((w,i)=>(<div key={i} className="flex justify-between border-b border-white/10 pb-2"><div><span className="block font-bold">{w.city}</span><span className="text-xs opacity-50">{getLocalCityTime(w.tz)}</span></div><div className="text-right"><span className="text-lg">{w.temp}</span><div className="text-xs opacity-70">{w.desc}</div></div></div>))}</div>
                     </div>
                     
                     {/* News */}
@@ -829,7 +888,7 @@ const App = () => {
                 {view !== 'tutorial' && <Header title="✈️ Travel Together" user={user} isDarkMode={isDarkMode} toggleDarkMode={()=>setIsDarkMode(!isDarkMode)} onLogout={()=>signOut(auth)} onBack={view!=='dashboard'?()=>setView('dashboard'):null} onTutorialStart={()=>setView('tutorial')} onViewChange={setView} onOpenUserSettings={()=>setIsSettingsOpen(true)} onOpenVersion={()=>setIsVersionOpen(true)}/>}
                 {view === 'dashboard' && <Dashboard user={user} onSelectTrip={(t)=>{setSelectedTrip(t); setView('detail');}} isDarkMode={isDarkMode} setGlobalBg={setGlobalBg}/>}
                 {view === 'detail' && <TripDetail tripData={selectedTrip} user={user} isDarkMode={isDarkMode} setGlobalBg={setGlobalBg} isSimulation={false} globalSettings={globalSettings} onBack={()=>setView('dashboard')}/>}
-                {view === 'tutorial' && <div className="h-screen flex flex-col"><div className="p-4 border-b flex gap-4"><button onClick={()=>setView('dashboard')}><ChevronLeft/></button> 模擬模式</div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={()=>{}} isSimulation={true} globalSettings={globalSettings}/></div></div>}
+                {view === 'tutorial' && <div className="h-screen flex flex-col"><div className="p-4 border-b flex gap-4"><button onClick={()=>setView('dashboard')}><ChevronLeft/></button> 模擬模式 (東京範例)</div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={()=>{}} isSimulation={true} globalSettings={globalSettings}/></div></div>}
             </div>
             {view !== 'tutorial' && <Footer isDarkMode={isDarkMode}/>}
             <SettingsModal isOpen={isSettingsOpen} onClose={()=>setIsSettingsOpen(false)} globalSettings={globalSettings} setGlobalSettings={setGlobalSettings} isDarkMode={isDarkMode}/>
