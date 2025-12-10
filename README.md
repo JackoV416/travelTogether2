@@ -1,16 +1,59 @@
-# React + Vite
+# Travel Together 行程規劃與協作應用程式
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 簡介 (Introduction)
 
-Currently, two official plugins are available:
+**Travel Together** 是一個現代化的旅遊行程規劃與協作平台。它專為團體或個人旅行設計，提供從行前準備、行程規劃、實時協作到預算管理的全方位解決方案。
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+應用程式利用 Firebase 實現數據即時同步，並內建 AI 領隊功能，讓規劃過程更加智慧與輕鬆。
 
-## React Compiler
+## 主要特色 (Features)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+  * **多人協作與權限管理**
+      * 支援多用戶登入 (Google 登入)。
+      * 支援擁有者 (Owner)、編輯者 (Editor)、檢視者 (Viewer) 三種角色權限。
+      * 所有行程內容實時同步。
+  * **行程與交通規劃**
+      * 支援建立**多國多城**的複雜行程。
+      * 行程項目包括：航班 (含轉機)、住宿、景點、餐飲、購物、交通 (地鐵、巴士、自駕) 等。
+      * 提供交通建議 (如距離、步行時間、步數)。
+      * 行程地圖視圖，集合所有地點。
+  * **預算與分帳**
+      * 詳細記錄每筆支出，支援稅金與退稅記錄。
+      * 支援多種貨幣 (包括 HKD, TWD, JPY, KRW, USD, EUR, GBP, THB 等) 的匯率換算。
+      * 內建債務結算功能，清晰顯示成員間應收/應付金額。
+  * **智慧化工具**
+      * **AI 領隊/建議:** 可根據現有行程提供真實的行程與交通智慧推薦。
+      * **旅遊資訊中心:** 提供即時天氣、衣著提示、旅遊新聞、機票/酒店/交通工具優惠資訊。
+  * **行前準備**
+      * **簽證/入境:** 記錄個人簽證狀態、有效期限，提供 Visit Japan Web、K-ETA 等指引。
+      * **保險/緊急:** 提供旅遊保險建議與全球緊急聯絡電話 (根據所在地顯示正確辦事處)。
+      * **購物清單:** 規劃購物項目與預計支出。
+  * **數據管理**
+      * 支援行程匯出為 PDF 總結。
+      * 支援行程數據 (行程、預算、購物) 的 JSON/CSV 匯入與匯出。
 
-## Expanding the ESLint configuration
+## 技術棧 (Tech Stack)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+| 類別 | 組件 | 說明 |
+| :--- | :--- | :--- |
+| **框架** | React.js | 構建使用者介面的核心函式庫。 |
+| **數據** | Firebase Firestore | 實時 NoSQL 雲端資料庫。 |
+| **驗證** | Firebase Authentication | Google 登入驗證服務。 |
+| **樣式** | Tailwind CSS (推測) | 使用大量功能類別 (utility classes) 進行快速介面設計。 |
+| **圖標** | Lucide React | 清晰、現代化的圖標集 (如 `Home`, `BrainCircuit`, `Wallet` 等)。 |
+
+## 版本資訊
+
+  * **作者：** Jamie Kwok
+  * **當前版本：** V0.6.1 Beta
+
+## 版本更新歷史 (Version History)
+
+| 版本 | 日期 | 簡述 | 詳細內容 |
+| :--- | :--- | :--- | :--- |
+| **V0.6.1** | 10/12/2025 | 旅遊資訊中心修正與新功能加入 | 1. 修正旅遊資訊中心的顯示BUG。 2. 新增建立行程的顯示BUG修正。 |
+| **V0.6.0** | 01/12/2025 | Beta 版：首頁、AI、簽證、保險、地圖等全方位升級 | 1. 所有日期以 DD/MM/YYYY 顯示，建立行程支援多國多城多選。 2. 首頁卡片新增即時天氣與衣著提示、旅遊資訊中心含更多連結。 3. 簽證區分公開狀態與個人詳情，教學資料補齊 5 天內容。 4. AI 領隊提供真實建議，可加入行程與交通推薦。 5. 機票、交通卡片顯示航空公司 / 交通 Logo，保險提供 AI 建議與 Visit Japan Web 指引。 6. 每日行程摘要、交通建議、地圖視圖集合全部行程地點。 |
+| **V0.5.0** | 26/11/2025 | 版本視窗、簽證資訊與彈窗體驗更新 | 1. 新增版本按鈕與詳細紀錄視窗。 2. 補齊簽證分頁內容與權限顯示。 3. 優化加入行程等彈窗文案。 |
+| **V0.4.0** | 26/11/2025 | 真實東京行程教學、新增項目支援稅務/轉機 | 1. 教學模式資料替換為真實東京5日遊。 2. 新增項目可填寫稅金、退稅、航班轉機。 3. 緊急資訊根據用戶所在地顯示正確辦事處。 |
+
+-----
