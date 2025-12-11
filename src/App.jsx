@@ -20,7 +20,7 @@ import {
 // --- 0. Constants & Data ---
 
 const AUTHOR_NAME = "Jamie Kwok";
-const APP_VERSION = "V0.7.1 Beta";
+const APP_VERSION = "V0.7.2 Beta";
 const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 
@@ -360,9 +360,9 @@ const SIMULATION_DATA = {
 
 const INSURANCE_SUGGESTIONS = { "HK": ["Prudential", "AIG", "Blue Cross"], "TW": ["富邦", "國泰", "南山"], "Global": ["World Nomads", "Allianz"] };
 
-// --- Helpers ---
-const glassCard = (isDarkMode) => `backdrop-blur-sm border shadow-xl rounded-2xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${isDarkMode ? 'bg-gray-900/95 border-gray-700 text-gray-100 hover:border-gray-600' : 'bg-white/95 border-white/60 text-gray-900 hover:border-white/80'}`;
-const inputClasses = (isDarkMode) => `w - full p - 3 rounded - xl border transition - all outline - none ${isDarkMode ? 'bg-gray-800/80 border-gray-600 focus:border-indigo-400 text-white placeholder-gray-500' : 'bg-white/80 border-gray-300 focus:border-indigo-600 text-gray-900 placeholder-gray-400'} `;
+// --- 1. Helper Functions ---
+const glassCard = (isDarkMode) => `backdrop-blur-sm border shadow-xl rounded-2xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${isDarkMode ? 'bg-gray-900/95 border-gray-700 text-gray-100 hover:border-gray-600' : 'bg-slate-50/95 border-gray-200 text-gray-900 hover:border-gray-300'}`;
+const inputClasses = (isDarkMode) => `w-full p-3 rounded-xl border transition-all outline-none ${isDarkMode ? 'bg-gray-800/80 border-gray-600 focus:border-indigo-400 text-white placeholder-gray-500' : 'bg-gray-50/80 border-gray-300 focus:border-indigo-600 text-gray-900 placeholder-gray-400'}`;
 const buttonPrimary = `flex items - center justify - center px - 6 py - 3 rounded - xl font - bold text - white bg - gradient - to - r from - indigo - 600 via - purple - 600 to - pink - 600 hover: from - indigo - 500 hover: via - purple - 500 hover: to - pink - 500 shadow - lg hover: shadow - xl transition - all duration - 300 transform hover: scale - [1.05] active: scale - 95 w - full cursor - pointer`;
 const getHolidayMap = (region) => HOLIDAYS_BY_REGION[region] || HOLIDAYS_BY_REGION.Global;
 const getLocalizedCountryName = (country, lang = 'zh-TW') => COUNTRY_TRANSLATIONS[country]?.[lang] || country;
@@ -474,7 +474,7 @@ const Footer = ({ isDarkMode, onOpenVersion }) => {
     const [time, setTime] = useState(new Date());
     useEffect(() => { const t = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(t); }, []);
     return (
-        <footer className={`mt-12 py-6 border-t text-center text-xs md:text-sm flex flex-col items-center justify-center gap-1 ${isDarkMode ? 'bg-gray-900 border-gray-800 text-gray-500' : 'bg-white border-gray-200 text-gray-500'}`}>
+        <footer className={`mt-12 py-6 border-t text-center text-xs md:text-sm flex flex-col items-center justify-center gap-1 ${isDarkMode ? 'bg-gray-900 border-gray-800 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
             <div className="flex flex-wrap gap-2 items-center justify-center font-bold">
                 <span>Travel Together {APP_VERSION}</span>
                 <span>•</span>
@@ -505,7 +505,7 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
     };
 
     return (
-        <header className={`sticky top-0 z-50 p-4 transition-all duration-300 ${isDarkMode ? 'bg-gray-900/95 border-b border-gray-800' : 'bg-white/90 border-b border-white/20'} shadow-sm`}>
+        <header className={`sticky top-0 z-50 p-4 transition-all duration-300 ${isDarkMode ? 'bg-gray-900/95 border-b border-gray-800' : 'bg-gray-50/95 border-b border-gray-200'} shadow-sm`}>
             <div className="flex items-center justify-between max-w-7xl mx-auto">
                 <div className="flex items-center gap-3">
                     {onBack && <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-500/10"><ChevronLeft /></button>}
@@ -520,7 +520,7 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                             <Bell className="w-5 h-5" />
                             {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>}
                         </button>
-                        {showNotif && <div className={`absolute top-12 right-0 w-96 p-4 rounded-xl shadow-2xl border z-50 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                        {showNotif && <div className={`absolute top-12 right-0 w-96 p-4 rounded-xl shadow-2xl border z-50 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
                             <h4 className="font-bold px-3 py-2 text-sm border-b border-gray-500/10 mb-2">通知中心</h4>
                             <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-1">
                                 {notifications.length === 0 ? (
@@ -556,7 +556,7 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                             ) : <UserCircle className="w-8 h-8" />}
                         </button>
                         <div className={`absolute top-10 right-0 w-64 pt-4 transition-all duration-300 origin-top-right ${hoverMenu ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible'}`}>
-                            <div className={`rounded-xl shadow-2xl border overflow-hidden ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-800'}`}>
+                            <div className={`rounded-xl shadow-2xl border overflow-hidden ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-800'}`}>
                                 <div className="p-4 border-b border-gray-500/10">
                                     <p className="font-bold truncate">{user?.displayName}</p>
                                     <p className="text-xs opacity-50 truncate">{user?.email}</p>
@@ -629,7 +629,7 @@ const MemberSettingsModal = ({ isOpen, onClose, members, onUpdateRole, isDarkMod
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black/60 z-[80] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-            <div className={`w - full max - w - sm rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} `}>
+            <div className={`w - full max - w - sm rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} `}>
                 <h3 className="text-xl font-bold mb-4">成員權限管理</h3>
                 <div className="space-y-2">
                     {members.map(m => (
@@ -655,7 +655,7 @@ const SettingsModal = ({ isOpen, onClose, globalSettings, setGlobalSettings, isD
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-            <div className={`w - full max - w - sm rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} `}>
+            <div className={`w - full max - w - sm rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} `}>
                 <h3 className="text-xl font-bold mb-4">個人設定</h3>
                 <div className="space-y-4">
                     <div><label className="block text-xs opacity-70 mb-1">貨幣</label><select value={globalSettings.currency} onChange={e => setGlobalSettings({ ...globalSettings, currency: e.target.value })} className={inputClasses(isDarkMode)}>{Object.keys(CURRENCIES).map(c => <option key={c} value={c}>{c}</option>)}</select></div>
@@ -712,7 +712,7 @@ const InviteModal = ({ isOpen, onClose, tripId, onInvite, isDarkMode }) => {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-            <div className={`w - full max - w - sm rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} `}>
+            <div className={`w - full max - w - sm rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} `}>
                 <h3 className="text-xl font-bold mb-4">邀請成員</h3>
                 <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Google Email" className={inputClasses(isDarkMode) + " mb-3"} />
                 <select value={role} onChange={e => setRole(e.target.value)} className={inputClasses(isDarkMode) + " mb-4"}>
@@ -732,7 +732,7 @@ const TripSettingsModal = ({ isOpen, onClose, trip, onUpdate, isDarkMode }) => {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className={`w - full max - w - md p - 6 rounded - 2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'} `}>
+            <div className={`w - full max - w - md p - 6 rounded - 2xl ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} `}>
                 <h3 className="text-xl font-bold mb-4">行程設定</h3>
                 <div className="space-y-4">
                     <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className={inputClasses(isDarkMode)} placeholder="名稱" />
@@ -789,7 +789,7 @@ const AddActivityModal = ({ isOpen, onClose, onSave, isDarkMode, date, defaultTy
 
     return (
         <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className={`w - full max - w - md p - 6 rounded - 2xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'} max - h - [90vh] overflow - y - auto custom - scrollbar`}>
+            <div className={`w - full max - w - md p - 6 rounded - 2xl ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} max - h - [90vh] overflow - y - auto custom - scrollbar`}>
                 <div className="flex items-start justify-between mb-4">
                     <div>
                         <h3 className="font-bold text-lg">{editData ? '編輯行程項目' : '加入行程項目'}</h3>
@@ -1255,7 +1255,7 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
 
             {/* Tabs */}
             <div className="flex gap-2 overflow-x-auto pb-2 mb-4 no-scrollbar">
-                {[{ id: 'itinerary', label: '行程', icon: CalendarDays }, { id: 'shopping', label: '購物', icon: ShoppingBag }, { id: 'budget', label: '預算', icon: Wallet }, { id: 'insurance', label: '保險', icon: Shield }, { id: 'emergency', label: '緊急', icon: Siren }, { id: 'visa', label: '簽證', icon: FileCheck }, { id: 'notes', label: '筆記', icon: NotebookPen }].map(t => (<button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex items-center px-4 py-2 rounded-full font-bold transition-all duration-300 whitespace-nowrap transform hover:scale-105 ${activeTab === t.id ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl scale-105' : (isDarkMode ? 'bg-gray-800/60 text-gray-300 hover:bg-gray-700' : 'bg-white/60 text-gray-600 hover:bg-white')}`}><t.icon className="w-4 h-4 mr-2" />{t.label}</button>))}
+                {[{ id: 'itinerary', label: '行程', icon: CalendarDays }, { id: 'shopping', label: '購物', icon: ShoppingBag }, { id: 'budget', label: '預算', icon: Wallet }, { id: 'insurance', label: '保險', icon: Shield }, { id: 'emergency', label: '緊急', icon: Siren }, { id: 'visa', label: '簽證', icon: FileCheck }, { id: 'notes', label: '筆記', icon: NotebookPen }].map(t => (<button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex items-center px-4 py-2 rounded-full font-bold transition-all duration-300 whitespace-nowrap transform hover:scale-105 ${activeTab === t.id ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl scale-105' : (isDarkMode ? 'bg-gray-800/60 text-gray-300 hover:bg-gray-700' : 'bg-gray-100/80 text-gray-600 hover:bg-gray-100')}`}><t.icon className="w-4 h-4 mr-2" />{t.label}</button>))}
             </div>
 
             {/* Itinerary Tab */}
@@ -1263,7 +1263,7 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
                 <div className="space-y-6 animate-fade-in">
                     <div className="flex gap-3 overflow-x-auto pb-2">
                         {days.map((d) => (
-                            <button key={d} onClick={() => setSelectDate(d)} className={`flex-shrink-0 px-4 py-3 rounded-xl border transition text-center min-w-[130px] relative overflow-hidden ${currentDisplayDate === d ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg scale-105' : (isDarkMode ? 'bg-gray-800/60 border-gray-700' : 'bg-white/60 border-gray-200')}`}>
+                            <button key={d} onClick={() => setSelectDate(d)} className={`flex-shrink-0 px-4 py-3 rounded-xl border transition text-center min-w-[130px] relative overflow-hidden ${currentDisplayDate === d ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg scale-105' : (isDarkMode ? 'bg-gray-800/60 border-gray-700' : 'bg-gray-100/80 border-gray-200')}`}>
                                 <div className="text-xs opacity-70 uppercase mb-1">{getWeekday(d)}</div>
                                 <div className="font-bold text-sm">{formatDate(d)}</div>
                                 {holidays[d.slice(5)] && <div className="absolute top-0 right-0 bg-red-500 text-white text-[9px] px-1 rounded-bl">{holidays[d.slice(5)]}</div>}
@@ -1302,7 +1302,7 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
                                     const transportMeta = advice ? TRANSPORT_ICONS[advice.mode] : null;
                                     const TransportIcon = transportMeta?.icon;
                                     return (
-                                        <div key={i} draggable={canEdit} onDragStart={(e) => onDragStart(e, i)} onDragOver={(e) => e.preventDefault()} onDrop={(e) => onDrop(e, i)} onClick={() => { if (canEdit) { setAddType(item.type); setEditingItem(item); setIsAddModal(true); } }} className={`group p-3 border rounded-xl mb-2 flex flex-col gap-2 hover:shadow-md transition cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-white/60 border-gray-200'}`}>
+                                        <div key={i} draggable={canEdit} onDragStart={(e) => onDragStart(e, i)} onDragOver={(e) => e.preventDefault()} onDrop={(e) => onDrop(e, i)} onClick={() => { if (canEdit) { setAddType(item.type); setEditingItem(item); setIsAddModal(true); } }} className={`group p-3 border rounded-xl mb-2 flex flex-col gap-2 hover:shadow-md transition cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-100/80 border-gray-200'}`}>
                                             <div className="flex items-center gap-3">
                                                 <div className={`p-2 rounded-full flex-shrink-0 ${item.type === 'flight' ? 'bg-blue-100 text-blue-600' : (item.type === 'hotel' ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600')}`}>
                                                     {item.type === 'flight' ? <PlaneTakeoff className="w-4 h-4" /> : (item.type === 'hotel' ? <Hotel className="w-4 h-4" /> : <MapIcon className="w-4 h-4" />)}
