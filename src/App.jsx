@@ -20,7 +20,7 @@ import {
 // --- 0. Constants & Data ---
 
 const AUTHOR_NAME = "Jamie Kwok";
-const APP_VERSION = "V0.7.2 Beta";
+const APP_VERSION = "V0.7.3 Beta";
 const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 
@@ -655,7 +655,7 @@ const SettingsModal = ({ isOpen, onClose, globalSettings, setGlobalSettings, isD
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-            <div className={`w - full max - w - sm rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} `}>
+            <div className={`w-full max-w-md rounded-2xl p-6 shadow-2xl border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
                 <h3 className="text-xl font-bold mb-4">個人設定</h3>
                 <div className="space-y-4">
                     <div><label className="block text-xs opacity-70 mb-1">貨幣</label><select value={globalSettings.currency} onChange={e => setGlobalSettings({ ...globalSettings, currency: e.target.value })} className={inputClasses(isDarkMode)}>{Object.keys(CURRENCIES).map(c => <option key={c} value={c}>{c}</option>)}</select></div>
