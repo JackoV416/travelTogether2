@@ -16,6 +16,25 @@ import {
     PlaneTakeoff, Hotel, GripVertical, Printer, ArrowUpRight, Navigation, Share2, Phone, Globe2, Link as LinkIcon, CheckCircle, Wifi,
     Utensils, Camera, Image, QrCode, Download, Copy, MessageCircle, Instagram
 } from 'lucide-react';
+import { getExchangeRates, convertCurrency } from './services/exchangeRate';
+import { getWeather, getWeatherInfo } from './services/weather';
+import { generateAISuggestions } from './services/ai';
+
+// 主要城市坐標 (用於天氣功能)
+const CITY_COORDS = {
+    "Tokyo": { lat: 35.6762, lon: 139.6503 },
+    "Taipei": { lat: 25.0330, lon: 121.5654 },
+    "London": { lat: 51.5074, lon: -0.1278 },
+    "New York": { lat: 40.7128, lon: -74.0060 },
+    "Bangkok": { lat: 13.7563, lon: 100.5018 },
+    "Zurich": { lat: 47.3769, lon: 8.5417 },
+    "Osaka": { lat: 34.6937, lon: 135.5023 },
+    "Seoul": { lat: 37.5665, lon: 126.9780 },
+    "Paris": { lat: 48.8566, lon: 2.3522 },
+    "Berlin": { lat: 52.5200, lon: 13.4050 },
+    "Rome": { lat: 41.9028, lon: 12.4964 },
+    "Sydney": { lat: -33.8688, lon: 151.2093 }
+};
 
 // --- 0. Constants & Data ---
 
@@ -25,6 +44,18 @@ const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe
 
 
 const VERSION_HISTORY = [
+    {
+        ver: "V0.8.2 Beta",
+        date: "2025-12-11",
+        desc: {
+            "zh-TW": "API 服務整合與 AI 領隊升級",
+            "en": "API Integration & AI Upgrades"
+        },
+        details: {
+            "zh-TW": "1. 整合免費匯率 API (ExchangeRate-API) 與天氣 API (Open-Meteo)，實現預算實時轉換與首頁天氣顯示。\n2. AI 領隊功能升級：新增智能模擬服務，提供更精確的在地行程建議與成本估算。\n3. 修復航空公司 Logo 無法顯示問題 (403 Forbidden)，改用 Google Favicon 服務。\n4. 系統優化：解決 Vite 構建緩存問題，提升開發穩定性。",
+            "en": "1. Integrated free Exchange Rate & Weather APIs for real-time budget conversion and weather display.\n2. Upgraded AI Guide: New service logic with better localized suggestions and cost estimates.\n3. Fixed airline logo display issues (403 Forbidden).\n4. System optimization: Resolved Vite cache issues."
+        }
+    },
     {
         ver: "V0.8.1",
         date: "11/12/2025",
@@ -297,12 +328,12 @@ const TRAVEL_ARTICLES = [
 ];
 
 const AIRLINE_LOGOS = {
-    "EVA Air": "https://logo.clearbit.com/evaair.com",
-    "Cathay": "https://logo.clearbit.com/cathaypacific.com",
-    "ANA": "https://logo.clearbit.com/ana.co.jp",
-    "JAL": "https://logo.clearbit.com/jal.com",
-    "China Airlines": "https://logo.clearbit.com/china-airlines.com",
-    "Swiss": "https://logo.clearbit.com/swiss.com"
+    "EVA Air": "https://www.google.com/s2/favicons?domain=evaair.com&sz=64",
+    "Cathay": "https://www.google.com/s2/favicons?domain=cathaypacific.com&sz=64",
+    "ANA": "https://www.google.com/s2/favicons?domain=ana.co.jp&sz=64",
+    "JAL": "https://www.google.com/s2/favicons?domain=jal.com&sz=64",
+    "China Airlines": "https://www.google.com/s2/favicons?domain=china-airlines.com&sz=64",
+    "Swiss": "https://www.google.com/s2/favicons?domain=swiss.com&sz=64"
 };
 
 const TRANSPORT_ICONS = {
@@ -411,14 +442,18 @@ const getTripSummary = (trip) => {
     return summary;
 };
 
-const calculateDebts = (budget, repayments, members, baseCurrency) => {
+const calculateDebts = (budget, repayments, members, baseCurrency, exchangeRates) => {
     const balances = {}; members.forEach(m => balances[m.name] = 0); let totalSpent = 0;
+
+    // 準備匯率表：如果沒有實時匯率，則從靜態 CURRENCIES 轉換
+    const rates = exchangeRates || Object.keys(CURRENCIES).reduce((acc, key) => ({ ...acc, [key]: CURRENCIES[key].rate }), {});
+
     budget.forEach(item => {
         const tax = item.details?.tax ? Number(item.details.tax) : 0;
         const refund = item.details?.refund ? Number(item.details.refund) : 0;
         const baseCost = Number(item.cost) + tax - refund;
 
-        const cost = baseCost / (CURRENCIES[item.currency]?.rate || 1) * (CURRENCIES[baseCurrency]?.rate || 1);
+        const cost = convertCurrency(baseCost, item.currency || 'HKD', baseCurrency || 'HKD', rates);
         totalSpent += cost;
 
         const payer = item.payer || members[0].name;
@@ -471,19 +506,7 @@ const buildDailyReminder = (date, items = []) => {
 
 const getUserInitial = (nameOrEmail = "") => (nameOrEmail[0] || "T").toUpperCase();
 
-const generateAISuggestions = (city = "", existingItems = []) => {
-    const fallbackCity = city || "旅遊地點";
-    const base = [
-        { time: "09:00", name: `${fallbackCity} 城市散步`, type: "spot", details: { location: `${fallbackCity} Old Town` } },
-        { time: "13:00", name: `${fallbackCity} 在地市場午餐`, type: "food", details: { location: `${fallbackCity} Market` }, cost: 1500, currency: "JPY" },
-        { time: "19:30", name: "夜景與調酒吧", type: "spot", details: { location: `${fallbackCity} Rooftop Bar` } }
-    ];
-    if (existingItems.length > 2) {
-        base[0] = { ...base[0], name: `${fallbackCity} 秘境走讀`, details: { location: `${fallbackCity} Hidden Trail` } };
-        base[2] = { ...base[2], name: "溫泉 / SPA 放鬆時光", details: { location: `${fallbackCity} Onsen` } };
-    }
-    return base;
-};
+
 
 const getWalkMeta = () => {
     const distance = (0.4 + Math.random() * 0.8).toFixed(1);
@@ -611,10 +634,15 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
     useEffect(() => {
         if (isOpen) {
             setLoading(true);
-            setTimeout(() => {
-                setResult(generateAISuggestions(contextCity, existingItems));
-                setLoading(false);
-            }, 1500);
+            generateAISuggestions(contextCity, existingItems)
+                .then(res => {
+                    setResult(res);
+                    setLoading(false);
+                })
+                .catch(err => {
+                    console.error("AI Error:", err);
+                    setLoading(false);
+                });
         } else { setResult(null); }
     }, [isOpen, contextCity, existingItems]);
     if (!isOpen) return null;
@@ -633,9 +661,17 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
                                         <li key={i} className="border-b border-black/5 pb-2 last:border-0">
                                             <div className="flex gap-3 items-center">
                                                 <span className="font-mono text-xs opacity-50">{item.time}</span>
-                                                <span>{item.name}</span>
+                                                <div className="flex-1">
+                                                    <span className="font-bold text-sm block">{item.name}</span>
+                                                    {item.details?.desc && <span className="text-xs opacity-70 block">{item.details.desc}</span>}
+                                                </div>
+                                                {item.cost > 0 && (
+                                                    <div className="text-xs font-mono bg-white/20 px-2 py-1 rounded">
+                                                        {item.currency} {item.cost}
+                                                    </div>
+                                                )}
                                             </div>
-                                            {advice && <div className="text-[11px] opacity-70 ml-10">交通建議：{advice.label} · {advice.cost}</div>}
+                                            {advice && <div className="text-[11px] opacity-70 ml-10 mt-1 flex items-center gap-1">🚌 交通建議：{advice.label} · {advice.cost}</div>}
                                         </li>
                                     );
                                 })}
@@ -1000,7 +1036,7 @@ const SectionDataModal = ({ isOpen, onClose, mode, section, data, onConfirm, isD
 };
 
 // --- Trip Detail ---
-const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, globalSettings }) => {
+const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, globalSettings, exchangeRates }) => {
     const [activeTab, setActiveTab] = useState('itinerary');
     const [isAddModal, setIsAddModal] = useState(false);
     const [isInviteModal, setIsInviteModal] = useState(false);
@@ -1061,7 +1097,7 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
     const days = getDaysArray(trip.startDate, trip.endDate);
     const currentDisplayDate = selectDate || days[0];
     const dailyWeather = getWeatherForecast(trip.country, currentDisplayDate);
-    const debtInfo = calculateDebts(trip.budget || [], trip.repayments || [], trip.members || [], globalSettings.currency);
+    const debtInfo = calculateDebts(trip.budget || [], trip.repayments || [], trip.members || [], globalSettings.currency, exchangeRates);
     const timeDiff = getTimeDiff(globalSettings.region, trip.country);
     const tripSummary = getTripSummary(trip, user.uid);
     const countryInfo = getSafeCountryInfo(trip.country);
@@ -1607,7 +1643,7 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
 };
 
 // --- Dashboard ---
-const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, setGlobalBg, globalSettings }) => {
+const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, setGlobalBg, globalSettings, exchangeRates, weatherData }) => {
     const [trips, setTrips] = useState([]);
     const [form, setForm] = useState({ name: '', countries: [], cities: [], startDate: '', endDate: '' });
     const [selectedCountryImg, setSelectedCountryImg] = useState(DEFAULT_BG_IMAGE);
@@ -1793,16 +1829,32 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, setGlobalBg, 
                         {/* Weather */}
                         <div className={`${glassCard(isDarkMode)} p-6 row-span-1 md:row-span-2 flex flex-col bg-gradient-to-br from-blue-500/15 via-cyan-500/10 to-white/5 h-full min-h-0`}>
                             <h4 className="font-bold flex items-center gap-2 mb-4"><CloudSun className="w-5 h-5" /> 當地天氣 & 當地時間</h4>
-                            <div className="space-y-3 custom-scrollbar overflow-y-auto pr-1 flex-1">{INFO_DB.weather.map((w, i) => (<div key={i} className="flex items-center justify-between border-b border-white/10 pb-2">
-                                <div>
-                                    <span className="block font-bold text-sm">{w.city}</span>
-                                    <span className="text-[11px] opacity-60">{getLocalCityTime(w.tz)}</span>
-                                </div>
-                                <div className="text-right">
-                                    <span className="text-lg font-semibold">{w.temp}</span>
-                                    <div className="text-xs opacity-70">{w.desc}</div>
-                                </div>
-                            </div>))}</div>
+                            <div className="space-y-3 custom-scrollbar overflow-y-auto pr-1 flex-1">
+                                {Object.keys(CITY_COORDS).map((city, i) => {
+                                    const wData = weatherData?.[city];
+                                    const staticData = INFO_DB.weather.find(w => w.city === city) || {};
+                                    // 優先使用動態數據，否則使用靜態數據 (僅作為最後備援，實際應該都有動態數據)
+                                    const displayTemp = wData?.temp || staticData.temp || '--';
+                                    const displayDesc = wData?.desc || staticData.desc || '載入中...';
+                                    const displayIcon = wData?.icon || staticData.icon || '⌛';
+                                    const timezone = staticData.tz || 'UTC';
+
+                                    return (
+                                        <div key={city} className="flex items-center justify-between border-b border-white/10 pb-2">
+                                            <div>
+                                                <span className="block font-bold text-sm">{getLocalizedCityName(city, currentLang)}</span>
+                                                <span className="text-[11px] opacity-60">{getLocalCityTime(timezone)}</span>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-lg font-semibold">{displayTemp}</span>
+                                                <div className="text-xs opacity-70 flex items-center justify-end gap-1">
+                                                    <span>{displayIcon}</span> <span>{displayDesc}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
 
@@ -1924,7 +1976,44 @@ const App = () => {
         { id: 'n2', title: "匯入完成", message: "已匯入 3 個新行程，請檢查細節。", time: "2025/12/01 08:40", read: true }
     ]);
 
+    // 新增：匯率與天氣狀態
+    const [exchangeRates, setExchangeRates] = useState(null);
+    const [weatherData, setWeatherData] = useState({}); // { [CityName]: weatherObj }
+
     useEffect(() => { onAuthStateChanged(auth, setUser); }, []);
+
+    // 新增：獲取匯率數據
+    useEffect(() => {
+        async function fetchRates() {
+            const rates = await getExchangeRates('HKD'); // 預設以 HKD 為基準
+            setExchangeRates(rates);
+        }
+        fetchRates();
+    }, []);
+
+    // 新增：獲取天氣數據
+    useEffect(() => {
+        async function fetchAllWeather() {
+            const newWeatherData = {};
+            const cities = Object.keys(CITY_COORDS);
+
+            for (const city of cities) {
+                const { lat, lon } = CITY_COORDS[city];
+                const data = await getWeather(lat, lon);
+                if (data && data.current) {
+                    const info = getWeatherInfo(data.current.weathercode);
+                    newWeatherData[city] = {
+                        temp: `${Math.round(data.current.temperature_2m)}°C`,
+                        desc: info.desc,
+                        icon: info.icon,
+                        details: data
+                    };
+                }
+            }
+            setWeatherData(newWeatherData);
+        }
+        fetchAllWeather();
+    }, []);
 
     const markNotificationsRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     const removeNotification = (id) => setNotifications(prev => prev.filter(n => n.id !== id));
@@ -1937,9 +2026,9 @@ const App = () => {
             <div className="fixed inset-0 z-0 opacity-20 pointer-events-none transition-all duration-1000" style={{ backgroundImage: `url(${globalBg})`, backgroundSize: 'cover' }}></div>
             <div className="relative z-10 flex-grow">
                 {view !== 'tutorial' && <Header title="✈️ Travel Together" user={user} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} onLogout={() => signOut(auth)} onBack={view !== 'dashboard' ? () => setView('dashboard') : null} onTutorialStart={() => setView('tutorial')} onViewChange={setView} onOpenUserSettings={() => setIsSettingsOpen(true)} onOpenVersion={() => setIsVersionOpen(true)} notifications={notifications} onRemoveNotification={removeNotification} onMarkNotificationsRead={markNotificationsRead} />}
-                {view === 'dashboard' && <Dashboard user={user} onSelectTrip={(t) => { setSelectedTrip(t); setView('detail'); }} isDarkMode={isDarkMode} setGlobalBg={setGlobalBg} globalSettings={globalSettings} />}
-                {view === 'detail' && <TripDetail tripData={selectedTrip} user={user} isDarkMode={isDarkMode} setGlobalBg={setGlobalBg} isSimulation={false} globalSettings={globalSettings} onBack={() => setView('dashboard')} />}
-                {view === 'tutorial' && <div className="h-screen flex flex-col"><div className="p-4 border-b flex gap-4"><button onClick={() => setView('dashboard')}><ChevronLeft /></button> 模擬模式 (東京範例)</div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} globalSettings={globalSettings} /></div></div>}
+                {view === 'dashboard' && <Dashboard user={user} onSelectTrip={(t) => { setSelectedTrip(t); setView('detail'); }} isDarkMode={isDarkMode} setGlobalBg={setGlobalBg} globalSettings={globalSettings} exchangeRates={exchangeRates} weatherData={weatherData} />}
+                {view === 'detail' && <TripDetail tripData={selectedTrip} user={user} isDarkMode={isDarkMode} setGlobalBg={setGlobalBg} isSimulation={false} globalSettings={globalSettings} onBack={() => setView('dashboard')} exchangeRates={exchangeRates} />}
+                {view === 'tutorial' && <div className="h-screen flex flex-col"><div className="p-4 border-b flex gap-4"><button onClick={() => setView('dashboard')}><ChevronLeft /></button> 模擬模式 (東京範例)</div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} globalSettings={globalSettings} exchangeRates={exchangeRates} /></div></div>}
             </div>
             {view !== 'tutorial' && <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} />}
             <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} globalSettings={globalSettings} setGlobalSettings={setGlobalSettings} isDarkMode={isDarkMode} />
