@@ -26,6 +26,18 @@ const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe
 
 const VERSION_HISTORY = [
     {
+        ver: "V0.8.1",
+        date: "11/12/2025",
+        desc: {
+            "zh-TW": "Loading 介面美化升級",
+            "en": "Enhanced Loading Screen Design"
+        },
+        details: {
+            "zh-TW": "1. 多層旋轉環動畫，提升視覺吸引力。\n2. 添加背景粒子動畫效果。\n3. 飛機圖標脈衝動畫。\n4. 進度條與漸變效果。\n5. 優化色彩方案與排版。",
+            "en": "1. Multi-layer rotating rings with smooth animations.\n2. Added animated background particles.\n3. Airplane icon with pulse animation.\n4. Progress bar with gradient effect.\n5. Improved color scheme and typography."
+        }
+    },
+    {
         ver: "V0.8.0",
         date: "11/12/2025",
         desc: {
