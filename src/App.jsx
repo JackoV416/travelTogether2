@@ -40,11 +40,23 @@ const CITY_COORDS = {
 // --- 0. Constants & Data ---
 
 const AUTHOR_NAME = "Jamie Kwok";
-const APP_VERSION = "V0.8.3";
+const APP_VERSION = "V0.8.4";
 const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 
 const VERSION_HISTORY = [
+    {
+        ver: "V0.8.4",
+        date: "2025-12-11",
+        desc: {
+            "zh-TW": "UI 樣式與體驗優化",
+            "en": "UI Experience Polish"
+        },
+        details: {
+            "zh-TW": "1. 全面優化下拉選單樣式：確保操作按鈕觸發的選單具有一致的間距 (Margin) 與圓角陰影。\n2. 修復操作細節：提升在不同裝置上的點擊回饋。\n3. 優化通知權限指引。",
+            "en": "1. UI Polish: Fixed margins and styles for all dropdown menus.\n2. Improved click feedback.\n3. Updated notification permission guidance."
+        }
+    },
     {
         ver: "V0.8.3",
         date: "2025-12-11",
