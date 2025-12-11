@@ -14,14 +14,6 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// DEBUG: Check if environment variables are loading
-console.log('🔍 Firebase Config Debug:', {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY ? '✅ SET' : '❌ MISSING',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '❌ UNDEFINED',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '❌ UNDEFINED',
-  allEnvVars: Object.keys(import.meta.env).filter(key => key.startsWith('VITE_'))
-});
-
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
