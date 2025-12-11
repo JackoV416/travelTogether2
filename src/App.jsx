@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query, serverTimestamp, arrayUnion } from 'firebase/firestore';
+import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, query, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { auth, db, googleProvider } from './firebase';
 import {
     Home, Users, PiggyBank, MapPin, MapPinned, NotebookPen, Loader2, Plus,
@@ -39,7 +39,7 @@ const CITY_COORDS = {
 // --- 0. Constants & Data ---
 
 const AUTHOR_NAME = "Jamie Kwok";
-const APP_VERSION = "V0.8.1 Beta";
+const APP_VERSION = "V0.8.2 Beta";
 const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 
@@ -1035,6 +1035,112 @@ const SectionDataModal = ({ isOpen, onClose, mode, section, data, onConfirm, isD
     );
 };
 
+// --- Active Users Presence Component ---
+const TAB_LABELS = {
+    itinerary: { "zh-TW": "行程", "en": "Itinerary" },
+    shopping: { "zh-TW": "購物", "en": "Shopping" },
+    budget: { "zh-TW": "預算", "en": "Budget" },
+    insurance: { "zh-TW": "保險", "en": "Insurance" },
+    emergency: { "zh-TW": "緊急", "en": "Emergency" },
+    visa: { "zh-TW": "簽證", "en": "Visa" },
+    notes: { "zh-TW": "筆記", "en": "Notes" },
+    settings: { "zh-TW": "設定", "en": "Settings" }
+};
+
+const ActiveUsersList = ({ tripId, user, activeTab, language = "zh-TW" }) => {
+    const [activeUsers, setActiveUsers] = useState([]);
+
+    useEffect(() => {
+        if (!tripId || !user) return;
+
+        const presenceRef = doc(db, "trips", tripId, "presence", user.uid);
+
+        const updatePresence = () => {
+            setDoc(presenceRef, {
+                user: {
+                    uid: user.uid,
+                    name: user.displayName || user.email.split('@')[0],
+                    photo: user.photoURL || null
+                },
+                activeTab,
+                lastActive: Date.now()
+            }, { merge: true });
+        };
+
+        updatePresence();
+        const interval = setInterval(updatePresence, 10000);
+
+        const presenceColl = collection(db, "trips", tripId, "presence");
+        const unsub = onSnapshot(presenceColl, (snapshot) => {
+            const now = Date.now();
+            const users = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                // 顯示所有最近 60 秒活躍的用戶，包括自己
+                if (now - data.lastActive < 60000) {
+                    users.push(data);
+                }
+            });
+            // 排序：自己排第一個，然後按時間倒序
+            users.sort((a, b) => {
+                if (a.user.uid === user.uid) return -1;
+                if (b.user.uid === user.uid) return 1;
+                return b.lastActive - a.lastActive;
+            });
+            setActiveUsers(users);
+        });
+
+        return () => {
+            clearInterval(interval);
+            unsub();
+            // Optional: deleteDoc(presenceRef) - 保留這行如果想離線即刪除，或者註解掉以保留 "Last seen"
+            deleteDoc(presenceRef).catch(err => console.error("Presence cleanup failed", err));
+        };
+    }, [tripId, user.uid, activeTab, language]);
+
+    if (activeUsers.length === 0) return null;
+
+    return (
+        <div className="flex items-center -space-x-2 mr-4 animate-fade-in pointer-events-auto">
+            {activeUsers.slice(0, 5).map((u, i) => {
+                const isMe = u.user.uid === user.uid;
+                const timeDiff = Math.floor((Date.now() - u.lastActive) / 1000);
+                const statusText = timeDiff < 15 ? (language === 'zh-TW' ? '剛剛' : 'Just now') : `${timeDiff}${language === 'zh-TW' ? '秒前' : 's ago'}`;
+                const tabName = TAB_LABELS[u.activeTab]?.[language] || u.activeTab || (language === 'zh-TW' ? '總覽' : 'Overview');
+
+                return (
+                    <div key={u.user.uid} className={`relative group cursor-help z-${10 - i}`}>
+                        {u.user.photo ? (
+                            <img src={u.user.photo} alt={u.user.name}
+                                className={`w-8 h-8 rounded-full border-2 object-cover transition-transform hover:scale-110 ${isMe ? 'border-green-400 ring-2 ring-green-400/30' : 'border-white dark:border-gray-800'}`} />
+                        ) : (
+                            <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs text-white font-bold transition-transform hover:scale-110 ${isMe ? 'bg-green-500 border-green-400 ring-2 ring-green-400/30' : 'bg-indigo-500 border-white dark:border-gray-800'}`}>
+                                {getUserInitial(u.user.name)}
+                            </div>
+                        )}
+                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-900/90 backdrop-blur text-white text-[10px] px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl border border-white/10">
+                            <div className="font-bold flex items-center gap-1">
+                                {u.user.name} {isMe && <span className="text-green-400">(Me)</span>}
+                            </div>
+                            <div className="opacity-70">
+                                {language === 'zh-TW' ? '正在查看: ' : 'Viewing: '}{tabName}
+                            </div>
+                            <div className="opacity-50 text-[9px]">
+                                {language === 'zh-TW' ? '活躍於: ' : 'Active: '}{statusText}
+                            </div>
+                        </div>
+                    </div>
+                );
+            })}
+            {activeUsers.length > 5 && (
+                <div className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-bold z-0">
+                    +{activeUsers.length - 5}
+                </div>
+            )}
+        </div>
+    );
+};
+
 // --- Trip Detail ---
 const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, globalSettings, exchangeRates }) => {
     const [activeTab, setActiveTab] = useState('itinerary');
@@ -1286,8 +1392,12 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                     <div className="relative z-10 text-white">
                         <div className="flex justify-between items-start">
-                            <h2 className="text-3xl font-bold mb-2">{trip.name}</h2>
-                            {isOwner && <button onClick={() => setIsTripSettingsOpen(true)} className="p-1.5 bg-white/20 rounded-full hover:bg-white/30"><Edit3 className="w-4 h-4" /></button>}
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-3xl font-bold mb-2">{trip.name}</h2>
+                                {isOwner && <button onClick={() => setIsTripSettingsOpen(true)} className="p-1.5 bg-white/20 rounded-full hover:bg-white/30"><Edit3 className="w-4 h-4" /></button>}
+                            </div>
+                            {/* 在線用戶列表 */}
+                            <ActiveUsersList tripId={trip.id} user={user} activeTab={activeTab} language={globalSettings.language} />
                         </div>
                         <div className="flex gap-4 text-sm opacity-90">
                             <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {formatDate(trip.startDate)} - {formatDate(trip.endDate)}</span>
