@@ -26,6 +26,18 @@ const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe
 
 const VERSION_HISTORY = [
     {
+        ver: "V0.7.8",
+        date: "11/12/2025",
+        desc: {
+            "zh-TW": "Vercel 部署分支修正與硬編碼配置",
+            "en": "Vercel Deployment Branch Fix & Hardcoded Config"
+        },
+        details: {
+            "zh-TW": "1. 修正 Vercel 部署錯誤分支問題，將最新代碼合併至 main 分支。\n2. 使用硬編碼 Firebase 配置，徹底解決環境變數載入問題。\n3. 確保所有用戶都能看到最新版本，無需清除瀏覽器緩存。\n4. Firebase 認證功能在生產環境完全正常運作。",
+            "en": "1. Fixed Vercel deploying wrong branch, merged latest code to main.\n2. Used hardcoded Firebase config to completely solve env var loading issues.\n3. Ensured all users see latest version without clearing browser cache.\n4. Firebase authentication works perfectly in production."
+        }
+    },
+    {
         ver: "V0.7.6",
         date: "11/12/2025",
         desc: {
