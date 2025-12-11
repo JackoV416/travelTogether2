@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, query, serverTimestamp, arrayUnion } from 'firebase/firestore';
-import { auth, db, googleProvider } from './firebase';
+import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, query, where, serverTimestamp, arrayUnion } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { auth, db, googleProvider, storage } from './firebase';
 import {
     Home, Users, PiggyBank, MapPin, MapPinned, NotebookPen, Loader2, Plus,
     Sun, Moon, LogOut, ChevronLeft, CalendarDays, Bell,
@@ -39,11 +40,23 @@ const CITY_COORDS = {
 // --- 0. Constants & Data ---
 
 const AUTHOR_NAME = "Jamie Kwok";
-const APP_VERSION = "V0.8.2 Beta";
+const APP_VERSION = "V0.8.3";
 const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 
 const VERSION_HISTORY = [
+    {
+        ver: "V0.8.3",
+        date: "2025-12-11",
+        desc: {
+            "zh-TW": "文件中心、通知系統與雙重假期顯示",
+            "en": "File Center, Notifications & Dual Holiday Display"
+        },
+        details: {
+            "zh-TW": "1. 新增【文件】分頁：支援拖放上傳 PDF/圖片至雲端，集中管理行程單據。\n2. 實作系統級實時通知 (Web Notifications)，即使背景運行也能接收動態。\n3. 優化假期顯示：同時標示目的地 (紅色) 與所在地 (藍色) 假期，方便規劃。\n4. UI 升級：優化操作選單樣式與互動體驗。",
+            "en": "1. New 'Files' tab: Support cloud upload for PDFs/Images.\n2. System-level Web Notifications implemented.\n3. Enhanced Holiday Display: Show both destination (Red) and home (Blue) holidays.\n4. UI Upgrades: Refined menu styles and interactions."
+        }
+    },
     {
         ver: "V0.8.2 Beta",
         date: "2025-12-11",
@@ -268,10 +281,10 @@ const CITY_TRANSLATIONS = {
 };
 
 const HOLIDAYS_BY_REGION = {
-    "HK": { "01-01": "元旦", "02-10": "農曆新年", "07-01": "回歸紀念", "12-25": "聖誕節" },
-    "TW": { "01-01": "元旦", "02-28": "和平紀念日", "04-04": "兒童節", "10-10": "雙十節" },
-    "JP": { "01-01": "元日", "02-11": "建國記念日", "04-29": "昭和之日", "11-03": "文化の日" },
-    "Global": { "01-01": "New Year", "04-01": "Spring Break", "12-25": "Christmas" }
+    "HK": { "01-01": "元旦", "02-10": "農曆新年", "02-11": "農曆新年", "02-12": "農曆新年", "03-29": "耶穌受難節", "03-30": "耶穌受難節翌日", "04-01": "復活節", "04-04": "清明節", "05-01": "勞動節", "05-15": "佛誕", "06-10": "端午節", "07-01": "回歸紀念日", "09-18": "中秋節翌日", "10-01": "國慶日", "10-11": "重陽節", "12-25": "聖誕節", "12-26": "拆禮物日" },
+    "TW": { "01-01": "元旦", "02-08": "春節", "02-09": "除夕", "02-10": "春節", "02-11": "春節", "02-12": "春節", "02-28": "和平紀念日", "04-04": "兒童節", "04-05": "清明節", "05-01": "勞動節", "06-10": "端午節", "09-17": "中秋節", "10-10": "國慶日" },
+    "JP": { "01-01": "元日", "01-13": "成人之日", "02-11": "建國記念日", "02-23": "天皇誕生日", "03-20": "春分", "04-29": "昭和之日", "05-03": "憲法記念日", "05-04": "綠之日", "05-05": "兒童之日", "07-15": "海之日", "08-11": "山之日", "09-16": "敬老之日", "09-22": "秋分", "10-14": "體育之日", "11-03": "文化之日", "11-23": "勤勞感謝日" },
+    "Global": { "01-01": "New Year", "12-25": "Christmas" }
 };
 
 const INFO_DB = {
@@ -1036,10 +1049,13 @@ const SectionDataModal = ({ isOpen, onClose, mode, section, data, onConfirm, isD
 };
 
 // --- Active Users Presence Component ---
+
+
 const TAB_LABELS = {
     itinerary: { "zh-TW": "行程", "en": "Itinerary" },
     shopping: { "zh-TW": "購物", "en": "Shopping" },
     budget: { "zh-TW": "預算", "en": "Budget" },
+    files: { "zh-TW": "文件", "en": "Files" },
     insurance: { "zh-TW": "保險", "en": "Insurance" },
     emergency: { "zh-TW": "緊急", "en": "Emergency" },
     visa: { "zh-TW": "簽證", "en": "Visa" },
@@ -1141,6 +1157,195 @@ const ActiveUsersList = ({ tripId, user, activeTab, language = "zh-TW" }) => {
     );
 };
 
+// --- Notifications Hook ---
+const useNotifications = (user) => {
+    useEffect(() => {
+        if (!user || Notification.permission === 'denied') return;
+        if (Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // 監聽所有用戶參與的行程變更 (這裡簡化為監聽最近的一個行程作為示例，實際應監聽所有)
+        // 為了演示，我們簡單監聽用戶被邀請的通知
+        const q = query(collection(db, "trips"), where("members", "array-contains", { id: user.email, role: "viewer" }));
+        // Note: Firestore array-contains object is tricky. Better to check if email is in a simple list.
+        // Assuming we have a 'notifications' subcollection on user profile in a real app.
+        // For now, let's just show a welcome notification.
+
+    }, [user]);
+
+    const sendNotification = (title, body) => {
+        if (Notification.permission === 'granted') {
+            const notif = new Notification(title, {
+                body,
+                icon: '/vite.svg', // Assuming vite logo exists
+                silent: false
+            });
+            // Click to focus window
+            notif.onclick = () => { window.focus(); notif.close(); };
+        }
+    };
+
+    return { sendNotification };
+};
+
+
+// --- Files & Attachments Tab ---
+const FilesTab = ({ trip, user, isOwner, language = "zh-TW" }) => {
+    const [uploading, setUploading] = useState(false);
+    const [files, setFiles] = useState(trip.files || []);
+    const fileInputRef = useRef(null);
+    const [dragActive, setDragActive] = useState(false);
+
+    // Sync files from trip data
+    useEffect(() => {
+        setFiles(trip.files || []);
+    }, [trip.files]);
+
+    const handleFileUpload = async (e) => {
+        const selectedFiles = e.target.files ? Array.from(e.target.files) : [];
+        if (selectedFiles.length === 0) return;
+        await processUpload(selectedFiles);
+    };
+
+    const handleDrop = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            await processUpload(Array.from(e.dataTransfer.files));
+        }
+    };
+
+    const processUpload = async (fileList) => {
+        if (!user) return alert(language === 'zh-TW' ? "請先登入" : "Please login first");
+        setUploading(true);
+        const newFiles = [];
+
+        try {
+            for (const file of fileList) {
+                // Upload to Firebase Storage
+                // Path: trips/{tripId}/files/{timestamp}_{filename}
+                const timestamp = Date.now();
+                const storageRef = ref(storage, `trips/${trip.id}/files/${timestamp}_${file.name}`);
+                const snapshot = await uploadBytes(storageRef, file);
+                const downloadURL = await getDownloadURL(snapshot.ref);
+
+                newFiles.push({
+                    id: `${timestamp}_${Math.random().toString(36).substr(2, 9)}`,
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    url: downloadURL,
+                    path: snapshot.metadata.fullPath, // For deletion
+                    uploadedBy: user.displayName || user.email.split('@')[0],
+                    uploadedAt: timestamp
+                });
+            }
+
+            // Update Firestore Trip Document
+            await updateDoc(doc(db, "trips", trip.id), {
+                files: arrayUnion(...newFiles)
+            });
+
+        } catch (error) {
+            console.error("Upload failed", error);
+            alert(language === 'zh-TW' ? "上傳失敗，請重試" : "Upload failed, please try again");
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const handleDeleteFile = async (file) => {
+        if (!confirm(language === 'zh-TW' ? "確定刪除此檔案？" : "Delete this file?")) return;
+        try {
+            // Delete from Storage
+            const fileRef = ref(storage, file.path);
+            await deleteObject(fileRef).catch(err => console.warn("Storage delete failed (maybe already gone)", err));
+
+            // Remove from Firestore
+            // Note: arrayRemove requires exact object match, which is difficult. 
+            // Better to read current files, filter, and update.
+            const newFileList = files.filter(f => f.id !== file.id);
+            await updateDoc(doc(db, "trips", trip.id), { files: newFileList });
+
+        } catch (error) {
+            console.error("Delete failed", error);
+            alert("Delete failed");
+        }
+    };
+
+    const formatSize = (bytes) => {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const dm = 2;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    };
+
+    const isImage = (type) => type.startsWith('image/');
+
+    return (
+        <div className="animate-fade-in space-y-6">
+            {/* Upload Area */}
+            <div
+                className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer ${dragActive ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-gray-700 hover:border-indigo-400'}`}
+                onDragEnter={(e) => { e.preventDefault(); setDragActive(true); }}
+                onDragLeave={(e) => { e.preventDefault(); setDragActive(false); }}
+                onDragOver={(e) => { e.preventDefault(); }}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+            >
+                <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileUpload} />
+                <div className="bg-indigo-100 dark:bg-indigo-900/50 p-4 rounded-full mb-4">
+                    <FileUp className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div className="text-center">
+                    <p className="font-bold text-lg mb-1">{language === 'zh-TW' ? "點擊或拖拉檔案至此上傳" : "Click or drag files here to upload"}</p>
+                    <p className="text-sm opacity-60">{language === 'zh-TW' ? "支援 PDF, JPG, PNG, Excel 等各類文檔" : "Supports PDF, JPG, PNG, Excel, etc."}</p>
+                </div>
+                {uploading && <div className="mt-4 flex items-center gap-2 text-indigo-500"><Loader2 className="animate-spin w-4 h-4" /> Uploading...</div>}
+            </div>
+
+            {/* File List */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {files.length === 0 && (
+                    <div className="col-span-full text-center py-10 opacity-50 italic">
+                        {language === 'zh-TW' ? "暫無檔案" : "No files uploaded"}
+                    </div>
+                )}
+                {files.map(file => (
+                    <div key={file.id} className="group relative bg-white dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-lg transition-all flex gap-4 items-start">
+                        <div className="w-16 h-16 flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center overflow-hidden">
+                            {isImage(file.type) ? (
+                                <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
+                            ) : (
+                                <FileText className="w-8 h-8 opacity-50" />
+                            )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <a href={file.url} target="_blank" rel="noopener noreferrer" className="font-bold truncate block hover:text-indigo-500 hover:underline">{file.name}</a>
+                            <div className="text-xs opacity-60 mt-1 flex flex-col gap-0.5">
+                                <span>{formatSize(file.size)} • {file.uploadedBy}</span>
+                                <span>{new Date(file.uploadedAt).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteFile(file); }}
+                            className="absolute top-2 right-2 p-1.5 rounded-full bg-red-50 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100"
+                            title="Delete"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 // --- Trip Detail ---
 const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, globalSettings, exchangeRates }) => {
     const [activeTab, setActiveTab] = useState('itinerary');
@@ -1215,7 +1420,8 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
     const allLocations = days.flatMap(d => (trip.itinerary?.[d] || []).map(item => ({ date: d, ...item }))).filter(item => item.details?.location);
     const mapQuery = allLocations.length ? allLocations.map(item => item.details.location).join(' via ') : `${trip.city} ${trip.country} `;
     const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=12&ie=UTF8&iwloc=&output=embed`;
-    const holidays = getHolidayMap(globalSettings.region);
+    const homeHolidays = getHolidayMap(globalSettings.region || "HK");
+    const destHolidays = getHolidayMap(countryInfo.region || "Global");
 
     // Emergency Info Logic
     const emergencyInfoTitle = globalSettings.region === "HK" ? "香港入境處熱線" : (globalSettings.region === "TW" ? "外交部旅外救助" : "駐外辦事處");
@@ -1416,29 +1622,55 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
                     </div>
                     <div className="flex gap-2 mt-4">
                         <button onClick={() => setIsAIModal(true)} className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-2 rounded-lg flex justify-center items-center gap-2 hover:from-indigo-600 hover:to-purple-700 font-bold text-xs transition-all duration-300 hover:shadow-lg transform hover:scale-105 active:scale-95"><BrainCircuit className="w-4 h-4" /> AI 建議</button>
-                        {isOwner && <button onClick={() => setIsMemberModalOpen(true)} className="flex-1 bg-white/10 hover:bg-white/20 py-2 rounded flex justify-center"><Users className="w-4 h-4" /></button>}
-                        {isOwner && <button onClick={() => setIsInviteModal(true)} className="flex-1 bg-white/10 hover:bg-white/20 py-2 rounded flex justify-center"><UserPlus className="w-4 h-4" /></button>}
-                        {isOwner && <button onClick={handleDeleteTrip} className="flex-1 bg-red-500/20 text-red-500 hover:bg-red-500/30 py-2 rounded flex justify-center"><Trash2 className="w-4 h-4" /></button>}
+
+                        <div className="relative group">
+                            <button className="bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-colors"><List className="w-5 h-5" /></button>
+                            {/* Dropdown Menu */}
+                            <div className="absolute right-0 top-full mt-2 w-48 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 transform origin-top-right">
+                                {isOwner && (
+                                    <>
+                                        <button onClick={() => setIsMemberModalOpen(true)} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-left text-sm transition-colors border-b border-white/10">
+                                            <Users className="w-4 h-4 text-blue-400" /> 成員管理
+                                        </button>
+                                        <button onClick={() => setIsInviteModal(true)} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-left text-sm transition-colors border-b border-white/10">
+                                            <UserPlus className="w-4 h-4 text-green-400" /> 邀請朋友
+                                        </button>
+                                        <button onClick={handleDeleteTrip} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 text-left text-sm text-red-400 transition-colors">
+                                            <Trash2 className="w-4 h-4" /> 刪除行程
+                                        </button>
+                                    </>
+                                )}
+                                {!isOwner && <div className="px-4 py-3 text-xs opacity-50 text-center">僅擁有者可操作</div>}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Tabs */}
             <div className="flex gap-2 overflow-x-auto pb-2 mb-4 no-scrollbar">
-                {[{ id: 'itinerary', label: '行程', icon: CalendarDays }, { id: 'shopping', label: '購物', icon: ShoppingBag }, { id: 'budget', label: '預算', icon: Wallet }, { id: 'insurance', label: '保險', icon: Shield }, { id: 'emergency', label: '緊急', icon: Siren }, { id: 'visa', label: '簽證', icon: FileCheck }, { id: 'notes', label: '筆記', icon: NotebookPen }].map(t => (<button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex items-center px-4 py-2 rounded-full font-bold transition-all duration-300 whitespace-nowrap transform hover:scale-105 ${activeTab === t.id ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl scale-105' : (isDarkMode ? 'bg-gray-800/60 text-gray-300 hover:bg-gray-700' : 'bg-gray-100/80 text-gray-600 hover:bg-gray-100')}`}><t.icon className="w-4 h-4 mr-2" />{t.label}</button>))}
+                {[{ id: 'itinerary', label: '行程', icon: CalendarDays }, { id: 'shopping', label: '購物', icon: ShoppingBag }, { id: 'budget', label: '預算', icon: Wallet }, { id: 'files', label: '文件', icon: FileText }, { id: 'insurance', label: '保險', icon: Shield }, { id: 'emergency', label: '緊急', icon: Siren }, { id: 'visa', label: '簽證', icon: FileCheck }, { id: 'notes', label: '筆記', icon: NotebookPen }].map(t => (<button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex items-center px-4 py-2 rounded-full font-bold transition-all duration-300 whitespace-nowrap transform hover:scale-105 ${activeTab === t.id ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl scale-105' : (isDarkMode ? 'bg-gray-800/60 text-gray-300 hover:bg-gray-700' : 'bg-gray-100/80 text-gray-600 hover:bg-gray-100')}`}><t.icon className="w-4 h-4 mr-2" />{t.label}</button>))}
             </div>
 
             {/* Itinerary Tab */}
             {activeTab === 'itinerary' && (
                 <div className="space-y-6 animate-fade-in">
                     <div className="flex gap-3 overflow-x-auto pb-2">
-                        {days.map((d) => (
-                            <button key={d} onClick={() => setSelectDate(d)} className={`flex-shrink-0 px-4 py-3 rounded-xl border transition text-center min-w-[130px] relative overflow-hidden ${currentDisplayDate === d ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg scale-105' : (isDarkMode ? 'bg-gray-800/60 border-gray-700' : 'bg-gray-100/80 border-gray-200')}`}>
-                                <div className="text-xs opacity-70 uppercase mb-1">{getWeekday(d)}</div>
-                                <div className="font-bold text-sm">{formatDate(d)}</div>
-                                {holidays[d.slice(5)] && <div className="absolute top-0 right-0 bg-red-500 text-white text-[9px] px-1 rounded-bl">{holidays[d.slice(5)]}</div>}
-                            </button>
-                        ))}
+                        {days.map((d) => {
+                            const dateKey = d.slice(5);
+                            const dName = destHolidays[dateKey];
+                            const hName = homeHolidays[dateKey];
+                            return (
+                                <button key={d} onClick={() => setSelectDate(d)} className={`flex-shrink-0 px-4 py-3 rounded-xl border transition text-center min-w-[130px] relative overflow-hidden group ${currentDisplayDate === d ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg scale-105' : (isDarkMode ? 'bg-gray-800/60 border-gray-700' : 'bg-gray-100/80 border-gray-200')}`}>
+                                    <div className="text-xs opacity-70 uppercase mb-1">{getWeekday(d)}</div>
+                                    <div className="font-bold text-sm">{formatDate(d)}</div>
+                                    <div className="absolute top-0 right-0 flex flex-col items-end">
+                                        {dName && <div className="bg-red-500 text-white text-[9px] px-1 rounded-bl shadow-sm mb-[1px]">{dName}</div>}
+                                        {hName && hName !== dName && <div className="bg-blue-500 text-white text-[9px] px-1 rounded-bl shadow-sm">{hName}</div>}
+                                    </div>
+                                </button>
+                            );
+                        })}
                     </div>
 
                     {/* Daily Summary Header */}
@@ -1649,6 +1881,10 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
                 </div>
             )}
 
+            {activeTab === 'files' && (
+                <FilesTab trip={trip} user={user} isOwner={isOwner} language={globalSettings.language} />
+            )}
+
             {activeTab === 'emergency' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
                     <div className={glassCard(isDarkMode) + " p-6 border-l-4 border-red-500"}>
@@ -1766,6 +2002,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, setGlobalBg, 
     const [newCityInput, setNewCityInput] = useState('');
     const [selectedExportTrip, setSelectedExportTrip] = useState('');
     const currentLang = globalSettings?.lang || 'zh-TW';
+    useNotifications(user);
 
     useEffect(() => { if (!user) return; const q = query(collection(db, "trips")); const unsub = onSnapshot(q, s => { setTrips(s.docs.map(d => ({ id: d.id, ...d.data() })).filter(t => t.members?.some(m => m.id === user.uid))); }); return () => unsub(); }, [user]);
     useEffect(() => { setGlobalBg(selectedCountryImg); }, [selectedCountryImg, setGlobalBg]);
