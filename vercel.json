@@ -1,0 +1,2 @@
+# Vercel will automatically expose VITE_ prefixed variables
+# No additional configuration needed - just ensure they're set in Vercel dashboard

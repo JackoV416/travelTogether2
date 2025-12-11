@@ -20,7 +20,7 @@ import {
 // --- 0. Constants & Data ---
 
 const AUTHOR_NAME = "Jamie Kwok";
-const APP_VERSION = "V0.7.3 Beta";
+const APP_VERSION = "V0.7.4 Beta";
 const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 
@@ -596,7 +596,7 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black/60 z-[90] flex items-center justify-center p-4 animate-fade-in" style={{ animation: 'fadeIn 0.2s ease-out' }}>
-            <div className={`w - full max - w - md rounded - 2xl p - 6 shadow - 2xl border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} transform scale - 100`} style={{ animation: 'scaleIn 0.3s ease-out' }}>
+            <div className={`w-full max-w-xl rounded - 2xl p - 6 shadow - 2xl border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} transform scale - 100`} style={{ animation: 'scaleIn 0.3s ease-out' }}>
                 <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><BrainCircuit className="w-5 h-5 text-indigo-500" /> AI 領隊建議</h3>
                 {loading ? <div className="py-10 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-indigo-500" /> 依據 {contextCity} 行程分析中...</div> : (
                     <div className="space-y-4">
@@ -629,7 +629,7 @@ const MemberSettingsModal = ({ isOpen, onClose, members, onUpdateRole, isDarkMod
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black/60 z-[80] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-            <div className={`w - full max - w - sm rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} `}>
+            <div className={`w-full max-w-lg rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} `}>
                 <h3 className="text-xl font-bold mb-4">成員權限管理</h3>
                 <div className="space-y-2">
                     {members.map(m => (
@@ -712,7 +712,7 @@ const InviteModal = ({ isOpen, onClose, tripId, onInvite, isDarkMode }) => {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-            <div className={`w - full max - w - sm rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} `}>
+            <div className={`w-full max-w-lg rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} `}>
                 <h3 className="text-xl font-bold mb-4">邀請成員</h3>
                 <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Google Email" className={inputClasses(isDarkMode) + " mb-3"} />
                 <select value={role} onChange={e => setRole(e.target.value)} className={inputClasses(isDarkMode) + " mb-4"}>
@@ -732,7 +732,7 @@ const TripSettingsModal = ({ isOpen, onClose, trip, onUpdate, isDarkMode }) => {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className={`w - full max - w - md p - 6 rounded - 2xl ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} `}>
+            <div className={`w-full max-w-xl p - 6 rounded - 2xl ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} `}>
                 <h3 className="text-xl font-bold mb-4">行程設定</h3>
                 <div className="space-y-4">
                     <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className={inputClasses(isDarkMode)} placeholder="名稱" />
@@ -789,7 +789,7 @@ const AddActivityModal = ({ isOpen, onClose, onSave, isDarkMode, date, defaultTy
 
     return (
         <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className={`w - full max - w - md p - 6 rounded - 2xl ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} max - h - [90vh] overflow - y - auto custom - scrollbar`}>
+            <div className={`w-full max-w-xl p - 6 rounded - 2xl ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} max - h - [90vh] overflow - y - auto custom - scrollbar`}>
                 <div className="flex items-start justify-between mb-4">
                     <div>
                         <h3 className="font-bold text-lg">{editData ? '編輯行程項目' : '加入行程項目'}</h3>
@@ -847,7 +847,7 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
     const availableCities = (form.countries.length ? form.countries : Object.keys(COUNTRIES_DATA)).flatMap(country => (COUNTRIES_DATA[country]?.cities || []));
     return (
         <div className="fixed inset-0 bg-black/60 z-[85] flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className={`w - full max - w - 2xl rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} `}>
+            <div className={`w-full max-w-3xl rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} `}>
                 <div className="flex justify-between items-center mb-4">
                     <div>
                         <h3 className="text-xl font-bold">建立新行程</h3>
@@ -899,7 +899,7 @@ const ImportTripModal = ({ isOpen, onClose, mode, setMode, inputValue, setInputV
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black/60 z-[85] flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className={`w - full max - w - 2xl rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} `}>
+            <div className={`w-full max-w-3xl rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} `}>
                 <div className="flex justify-between items-center mb-4">
                     <div>
                         <h3 className="text-xl font-bold">匯入行程</h3>
@@ -929,7 +929,7 @@ const ExportTripModal = ({ isOpen, onClose, trips, selectedTripId, setSelectedTr
     const copyData = () => navigator.clipboard.writeText(exportData);
     return (
         <div className="fixed inset-0 bg-black/60 z-[85] flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className={`w - full max - w - 2xl rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} `}>
+            <div className={`w-full max-w-3xl rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} `}>
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold">匯出行程</h3>
                     <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-500/10"><X className="w-4 h-4" /></button>
@@ -960,7 +960,7 @@ const SectionDataModal = ({ isOpen, onClose, mode, section, data, onConfirm, isD
     };
     return (
         <div className="fixed inset-0 bg-black/60 z-[85] flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className={`w - full max - w - 2xl rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} `}>
+            <div className={`w-full max-w-3xl rounded - 2xl p - 6 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} `}>
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold">{mode === 'import' ? '匯入' : '匯出'} {titleMap[section] || ''}</h3>
                     <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-500/10"><X className="w-4 h-4" /></button>
