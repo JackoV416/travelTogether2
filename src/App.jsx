@@ -20,7 +20,7 @@ import {
 // --- 0. Constants & Data ---
 
 const AUTHOR_NAME = "Jamie Kwok";
-const APP_VERSION = "V0.7.0 Beta";
+const APP_VERSION = "V0.7.1 Beta";
 const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 
@@ -520,7 +520,7 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                             <Bell className="w-5 h-5" />
                             {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>}
                         </button>
-                        {showNotif && <div className={`absolute top - 12 right - 0 w - 80 p - 4 rounded - xl shadow - 2xl border z - 50 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} `}>
+                        {showNotif && <div className={`absolute top-12 right-0 w-96 p-4 rounded-xl shadow-2xl border z-50 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                             <h4 className="font-bold px-3 py-2 text-sm border-b border-gray-500/10 mb-2">通知中心</h4>
                             <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-1">
                                 {notifications.length === 0 ? (
@@ -555,20 +555,20 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                                 )
                             ) : <UserCircle className="w-8 h-8" />}
                         </button>
-                        <div className={`absolute top - 10 right - 0 w - 64 pt - 4 transition - all duration - 300 origin - top - right ${hoverMenu ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible'} `}>
-                            <div className={`rounded - xl shadow - 2xl border overflow - hidden ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-800'} `}>
+                        <div className={`absolute top-10 right-0 w-64 pt-4 transition-all duration-300 origin-top-right ${hoverMenu ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible'}`}>
+                            <div className={`rounded-xl shadow-2xl border overflow-hidden ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-800'}`}>
                                 <div className="p-4 border-b border-gray-500/10">
                                     <p className="font-bold truncate">{user?.displayName}</p>
                                     <p className="text-xs opacity-50 truncate">{user?.email}</p>
                                 </div>
                                 <div className="p-2 flex flex-col gap-1">
-                                    <button onClick={() => { setHoverMenu(false); onViewChange('dashboard'); }} className={`flex items - center gap - 3 w - full px - 3 py - 2 text - sm rounded - lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} `}><Home className="w-4 h-4" /> 我的行程</button>
-                                    <button onClick={() => { setHoverMenu(false); onTutorialStart(); }} className={`flex items - center gap - 3 w - full px - 3 py - 2 text - sm rounded - lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} md: hidden`}><MonitorPlay className="w-4 h-4" /> 教學模式</button>
-                                    <button onClick={() => { setHoverMenu(false); onOpenUserSettings(); }} className={`flex items - center gap - 3 w - full px - 3 py - 2 text - sm rounded - lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} `}><Edit3 className="w-4 h-4" /> 個人設定</button>
-                                    <button onClick={() => { setHoverMenu(false); onOpenVersion(); }} className={`flex items - center gap - 3 w - full px - 3 py - 2 text - sm rounded - lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} `}><History className="w-4 h-4" /> 版本資訊</button>
+                                    <button onClick={() => { setHoverMenu(false); onViewChange('dashboard'); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><Home className="w-4 h-4" /> 我的行程</button>
+                                    <button onClick={() => { setHoverMenu(false); onTutorialStart(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} md:hidden`}><MonitorPlay className="w-4 h-4" /> 教學模式</button>
+                                    <button onClick={() => { setHoverMenu(false); onOpenUserSettings(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><Edit3 className="w-4 h-4" /> 個人設定</button>
+                                    <button onClick={() => { setHoverMenu(false); onOpenVersion(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><History className="w-4 h-4" /> 版本資訊</button>
                                     <div className="h-px bg-gray-500/10 my-1"></div>
-                                    <button onClick={toggleDarkMode} className={`flex items - center gap - 3 w - full px - 3 py - 2 text - sm rounded - lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} `}>{isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />} 切換模式</button>
-                                    <button onClick={onLogout} className={`flex items - center gap - 3 w - full px - 3 py - 2 text - sm rounded - lg text - red - 500 transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-red-50'} `}><LogOut className="w-4 h-4" /> 登出</button>
+                                    <button onClick={toggleDarkMode} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>{isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />} 切換模式</button>
+                                    <button onClick={onLogout} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg text-red-500 transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-red-50'}`}><LogOut className="w-4 h-4" /> 登出</button>
                                 </div>
                             </div>
                         </div>
