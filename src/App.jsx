@@ -20,11 +20,23 @@ import {
 // --- 0. Constants & Data ---
 
 const AUTHOR_NAME = "Jamie Kwok";
-const APP_VERSION = "V0.7.8 Beta";
+const APP_VERSION = "V0.8.0 Beta";
 const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 
 const VERSION_HISTORY = [
+    {
+        ver: "V0.8.0",
+        date: "11/12/2025",
+        desc: {
+            "zh-TW": "功能升級與安全性更新",
+            "en": "Feature Upgrade & Security Update"
+        },
+        details: {
+            "zh-TW": "1. 更新所有依賴套件至最新版本（React 19.2.1, Vite 7.2.7）。\n2. 添加初始 Loading 畫面，改善載入體驗。\n3. 實作緩存破壞機制，確保用戶總是看到最新版本。\n4. 優化 SEO 設定，改善搜尋引擎收錄。\n5. 新增構建時間戳記，便於版本追蹤。",
+            "en": "1. Updated all dependencies to latest versions (React 19.2.1, Vite 7.2.7).\n2. Added initial loading screen for better UX.\n3. Implemented cache busting to ensure users always see latest version.\n4. Optimized SEO settings for better search engine indexing.\n5. Added build timestamp for version tracking."
+        }
+    },
     {
         ver: "V0.7.8",
         date: "11/12/2025",
