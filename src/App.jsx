@@ -40,11 +40,23 @@ const CITY_COORDS = {
 // --- 0. Constants & Data ---
 
 const AUTHOR_NAME = "Jamie Kwok";
-const APP_VERSION = "V0.9.0";
+const APP_VERSION = "V0.9.1";
 const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 
 const VERSION_HISTORY = [
+    {
+        ver: "V0.9.1",
+        date: "2025-12-15",
+        desc: {
+            "zh-TW": "版本號更新與小修復",
+            "en": "Version Update & Minor Fixes"
+        },
+        details: {
+            "zh-TW": "1. 更新版本號至 V0.9.1\n2. 修復小錯誤與改進穩定性",
+            "en": "1. Updated version to V0.9.1\n2. Minor bug fixes and stability improvements"
+        }
+    },
     {
         ver: "V0.9.0",
         date: "2025-12-11",
