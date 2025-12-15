@@ -70,147 +70,39 @@ const VERSION_HISTORY = [
         }
     },
     {
-        ver: "V0.8.6",
+        ver: "V0.8.6 - V0.8.0",
         date: "2025-12-11",
         desc: {
-            "zh-TW": "緊急修復與假期邏輯驗證",
-            "en": "Hotfix & Holiday Logic"
+            "zh-TW": "多項功能增強與錯誤修復",
+            "en": "Multiple Feature Enhancements & Bug Fixes"
         },
         details: {
-            "zh-TW": "1. 嚴重錯誤修復：解決 CreateTripModal 未正確閉合導致的應用崩潰 (Unexpected token)。\n2. 修復 ImportTripModal 樣式屬性語法錯誤。\n3. 優化假期顯示邏輯：確保目的地假期數據源正確連接。",
-            "en": "1. CRITICAL FIX: Fixed unclosed tag in CreateTripModal causing crash.\n2. Fixed style syntax error in ImportTripModal.\n3. Verified holiday display logic."
-        }
-    },
-    {
-        ver: "V0.8.5",
-        date: "2025-12-11",
-        desc: {
-            "zh-TW": "彈窗介面與佈局優化",
-            "en": "Dialog & Layout Polish"
-        },
-        details: {
-            "zh-TW": "1. 修復新建行程與項目編輯彈窗 (Modal) 的佈局錯位問題。\n2. 優化操作按鈕排列：改為水平並排顯示，增加操作空間與視覺間距。\n3. 修復部分樣式語法錯誤。",
-            "en": "1. Fixed layout alignment in Create Trip & Edit Item modals.\n2. Improved button layout: Switched to horizontal alignment with proper spacing.\n3. Fixed typo in style classes."
-        }
-    },
-    {
-        ver: "V0.8.4",
-        date: "2025-12-11",
-        desc: {
-            "zh-TW": "UI 樣式與體驗優化",
-            "en": "UI Experience Polish"
-        },
-        details: {
-            "zh-TW": "1. 全面優化下拉選單樣式：確保操作按鈕觸發的選單具有一致的間距 (Margin) 與圓角陰影。\n2. 修復操作細節：提升在不同裝置上的點擊回饋。\n3. 優化通知權限指引。",
-            "en": "1. UI Polish: Fixed margins and styles for all dropdown menus.\n2. Improved click feedback.\n3. Updated notification permission guidance."
-        }
-    },
-    {
-        ver: "V0.8.3",
-        date: "2025-12-11",
-        desc: {
-            "zh-TW": "文件中心、通知系統與雙重假期顯示",
-            "en": "File Center, Notifications & Dual Holiday Display"
-        },
-        details: {
-            "zh-TW": "1. 新增【文件】分頁：支援拖放上傳 PDF/圖片至雲端，集中管理行程單據。\n2. 實作系統級實時通知 (Web Notifications)，即使背景運行也能接收動態。\n3. 優化假期顯示：同時標示目的地 (紅色) 與所在地 (藍色) 假期，方便規劃。\n4. UI 升級：優化操作選單樣式與互動體驗。",
-            "en": "1. New 'Files' tab: Support cloud upload for PDFs/Images.\n2. System-level Web Notifications implemented.\n3. Enhanced Holiday Display: Show both destination (Red) and home (Blue) holidays.\n4. UI Upgrades: Refined menu styles and interactions."
-        }
-    },
-    {
-        ver: "V0.8.2 Beta",
-        date: "2025-12-11",
-        desc: {
-            "zh-TW": "API 服務整合與 AI 領隊升級",
-            "en": "API Integration & AI Upgrades"
-        },
-        details: {
-            "zh-TW": "1. 整合免費匯率 API (ExchangeRate-API) 與天氣 API (Open-Meteo)，實現預算實時轉換與首頁天氣顯示。\n2. AI 領隊功能升級：新增智能模擬服務，提供更精確的在地行程建議與成本估算。\n3. 修復航空公司 Logo 無法顯示問題 (403 Forbidden)，改用 Google Favicon 服務。\n4. 系統優化：解決 Vite 構建緩存問題，提升開發穩定性。",
-            "en": "1. Integrated free Exchange Rate & Weather APIs for real-time budget conversion and weather display.\n2. Upgraded AI Guide: New service logic with better localized suggestions and cost estimates.\n3. Fixed airline logo display issues (403 Forbidden).\n4. System optimization: Resolved Vite cache issues."
-        }
-    },
-    {
-        ver: "V0.8.1",
-        date: "11/12/2025",
-        desc: {
-            "zh-TW": "Loading 介面美化升級",
-            "en": "Enhanced Loading Screen Design"
-        },
-        details: {
-            "zh-TW": "1. 多層旋轉環動畫，提升視覺吸引力。\n2. 添加背景粒子動畫效果。\n3. 飛機圖標脈衝動畫。\n4. 進度條與漸變效果。\n5. 優化色彩方案與排版。",
-            "en": "1. Multi-layer rotating rings with smooth animations.\n2. Added animated background particles.\n3. Airplane icon with pulse animation.\n4. Progress bar with gradient effect.\n5. Improved color scheme and typography."
-        }
-    },
-    {
-        ver: "V0.8.0",
-        date: "11/12/2025",
-        desc: {
-            "zh-TW": "功能升級與安全性更新",
-            "en": "Feature Upgrade & Security Update"
-        },
-        details: {
-            "zh-TW": "1. 更新所有依賴套件至最新版本（React 19.2.1, Vite 7.2.7）。\n2. 添加初始 Loading 畫面，改善載入體驗。\n3. 實作緩存破壞機制，確保用戶總是看到最新版本。\n4. 優化 SEO 設定，改善搜尋引擎收錄。\n5. 新增構建時間戳記，便於版本追蹤。",
-            "en": "1. Updated all dependencies to latest versions (React 19.2.1, Vite 7.2.7).\n2. Added initial loading screen for better UX.\n3. Implemented cache busting to ensure users always see latest version.\n4. Optimized SEO settings for better search engine indexing.\n5. Added build timestamp for version tracking."
+            "zh-TW": "• 修復多個 UI 錯誤與佈局問題\n• 新增文件中心與通知系統\n• 整合匯率與天氣 API\n• 優化載入畫面與動畫效果\n• 多項安全性更新與依賴套件升級",
+            "en": "• Fixed various UI issues and layout problems\n• Added file center and notification system\n• Integrated exchange rate and weather APIs\n• Enhanced loading screens and animations\n• Security updates and dependency upgrades"
         }
     },
     {
         ver: "V0.7.0",
         date: "11/12/2024",
         desc: {
-            "zh-TW": "社交分享、相片庫與安全性強化",
-            "en": "Social Sharing, Photo Gallery & Security Enhancement"
+            "zh-TW": "社交分享與相片功能",
+            "en": "Social Sharing & Photo Features"
         },
         details: {
-            "zh-TW": "1. 新增行程分享至社交媒體功能（WhatsApp、Instagram、Threads）。\n2. 新增相片畫廊：支援多張上傳、地點標記、全螢幕檢視。\n3. 強化安全性：完整的 .gitignore 設定保護敏感資訊。\n4. 新增互動式教學模式與多幣別計算器小工具。\n5. 修正 Firebase 認證配置問題（VITE_ 前綴）。",
-            "en": "1. Added trip sharing to social media (WhatsApp, Instagram, Threads).\n2. Added photo gallery: multi-upload, location tagging, full-screen view.\n3. Enhanced security: comprehensive .gitignore for sensitive data protection.\n4. Added interactive tutorial mode and multi-currency calculator.\n5. Fixed Firebase authentication config (VITE_ prefix)."
+            "zh-TW": "• 新增行程分享至社交媒體\n• 實作相片畫廊與多圖上傳\n• 強化安全性設定\n• 新增互動式教學",
+            "en": "• Added trip sharing to social media\n• Implemented photo gallery with multi-upload\n• Enhanced security settings\n• Added interactive tutorial"
         }
     },
     {
-        ver: "V0.6.1",
-        date: "10/12/2025",
+        ver: "V0.6.x - V0.4.0",
+        date: "11/2024 - 11/2025",
         desc: {
-            "zh-TW": "旅遊資訊中心修正與新功能加入",
-            "en": "Travel Info Hub Fixes & New Features"
+            "zh-TW": "早期版本與基礎功能",
+            "en": "Early Versions & Core Features"
         },
         details: {
-            "zh-TW": "1. 修正旅遊資訊中心的顯示BUG。\n2. 新增建立行程的顯示BUG修正。",
-            "en": "1. Fixed travel information center display bugs.\n2. Fixed trip creation display issues."
-        }
-    },
-    {
-        ver: "V0.6.0",
-        date: "01/12/2025",
-        desc: {
-            "zh-TW": "Beta 版：首頁、AI、簽證、保險、地圖等全方位升級",
-            "en": "Beta: Home, AI, Visa, Insurance, Map Comprehensive Upgrade"
-        },
-        details: {
-            "zh-TW": "1. 所有日期以 DD/MM/YYYY 顯示，建立行程支援多國多城多選。\n2. 首頁卡片新增即時天氣與衣著提示、旅遊資訊中心含更多連結。\n3. 簽證區分公開狀態與個人詳情，教學資料補齊 5 天內容。\n4. AI 領隊提供真實建議，可加入行程與交通推薦。\n5. 機票、交通卡片顯示航空公司 / 交通 Logo，保險提供 AI 建議與 Visit Japan Web 指引。\n6. 每日行程摘要、交通建議、地圖視圖集合全部行程地點。",
-            "en": "1. All dates in DD/MM/YYYY format, multi-country/city trip creation.\n2. Homepage cards with real-time weather & clothing tips, enhanced info hub.\n3. Visa section split into public status & private details, tutorial with 5-day content.\n4. AI guide with real suggestions, trip & transport recommendations.\n5. Flight/transport cards show airline/transport logos, insurance with AI tips & Visit Japan Web guide.\n6. Daily itinerary summary, transport advice, map view with all locations."
-        }
-    },
-    {
-        ver: "V0.5.0",
-        date: "26/11/2025",
-        desc: {
-            "zh-TW": "版本視窗、簽證資訊與彈窗體驗更新",
-            "en": "Version Window, Visa Info & Modal UX Update"
-        },
-        details: {
-            "zh-TW": "1. 新增版本按鈕與詳細紀錄視窗。\n2. 補齊簽證分頁內容與權限顯示。\n3. 優化加入行程等彈窗文案。",
-            "en": "1. Added version button with detailed history window.\n2. Completed visa tab content and permission display.\n3. Improved modal text for adding items."
-        }
-    },
-    {
-        ver: "V0.4.0",
-        date: "26/11/2025",
-        desc: {
-            "zh-TW": "真實東京行程教學、新增項目支援稅務/轉機",
-            "en": "Real Tokyo Tutorial, Tax/Transfer Support"
-        },
-        details: {
-            "zh-TW": "1. 教學模式資料替換為真實東京5日遊。\n2. 新增項目可填寫稅金、退稅、航班轉機。\n3. 緊急資訊根據用戶所在地顯示正確辦事處。",
-            "en": "1. Tutorial mode with real Tokyo 5-day trip data.\n2. New items support tax, tax refund, flight transfer fields.\n3. Emergency info shows correct office based on user location."
+            "zh-TW": "• 初期版本開發與測試\n• 基礎行程規劃功能\n• 地圖與簽證資訊整合\n• 使用者介面優化",
+            "en": "• Initial development and testing\n• Basic trip planning features\n• Map and visa information integration\n• User interface improvements"
         }
     },
 ];
