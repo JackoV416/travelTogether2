@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db, storage } from '../../../firebase';
-import { FileUp, Loader2, FileText, Trash2 } from 'lucide-react';
+import { FileUp, Loader2, FileText, Trash2, Upload } from 'lucide-react';
 
-const FilesTab = ({ trip, user, isOwner, language = "zh-TW" }) => {
+const FilesTab = ({ trip, user, isOwner, language = "zh-TW", onOpenSmartImport }) => {
     const [uploading, setUploading] = useState(false);
     const [files, setFiles] = useState(trip.files || []);
     const fileInputRef = useRef(null);
@@ -102,23 +102,42 @@ const FilesTab = ({ trip, user, isOwner, language = "zh-TW" }) => {
 
     return (
         <div className="animate-fade-in space-y-6">
-            {/* Upload Area */}
+            {/* Smart Import Banner & Upload Area */}
             <div
-                className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer ${dragActive ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-gray-700 hover:border-indigo-400'}`}
+                className={`mb-6 p-8 rounded-2xl border-2 border-dashed transition-all cursor-pointer group flex flex-col items-center justify-center text-center space-y-3 ${dragActive ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-indigo-500/30 bg-indigo-500/5 hover:bg-indigo-500/10'}`}
                 onDragEnter={(e) => { e.preventDefault(); setDragActive(true); }}
                 onDragLeave={(e) => { e.preventDefault(); setDragActive(false); }}
                 onDragOver={(e) => { e.preventDefault(); }}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
+                onDrop={(e) => {
+                    e.preventDefault();
+                    setDragActive(false);
+                    if (onOpenSmartImport) {
+                        onOpenSmartImport();
+                    } else if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                        processUpload(Array.from(e.dataTransfer.files));
+                    }
+                }}
+                onClick={() => {
+                    if (onOpenSmartImport) {
+                        onOpenSmartImport();
+                    } else {
+                        fileInputRef.current?.click();
+                    }
+                }}
             >
                 <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileUpload} />
-                <div className="bg-indigo-100 dark:bg-indigo-900/50 p-4 rounded-full mb-4">
-                    <FileUp className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+                <div className="w-16 h-16 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    {onOpenSmartImport ? <Upload className="w-8 h-8" /> : <FileUp className="w-8 h-8" />}
                 </div>
-                <div className="text-center">
-                    <p className="font-bold text-lg mb-1">{language === 'zh-TW' ? "點擊或拖拉檔案至此上傳" : "Click or drag files here to upload"}</p>
-                    <p className="text-sm opacity-60">{language === 'zh-TW' ? "支援 PDF, JPG, PNG, Excel 等各類文檔" : "Supports PDF, JPG, PNG, Excel, etc."}</p>
+                <div>
+                    <h3 className="text-lg font-bold text-indigo-300">{onOpenSmartImport ? "智能匯入中心" : (language === 'zh-TW' ? "上傳檔案" : "Upload Files")}</h3>
+                    <p className="text-sm opacity-60">
+                        {onOpenSmartImport ? "拖放檔案或點擊此處，自動識別行程、單據或儲存文件" : (language === 'zh-TW' ? "點擊或拖拉檔案至此上傳" : "Click or drag files here")}
+                    </p>
                 </div>
+                <button className="px-6 py-2 rounded-full bg-indigo-600 text-white text-sm font-bold shadow-lg hover:shadow-indigo-500/30">
+                    {language === 'zh-TW' ? "立即開始" : "Start Now"}
+                </button>
                 {uploading && <div className="mt-4 flex items-center gap-2 text-indigo-500"><Loader2 className="animate-spin w-4 h-4" /> Uploading...</div>}
             </div>
 

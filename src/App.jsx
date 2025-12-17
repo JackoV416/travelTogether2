@@ -322,6 +322,14 @@ const INSURANCE_RESOURCES = [
 ];
 
 // 📚 真實度 100% 東京 5 天 4 夜 教學資料
+
+const TRANSPORT_ICONS = {
+    metro: { label: "地鐵", icon: TrainFront, color: "text-indigo-500" },
+    bus: { label: "巴士", icon: BusFront, color: "text-emerald-500" },
+    car: { label: "自駕", icon: Car, color: "text-amber-500" },
+    walk: { label: "步行", icon: Route, color: "text-blue-500" }
+};
+
 const SIMULATION_DATA = {
     id: 'sim', name: "教學：東京 5 天 4 夜自由行", country: "Japan (日本)", city: "Tokyo", startDate: "2025-04-01", endDate: "2025-04-05",
     members: [
@@ -1440,172 +1448,7 @@ const ActiveUsersList = ({ tripId, user, activeTab, language = "zh-TW" }) => {
 };
 
 // --- Files & Attachments Tab ---
-const FilesTab = ({ trip, user, isOwner, language = "zh-TW", onOpenSmartImport }) => {
-    const [uploading, setUploading] = useState(false);
-    const [files, setFiles] = useState(trip.files || []);
-    const fileInputRef = useRef(null);
-    const [dragActive, setDragActive] = useState(false);
 
-    // Sync files from trip data
-    useEffect(() => {
-        setFiles(trip.files || []);
-    }, [trip.files]);
-
-    const handleFileUpload = async (e) => {
-        const selectedFiles = e.target.files ? Array.from(e.target.files) : [];
-        if (selectedFiles.length === 0) return;
-        // Check if we should use smart import for single/multiple files?
-        // For now, let's keep direct upload for "Files" tab but add Smart Import button.
-        await processUpload(selectedFiles);
-    };
-
-    const handleDrop = async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setDragActive(false);
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            // Trigger Smart Import for dropped files if desired
-            // The user wanted "Change to this function".
-            // So dragging here should probably open Smart Import Modal with the file?
-            // But Smart Import Modal expects file input, not dropped file object passed directly immediately unless we modify logic.
-            // Let's just open the modal if they click the big area, or keep this as legacy upload + New Button.
-            // User: "TripDetalis 入面個 文件tab 將佢變為呢個功能" -> Change INTO this feature.
-            // So I should replace the drag/drop logic to open SmartImport (or handle via SmartImport logic).
-            // Passing file to SmartImportModal? 
-            if (onOpenSmartImport) {
-                // We can't easily pass the file to the modal unless we lift state.
-                // Simpler: Just open the modal.
-                onOpenSmartImport();
-            } else {
-                await processUpload(Array.from(e.dataTransfer.files));
-            }
-        }
-    };
-
-    const processUpload = async (fileList) => {
-        if (!user) return alert(language === 'zh-TW' ? "請先登入" : "Please login first");
-        setUploading(true);
-        const newFiles = [];
-
-        try {
-            for (const file of fileList) {
-                // Upload to Firebase Storage
-                // Path: trips/{tripId}/files/{timestamp}_{filename}
-                const timestamp = Date.now();
-                const storageRef = ref(storage, `trips/${trip.id}/files/${timestamp}_${file.name}`);
-                const snapshot = await uploadBytes(storageRef, file);
-                const downloadURL = await getDownloadURL(snapshot.ref);
-
-                newFiles.push({
-                    id: `${timestamp}_${Math.random().toString(36).substr(2, 9)}`,
-                    name: file.name,
-                    size: file.size,
-                    type: file.type,
-                    url: downloadURL,
-                    path: snapshot.metadata.fullPath, // For deletion
-                    uploadedBy: user.displayName || user.email.split('@')[0],
-                    uploadedAt: timestamp
-                });
-            }
-
-            // Update Firestore Trip Document
-            await updateDoc(doc(db, "trips", trip.id), {
-                files: arrayUnion(...newFiles)
-            });
-
-        } catch (error) {
-            console.error("Upload failed", error);
-            alert(language === 'zh-TW' ? "上傳失敗，請重試" : "Upload failed, please try again");
-        } finally {
-            setUploading(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
-        }
-    };
-
-    const handleDeleteFile = async (file) => {
-        if (!confirm(language === 'zh-TW' ? "確定刪除此檔案？" : "Delete this file?")) return;
-        try {
-            // Delete from Storage
-            const fileRef = ref(storage, file.path);
-            await deleteObject(fileRef).catch(err => console.warn("Storage delete failed (maybe already gone)", err));
-
-            // Remove from Firestore
-            // Note: arrayRemove requires exact object match, which is difficult. 
-            // Better to read current files, filter, and update.
-            const newFileList = files.filter(f => f.id !== file.id);
-            await updateDoc(doc(db, "trips", trip.id), { files: newFileList });
-
-        } catch (error) {
-            console.error("Delete failed", error);
-            alert("Delete failed");
-        }
-    };
-
-    const formatSize = (bytes) => {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const dm = 2;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-    };
-
-    const isImage = (type) => type.startsWith('image/');
-
-    return (
-        <div className="animate-fade-in space-y-6">
-            {/* Upload Area */}
-            {/* Smart Import Banner */}
-            <div
-                onClick={onOpenSmartImport}
-                className="mb-6 p-8 rounded-2xl border-2 border-dashed border-indigo-500/30 bg-indigo-500/5 hover:bg-indigo-500/10 transition-all cursor-pointer group flex flex-col items-center justify-center text-center space-y-3"
-            >
-                <div className="w-16 h-16 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Upload className="w-8 h-8" />
-                </div>
-                <div>
-                    <h3 className="text-lg font-bold text-indigo-300">智能匯入中心</h3>
-                    <p className="text-sm opacity-60">拖放檔案或點擊此處，自動識別行程、單據或儲存文件</p>
-                </div>
-                <button className="px-6 py-2 rounded-full bg-indigo-600 text-white text-sm font-bold shadow-lg hover:shadow-indigo-500/30">立即開始</button>
-            </div>
-
-            {/* File List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {files.length === 0 && (
-                    <div className="col-span-full text-center py-10 opacity-50 italic">
-                        {language === 'zh-TW' ? "暫無檔案" : "No files uploaded"}
-                    </div>
-                )}
-                {files.map(file => (
-                    <div key={file.id} className="group relative bg-white dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-lg transition-all flex gap-4 items-start">
-                        <div className="w-16 h-16 flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center overflow-hidden">
-                            {isImage(file.type) ? (
-                                <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
-                            ) : (
-                                <FileText className="w-8 h-8 opacity-50" />
-                            )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <a href={file.url} target="_blank" rel="noopener noreferrer" className="font-bold truncate block hover:text-indigo-500 hover:underline">{file.name}</a>
-                            <div className="text-xs opacity-60 mt-1 flex flex-col gap-0.5">
-                                <span>{formatSize(file.size)} • {file.uploadedBy}</span>
-                                <span>{new Date(file.uploadedAt).toLocaleDateString()}</span>
-                            </div>
-                        </div>
-                        <button
-                            onClick={(e) => { e.stopPropagation(); handleDeleteFile(file); }}
-                            className="absolute top-2 right-2 p-1.5 rounded-full bg-red-50 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100"
-                            title="Delete"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-};
 // --- Trip Detail Wrapper (handles ALL data loading, TripDetailContent only renders when trip is ready) ---
 const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, globalSettings, exchangeRates, onOpenSmartImport, weatherData }) => {
     // ALL hooks in wrapper - consistent on every render
