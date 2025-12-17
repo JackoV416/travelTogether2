@@ -7,6 +7,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Travel Together - 智能旅遊規劃助手，輕鬆規劃您的完美旅程" />
   <meta name="theme-color" content="#1e1b4b" />
+
+  <!-- PWA Support -->
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/pwa-icon.svg" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Travel Together" />
+
   <title>Travel Together | 智能旅遊規劃</title>
   <style>
     /* 初始 Loading 畫面樣式 - 美化版 */
@@ -220,6 +228,19 @@
         }
       }, 300);
     });
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js')
+          .then(function (registration) {
+            console.log('[PWA] Service Worker registered:', registration.scope);
+          })
+          .catch(function (error) {
+            console.log('[PWA] Service Worker registration failed:', error);
+          });
+      });
+    }
   </script>
 </body>
 

@@ -73,3 +73,77 @@ export async function generateAISuggestions(city, existingItems = []) {
     // 隨機選擇 3-4 個建議
     return suggestions.sort(() => 0.5 - Math.random()).slice(0, 4);
 }
+/**
+ * 模擬 AI 視覺識別 (取代真實 API)
+ * @param {File} file 上傳的圖片或 PDF
+ * @returns {Promise<Array>} 解析出的行程項目
+ */
+export const parseTripImage = async (file) => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            // 模擬隨機解析結果
+            const isFlight = file.name.toLowerCase().includes('flight') || Math.random() > 0.7;
+            const isHotel = file.name.toLowerCase().includes('hotel') || Math.random() > 0.7;
+
+            let result = [];
+
+            if (isFlight) {
+                result = [{
+                    name: "前往東京成田機場 (JL736)",
+                    type: "flight",
+                    cost: 4500,
+                    currency: "HKD",
+                    // 刻意留空時間以觸發 AI 建議
+                    details: { location: "HKG -> NRT", desc: "國泰航空 / 日本航空" }
+                }];
+            } else if (isHotel) {
+                result = [{
+                    name: "新宿格拉斯麗酒店 (Godzilla Hotel)",
+                    type: "hotel",
+                    cost: 120000,
+                    currency: "JPY",
+                    details: { location: "Shinjuku", desc: "4 晚住宿" }
+                }];
+            } else {
+                // 預設雜項收據
+                result = [
+                    { name: "便利店宵夜", type: "food", cost: 1200, currency: "JPY", details: { location: "FamilyMart", desc: "炸雞、啤酒" } },
+                    { name: "藥妝店購物", type: "shopping", cost: 5500, currency: "JPY", details: { location: "Matsumotokiyoshi", desc: "免稅品" } }
+                ];
+            }
+
+            // 模擬 AI 建議補全 (Smart Suggestions)
+            result = result.map(item => suggestMissingInfo(item));
+
+            resolve(result);
+        }, 1500); // 模擬處理時間
+    });
+};
+
+/**
+ * AI 智能補全缺失資料
+ * @param {Object} item 
+ * @param {Object} context (可選) 上下文如城市、日期
+ */
+export const suggestMissingInfo = (item, context = {}) => {
+    const newItem = { ...item, aiSuggested: [] };
+
+    // 如果沒有時間，AI 自動建議
+    if (!newItem.time && !newItem.details?.time) {
+        if (newItem.type === 'flight') {
+            newItem.details = { ...newItem.details, time: "10:00" };
+            newItem.aiSuggested.push('time');
+        } else if (newItem.type === 'food') {
+            newItem.details = { ...newItem.details, time: "12:30" };
+            newItem.aiSuggested.push('time');
+        } else if (newItem.type === 'hotel') {
+            newItem.details = { ...newItem.details, time: "15:00" }; // Check-in time
+            newItem.aiSuggested.push('time');
+        } else {
+            newItem.details = { ...newItem.details, time: "09:00" };
+            newItem.aiSuggested.push('time');
+        }
+    }
+
+    return newItem;
+};

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e1b4b"/>
+      <stop offset="100%" style="stop-color:#6366f1"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="64" fill="url(#bg)"/>
+  <g transform="translate(96, 128)">
+    <path d="M160 0L280 80L160 160L40 80L160 0Z" fill="white" opacity="0.9"/>
+    <path d="M160 60L240 100L160 140L80 100L160 60Z" fill="white" opacity="0.7"/>
+    <path d="M100 180L160 120L220 180" stroke="white" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="160" cy="200" r="40" fill="none" stroke="white" stroke-width="8"/>
+    <circle cx="160" cy="200" r="12" fill="white"/>
+  </g>
+  <text x="256" y="420" text-anchor="middle" font-family="system-ui, sans-serif" font-size="48" font-weight="bold" fill="white">Travel</text>
+</svg>

@@ -55,3 +55,7 @@ firestore-debug.log
 # OS
 Thumbs.db
 Desktop.ini
+
+# Markdown (除咗 README.md)
+*.md
+!README.md

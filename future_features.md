@@ -1,37 +1,379 @@
-# Future Features & Roadmap
+# Future Features & Version History
 
-## ✅ Recently Completed (V0.6.1)
-- Fixed duplicate file upload section in shopping tab
-- Improved UI/UX with modern animations and gradients
-- Enhanced button hover effects and transitions
-- Added custom scrollbar styling
-- Improved modal animations (fade-in, scale effects)
+> 最後更新：2025-12-17  
+> 當前版本：V0.15.0 Release Candidate
 
-## 🔥 High Priority (Next Release)
-- **AI Shopping Suggestions**: Intelligent product recommendations based on destination
-- **Enhanced Tutorial Mode**: Step-by-step guided tour with interactive tooltips
-- **Cloud File Upload**: Upload receipts and documents to cloud storage
-- **Advanced PDF Export**: Better formatting with images and custom branding
+---
 
-## 📋 Medium Priority
-- **Insurance Grouping**: Separate local/destination insurance categories
-- **Detailed Emergency Info**: More comprehensive emergency contacts and procedures
-- **Offline Mode**: Access trip data without internet connection
-- **Multi-currency Calculator**: Real-time exchange rates with calculator widget
+## 📋 版本記錄 (Version History)
 
-## 💡 Future Ideas
-- **CSV Import/Export**: Multi-field validation for shopping and budget data
-- **Collaboration Features**: Real-time editing indicators and chat
-- **Packing List Manager**: Smart packing suggestions based on weather and trip duration
-- **Photo Gallery**: Trip photo albums with location tagging
-- **Expense Analytics**: Charts and insights for spending patterns
-- **Integration with Booking Platforms**: Direct links to hotels, flights on booking sites
-- **Trip Sharing**: Public trip itineraries that can be cloned by others
-- **Mobile App**: Native iOS/Android applications
+### V0.15.0 RC (Release Candidate) - 2025-12-17
+**主題：VibeCode 3.0 - 完整組件拆分 + AI 客製化 + 即時翻譯 + 多格式匯出**
 
-## 🔧 Technical Improvements
-- Add comprehensive test coverage
-- Implement error boundaries for better error handling
-- Optimize bundle size and performance
-- Add progressive web app (PWA) capabilities
-- Implement server-side rendering (SSR) for better SEO
+---
+
+#### 🏗️ 組件拆分架構 (Component Restructure)
+
+**目標**：將 2500+ 行 God Component (`App.jsx`) 拆分成可維護的模組化組件
+
+```
+src/
+├── App.jsx                     # 主入口 (~300 lines)
+├── components/
+│   ├── TripDetail/
+│   │   ├── index.jsx           # TripDetail 主組件
+│   │   ├── TripDetailContent.jsx
+│   │   ├── TripHeader.jsx
+│   │   ├── TabNavigation.jsx
+│   │   └── tabs/
+│   │       ├── ItineraryTab.jsx
+│   │       ├── ShoppingTab.jsx
+│   │       ├── BudgetTab.jsx
+│   │       ├── FilesTab.jsx
+│   │       ├── InsuranceTab.jsx
+│   │       ├── EmergencyTab.jsx
+│   │       ├── VisaTab.jsx
+│   │       └── NotesTab.jsx
+│   │
+│   ├── Dashboard/
+│   │   ├── index.jsx           # Dashboard 主組件
+│   │   ├── TripCard.jsx
+│   │   ├── CreateTripModal.jsx
+│   │   └── ExportModal.jsx
+│   │
+│   ├── Modals/
+│   │   ├── AIGeminiModal.jsx
+│   │   ├── InviteModal.jsx
+│   │   ├── TripSettingsModal.jsx
+│   │   └── SectionDataModal.jsx
+│   │
+│   ├── Shared/
+│   │   ├── GlassCard.jsx
+│   │   ├── Navbar.jsx
+│   │   ├── ActiveUsersList.jsx
+│   │   └── LoadingSpinner.jsx
+│   │
+│   └── Landing/
+│       └── LandingPage.jsx
+│
+├── hooks/
+│   ├── useNotifications.js
+│   ├── useExchangeRates.js
+│   ├── useWeather.js
+│   └── useTripData.js
+│
+├── services/
+│   ├── ai.js                   # (existing)
+│   ├── exchangeRate.js         # (existing)
+│   ├── weather.js              # (existing)
+│   ├── translation.js          # (V0.15 NEW)
+│   └── pdfExport.js            # (V0.15 NEW)
+│
+├── utils/
+│   ├── dateUtils.js
+│   ├── currencyUtils.js
+│   ├── countryData.js
+│   └── holidayData.js
+│
+└── constants/
+    ├── countries.js
+    ├── currencies.js
+    └── simulationData.js
+```
+
+---
+
+#### 🚀 AI 規劃核心 (AI Core)
+- **`generateItineraryByVibe` 函式**：支援 5+ 非地理參數輸入（情緒、預算、同行人數等）
+- **路線動態調整邏輯**：基於即時交通/天氣數據，自動建議替代方案
+- **TripDetail 重構**：徹底解決 Hooks order violation（分拆為獨立檔案）
+
+---
+
+#### 🌐 實用性與翻譯 (Utility & Translation)
+- **PWA 即時翻譯模組**：對話翻譯（語音輸入/輸出）+ 景點文字一鍵翻譯
+- **離線翻譯功能**：500+ 常用旅遊詞彙 PWA 離線模式支援
+- **React 18.3.1 穩定版**：完整 Hooks Rules 遵循
+
+---
+
+#### 📤 匯出與分享 (Export & Sharing)
+- **`exportToBeautifulPDF` 函式**：3 種排版模板（簡約、文青、家庭）
+- **專業 PDF 排版**：美觀設計，支援品牌自訂
+- **iCal 匯出**：行程轉換為日曆格式，供 Google/Apple Calendar 匯入
+
+---
+
+#### ⚙️ 技術規範
+- **效能要求**：PDF 生成 / AI 優化延遲 < 5 秒
+- **測試覆蓋**：AI 核心、翻譯模組、PDF 匯出完整單元測試
+- **程式碼風格**：嚴格遵循 ESLint 規範
+
+---
+
+#### 📋 拆分實施步驟 (Implementation Steps)
+
+| 階段 | 任務 | 優先級 | 狀態 |
+|-----|------|-------|------|
+| 1 | 創建 `src/components/` 目錄結構 | 🔴 Critical | ⏳ 待開始 |
+| 2 | 抽取 `TripDetail` + `TripDetailContent` 到獨立檔案 | 🔴 Critical | ⏳ 待開始 |
+| 3 | 抽取各 Tab 組件 (Itinerary/Shopping/Budget...) | 🔴 Critical | ⏳ 待開始 |
+| 4 | 抽取 Dashboard 組件 | 🟡 High | ⏳ 待開始 |
+| 5 | 抽取 Modal 組件 | 🟡 High | ⏳ 待開始 |
+| 6 | 創建 `src/hooks/` custom hooks | 🟢 Medium | ⏳ 待開始 |
+| 7 | 抽取 utils 同 constants | 🟢 Medium | ⏳ 待開始 |
+| 8 | 新增 Translation service | 🟡 High | ⏳ 待開始 |
+| 9 | 新增 PDF Export service | 🟡 High | ⏳ 待開始 |
+| 10 | 整合測試 + Bug 修復 | 🔴 Critical | ⏳ 待開始 |
+
+---
+
+#### ✅ 已完成修復 (V0.15)
+- [x] TripDetail Hooks order violation（已重構 wrapper/content 分離）
+- [x] 日期格式空格問題（`formatDate` 函數）
+- [x] 假期顯示問題（改用 `countryInfo.tz`）
+- [x] 行程 item UI 升級（拖拉手柄、序號標籤、類型顏色）
+- [x] 地圖按鈕暗黑模式顏色
+- [x] 降級 react-router-dom 到 v6.28.2
+
+#### ⏳ 待處理
+- [ ] FilesTab 拆分到獨立檔案
+- [ ] ActiveUsersList realtime 優化
+- [ ] Dashboard 組件拆分
+
+
+
+---
+
+### V0.14.2 - 2025-12-16
+**主題：匯出匯入系統同UI美觀度提升版**
+
+#### ✨ 新功能
+- 📤 **多格式匯出系統**：純文字、JSON、PDF、圖片格式匯出（主頁同TripDetails）
+- 📥 **智能匯入系統**：支持多格式檔案上傳，智慧數據解析同映射
+- 📅 **日期選擇器統一升級**：顯示格式統一為DD/MM/YYYY，同一視窗選擇start/end date
+- 🔍 **目的地搜尋系統**：國家城市顯示更多選項，即時搜尋篩選功能
+- 📂 **TripDetails更仔細分類**：預算、購物清單、交通等子分類
+- 🏠 **旅遊規劃中心升級**：真實資訊整合，即時貨幣兌換功能移至主頁
+- 🔄 **重新設計主頁佈局**：更直觀的導航結構，個人化儀表板
+
+#### 🎨 UI/UX 改進
+- 建立新行程介面升級：加大執美觀度設計，更好的視覺層次
+- ✅ V0.14.0/V0.14.1功能驗證：確保所有功能已實際安裝
+
+---
+
+### V0.14.1 - 2025-12-16
+**主題：UI修正同用戶體驗大幅改善版**
+
+#### � Bug修正
+- 修正所有UI間距問題：修復menu無margin等
+- 🏖️ 假期顯示修正：TripDetails顯示目的地假期，教學模式添加雙重假期提醒
+
+#### 🌤️ 天氣系統
+- 天氣系統真實化：替換假天氣數據為真實Open-Meteo API
+- 📊 智能行程摘要系統：整個旅程準確天氣預測，每日準確行程提示
+
+#### 🎨 UI/UX
+- 增強行程列表：自動交通選項建議，更清晰的項目分類
+- 📍 旅遊規劃中心升級：真實資訊整合，即時貨幣兌換功能
+- 🔔 真實提醒系統：行程、天氣、航班提醒
+
+#### ⚡ 性能
+- 無限免費API更新：移除使用限制，優化性能
+- ♿ 無障礙功能：鍵盤導航、螢幕閱讀器支援
+
+---
+
+### V0.14.0 - 2025-12-16
+**主題：AI助手強化版，智能交通同行程分析**
+
+#### 🤖 AI 功能
+- 🚀 TripDetails AI助手分類百分比功能：顯示不同項目類型分佈圖表
+- 🗺️ 智能交通選項系統：根據景點自動生成交通建議，支持多選
+
+#### 🎯 旅行規劃
+- 旅行選項多選功能：按熱門程度排序的旅行偏好設定
+- 🔧 重構God Component：改善代碼可維護性
+- 🎨 Modal狀態管理優化：修復關閉後狀態未reset問題
+
+---
+
+### V0.13.0 - 2025-12-15
+**主題：多語言支援上線，優化手機UI**
+
+#### 🌏 國際化
+- 繁體中文/英文雙語完整支援
+- 所有 UI 元素翻譯
+- 日期格式本地化
+
+#### 📱 移動端
+- 響應式設計全面優化
+- 觸控操作改進
+- 手機端 UI 專屬優化
+
+---
+
+### V0.12.0 - 2025-11-20
+**主題：分帳功能強化，新增分享行程連結**
+
+#### 👥 協作
+- 分享行程連結
+- 多人即時編輯
+- 成員權限管理
+
+#### 💰 分帳系統
+- 自動計算分帳（誰付多少、分類統計）
+- 多幣種支援
+- 即時匯率轉換台幣/外幣
+
+---
+
+### V0.11.0 - 2025-10-10
+**主題：核心功能完成，PWA 模式正式上線**
+
+#### ✅ 核心功能
+- 行程規劃、地圖導航、天氣顯示
+- 行李/必買清單、記帳本
+- PWA 模式，加到手機桌面即成專屬旅遊 App
+
+---
+
+### V0.10.0 - 2025-09-01
+**主題：Beta 版開放測試**
+
+#### 🚀 初始版本
+- 智能行程產生
+- Google Maps 整合
+- 每日拖曳調整
+- 登入後即可開始你的完美旅程 ✈️
+
+---
+
+### V0.9.1 - V0.9.0 - 2025-12-11
+
+**主題：AI 智能領隊與 UI 重製**
+
+#### 🎨 UI 全面升級
+- Glassmorphism 玻璃擬態設計
+- 全新配色方案
+- 動畫效果優化
+
+#### 🤖 AI 領隊
+- 行程智能規劃
+- 交通方式分析
+- 預算智能預估
+
+---
+
+## 🔥 即將推出 (Upcoming Features)
+
+### High Priority
+- [ ] **Complete UI Overhaul**: Revise entire interface for aesthetic consistency (Post-V15).
+- [ ] **PWA 支援**：離線模式、桌面安裝
+- [ ] **進階 PDF 匯出**：自訂品牌、圖片整合
+- [ ] **雲端檔案上傳**：收據、文件雲端儲存
+- [ ] **AI 購物建議**：基於目的地的智能商品推薦
+- [ ] **AI 自動生成行程名稱**：根據地點日期自動改名 (User Request)
+- [ ] **無時區差別顯示**：日期時間顯示自動本地化調整 (排期最後線)
+
+### Medium Priority
+- [ ] **保險分組功能**：本地/目的地保險分類
+- [ ] **詳細緊急資訊**：更完整的緊急聯絡資料
+- [ ] **多幣種計算器**：即時匯率計算小工具
+- [ ] **互動式教學**：Step-by-step 引導
+
+### Future Ideas
+- [ ] **打包清單管理**：基於天氣的智能打包建議
+- [ ] **相片圖庫**：行程照片集合與地點標記
+- [ ] **支出分析圖表**：消費模式洞察
+- [ ] **訂房平台整合**：直連酒店、機票訂購網站
+- [ ] **公開行程分享**：讓其他用戶複製你的行程
+- [ ] **原生 Mobile App**：iOS/Android 應用程式
+
+---
+
+## 🔧 技術債務 (Technical Debt)
+
+### Critical
+- [x] ~~修復 React 19 Hooks compatibility~~
+- [x] ~~升級 Vite 7~~
+- [ ] 重構 God Component (App.jsx 過大)
+- [ ] 實作 Error Boundaries
+
+### Important
+- [ ] 完整測試覆蓋率
+- [ ] 優化 Bundle Size
+- [ ] 實作 SSR (Server-Side Rendering)
+- [ ] Code splitting 優化
+
+### Nice to Have
+- [ ] TypeScript 遷移
+- [ ] Storybook 組件文檔
+- [ ] E2E 測試
+- [ ] 性能監控整合
+
+---
+
+## 📊 已知問題 (Known Issues)
+
+### 已修復
+- ✅ TripDetail 白屏問題（V0.15.0 RC）
+- ✅ React Hooks order violation（V0.15.0 RC）
+- ✅ Dependencies version mismatch（V0.15.0 RC）
+
+### 進行中
+- 🔄 FilesTab component 重構
+- 🔄 ActiveUsersList realtime 優化
+
+### 待處理
+- ⏳ 大檔案上傳性能優化
+- ⏳ 離線模式支援
+- ⏳ 多人同時編輯衝突處理
+
+---
+
+## 🎯 開發路線圖 (Roadmap)
+
+### 2025 Q1
+- ✅ React 19 升級
+- ✅ Vite 7 整合
+- ⏳ PWA 功能
+- ⏳ 離線模式
+
+### 2025 Q2
+- TypeScript 遷移
+- 組件庫重構
+- E2E 測試建立
+- 性能優化
+
+### 2025 Q3
+- Mobile App Beta
+- 訂房平台整合
+- 進階 AI 功能
+- 社群分享功能
+
+### 2025 Q4
+- 1.0 正式版發布
+- 完整文檔
+- 開發者 API
+- 企業版功能
+
+---
+
+**Maintained by**: Travel Together Team  
+**Last Updated**: 2025-12-17 10:45 HKT
+
+### Low Priority / Backlog
+- [ ] **Threads Vibe Coding Ideas 整合**: 整合 Threads Vibe Coding Ideas (Travel Planning App Integration)
+- [ ] **智能排期更新系統 (Smart Schedule Auto-Adjustment V1.0)**: 
+    - **資料煉金 (Data Enrichment)**: 自動分析粗略行程，補完遺漏（交通時間、建議活動/餐廳、目的地天氣注意事項）
+    - **自動拆解樞紐 (Hub Splitting)**: 將行程自動分成每日/城市/主要樞紐
+    - **補上移動卡 (Transport Injection)**: 自動插入交通建議（步行、公共交通、駕車時間估計）
+    - **計算時間推擠（動態排期更新）**: 拖拽調整/改變時間/新增項目時，自動推擠後續行程，避免時間衝突
+    - **UI 強化**: 卡片式拖拽重排、時間軸視圖（Timeline）、互動地圖顯示路線、離線編輯同步
+    - **PWA 增強**: 完善 manifest.json、icons、service worker；IndexedDB 資料持久化
+- [ ] **AI 助手進階 (Smart AI Assistant V2.0)**:
+    - **用戶指定建議選項**: 根據用戶偏好（預算、興趣、體力）生成個人化推薦
+    - **更智慧化選項**: 根據天氣、節日、人流預測調整建議
+    - **創新功能**: 語音輸入行程、圖片辨識景點、即時翻譯整合
