@@ -90,10 +90,20 @@ export const INSURANCE_RESOURCES = [
 ];
 
 export const AUTHOR_NAME = "Jamie Kwok";
-export const APP_VERSION = "V0.16.0-Beta";
+export const APP_VERSION = "V0.16.1";
 
 
 export const VERSION_HISTORY = [
+    {
+        version: "V0.16.1",
+        date: "2025-12-17",
+        changes: [
+            "⚡️ 效能優化: 重構行程與檔案分頁組件",
+            "🔧 ItineraryTab: 獨立組件化",
+            "📂 FilesTab: 優化檔案管理介面",
+            "📱 PWA: 更新緩存策略"
+        ]
+    },
     {
         ver: "V0.16.0-Beta",
         date: "2025-12-17",

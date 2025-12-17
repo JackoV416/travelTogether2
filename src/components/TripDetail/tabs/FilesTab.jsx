@@ -1,5 +1,9 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { db, storage } from '../../../firebase';
+import { FileUp, Loader2, FileText, Trash2 } from 'lucide-react';
 
-// --- Files & Attachments Tab ---
 const FilesTab = ({ trip, user, isOwner, language = "zh-TW" }) => {
     const [uploading, setUploading] = useState(false);
     const [files, setFiles] = useState(trip.files || []);
@@ -154,3 +158,5 @@ const FilesTab = ({ trip, user, isOwner, language = "zh-TW" }) => {
         </div>
     );
 };
+
+export default FilesTab;
