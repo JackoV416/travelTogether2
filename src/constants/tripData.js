@@ -90,10 +90,22 @@ export const INSURANCE_RESOURCES = [
 ];
 
 export const AUTHOR_NAME = "Jamie Kwok";
-export const APP_VERSION = "V0.15.0-RC";
+export const APP_VERSION = "V0.15.1-Beta";
 
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V0.15.1-Beta",
+        date: "2025-12-17",
+        desc: {
+            "zh-TW": "PWA + 組件重構 + 功能完善",
+            "en": "PWA + Component Refactoring + Feature Polish"
+        },
+        details: {
+            "zh-TW": "1. PWA 配置：manifest.json / service worker / 可安裝\n2. Modal 組件拆分：10 個獨立組件\n3. 多語言修復：.language 一致性\n4. Split Bill 驗證：分帳邏輯測試",
+            "en": "1. PWA Setup: manifest.json / service worker / installable\n2. Modal Refactoring: 10 independent components\n3. Multi-language Fix: .language consistency\n4. Split Bill Validation: debt logic testing"
+        }
+    },
     {
         ver: "V0.9.1",
         date: "2025-12-15",
