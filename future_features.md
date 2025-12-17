@@ -1,7 +1,7 @@
 # Future Features & Version History
 
-> 最後更新：2025-12-17  
-> 當前版本：V0.15.0 Release Candidate
+> 最後更新：2025-12-17 17:10 HKT  
+> 當前版本：V0.16.0-Beta (Component Refactoring)
 
 ---
 
@@ -266,30 +266,63 @@ src/
 
 ---
 
-## 🔥 即將推出 (Upcoming Features)
+## 🔥 未完成功能 (按版本編排)
 
-### High Priority
-- [ ] **Complete UI Overhaul**: Revise entire interface for aesthetic consistency (Post-V15).
-- [ ] **PWA 支援**：離線模式、桌面安裝
+### V0.16.0 - 組件重構 + PWA (Current Sprint)
+- [x] TripDetail Tabs 抽取 (7 個組件)
+- [x] App.jsx 減少 187 行
+- [ ] ItineraryTab 抽取 (最複雜)
+- [ ] Dashboard 組件拆分
+- [ ] 完整 PWA 支援 (離線模式、桌面安裝)
+- [ ] FilesTab component 重構
+- [ ] Service Worker 優化
+
+---
+
+### V0.17.0 - AI 智能強化
+- [ ] **AI 自動生成行程名稱**：根據地點日期自動改名
+- [ ] **AI 購物建議**：基於目的地的智能商品推薦
+- [ ] **智能排期更新系統 V1.0**：
+  - 資料煉金 (Data Enrichment)
+  - 自動拆解樞紐 (Hub Splitting)
+  - 補上移動卡 (Transport Injection)
+  - 計算時間推擠 (動態排期更新)
+- [ ] **用戶指定建議選項**：根據偏好生成個人化推薦
+
+---
+
+### V0.18.0 - 匯出 + 分享
 - [ ] **進階 PDF 匯出**：自訂品牌、圖片整合
 - [ ] **雲端檔案上傳**：收據、文件雲端儲存
-- [ ] **AI 購物建議**：基於目的地的智能商品推薦
-- [ ] **AI 自動生成行程名稱**：根據地點日期自動改名 (User Request)
-- [ ] **無時區差別顯示**：日期時間顯示自動本地化調整 (排期最後線)
+- [ ] **公開行程分享**：讓其他用戶複製行程
+- [ ] **iCal 匯出**：行程轉換為日曆格式
 
-### Medium Priority
+---
+
+### V0.19.0 - 國際化 + 無障礙
+- [ ] **無時區差別顯示**：日期時間自動本地化調整
 - [ ] **保險分組功能**：本地/目的地保險分類
 - [ ] **詳細緊急資訊**：更完整的緊急聯絡資料
 - [ ] **多幣種計算器**：即時匯率計算小工具
 - [ ] **互動式教學**：Step-by-step 引導
 
-### Future Ideas
+---
+
+### V1.0.0 - 正式版 (2025 Q4 Target)
+- [ ] **Complete UI Overhaul**：全面界面美化
 - [ ] **打包清單管理**：基於天氣的智能打包建議
 - [ ] **相片圖庫**：行程照片集合與地點標記
 - [ ] **支出分析圖表**：消費模式洞察
 - [ ] **訂房平台整合**：直連酒店、機票訂購網站
-- [ ] **公開行程分享**：讓其他用戶複製你的行程
+
+---
+
+### V1.1.0+ (Future)
 - [ ] **原生 Mobile App**：iOS/Android 應用程式
+- [ ] **Threads Vibe Coding Ideas 整合**
+- [ ] **AI 助手 V2.0**：語音輸入、圖片辨識、即時翻譯
+- [ ] **開發者 API**
+- [ ] **企業版功能**
 
 ---
 
@@ -362,18 +395,4 @@ src/
 ---
 
 **Maintained by**: Travel Together Team  
-**Last Updated**: 2025-12-17 10:45 HKT
-
-### Low Priority / Backlog
-- [ ] **Threads Vibe Coding Ideas 整合**: 整合 Threads Vibe Coding Ideas (Travel Planning App Integration)
-- [ ] **智能排期更新系統 (Smart Schedule Auto-Adjustment V1.0)**: 
-    - **資料煉金 (Data Enrichment)**: 自動分析粗略行程，補完遺漏（交通時間、建議活動/餐廳、目的地天氣注意事項）
-    - **自動拆解樞紐 (Hub Splitting)**: 將行程自動分成每日/城市/主要樞紐
-    - **補上移動卡 (Transport Injection)**: 自動插入交通建議（步行、公共交通、駕車時間估計）
-    - **計算時間推擠（動態排期更新）**: 拖拽調整/改變時間/新增項目時，自動推擠後續行程，避免時間衝突
-    - **UI 強化**: 卡片式拖拽重排、時間軸視圖（Timeline）、互動地圖顯示路線、離線編輯同步
-    - **PWA 增強**: 完善 manifest.json、icons、service worker；IndexedDB 資料持久化
-- [ ] **AI 助手進階 (Smart AI Assistant V2.0)**:
-    - **用戶指定建議選項**: 根據用戶偏好（預算、興趣、體力）生成個人化推薦
-    - **更智慧化選項**: 根據天氣、節日、人流預測調整建議
-    - **創新功能**: 語音輸入行程、圖片辨識景點、即時翻譯整合
+**Last Updated**: 2025-12-17 17:10 HKT
