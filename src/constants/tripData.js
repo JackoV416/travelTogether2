@@ -95,14 +95,16 @@ export const APP_VERSION = "V0.16.1";
 
 export const VERSION_HISTORY = [
     {
-        version: "V0.16.1",
+        ver: "V0.16.1",
         date: "2025-12-17",
-        changes: [
-            "⚡️ 效能優化: 重構行程與檔案分頁組件",
-            "🔧 ItineraryTab: 獨立組件化",
-            "📂 FilesTab: 優化檔案管理介面",
-            "📱 PWA: 更新緩存策略"
-        ]
+        desc: {
+            "zh-TW": "效能優化 + 組件重構",
+            "en": "Performance Optimization + Refactoring"
+        },
+        details: {
+            "zh-TW": "• ItineraryTab: 獨立組件化，提升維護性\n• FilesTab: 上傳介面優化與智能匯入整合\n• PWA: 更新緩存策略，提升離線體驗\n• Code Cleanup: 移除冗餘代碼",
+            "en": "• ItineraryTab: Extracted for maintainability\n• FilesTab: Optimized upload UI with Smart Import\n• PWA: Updated cache strategy\n• Code Cleanup: Removed redundancy"
+        }
     },
     {
         ver: "V0.16.0-Beta",
