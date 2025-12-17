@@ -14,6 +14,7 @@ import TripExportImportModal from './components/Modals/TripExportImportModal';
 import SmartImportModal from './components/Modals/SmartImportModal';
 import { useNotifications } from './hooks/useNotifications';
 import NotificationSystem from './components/Shared/NotificationSystem';
+import { NotesTab, EmergencyTab, InsuranceTab, BudgetTab, CurrencyTab, ShoppingTab, VisaTab } from './components/TripDetail/tabs';
 
 // 主要城市坐標 (用於天氣功能)
 const CITY_COORDS = {
@@ -2249,259 +2250,79 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
             )}
 
             {activeTab === 'insurance' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
-                    <div className={glassCard(isDarkMode) + " p-6"}>
-                        <h3 className="font-bold mb-4 flex gap-2"><Lock className="w-5 h-5" /> 私人保險 (僅自己可見)</h3>
-                        <div className="space-y-4">
-                            <input value={myInsurance.provider || ''} onChange={e => setMyInsurance({ ...myInsurance, provider: e.target.value })} placeholder="保險公司" className={inputClasses(isDarkMode)} />
-                            <input value={myInsurance.policyNo || ''} onChange={e => setMyInsurance({ ...myInsurance, policyNo: e.target.value })} placeholder="保單號碼" className={inputClasses(isDarkMode)} />
-                            <input value={myInsurance.phone || ''} onChange={e => setMyInsurance({ ...myInsurance, phone: e.target.value })} placeholder="緊急聯絡電話" className={inputClasses(isDarkMode)} />
-                            <button onClick={handleSaveInsurance} className={buttonPrimary}>儲存資料</button>
-                        </div>
-                    </div>
-                    <div className={glassCard(isDarkMode) + " p-6"}>
-                        <h3 className="font-bold mb-4 flex gap-2"><Shield className="w-5 h-5" /> 建議與狀態</h3>
-                        <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-sm mb-4">{countryInfo.insuranceInfo}</div>
-                        <div className="flex gap-2 flex-wrap mb-4">{INSURANCE_SUGGESTIONS[globalSettings.region]?.map(s => <span key={s} className="px-3 py-1 bg-white/10 border rounded-full text-sm">{s}</span>)}</div>
-                        <div className="space-y-2">
-                            {INSURANCE_RESOURCES.filter(item => item.region === globalSettings.region || item.region === 'Global').map(item => (
-                                <a key={item.title} href={item.url} target="_blank" className="flex items-center justify-between text-sm px-3 py-2 rounded-lg border border-white/10 hover:bg-white/5 transition">
-                                    <span>{item.title}</span>
-                                    <ArrowUpRight className="w-4 h-4 opacity-60" />
-                                </a>
-                            ))}
-                        </div>
-                        <div className="text-[11px] opacity-60 mt-3">AI 建議：依所在地先完成 Visit Japan Web 等官方登錄，再補上涵蓋醫療與航班延誤的保單。</div>
-                    </div>
-                </div>
+                <InsuranceTab
+                    isDarkMode={isDarkMode}
+                    countryInfo={countryInfo}
+                    globalSettings={globalSettings}
+                    myInsurance={myInsurance}
+                    setMyInsurance={setMyInsurance}
+                    onSaveInsurance={handleSaveInsurance}
+                    insuranceSuggestions={INSURANCE_SUGGESTIONS}
+                    insuranceResources={INSURANCE_RESOURCES}
+                    inputClasses={inputClasses}
+                    buttonPrimary={buttonPrimary}
+                    glassCard={glassCard}
+                />
             )}
 
             {activeTab === 'visa' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
-                    <div className={glassCard(isDarkMode) + " p-6"}>
-                        <h3 className="font-bold mb-4 flex gap-2">
-                            <FileCheck className="w-5 h-5" /> 目的地入境與簽證資訊
-                        </h3>
-                        <div className="text-sm mb-3">
-                            <div className="font-semibold mb-1">{displayCountry} {displayCity}</div>
-                            <div className="opacity-80">
-                                {countryInfo.entryInfo || '請依照官方網站最新規定辦理入境／簽證。'}
-                            </div>
-                        </div>
-                        <div className="mt-3 text-xs opacity-70">
-                            提醒：實際入境規定可能隨時間變動，請於出發前再次確認航空公司與官方網站資訊。
-                        </div>
-                    </div>
-                    <div className={glassCard(isDarkMode) + " p-6 space-y-5"}>
-                        <div>
-                            <h3 className="font-bold mb-2 flex gap-2">
-                                <FileText className="w-5 h-5" /> 成員簽證狀態（所有人可見）
-                            </h3>
-                            {(() => {
-                                const visaStore = trip.visa || {};
-                                const entries = Object.entries(visaStore).filter(([key]) => !['default'].includes(key));
-                                if (entries.length === 0) return <div className="text-sm opacity-60">尚未有人更新簽證狀態。</div>;
-                                return (
-                                    <div className="space-y-3">
-                                        {entries.map(([memberId, info]) => {
-                                            const member = trip.members?.find(m => m.id === memberId) || { name: memberId };
-                                            return (
-                                                <div key={memberId} className="p-3 rounded-xl border border-white/10 bg-white/5">
-                                                    <div className="flex justify-between text-sm font-bold">
-                                                        <span>{member.name}</span>
-                                                        <span className="text-indigo-400">{info.status || '未填寫'}</span>
-                                                    </div>
-                                                    <div className="text-[11px] opacity-70 mt-1">有效期限：{info.expiry || '-'}</div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                );
-                            })()}
-                        </div>
-                        <div className="border-t border-white/10 pt-4">
-                            <h4 className="font-bold mb-2 text-sm">我的簽證詳細（僅自己可見）</h4>
-                            {(() => {
-                                const visaStore = trip.visa || {};
-                                const myVisa = isSimulation ? visaStore.sim : (visaStore[user.uid] || visaStore.default);
-                                if (!myVisa) {
-                                    return (
-                                        <div className="text-sm opacity-70">
-                                            尚未填寫簽證資訊，可在未來版本中由自己或管理者補上。
-                                        </div>
-                                    );
-                                }
-                                return (
-                                    <div className="space-y-2 text-sm">
-                                        {myVisa.status && (
-                                            <div className="flex justify-between">
-                                                <span className="opacity-70">狀態</span>
-                                                <span className="font-semibold">{myVisa.status}</span>
-                                            </div>
-                                        )}
-                                        {myVisa.number && (
-                                            <div className="flex justify-between">
-                                                <span className="opacity-70">簽證類型／備註</span>
-                                                <span className="font-semibold">{myVisa.number}</span>
-                                            </div>
-                                        )}
-                                        {myVisa.expiry && (
-                                            <div className="flex justify-between">
-                                                <span className="opacity-70">有效期限</span>
-                                                <span className="font-mono">{myVisa.expiry}</span>
-                                            </div>
-                                        )}
-                                        {typeof myVisa.needsPrint === 'boolean' && (
-                                            <div className="flex items-center gap-2 mt-2 text-xs">
-                                                <CheckCircle className={`w-4 h-4 ${myVisa.needsPrint ? 'text-amber-400' : 'text-emerald-400'}`} />
-                                                <span>{myVisa.needsPrint ? '建議列印簽證文件隨身攜帶。' : '此行程不需額外列印簽證文件。'}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })()}
-                            <div className="mt-4 space-y-2 text-xs">
-                                <div className="grid grid-cols-2 gap-2">
-                                    <input value={visaForm.status} onChange={e => setVisaForm({ ...visaForm, status: e.target.value })} placeholder="簽證狀態 (如：免簽)" className={inputClasses(isDarkMode) + " text-xs"} />
-                                    <input value={visaForm.number} onChange={e => setVisaForm({ ...visaForm, number: e.target.value })} placeholder="簽證號碼 / 備註" className={inputClasses(isDarkMode) + " text-xs"} />
-                                </div>
-                                <div className="grid grid-cols-2 gap-2 items-center">
-                                    <input value={visaForm.expiry} onChange={e => setVisaForm({ ...visaForm, expiry: e.target.value })} placeholder="有效期 (DD/MM/YYYY)" className={inputClasses(isDarkMode) + " text-xs"} />
-                                    <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={visaForm.needsPrint} onChange={e => setVisaForm({ ...visaForm, needsPrint: e.target.checked })} /> 需列印簽證文件</label>
-                                </div>
-                                <button onClick={handleSaveVisa} className="w-full py-2.5 rounded-xl font-bold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 group text-xs">
-                                    <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                                    儲存我的簽證資訊
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <VisaTab
+                    trip={trip}
+                    user={user}
+                    isDarkMode={isDarkMode}
+                    isSimulation={isSimulation}
+                    countryInfo={countryInfo}
+                    displayCountry={displayCountry}
+                    displayCity={displayCity}
+                    visaForm={visaForm}
+                    setVisaForm={setVisaForm}
+                    onSaveVisa={handleSaveVisa}
+                    inputClasses={inputClasses}
+                    glassCard={glassCard}
+                />
             )}
 
 
             {
                 activeTab === 'emergency' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
-                        <div className={glassCard(isDarkMode) + " p-6 border-l-4 border-red-500"}>
-                            <h3 className="font-bold text-red-500 mb-4 flex gap-2"><Siren className="w-5 h-5" /> 當地緊急電話</h3>
-                            <div className="text-3xl font-bold mb-2">{countryInfo.emergency}</div>
-                            <p className="opacity-70 text-sm">遇緊急狀況請優先撥打。</p>
-                        </div>
-                        <div className={glassCard(isDarkMode) + " p-6"}>
-                            <h3 className="font-bold mb-4 flex gap-2"><Globe2 className="w-5 h-5" /> 駐當地辦事處 ({globalSettings.region})</h3>
-                            <div className="p-3 bg-white/5 rounded border border-white/10">
-                                <div className="font-bold">{emergencyInfoTitle}</div>
-                                <div className="text-2xl font-mono my-2">{emergencyInfoContent}</div>
-                                <div className="text-sm opacity-70 mt-1">地址與電話請查閱外交部網站。</div>
-                            </div>
-                        </div>
-                    </div>
+                    <EmergencyTab
+                        isDarkMode={isDarkMode}
+                        countryInfo={countryInfo}
+                        globalSettings={globalSettings}
+                        emergencyInfoTitle={emergencyInfoTitle}
+                        emergencyInfoContent={emergencyInfoContent}
+                        glassCard={glassCard}
+                    />
                 )
             }
 
             {
                 activeTab === 'budget' && (
-                    <div className="space-y-6 animate-fade-in">
-                        <div className="flex justify-end gap-2">
-                            <button onClick={() => openSectionModal('import', 'budget')} className="px-3 py-1 rounded-lg border border-white/30 text-xs">匯入</button>
-                            <button onClick={() => openSectionModal('export', 'budget')} className="px-3 py-1 rounded-lg border border-white/30 text-xs">匯出</button>
-                            <button onClick={() => handleExportPdf()} className="px-3 py-1 rounded-lg border border-indigo-400 text-xs text-indigo-200">匯出 PDF</button>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className={glassCard(isDarkMode) + " p-6 text-center"}>
-                                <div className="text-sm opacity-60 uppercase mb-1">總支出</div>
-                                <div className="text-3xl font-bold font-mono text-indigo-500">${Math.round(debtInfo.totalSpent).toLocaleString()}</div>
-                            </div>
-                            <div className={glassCard(isDarkMode) + " p-6"}>
-                                <h3 className="font-bold mb-2 flex gap-2"><RefreshCw className="w-4 h-4" /> 債務結算</h3>
-                                <div className="space-y-2 text-sm">{Object.entries(debtInfo.balances).map(([name, bal]) => (<div key={name} className="flex justify-between border-b pb-1"><span>{name}</span><span className={bal > 0 ? 'text-green-500' : 'text-red-500'}>{bal > 0 ? `應收 $${Math.round(bal)}` : `應付 $${Math.round(Math.abs(bal))}`}</span></div>))}</div>
-                            </div>
-                        </div>
-                        <div className={glassCard(isDarkMode) + " p-6"}>
-                            <h3 className="font-bold mb-4 flex gap-2"><List className="w-4 h-4" /> 支出明細</h3>
-                            <div className="max-h-60 overflow-y-auto space-y-2 custom-scrollbar">{(trip.budget || []).map((b, i) => (<div key={i} className="flex justify-between p-2 hover:bg-white/5 rounded text-sm"><span>{b.name || b.desc} ({b.payer})</span><span className="font-mono opacity-70">{b.currency} {b.cost}</span></div>))}</div>
-                        </div>
-                        <div className={glassCard(isDarkMode) + " p-4 flex flex-col gap-3"}>
-                            <h3 className="font-bold flex gap-2"><FileUp className="w-5 h-5" /> 收據 / 單據上傳</h3>
-                            <input type="file" accept="image/*,application/pdf" onChange={e => handleReceiptUpload('budget', e.target.files?.[0])} className="text-xs" />
-                            <p className="text-xs opacity-70">支援圖片或 PDF，檔案不會上傳，只供本機紀錄與 PDF 匯出。</p>
-
-                        </div>
-                    </div>
+                    <BudgetTab
+                        trip={trip}
+                        isDarkMode={isDarkMode}
+                        debtInfo={debtInfo}
+                        onOpenSectionModal={openSectionModal}
+                        onExportPdf={handleExportPdf}
+                        handleReceiptUpload={handleReceiptUpload}
+                        glassCard={glassCard}
+                    />
                 )
             }
 
             {
                 activeTab === 'currency' && (
-                    <div className="animate-fade-in space-y-6">
-                        <div className={glassCard(isDarkMode) + " p-8 flex flex-col items-center justify-center min-h-[400px]"}>
-                            <h3 className="font-bold text-2xl mb-8 flex items-center gap-3"><DollarSign className="w-8 h-8 text-emerald-400" /> 匯率計算機</h3>
-
-                            {/* Trip Specific Converter */}
-                            <div className="w-full max-w-md bg-white/5 rounded-3xl p-6 border border-white/10 shadow-2xl backdrop-blur-sm relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-cyan-500"></div>
-
-                                {/* Input Area */}
-                                <div className="space-y-6 relative z-10">
-                                    {/* From (Home Currency) */}
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold opacity-60 uppercase tracking-wider pl-1">您持有 ({globalSettings?.currency || 'HKD'})</label>
-                                        <div className="flex items-center gap-4 bg-black/20 p-4 rounded-xl border border-white/5">
-                                            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center font-bold text-lg shrink-0">
-                                                {CURRENCIES[globalSettings?.currency || 'HKD']?.symbol}
-                                            </div>
-                                            <input
-                                                type="number"
-                                                value={convAmount}
-                                                onChange={e => setConvAmount(Number(e.target.value))}
-                                                className="w-full bg-transparent text-3xl font-bold font-mono outline-none placeholder-white/20"
-                                                placeholder="1000"
-                                            />
-                                            <div className="font-bold opacity-50">{globalSettings?.currency || 'HKD'}</div>
-                                        </div>
-                                    </div>
-
-                                    {/* Divider / Switch */}
-                                    <div className="flex justify-center -my-3 relative z-20">
-                                        <div className="bg-gray-800 rounded-full p-2 border border-gray-600">
-                                            <ArrowUpRight className="w-5 h-5 text-emerald-400 rotate-45" />
-                                        </div>
-                                    </div>
-
-                                    {/* To (Destination Currency) */}
-                                    {/* We need to map Trip Country to Currency. Assuming simplified map or user select. */}
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold opacity-60 uppercase tracking-wider pl-1">目的地 ({convTo})</label>
-                                        <div className="flex items-center gap-4 bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/30">
-                                            <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center font-bold text-lg text-emerald-400 shrink-0">
-                                                {CURRENCIES[convTo]?.symbol}
-                                            </div>
-                                            <div className="w-full text-3xl font-bold font-mono text-emerald-400">
-                                                {convertCurrency(convAmount, globalSettings?.currency || 'HKD', convTo, exchangeRates).toLocaleString('en-US', { maximumFractionDigits: 2 })}
-                                            </div>
-                                            <select
-                                                value={convTo}
-                                                onChange={e => setConvTo(e.target.value)}
-                                                className="bg-transparent font-bold outline-none cursor-pointer text-right appearance-none py-1 pr-2"
-                                                style={{ textAlignLast: 'right' }}
-                                            >
-                                                {Object.keys(CURRENCIES).map(c => <option key={c} value={c} className="text-black">{c}</option>)}
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Rate Info */}
-                                <div className="mt-8 pt-6 border-t border-white/10 text-center">
-                                    <div className="text-sm opacity-60 font-mono">
-                                        1 {globalSettings?.currency || 'HKD'} ≈ <span className="text-white font-bold">{convertCurrency(1, globalSettings?.currency || 'HKD', convTo, exchangeRates).toFixed(4)}</span> {convTo}
-                                    </div>
-                                    <div className="text-[10px] opacity-40 mt-1">匯率僅供參考，實際交易請以銀行為準</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <CurrencyTab
+                        isDarkMode={isDarkMode}
+                        globalSettings={globalSettings}
+                        exchangeRates={exchangeRates}
+                        convAmount={convAmount}
+                        setConvAmount={setConvAmount}
+                        convTo={convTo}
+                        setConvTo={setConvTo}
+                        currencies={CURRENCIES}
+                        glassCard={glassCard}
+                    />
                 )
             }
 
@@ -2513,37 +2334,31 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
 
             {
                 activeTab === 'notes' && (
-                    <div className={glassCard(isDarkMode) + " p-6 min-h-[500px] flex flex-col animate-fade-in"}>
-                        <div className="flex justify-between items-center mb-4"><h3 className="font-bold flex gap-2"><NotebookPen className="w-5 h-5" /> 備忘錄</h3><button onClick={() => { if (noteEdit && !isSimulation) updateDoc(doc(db, "trips", trip.id), { notes: tempNote }); setNoteEdit(!noteEdit); }} className="bg-indigo-500 text-white px-3 py-1 rounded text-sm">{noteEdit ? '儲存' : '編輯'}</button></div>
-                        {noteEdit ? <textarea className={`w-full flex-grow p-4 rounded-xl border outline-none ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`} value={tempNote} onChange={e => setTempNote(e.target.value)} /> : <div className="w-full flex-grow p-4 rounded-xl border overflow-y-auto whitespace-pre-wrap opacity-80">{tempNote || "暫無筆記"}</div>}
-                    </div>
+                    <NotesTab
+                        trip={trip}
+                        isDarkMode={isDarkMode}
+                        isSimulation={isSimulation}
+                        noteEdit={noteEdit}
+                        setNoteEdit={setNoteEdit}
+                        tempNote={tempNote}
+                        setTempNote={setTempNote}
+                        onSaveNotes={(notes) => updateDoc(doc(db, "trips", trip.id), { notes })}
+                        glassCard={glassCard}
+                    />
                 )
             }
 
             {
                 activeTab === 'shopping' && (
-                    <div className="space-y-4">
-                        <div className="flex justify-end gap-2">
-                            <button onClick={() => openSectionModal('import', 'shopping')} className="px-3 py-1 rounded-lg border border-white/30 text-xs">匯入</button>
-                            <button onClick={() => openSectionModal('export', 'shopping')} className="px-3 py-1 rounded-lg border border-white/30 text-xs">匯出</button>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className={glassCard(isDarkMode) + " p-6"}>
-                                <div className="flex justify-between mb-4"><h3 className="font-bold flex gap-2"><List className="w-5 h-5" /> 預計購買</h3><button onClick={() => { setAddType('shopping_plan'); setIsAddModal(true) }} className="text-xs bg-indigo-500 text-white px-2 py-1 rounded">+ 新增</button></div>
-                                {(trip.shoppingList || []).filter(i => !i.bought).map((item, i) => (<div key={i} className="p-2 border rounded mb-2 flex justify-between"><span>{item.name}</span><span className="opacity-50 text-xs">預估: {item.estPrice}</span></div>))}
-                            </div>
-                            <div className={glassCard(isDarkMode) + " p-6"}>
-                                <div className="flex justify-between mb-4"><h3 className="font-bold flex gap-2"><CheckSquare className="w-5 h-5" /> 已購入</h3><button onClick={() => { setAddType('shopping'); setIsAddModal(true) }} className="text-xs bg-green-500 text-white px-2 py-1 rounded">+ 記帳</button></div>
-                                {(trip.budget || []).filter(i => i.category === 'shopping').map((item, i) => (<div key={i} className="p-2 border rounded mb-2 flex justify-between bg-green-500/10"><span>{item.name || item.desc}</span><span className="font-mono">{item.currency} {item.cost}</span></div>))}
-                            </div>
-                        </div>
-                        <div className={glassCard(isDarkMode) + " p-4 flex flex-col gap-3"}>
-                            <h3 className="font-bold flex gap-2"><FileUp className="w-5 h-5" /> 單據掃描 / 上傳</h3>
-                            <input type="file" accept="image/*" onChange={e => handleReceiptUpload('shopping', e.target.files?.[0])} className="text-xs" />
-                            <p className="text-xs opacity-70">限制：JPG/PNG，建議 2MB 內。檔案僅暫存於本機，可搭配 PDF 匯出。</p>
-                            {receiptPreview.shopping && <img src={receiptPreview.shopping} alt="receipt" className="max-h-48 rounded-lg border border-white/10 object-contain" />}
-                        </div>
-                    </div>
+                    <ShoppingTab
+                        trip={trip}
+                        isDarkMode={isDarkMode}
+                        onOpenSectionModal={openSectionModal}
+                        onAddItem={(type) => { setAddType(type); setIsAddModal(true); }}
+                        handleReceiptUpload={handleReceiptUpload}
+                        receiptPreview={receiptPreview}
+                        glassCard={glassCard}
+                    />
                 )
             }
 
