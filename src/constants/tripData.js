@@ -90,10 +90,22 @@ export const INSURANCE_RESOURCES = [
 ];
 
 export const AUTHOR_NAME = "Jamie Kwok";
-export const APP_VERSION = "V0.15.1-Beta";
+export const APP_VERSION = "V0.16.0-Beta";
 
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V0.16.0-Beta",
+        date: "2025-12-17",
+        desc: {
+            "zh-TW": "組件重構 + 版本規劃",
+            "en": "Component Refactoring + Version Roadmap"
+        },
+        details: {
+            "zh-TW": "1. TripDetail Tabs 抽取：7 個獨立組件\n2. App.jsx 減少 187 行\n3. Future Features 按版本整理\n4. Build 通過 + Git Push",
+            "en": "1. TripDetail Tabs Extraction: 7 components\n2. App.jsx reduced 187 lines\n3. Future Features organized by version\n4. Build passed + Git Push"
+        }
+    },
     {
         ver: "V0.15.1-Beta",
         date: "2025-12-17",
@@ -104,6 +116,66 @@ export const VERSION_HISTORY = [
         details: {
             "zh-TW": "1. PWA 配置：manifest.json / service worker / 可安裝\n2. Modal 組件拆分：10 個獨立組件\n3. 多語言修復：.language 一致性\n4. Split Bill 驗證：分帳邏輯測試",
             "en": "1. PWA Setup: manifest.json / service worker / installable\n2. Modal Refactoring: 10 independent components\n3. Multi-language Fix: .language consistency\n4. Split Bill Validation: debt logic testing"
+        }
+    },
+    {
+        ver: "V0.14.0 - V0.14.2",
+        date: "2025-12-16",
+        desc: {
+            "zh-TW": "AI 助手強化 + 匯出匯入系統",
+            "en": "AI Assistant Enhancement + Export/Import System"
+        },
+        details: {
+            "zh-TW": "• 多格式匯出：JSON / PDF / 圖片\n• 智能匯入：檔案自動解析\n• AI 分類百分比功能\n• 日期選擇器統一 DD/MM/YYYY\n• 天氣 API 真實數據替換",
+            "en": "• Multi-format Export: JSON / PDF / Image\n• Smart Import: Auto file parsing\n• AI Category Percentage\n• Date Picker unified DD/MM/YYYY\n• Real Weather API integration"
+        }
+    },
+    {
+        ver: "V0.13.0",
+        date: "2025-12-15",
+        desc: {
+            "zh-TW": "多語言支援 + 手機 UI 優化",
+            "en": "Multi-language Support + Mobile UI"
+        },
+        details: {
+            "zh-TW": "• 繁體中文 / 英文雙語\n• 日期格式本地化\n• 響應式設計優化\n• 觸控操作改進",
+            "en": "• Traditional Chinese / English\n• Date format localization\n• Responsive design optimization\n• Touch operation improvements"
+        }
+    },
+    {
+        ver: "V0.12.0",
+        date: "2025-11-20",
+        desc: {
+            "zh-TW": "分帳功能 + 分享行程連結",
+            "en": "Split Bill + Trip Sharing"
+        },
+        details: {
+            "zh-TW": "• 分享行程連結\n• 多人即時編輯\n• 自動計算分帳\n• 即時匯率轉換",
+            "en": "• Share trip links\n• Multi-user real-time editing\n• Auto split bill calculation\n• Real-time exchange rate"
+        }
+    },
+    {
+        ver: "V0.11.0",
+        date: "2025-10-10",
+        desc: {
+            "zh-TW": "核心功能完成 + PWA 模式",
+            "en": "Core Features + PWA Mode"
+        },
+        details: {
+            "zh-TW": "• 行程規劃 / 地圖導航 / 天氣顯示\n• 行李 / 必買清單 / 記帳本\n• PWA 模式：加到手機桌面",
+            "en": "• Trip planning / Maps / Weather\n• Luggage / Shopping list / Expense tracker\n• PWA: Add to home screen"
+        }
+    },
+    {
+        ver: "V0.10.0",
+        date: "2025-09-01",
+        desc: {
+            "zh-TW": "Beta 版開放測試",
+            "en": "Beta Release"
+        },
+        details: {
+            "zh-TW": "• 智能行程產生\n• Google Maps 整合\n• 每日拖曳調整\n• 登入後開始旅程",
+            "en": "• Smart itinerary generation\n• Google Maps integration\n• Daily drag-and-drop\n• Login to start trip"
         }
     },
     {

@@ -35,45 +35,69 @@ const CITY_COORDS = {
 // --- 0. Constants & Data ---
 
 const AUTHOR_NAME = "Jamie Kwok";
-const APP_VERSION = "V0.15.1-Beta";
+const APP_VERSION = "V0.16.0-Beta";
 const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 
 const VERSION_HISTORY = [
     {
-        ver: "V0.15.1-Beta",
+        ver: "V0.16.0-Beta",
         date: "2025-12-17",
         desc: {
-            "zh-TW": "PWA + 組件重構 + 功能完善",
-            "en": "PWA + Component Refactoring + Feature Polish"
+            "zh-TW": "組件重構 + 版本規劃",
+            "en": "Component Refactoring + Version Roadmap"
         },
         details: {
-            "zh-TW": "1. 完整 PWA 配置 (manifest.json, sw.js, 離線支援)\n2. Modal 組件拆分至獨立檔案\n3. 多語言 .language 一致性修復\n4. Split Bill 邏輯驗證\n5. 匯入匯出功能優化",
-            "en": "1. Full PWA setup (manifest.json, sw.js, offline support)\n2. Modal components extracted to separate files\n3. Multi-language .language consistency fix\n4. Split Bill logic verified\n5. Import/Export feature improvements"
+            "zh-TW": "1. TripDetail Tabs 抽取：7 個獨立組件\n2. App.jsx 減少 187 行\n3. Future Features 按版本整理",
+            "en": "1. TripDetail Tabs Extraction: 7 components\n2. App.jsx reduced 187 lines\n3. Future Features organized by version"
+        }
+    },
+    {
+        ver: "V0.14.0 - V0.15.1",
+        date: "2025-12-16~17",
+        desc: {
+            "zh-TW": "PWA + AI 強化 + 匯出系統",
+            "en": "PWA + AI Enhancement + Export System"
+        },
+        details: {
+            "zh-TW": "• PWA 配置：可安裝、離線支援\n• Modal 組件拆分\n• 多格式匯出：JSON / PDF / 圖片\n• AI 分類百分比功能",
+            "en": "• PWA setup: installable, offline support\n• Modal component extraction\n• Multi-format export: JSON / PDF / Image\n• AI category percentage"
+        }
+    },
+    {
+        ver: "V0.12.0 - V0.13.0",
+        date: "2025-11~12",
+        desc: {
+            "zh-TW": "多語言 + 分帳 + 分享",
+            "en": "Multi-language + Split Bill + Sharing"
+        },
+        details: {
+            "zh-TW": "• 繁中 / 英文雙語\n• 分享行程連結\n• 自動計算分帳\n• 響應式設計優化",
+            "en": "• Chinese / English dual language\n• Share trip links\n• Auto split bill\n• Responsive design"
+        }
+    },
+    {
+        ver: "V0.10.0 - V0.11.0",
+        date: "2025-09~10",
+        desc: {
+            "zh-TW": "Beta 版 + 核心功能",
+            "en": "Beta + Core Features"
+        },
+        details: {
+            "zh-TW": "• 智能行程產生\n• Google Maps 整合\n• PWA 模式\n• 行李 / 記帳本功能",
+            "en": "• Smart itinerary\n• Google Maps integration\n• PWA mode\n• Luggage / Expense tracker"
         }
     },
     {
         ver: "V0.9.0",
         date: "2025-12-11",
         desc: {
-            "zh-TW": "AI 智能領隊 & UI 全面重製",
+            "zh-TW": "AI 智能領隊 & UI 重製",
             "en": "AI Smart Guide & UI Remaster"
         },
         details: {
-            "zh-TW": "1. 全新 AI 領隊：支援各國行程規劃、交通分析與預算預估\n2. UI 升級：玻璃擬態 (Glassmorphism) 設計\n3. 優化：修復介面間距與對齊問題",
-            "en": "1. New AI Guide: Itinerary, transport & budget analysis\n2. UI Upgrade: Glassmorphism for all menus\n3. Polish: Fixed UI alignment issues"
-        }
-    },
-    {
-        ver: "V0.8.x - V0.4.0",
-        date: "2024-11 ~ 2024-12",
-        desc: {
-            "zh-TW": "早期版本與基礎功能",
-            "en": "Early Versions & Core Features"
-        },
-        details: {
-            "zh-TW": "• 基礎行程規劃功能\n• 地圖與簽證資訊整合\n• 文件中心與通知系統\n• 匯率與天氣 API 整合",
-            "en": "• Basic trip planning features\n• Map and visa information integration\n• File center and notification system\n• Exchange rate and weather API integration"
+            "zh-TW": "• AI 行程規劃、交通分析\n• 玻璃擬態 (Glassmorphism) UI",
+            "en": "• AI itinerary, transport analysis\n• Glassmorphism UI design"
         }
     },
 ];
