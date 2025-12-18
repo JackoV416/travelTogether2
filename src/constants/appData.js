@@ -1,5 +1,54 @@
 
-import { TrainFront, BusFront } from 'lucide-react';
+import {
+    TrainFront, BusFront, Car, Route
+} from 'lucide-react';
+
+// --- Versioning & Metadata ---
+export const AUTHOR_NAME = "Jamie Kwok";
+export const APP_VERSION = "V0.16.2";
+
+export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
+
+export const VERSION_HISTORY = [
+    {
+        ver: "V0.16.2",
+        date: "2025-12-18",
+        desc: {
+            "zh-TW": "Dashboard 重構 & 代碼清理",
+            "en": "Dashboard Refactoring & Code Cleanup"
+        },
+        details: {
+            "zh-TW": "• 數據分離：將靜態常量移至 appData.js\n• 工具函數抽取：建立 tripUtils.js\n• 組件提取：Dashboard, TripCard, CreateTripModal 獨立化\n• App.jsx 瘦身：移除數百行冗餘代碼",
+            "en": "• Data Separation: Constants moved to appData.js\n• Utils Extraction: Created tripUtils.js\n• Component Extraction: Independent Dashboard, TripCard, CreateTripModal\n• App.jsx Slimming: Hundreds of lines removed"
+        }
+    },
+    {
+        ver: "V0.16.1",
+        date: "2025-12-17",
+        desc: {
+            "zh-TW": "效能優化 + 組件重構",
+            "en": "Performance Optimization + Refactoring"
+        },
+        details: {
+            "zh-TW": "• ItineraryTab: 獨立組件化，提升維護性\n• FilesTab: 上傳介面優化與智能匯入整合\n• PWA: 更新緩存策略，提升離線體驗\n• Code Cleanup: 移除冗餘代碼",
+            "en": "• ItineraryTab: Extracted for maintainability\n• FilesTab: Optimized upload UI with Smart Import\n• PWA: Updated cache strategy\n• Code Cleanup: Removed redundancy"
+        }
+    },
+    {
+        ver: "V0.16.0-Beta",
+        date: "2025-12-17",
+        desc: {
+            "zh-TW": "組件重構 + 版本規劃",
+            "en": "Component Refactoring + Version Roadmap"
+        },
+        details: {
+            "zh-TW": "1. TripDetail Tabs 抽取：7 個獨立組件\n2. App.jsx 減少 187 行\n3. Future Features 按版本整理",
+            "en": "1. TripDetail Tabs Extraction: 7 components\n2. App.jsx reduced 187 lines\n3. Future Features organized by version"
+        }
+    }
+];
+
+// --- Core Data Structures ---
 
 export const CITY_COORDS = {
     "Tokyo": { lat: 35.6762, lon: 139.6503 },
@@ -15,8 +64,6 @@ export const CITY_COORDS = {
     "Rome": { lat: 41.9028, lon: 12.4964 },
     "Sydney": { lat: -33.8688, lon: 151.2093 }
 };
-
-export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const CURRENCIES = {
     "HKD": { rate: 1, label: "HKD", symbol: "$" },
@@ -79,188 +126,6 @@ export const COUNTRY_TRANSLATIONS = {
     "United States (美國)": { "zh-TW": "美國", "en": "United States" },
     "Other": { "zh-TW": "其他", "en": "Other" }
 };
-
-export const INSURANCE_SUGGESTIONS = { "HK": ["Prudential", "AIG", "Blue Cross"], "TW": ["富邦", "國泰", "南山"], "Global": ["World Nomads", "Allianz"] };
-
-export const INSURANCE_RESOURCES = [
-    { region: "HK", title: "富邦旅平險 Smart Go", url: "https://www.fubon.com/hk/insurance/" },
-    { region: "TW", title: "國泰旅平險 24h 線上投保", url: "https://www.cathaylife.com.tw/" },
-    { region: "Global", title: "World Nomads Explorer", url: "https://www.worldnomads.com" },
-    { region: "Global", title: "Visit Japan Web 健康聲明", url: "https://vjw-lp.digital.go.jp/en/" }
-];
-
-export const AUTHOR_NAME = "Jamie Kwok";
-export const APP_VERSION = "V0.16.2";
-export const VERSION_HISTORY = [
-    {
-        ver: "V0.16.2",
-        date: "2025-12-18",
-        desc: {
-            "zh-TW": "Dashboard 重構 & 代碼清理",
-            "en": "Dashboard Refactoring & Code Cleanup"
-        },
-        details: {
-            "zh-TW": "• 數據分離：將靜態常量移至 appData.js\n• 工具函數抽取：建立 tripUtils.js\n• 組件提取：Dashboard, TripCard, CreateTripModal 獨立化\n• App.jsx 瘦身：移除數百行冗餘代碼",
-            "en": "• Data Separation: Constants moved to appData.js\n• Utils Extraction: Created tripUtils.js\n• Component Extraction: Independent Dashboard, TripCard, CreateTripModal\n• App.jsx Slimming: Hundreds of lines removed"
-        }
-    },
-    {
-        ver: "V0.16.1",
-        date: "2025-12-17",
-        desc: {
-            "zh-TW": "效能優化 + 組件重構",
-            "en": "Performance Optimization + Refactoring"
-        },
-        details: {
-            "zh-TW": "• ItineraryTab: 獨立組件化，提升維護性\n• FilesTab: 上傳介面優化與智能匯入整合\n• PWA: 更新緩存策略，提升離線體驗\n• Code Cleanup: 移除冗餘代碼",
-            "en": "• ItineraryTab: Extracted for maintainability\n• FilesTab: Optimized upload UI with Smart Import\n• PWA: Updated cache strategy\n• Code Cleanup: Removed redundancy"
-        }
-    },
-    {
-        ver: "V0.16.0-Beta",
-        date: "2025-12-17",
-        desc: {
-            "zh-TW": "組件重構 + 版本規劃",
-            "en": "Component Refactoring + Version Roadmap"
-        },
-        details: {
-            "zh-TW": "1. TripDetail Tabs 抽取：7 個獨立組件\n2. App.jsx 減少 187 行\n3. Future Features 按版本整理\n4. Build 通過 + Git Push",
-            "en": "1. TripDetail Tabs Extraction: 7 components\n2. App.jsx reduced 187 lines\n3. Future Features organized by version\n4. Build passed + Git Push"
-        }
-    },
-    {
-        ver: "V0.15.1-Beta",
-        date: "2025-12-17",
-        desc: {
-            "zh-TW": "PWA + 組件重構 + 功能完善",
-            "en": "PWA + Component Refactoring + Feature Polish"
-        },
-        details: {
-            "zh-TW": "1. PWA 配置：manifest.json / service worker / 可安裝\n2. Modal 組件拆分：10 個獨立組件\n3. 多語言修復：.language 一致性\n4. Split Bill 驗證：分帳邏輯測試",
-            "en": "1. PWA Setup: manifest.json / service worker / installable\n2. Modal Refactoring: 10 independent components\n3. Multi-language Fix: .language consistency\n4. Split Bill Validation: debt logic testing"
-        }
-    },
-    {
-        ver: "V0.14.0 - V0.14.2",
-        date: "2025-12-16",
-        desc: {
-            "zh-TW": "AI 助手強化 + 匯出匯入系統",
-            "en": "AI Assistant Enhancement + Export/Import System"
-        },
-        details: {
-            "zh-TW": "• 多格式匯出：JSON / PDF / 圖片\n• 智能匯入：檔案自動解析\n• AI 分類百分比功能\n• 日期選擇器統一 DD/MM/YYYY\n• 天氣 API 真實數據替換",
-            "en": "• Multi-format Export: JSON / PDF / Image\n• Smart Import: Auto file parsing\n• AI Category Percentage\n• Date Picker unified DD/MM/YYYY\n• Real Weather API integration"
-        }
-    },
-    {
-        ver: "V0.13.0",
-        date: "2025-12-15",
-        desc: {
-            "zh-TW": "多語言支援 + 手機 UI 優化",
-            "en": "Multi-language Support + Mobile UI"
-        },
-        details: {
-            "zh-TW": "• 繁體中文 / 英文雙語\n• 日期格式本地化\n• 響應式設計優化\n• 觸控操作改進",
-            "en": "• Traditional Chinese / English\n• Date format localization\n• Responsive design optimization\n• Touch operation improvements"
-        }
-    },
-    {
-        ver: "V0.12.0",
-        date: "2025-11-20",
-        desc: {
-            "zh-TW": "分帳功能 + 分享行程連結",
-            "en": "Split Bill + Trip Sharing"
-        },
-        details: {
-            "zh-TW": "• 分享行程連結\n• 多人即時編輯\n• 自動計算分帳\n• 即時匯率轉換",
-            "en": "• Share trip links\n• Multi-user real-time editing\n• Auto split bill calculation\n• Real-time exchange rate"
-        }
-    },
-    {
-        ver: "V0.11.0",
-        date: "2025-10-10",
-        desc: {
-            "zh-TW": "核心功能完成 + PWA 模式",
-            "en": "Core Features + PWA Mode"
-        },
-        details: {
-            "zh-TW": "• 行程規劃 / 地圖導航 / 天氣顯示\n• 行李 / 必買清單 / 記帳本\n• PWA 模式：加到手機桌面",
-            "en": "• Trip planning / Maps / Weather\n• Luggage / Shopping list / Expense tracker\n• PWA: Add to home screen"
-        }
-    },
-    {
-        ver: "V0.10.0",
-        date: "2025-09-01",
-        desc: {
-            "zh-TW": "Beta 版開放測試",
-            "en": "Beta Release"
-        },
-        details: {
-            "zh-TW": "• 智能行程產生\n• Google Maps 整合\n• 每日拖曳調整\n• 登入後開始旅程",
-            "en": "• Smart itinerary generation\n• Google Maps integration\n• Daily drag-and-drop\n• Login to start trip"
-        }
-    },
-    {
-        ver: "V0.9.1",
-        date: "2025-12-15",
-        desc: {
-            "zh-TW": "版本號更新與小修復",
-            "en": "Version Update & Minor Fixes"
-        },
-        details: {
-            "zh-TW": "1. 更新版本號至 V0.9.1\n2. 修復小錯誤與改進穩定性",
-            "en": "1. Updated version to V0.9.1\n2. Minor bug fixes and stability improvements"
-        }
-    },
-    {
-        ver: "V0.9.0",
-        date: "2025-12-11",
-        desc: {
-            "zh-TW": "AI 智能領隊 & UI 全面重製",
-            "en": "AI Smart Guide & UI Remaster"
-        },
-        details: {
-            "zh-TW": "1. 全新 AI 領隊：支援各國行程規劃、交通分析與預算預估，介面更直觀。\n2. UI 升級：所有下拉選單與與彈窗採用玻璃擬態 (Glassmorphism) 設計。\n3. 優化：修復大量介面間距與對齊問題。",
-            "en": "1. New AI Guide: Itinerary, transport & budget analysis.\n2. UI Upgrade: Glassmorphism for all menus.\n3. Polish: Fixed UI alignment issues."
-        }
-    },
-    {
-        ver: "V0.8.6 - V0.8.0",
-        date: "2025-12-11",
-        desc: {
-            "zh-TW": "多項功能增強與錯誤修復",
-            "en": "Multiple Feature Enhancements & Bug Fixes"
-        },
-        details: {
-            "zh-TW": "• 修復多個 UI 錯誤與佈局問題\n• 新增文件中心與通知系統\n• 整合匯率與天氣 API\n• 優化載入畫面與動畫效果\n• 多項安全性更新與依賴套件升級",
-            "en": "• Fixed various UI issues and layout problems\n• Added file center and notification system\n• Integrated exchange rate and weather APIs\n• Enhanced loading screens and animations\n• Security updates and dependency upgrades"
-        }
-    },
-    {
-        ver: "V0.7.0",
-        date: "11/12/2024",
-        desc: {
-            "zh-TW": "社交分享與相片功能",
-            "en": "Social Sharing & Photo Features"
-        },
-        details: {
-            "zh-TW": "• 新增行程分享至社交媒體\n• 實作相片畫廊與多圖上傳\n• 強化安全性設定\n• 新增互動式教學",
-            "en": "• Added trip sharing to social media\n• Implemented photo gallery with multi-upload\n• Enhanced security settings\n• Added interactive tutorial"
-        }
-    },
-    {
-        ver: "V0.6.x - V0.4.0",
-        date: "11/2024 - 11/2025",
-        desc: {
-            "zh-TW": "早期版本與基礎功能",
-            "en": "Early Versions & Core Features"
-        },
-        details: {
-            "zh-TW": "• 初期版本開發與測試\n• 基礎行程規劃功能\n• 地圖與簽證資訊整合\n• 使用者介面優化",
-            "en": "• Initial development and testing\n• Basic trip planning features\n• Map and visa information integration\n• User interface improvements"
-        }
-    },
-];
 
 export const CITY_TRANSLATIONS = {
     "Sydney": { "zh-TW": "雪梨", "en": "Sydney" },
@@ -332,6 +197,59 @@ export const HOLIDAYS_BY_REGION = {
     "Global": { "01-01": "New Year", "12-25": "Christmas" }
 };
 
+export const INFO_DB = {
+    news: [
+        { title: "日本櫻花季預測提早：東京3/20開花", country: "Japan", url: "https://www.japan-guide.com", provider: "Japan Guide" },
+        { title: "泰國潑水節擴大舉辦", country: "Thailand", url: "https://www.tourismthailand.org", provider: "Tourism Authority of Thailand" },
+        { title: "星宇航空新增西雅圖航線", country: "USA", url: "https://www.starlux-airlines.com", provider: "STARLUX Airlines" },
+        { title: "Klook 推出多國 eSIM 85 折優惠", country: "Multi", url: "https://www.klook.com", provider: "Klook" },
+        { title: "JR Pass 東日本官方 App 上線", country: "Japan", url: "https://www.jreast.co.jp", provider: "JR East" },
+        { title: "義大利威尼斯實施旅遊人流費", country: "Italy", url: "https://www.veneziaunica.it", provider: "Venice Unica" },
+        { title: "加拿大 ETA 新版審核提醒", country: "Canada", url: "https://www.canada.ca", provider: "Government of Canada" },
+        { title: "新加坡星耀樟宜夜間活動回歸", country: "Singapore", url: "https://www.changiairport.com", provider: "Changi Airport Group" },
+        { title: "韓國滑雪季安全指引", country: "Korea", url: "https://english.visitkorea.or.kr", provider: "Visit Korea" },
+        { title: "IATA 預測 2025 國際旅客量創新高", country: "Global", url: "https://www.iata.org", provider: "IATA" }
+    ],
+    weather: [
+        { city: "Tokyo", temp: "12°C", desc: "多雲", tz: "Asia/Tokyo" },
+        { city: "Taipei", temp: "22°C", desc: "晴朗", tz: "Asia/Taipei" },
+        { city: "London", temp: "8°C", desc: "陰雨", tz: "Europe/London" },
+        { city: "New York", temp: "5°C", desc: "寒冷", tz: "America/New_York" },
+        { city: "Bangkok", temp: "33°C", desc: "炎熱", tz: "Asia/Bangkok" },
+        { city: "Zurich", temp: "2°C", desc: "飄雪", tz: "Europe/Zurich" }
+    ],
+    hotels: [
+        { name: "APA Shinjuku", country: "Japan", price: "$800", star: 4.2, img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400", url: "https://www.agoda.com", details: "雙人房 • 01/04/2025 • Agoda" },
+        { name: "W Taipei", country: "Taiwan", price: "$2500", star: 4.8, img: "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=400", url: "https://www.marriott.com", details: "景觀房 • 20/05/2025 • 官網" },
+        { name: "The Fullerton Bay", country: "Singapore", price: "$3200", star: 4.9, img: "https://images.unsplash.com/photo-1501117716987-c8e1ecb210cc?w=400", url: "https://www.fullertonhotels.com", details: "濱海灣景 • 早餐" },
+        { name: "Park Hyatt Seoul", country: "Korea", price: "$2100", star: 4.7, img: "https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?w=400", url: "https://www.hyatt.com", details: "江南夜景 • 泳池" }
+    ],
+    flights: [
+        { route: "HKG - TPE", airline: "EVA Air", price: "$1,800", tag: "熱門", url: "https://www.evaair.com", details: "BR856 • 17:00 起飛" },
+        { route: "HKG - NRT", airline: "Cathay", price: "$3,500", tag: "早鳥", url: "https://www.cathaypacific.com", details: "CX500 • 09:00 起飛" },
+        { route: "TPE - CDG", airline: "China Airlines", price: "$14,200", tag: "新航線", url: "https://www.china-airlines.com", details: "CI923 • 23:55 直飛" },
+        { route: "SIN - ZRH", airline: "Swiss", price: "$9,800", tag: "商務艙", url: "https://www.swiss.com", details: "LX179 • 01:30 起飛" },
+        { route: "LAX - HND", airline: "ANA", price: "$11,500", tag: "特價", url: "https://www.ana.co.jp", details: "NH105 • 10:45 起飛" }
+    ],
+    transports: [
+        { name: "JR Pass 東日本 5日券", provider: "JR EAST", price: "¥29,650", url: "https://www.jreast.co.jp", icon: "metro", details: "不限次乘搭新幹線", source: "JR東日本" },
+        { name: "Tokyo Subway Ticket 72hr", provider: "Tokyo Metro", price: "¥1,500", url: "https://www.tokyometro.jp", icon: "metro", details: "地鐵吃到飽", source: "Tokyo Metro" },
+        { name: "Limousine Bus", provider: "Airport Limousine", price: "¥3,400", url: "https://www.limousinebus.co.jp", icon: "bus", details: "成田/羽田直達飯店", source: "Airport Bus" },
+        { name: "Swiss Travel Pass", provider: "SBB", price: "CHF 232", url: "https://www.sbb.ch", icon: "metro", details: "全瑞士火車/湖船", source: "SBB" }
+    ],
+    connectivity: [
+        { name: "Klook eSIM 多國方案", type: "eSIM", price: "$120 起 / 5GB", provider: "Klook", url: "https://www.klook.com", regions: "Asia / Europe" },
+        { name: "Horizon WiFi 蛋", type: "WiFi", price: "$50 起 / 日", provider: "Horizon WiFi", url: "https://www.horizon-wifi.com", regions: "Japan / Korea" },
+        { name: "Airalo eSIM", type: "eSIM", price: "$4.5 起 / 1GB", provider: "Airalo", url: "https://www.airalo.com", regions: "Global" }
+    ]
+};
+
+export const TRAVEL_ARTICLES = [
+    { title: "東京交通局官方旅遊建議", provider: "Toei", url: "https://www.kotsu.metro.tokyo.jp/eng/guide/" },
+    { title: "JNTO 旅行安全資訊", provider: "JNTO", url: "https://www.japan.travel/en/plan/safety-tips/" },
+    { title: "Visit Japan Web 官方教學", provider: "Digital Agency Japan", url: "https://vjw-lp.digital.go.jp/en/" }
+];
+
 export const AIRLINE_LOGOS = {
     "EVA Air": "https://www.google.com/s2/favicons?domain=www.evaair.com&sz=64",
     "Cathay": "https://www.google.com/s2/favicons?domain=www.cathaypacific.com&sz=64",
@@ -344,19 +262,83 @@ export const AIRLINE_LOGOS = {
 export const TRANSPORT_ICONS = {
     metro: { label: "地鐵", icon: TrainFront, color: "text-indigo-500" },
     bus: { label: "巴士", icon: BusFront, color: "text-emerald-500" },
+    car: { label: "自駕", icon: Car, color: "text-amber-500" },
+    walk: { label: "步行", icon: Route, color: "text-blue-500" }
 };
 
 export const OUTFIT_IMAGES = {
-    "north": {
-        "Sunny": "https://cdn-icons-png.flaticon.com/512/869/869869.png",
-        "Rain": "https://cdn-icons-png.flaticon.com/512/1164/1164945.png"
+    hot: "https://img.icons8.com/color/48/flip-flops.png",
+    south: "https://img.icons8.com/color/48/t-shirt.png",
+    north: "https://img.icons8.com/color/48/coat.png"
+};
+
+export const INSURANCE_RESOURCES = [
+    { region: "HK", title: "富邦旅平險 Smart Go", url: "https://www.fubon.com/hk/insurance/" },
+    { region: "TW", title: "國泰旅平險 24h 線上投保", url: "https://www.cathaylife.com.tw/" },
+    { region: "Global", title: "World Nomads Explorer", url: "https://www.worldnomads.com" },
+    { region: "Global", title: "Visit Japan Web 健康聲明", url: "https://vjw-lp.digital.go.jp/en/" }
+];
+
+export const INSURANCE_SUGGESTIONS = {
+    "HK": ["Prudential", "AIG", "Blue Cross"],
+    "TW": ["富邦", "國泰", "南山"],
+    "Global": ["World Nomads", "Allianz"]
+};
+
+export const SIMULATION_DATA = {
+    id: 'sim', name: "教學：東京 5 天 4 夜自由行", country: "Japan (日本)", city: "Tokyo", startDate: "2025-04-01", endDate: "2025-04-05",
+    members: [
+        { id: 'me', name: "我 (Owner)", role: "owner" },
+        { id: 'friend1', name: "小明 (Editor)", role: "editor" },
+        { id: 'friend2', name: "小華 (Viewer)", role: "viewer" }
+    ],
+    itinerary: {
+        "2025-04-01": [
+            { id: "f1", name: "TPE -> NRT (BR198)", type: "flight", cost: 16000, currency: "TWD", details: { provider: "EVA Air", number: "BR198", time: "08:50", location: "Taoyuan Airport T2", layover: false }, createdBy: { name: "我" } },
+            { id: "t1", name: "領取 JR Pass & Suica 儲值", type: "transport", cost: 5000, currency: "JPY", details: { time: "13:30", location: "Narita Airport JR Office" }, createdBy: { name: "小明" } },
+            { id: "t2", name: "Skyliner 前往上野", type: "transport", cost: 2570, currency: "JPY", details: { time: "14:20", location: "Narita Airport Station" }, createdBy: { name: "我" } },
+            { id: "h1", name: "新宿格拉斯麗飯店 Check-in", type: "hotel", cost: 60000, currency: "JPY", details: { time: "16:30", location: "Shinjuku Gracery Hotel", tax: 5000 }, createdBy: { name: "我" } },
+            { id: "d1", name: "晚餐：AFURI 拉麵", type: "food", cost: 1200, currency: "JPY", details: { time: "19:00", location: "Lumine Shinjuku" }, createdBy: { name: "小明" } }
+        ],
+        "2025-04-02": [
+            { id: "s1", name: "東京迪士尼樂園", type: "spot", cost: 9800, currency: "JPY", details: { time: "08:30", location: "Tokyo Disneyland" }, createdBy: { name: "我" } },
+            { id: "f2", name: "午餐：紅心女王宴會大廳", type: "food", cost: 2500, currency: "JPY", details: { time: "11:30", location: "Fantasyland" }, createdBy: { name: "小華" } },
+            { id: "s2", name: "日間遊行：Harmony in Color", type: "spot", cost: 0, currency: "JPY", details: { time: "14:00", location: "Parade Route" }, createdBy: { name: "我" } },
+            { id: "s3", name: "夜間遊行與煙火", type: "spot", cost: 0, currency: "JPY", details: { time: "19:30", location: "Cinderella Castle" }, createdBy: { name: "我" } }
+        ],
+        "2025-04-03": [
+            { id: "s4", name: "明治神宮參拜", type: "spot", cost: 0, currency: "JPY", details: { time: "10:00", location: "Meiji Jingu" }, createdBy: { name: "我" } },
+            { id: "s5", name: "原宿竹下通逛街", type: "shopping", cost: 15000, currency: "JPY", details: { time: "11:30", location: "Takeshita Street", refund: 1000 }, createdBy: { name: "小明" } },
+            { id: "s6", name: "澀谷 SKY 觀景台 (日落)", type: "spot", cost: 2200, currency: "JPY", details: { time: "17:30", location: "Shibuya Scramble Square" }, createdBy: { name: "我" } },
+            { id: "d2", name: "晚餐：敘敘苑燒肉 (已訂位)", type: "food", cost: 15000, currency: "JPY", details: { time: "20:00", location: "Shibuya Branch" }, createdBy: { name: "小明" } }
+        ],
+        "2025-04-04": [
+            { id: "s7", name: "富士山一日遊 (巴士)", type: "transport", cost: 9000, currency: "JPY", details: { time: "07:30", location: "Shinjuku Station", provider: "Highland Express" }, createdBy: { name: "我" } },
+            { id: "s8", name: "河口湖散步＋午餐", type: "food", cost: 3500, currency: "JPY", details: { time: "12:30", location: "Lake Kawaguchi" }, createdBy: { name: "小華" } },
+            { id: "s9", name: "忍野八海集章", type: "spot", cost: 1000, currency: "JPY", details: { time: "15:00", location: "Oshino Hakkai" }, createdBy: { name: "我" } }
+        ],
+        "2025-04-05": [
+            { id: "s10", name: "築地市場早餐", type: "food", cost: 2500, currency: "JPY", details: { time: "08:30", location: "Tsukiji Outer Market" }, createdBy: { name: "我" } },
+            { id: "s11", name: "TeamLab Planets", type: "spot", cost: 3800, currency: "JPY", details: { time: "11:00", location: "Toyosu" }, createdBy: { name: "小明" } },
+            { id: "f3", name: "NRT -> TPE (CI107)", type: "flight", cost: 15000, currency: "TWD", details: { time: "16:20", location: "Narita T2", number: "CI107", layover: false }, createdBy: { name: "我" } }
+        ]
     },
-    "south": {
-        "Sunny": "https://cdn-icons-png.flaticon.com/512/3222/3222800.png"
+    budget: [
+        { id: "b1", name: "機票 (我代墊)", cost: 32000, currency: "TWD", category: "flight", payer: "我", splitType: 'group' },
+        { id: "b2", name: "住宿 3 晚", cost: 60000, currency: "JPY", category: "hotel", payer: "小明", splitType: 'group', details: { tax: 5000 } },
+        { id: "b3", name: "迪士尼門票", cost: 9800, currency: "JPY", category: "spot", payer: "我", splitType: 'group' }
+    ],
+    shoppingList: [
+        { id: "s1", name: "Dyson 吹風機", estPrice: 45000, bought: false },
+        { id: "s2", name: "合利他命 EX Plus", estPrice: 5500, bought: true, realCost: 5200 },
+        { id: "s3", name: "Tokyo Banana 伴手禮", estPrice: 3000, bought: false }
+    ],
+    notes: "### 行前準備\n- [x] 護照影本備份\n- [x] Visit Japan Web 註冊 (截圖 QR Code)\n- [x] 網卡 (esim) 設定\n\n### 交通備忘\n- 記得在機場儲值 Suica 3000 日圓\n- 回程 N'EX 車票要提早劃位",
+    insurance: {
+        "sim": { provider: "富邦產險", policyNo: "T55667788", status: "insured" },
+        "local": { name: "Visit Japan Web", status: "done", user: "我" }
     },
-    "hot": {
-        "Sunny": "https://cdn-icons-png.flaticon.com/512/2917/2917242.png"
-    }
+    visa: { "sim": { status: "printed", number: "免簽入境", expiry: "2025-07-01", needsPrint: false } }
 };
 
 export const TAB_LABELS = {

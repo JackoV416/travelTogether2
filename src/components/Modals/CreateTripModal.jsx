@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Search, X, CheckCircle, Calendar, MoveRight } from 'lucide-react';
-import { inputClasses, getLocalizedCountryName, getLocalizedCityName } from '../../utils/tripHelpers';
-import { COUNTRIES_DATA } from '../../constants/tripData';
+import { X, Search, CheckCircle, Calendar, MoveRight } from 'lucide-react';
+import { inputClasses, getLocalizedCountryName, getLocalizedCityName } from '../../utils/tripUtils';
+import { COUNTRIES_DATA } from '../../constants/appData';
 
 const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, onAddCity, newCityInput, setNewCityInput, onSubmit, isDarkMode, globalSettings }) => {
     const currentLang = globalSettings.language;
@@ -149,28 +149,27 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
 
                     <div className="space-y-2 md:col-span-2">
                         <label className="block text-xs font-bold opacity-70 uppercase tracking-wider ml-1">行程日期</label>
-                        <div className="flex items-center gap-2 p-1 border rounded-xl bg-gray-50/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
-                            <div className="flex-1 relative group">
-                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50 group-hover:text-indigo-500 transition-colors" />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <span className="text-[10px] opacity-50 ml-1">開始日期</span>
                                 <input
                                     type="date"
                                     value={form.startDate}
-                                    max={form.endDate}
+                                    max={form.endDate || undefined}
                                     onChange={e => onInputChange('startDate', e.target.value)}
-                                    className="w-full bg-transparent border-none py-3 pl-10 pr-2 text-sm font-medium focus:ring-0 cursor-pointer"
-                                    placeholder="開始日期"
+                                    style={{ colorScheme: isDarkMode ? 'dark' : 'light' }}
+                                    className={`w-full py-3 px-4 text-sm font-medium cursor-pointer rounded-xl appearance-none ${isDarkMode ? 'bg-gray-800 text-white border-gray-600 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert' : 'bg-white text-gray-900 border-gray-300'} border-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500`}
                                 />
                             </div>
-                            <div className="opacity-30"><MoveRight className="w-4 h-4" /></div>
-                            <div className="flex-1 relative group">
-                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50 group-hover:text-indigo-500 transition-colors" />
+                            <div className="space-y-1">
+                                <span className="text-[10px] opacity-50 ml-1">結束日期</span>
                                 <input
                                     type="date"
                                     value={form.endDate}
-                                    min={form.startDate}
+                                    min={form.startDate || undefined}
                                     onChange={e => onInputChange('endDate', e.target.value)}
-                                    className="w-full bg-transparent border-none py-3 pl-10 pr-2 text-sm font-medium focus:ring-0 cursor-pointer"
-                                    placeholder="結束日期"
+                                    style={{ colorScheme: isDarkMode ? 'dark' : 'light' }}
+                                    className={`w-full py-3 px-4 text-sm font-medium cursor-pointer rounded-xl appearance-none ${isDarkMode ? 'bg-gray-800 text-white border-gray-600 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert' : 'bg-white text-gray-900 border-gray-300'} border-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500`}
                                 />
                             </div>
                         </div>
