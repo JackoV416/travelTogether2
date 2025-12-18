@@ -53,8 +53,8 @@ const ShoppingTab = ({
                 isDarkMode={isDarkMode}
             />
             <div className="flex justify-end gap-2">
-                <button onClick={() => onOpenSmartImport ? onOpenSmartImport() : onOpenSectionModal('import', 'shopping')} className={`px-3 py-1 rounded-lg border text-xs ${isDarkMode ? 'border-white/30 hover:bg-white/10' : 'border-gray-300 hover:bg-gray-100'}`}>匯入</button>
-                <button onClick={() => onOpenSectionModal('export', 'shopping')} className={`px-3 py-1 rounded-lg border text-xs ${isDarkMode ? 'border-white/30 hover:bg-white/10' : 'border-gray-300 hover:bg-gray-100'}`}>匯出</button>
+                <button onClick={() => { }} className={`px-3 py-1 rounded-lg border text-xs opacity-50 cursor-not-allowed ${isDarkMode ? 'border-white/30' : 'border-gray-300'}`} title="匯入 - V0.22 開放">匯入 🚧</button>
+                <button onClick={() => { }} className={`px-3 py-1 rounded-lg border text-xs opacity-50 cursor-not-allowed ${isDarkMode ? 'border-white/30' : 'border-gray-300'}`} title="匯出 - V0.22 開放">匯出 🚧</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className={glassCard(isDarkMode) + " p-6"}>
@@ -62,11 +62,12 @@ const ShoppingTab = ({
                         <h3 className="font-bold flex gap-2"><List className="w-5 h-5" /> 預計購買</h3>
                         <div className="flex gap-2">
                             <button
-                                onClick={() => onOpenAIModal('shopping')}
-                                className={`text-xs px-2 py-1 rounded flex items-center gap-1 transition-colors ${isDarkMode ? 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/30' : 'bg-purple-100 text-purple-600 hover:bg-purple-200'}`}
+                                onClick={() => { }}
+                                className={`text-xs px-2 py-1 rounded flex items-center gap-1 opacity-50 cursor-not-allowed ${isDarkMode ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-100 text-purple-600'}`}
+                                title="AI 助手 - V0.22 開放"
                             >
                                 <Sparkles className="w-3 h-3" />
-                                AI 助手
+                                AI 助手 🚧
                             </button>
                             <button onClick={() => onAddItem('shopping_plan')} className="text-xs bg-indigo-500 text-white px-2 py-1 rounded hover:bg-indigo-600 transition-colors">+ 新增</button>
                         </div>

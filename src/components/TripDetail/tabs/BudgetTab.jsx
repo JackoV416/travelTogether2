@@ -66,9 +66,9 @@ const BudgetTab = ({
                 isDarkMode={isDarkMode}
             />
             <div className="flex justify-end gap-2">
-                <button onClick={() => onOpenSmartImport ? onOpenSmartImport() : onOpenSectionModal('import', 'budget')} className="px-3 py-1 rounded-lg border border-white/30 text-xs">匯入</button>
-                <button onClick={() => onOpenSectionModal('export', 'budget')} className="px-3 py-1 rounded-lg border border-white/30 text-xs">匯出</button>
-                <button onClick={onExportPdf} className="px-3 py-1 rounded-lg border border-indigo-400 text-xs text-indigo-200">匯出 PDF</button>
+                <button onClick={() => { }} className="px-3 py-1 rounded-lg border border-white/30 text-xs opacity-50 cursor-not-allowed" title="匯入 - V0.22 開放">匯入 🚧</button>
+                <button onClick={() => { }} className="px-3 py-1 rounded-lg border border-white/30 text-xs opacity-50 cursor-not-allowed" title="匯出 - V0.22 開放">匯出 🚧</button>
+                <button onClick={() => { }} className="px-3 py-1 rounded-lg border border-indigo-400/50 text-xs text-indigo-200/50 opacity-50 cursor-not-allowed" title="匯出 PDF - V0.22 開放">匯出 PDF 🚧</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className={glassCard(isDarkMode) + " p-6 text-center"}>

@@ -2,7 +2,7 @@
 > **智能旅遊規劃與實時協作平台**  
 > AI-Powered Itinerary Planner & Real-time Collaboration Tool
 
-[![Version](https://img.shields.io/badge/version-v0.21.1-blue?style=for-the-badge)](https://github.com/JackoV416/travelTogether2)
+[![Version](https://img.shields.io/badge/version-v0.21.2-blue?style=for-the-badge)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-19.0-blue)](https://reactjs.org/)
 [![Firebase](https://img.shields.io/badge/Firebase-Firestore-orange)](https://firebase.google.com/)
 [![Tailwind](https://img.shields.io/badge/Tailwind-3.4-cyan)](https://tailwindcss.com/)

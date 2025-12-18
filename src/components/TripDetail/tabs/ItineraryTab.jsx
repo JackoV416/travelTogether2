@@ -161,10 +161,10 @@ const ItineraryTab = ({
                             {isEditMode ? '完成編輯' : '編輯行程'}
                         </button>
 
-                        <button onClick={() => setViewMode(viewMode === 'list' ? 'map' : 'list')} className={`p-2 rounded-lg border transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100'}`}>{viewMode === 'list' ? <MapIcon className="w-5 h-5" /> : <List className="w-5 h-5" />}</button>
-                        {canEdit && <button onClick={onOptimize} className={`p-2 rounded-lg border transition-all ${isDarkMode ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/30' : 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'}`} title="AI 智能排程優化"><Wand2 className="w-5 h-5" /></button>}
-                        <button onClick={() => onOpenSmartImport ? onOpenSmartImport() : openSectionModal('import', 'itinerary')} className={`px-3 py-1 rounded-lg border text-xs ${isDarkMode ? 'border-white/20 hover:bg-white/10' : 'border-gray-200 hover:bg-gray-50'}`}>匯入</button>
-                        <button onClick={() => openSectionModal('export', 'itinerary')} className={`px-3 py-1 rounded-lg border text-xs ${isDarkMode ? 'border-white/20 hover:bg-white/10' : 'border-gray-200 hover:bg-gray-50'}`}>匯出</button>
+                        <button onClick={() => { }} className={`p-2 rounded-lg border transition-all opacity-50 cursor-not-allowed ${isDarkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'bg-white border-gray-300 text-gray-600'}`} title="Map 檢視 - V0.22 開放">{viewMode === 'list' ? <MapIcon className="w-5 h-5" /> : <List className="w-5 h-5" />}</button>
+                        {canEdit && <button onClick={() => { }} className={`p-2 rounded-lg border transition-all opacity-50 cursor-not-allowed ${isDarkMode ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-indigo-50 border-indigo-200 text-indigo-600'}`} title="AI 優化 - V0.22 開放"><Wand2 className="w-5 h-5" /></button>}
+                        <button onClick={() => { }} className={`px-3 py-1 rounded-lg border text-xs opacity-50 cursor-not-allowed ${isDarkMode ? 'border-white/20' : 'border-gray-200'}`} title="匯入 - V0.22 開放">匯入 🚧</button>
+                        <button onClick={() => { }} className={`px-3 py-1 rounded-lg border text-xs opacity-50 cursor-not-allowed ${isDarkMode ? 'border-white/20' : 'border-gray-200'}`} title="匯出 - V0.22 開放">匯出 🚧</button>
                         {canEdit && <button onClick={() => onAddItem(currentDisplayDate, 'spot')} className="text-xs bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-3 py-1.5 rounded-lg font-bold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 active:scale-95">+ 新增</button>}
                     </div>
                 </div>
@@ -199,28 +199,30 @@ const ItineraryTab = ({
                                                 </button>
 
                                                 <button
-                                                    onClick={() => onOpenAIModal('full')}
-                                                    className={`group flex items-center gap-4 px-6 py-4 rounded-2xl transition-all active:scale-95 ${isDarkMode ? 'bg-purple-500/20 hover:bg-purple-500/30' : 'bg-purple-50 hover:bg-purple-100'} border border-purple-500/20 shadow-lg`}
+                                                    onClick={() => { }}
+                                                    className={`group flex items-center gap-4 px-6 py-4 rounded-2xl transition-all opacity-50 cursor-not-allowed ${isDarkMode ? 'bg-purple-500/20' : 'bg-purple-50'} border border-purple-500/20 shadow-lg`}
+                                                    title="AI 智能領隊 - V0.22 開放"
                                                 >
-                                                    <div className="p-2.5 bg-purple-500/20 rounded-xl group-hover:bg-purple-500/30 transition-colors">
+                                                    <div className="p-2.5 bg-purple-500/20 rounded-xl">
                                                         <BrainCircuit className="w-5 h-5 text-purple-400" />
                                                     </div>
                                                     <div className="text-left">
-                                                        <div className="font-bold text-sm text-purple-400">AI 智能領隊</div>
-                                                        <div className="text-[10px] opacity-60 text-purple-400/70">一鍵生成完整旅遊計畫</div>
+                                                        <div className="font-bold text-sm text-purple-400">AI 智能領隊 🚧</div>
+                                                        <div className="text-[10px] opacity-60 text-purple-400/70">V0.22 開放</div>
                                                     </div>
                                                 </button>
 
                                                 <button
-                                                    onClick={onOptimize}
-                                                    className={`group flex items-center gap-4 px-6 py-4 rounded-2xl transition-all active:scale-95 bg-gradient-to-r from-indigo-600 via-indigo-600 to-indigo-700 text-white shadow-xl shadow-indigo-500/20 border border-white/10`}
+                                                    onClick={() => { }}
+                                                    className={`group flex items-center gap-4 px-6 py-4 rounded-2xl transition-all opacity-50 cursor-not-allowed bg-gradient-to-r from-indigo-600/50 via-indigo-600/50 to-indigo-700/50 text-white shadow-xl shadow-indigo-500/10 border border-white/10`}
+                                                    title="AI 快速排程 - V0.22 開放"
                                                 >
-                                                    <div className="p-2.5 bg-white/20 rounded-xl group-hover:bg-white/30 transition-colors">
+                                                    <div className="p-2.5 bg-white/20 rounded-xl">
                                                         <Sparkles className="w-5 h-5 text-white" />
                                                     </div>
                                                     <div className="text-left">
-                                                        <div className="font-bold text-sm">AI 快速排程</div>
-                                                        <div className="text-[10px] opacity-80">優化當前動線與路線</div>
+                                                        <div className="font-bold text-sm">AI 快速排程 🚧</div>
+                                                        <div className="text-[10px] opacity-80">V0.22 開放</div>
                                                     </div>
                                                 </button>
 

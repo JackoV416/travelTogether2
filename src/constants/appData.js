@@ -5,11 +5,23 @@ import {
 
 // --- Versioning & Metadata ---
 export const AUTHOR_NAME = "Jamie Kwok";
-export const APP_VERSION = "V0.21.1";
+export const APP_VERSION = "V0.21.2";
 
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V0.21.2",
+        date: "2025-12-19",
+        desc: {
+            "zh-TW": "功能穩定化",
+            "en": "Feature Stabilization"
+        },
+        details: {
+            "zh-TW": "• 暫時關閉 AI 推薦功能 (V0.22 重新開放)\n• 暫時關閉匯入功能 (V0.22 重新開放)\n• 暫時關閉 Map 檢視功能 (V0.22 重新開放)\n• 確保核心功能穩定運作",
+            "en": "• Temporarily disabled AI features (re-enable in V0.22)\n• Temporarily disabled import features (re-enable in V0.22)\n• Temporarily disabled Map view (re-enable in V0.22)\n• Ensuring core functionality stability"
+        }
+    },
     {
         ver: "V0.21.1",
         date: "2025-12-19",

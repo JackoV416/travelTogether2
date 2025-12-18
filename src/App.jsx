@@ -27,8 +27,8 @@ import {
     TIMEZONES, LANGUAGE_OPTIONS, DEFAULT_BG_IMAGE,
     TAB_LABELS, INSURANCE_SUGGESTIONS, INSURANCE_RESOURCES
 } from './constants/appData';
-export const APP_VERSION = "V0.21.1";
-console.log("Travel Together Version Logic Triggered: V0.21.1");
+export const APP_VERSION = "V0.21.2";
+console.log("Travel Together Version Logic Triggered: V0.21.2");
 
 import {
     glassCard, getHolidayMap, getLocalizedCountryName,
@@ -737,8 +737,19 @@ const App = () => {
                 isDarkMode={isDarkMode}
                 trips={[selectedTrip].filter(Boolean)}
                 onImport={async (file, type, targetTripId) => {
-                    // Placeholder - actual import handled in Dashboard
-                    console.log('Import from TripDetail:', file.name, type, targetTripId);
+                    // Show notification based on type
+                    const typeLabels = {
+                        itinerary: '行程截圖',
+                        budget: '消費單據',
+                        memory: '回憶相片',
+                        json: 'JSON',
+                        csv: 'CSV'
+                    };
+                    sendNotification(
+                        `${typeLabels[type] || '檔案'}已接收 ✅`,
+                        `${file.name} 已上傳`,
+                        'success'
+                    );
                     setIsSmartImportModalOpen(false);
                 }}
             />
