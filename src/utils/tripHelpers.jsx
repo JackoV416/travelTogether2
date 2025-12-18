@@ -8,7 +8,7 @@ import {
     CITY_TRANSLATIONS,
     COUNTRY_TRANSLATIONS,
     OUTFIT_IMAGES
-} from '../constants/tripData';
+} from '../constants/appData';
 
 export const getHolidayMap = (region) => HOLIDAYS_BY_REGION[region] || HOLIDAYS_BY_REGION.Global;
 export const getLocalizedCountryName = (country, lang = 'zh-TW') => COUNTRY_TRANSLATIONS[country]?.[lang] || country;
@@ -36,14 +36,36 @@ export const getDaysArray = (start, end) => {
 
 export const getWeekday = (dateStr) => ["週日", "週一", "週二", "週三", "週四", "週五", "週六"][new Date(dateStr).getDay()];
 
-export const getTripSummary = (trip, userId) => {
+export const getTripSummary = (trip) => {
     if (!trip) return "";
     const now = new Date();
     const start = new Date(trip.startDate);
-    const diffDays = Math.ceil((start - now) / (1000 * 60 * 60 * 24));
-    let summary = diffDays > 0 ? `距離出發 ${diffDays} 天` : "旅程進行中";
-    const nextFlight = trip.itinerary?.[now.toISOString().split('T')[0]]?.find(i => i.type === 'flight');
-    if (nextFlight) summary += ` • ✈️ ${nextFlight.details.number} `;
+    const end = new Date(trip.endDate);
+
+    const diffTime = start - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    let summary = "";
+
+    if (diffDays > 0) {
+        summary = `🚗 距離出發還有 ${diffDays} 天`;
+    } else if (now <= end) {
+        summary = "✈️ 旅程進行中";
+        const todayStr = now.toISOString().split('T')[0];
+        const todayItems = trip.itinerary?.[todayStr] || [];
+        const nextItem = todayItems.find(i => i.time > now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
+        if (nextItem) summary += ` • 下一站: ${nextItem.name}`;
+    } else {
+        summary = "🏁 旅程已結束";
+    }
+
+    // Add flight info if any
+    const firstDayItinerary = trip.itinerary?.[trip.startDate] || [];
+    const flight = firstDayItinerary.find(i => i.type === 'flight');
+    if (flight && flight.details?.number) {
+        summary += ` • 航班: ${flight.details.number}`;
+    }
+
     return summary;
 };
 
@@ -101,12 +123,23 @@ export const getTimeDiff = (userRegion, destCountry) => {
 
 export const getLocalCityTime = (tz) => new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit' });
 
-export const getWeatherForecast = (country) => {
+export const getWeatherForecast = (country, currentTempStr, customDesc, customIcon) => {
     const region = getSafeCountryInfo(country).region;
     const iconUrl = OUTFIT_IMAGES[region] || OUTFIT_IMAGES.north;
-    if (region === "hot") return { temp: "30°C", clothes: "短袖、墨鏡、防曬", icon: <Sun className="text-orange-500" />, desc: "炎熱", outfitIcon: iconUrl };
-    if (region === "south") return { temp: "24°C", clothes: "薄襯衫、輕薄外套", icon: <CloudSun className="text-yellow-500" />, desc: "舒適", outfitIcon: iconUrl };
-    return { temp: "10°C", clothes: "大衣、圍巾、暖包", icon: <Snowflake className="text-blue-300" />, desc: "寒冷", outfitIcon: iconUrl };
+
+    // If real temp is provided (e.g. "28°C"), use distinct logic
+    if (currentTempStr) {
+        const temp = parseInt(currentTempStr);
+        if (isNaN(temp)) return { temp: "--", clothes: "--", icon: null, desc: "--", outfitIcon: null };
+        if (temp >= 28) return { temp: currentTempStr, clothes: "背心、短褲、防曬", icon: customIcon || <Sun className="text-orange-500" />, desc: customDesc || "炎熱", outfitIcon: iconUrl };
+        if (temp >= 23) return { temp: currentTempStr, clothes: "短袖、透氣帆布鞋", icon: customIcon || <Sun className="text-yellow-500" />, desc: customDesc || "溫暖", outfitIcon: iconUrl };
+        if (temp >= 18) return { temp: currentTempStr, clothes: "薄長袖、針織衫", icon: customIcon || <CloudSun className="text-emerald-500" />, desc: customDesc || "舒適", outfitIcon: iconUrl };
+        if (temp >= 12) return { temp: currentTempStr, clothes: "夾克、帽T、牛仔褲", icon: customIcon || <CloudSun className="text-blue-400" />, desc: customDesc || "微涼", outfitIcon: iconUrl };
+        return { temp: currentTempStr, clothes: "厚大衣、圍巾、發熱衣", icon: customIcon || <Snowflake className="text-blue-600" />, desc: customDesc || "寒冷", outfitIcon: iconUrl };
+    }
+
+    // No real data - return placeholders instead of fake random info
+    return { temp: "--", clothes: "--", icon: null, desc: "--", outfitIcon: null };
 };
 
 export const getTransportAdvice = (item, city = "") => {

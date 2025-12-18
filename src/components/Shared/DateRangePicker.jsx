@@ -12,7 +12,8 @@ const DateRangePicker = ({
     onSelect,
     isDarkMode = true,
     placeholder = "選擇日期範圍",
-    minDate // 唔設預設值，喺下面處理
+    minDate, // 唔設預設值，喺下面處理
+    holidays // { "MM-DD": "Name" }
 }) => {
     // 確保 minDate 只係日期部分（去掉時間）
     const getMinDate = () => {
@@ -178,11 +179,19 @@ const DateRangePicker = ({
                                 day_disabled: 'opacity-20 cursor-not-allowed',
                                 day_hidden: 'invisible',
                             }}
+                            modifiers={{
+                                holiday: (date) => {
+                                    if (!holidays) return false;
+                                    const key = format(date, 'MM-dd');
+                                    return Boolean(holidays[key]);
+                                }
+                            }}
                             modifiersStyles={{
                                 selected: { backgroundColor: '#6366f1', color: 'white' },
                                 range_start: { backgroundColor: '#6366f1', color: 'white', borderRadius: '8px 0 0 8px' },
                                 range_end: { backgroundColor: '#6366f1', color: 'white', borderRadius: '0 8px 8px 0' },
                                 range_middle: { backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.2)' : '#e0e7ff' },
+                                holiday: { color: '#ef4444', fontWeight: 'bold' } // Red for holidays
                             }}
                         />
 

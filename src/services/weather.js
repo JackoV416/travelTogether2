@@ -46,7 +46,7 @@ export async function getWeather(latitude, longitude) {
             latitude,
             longitude,
             current: 'temperature_2m,weathercode,relative_humidity_2m,wind_speed_10m',
-            daily: 'temperature_2m_max,temperature_2m_min,sunrise,sunset', // 用於日夜判斷等
+            daily: 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset', // 用於日夜判斷等
             timezone: 'auto' // 自動偵測時區
         });
 

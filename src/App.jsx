@@ -14,6 +14,7 @@ import { exportToBeautifulPDF, exportToJSON, exportToImage } from './services/pd
 import TripExportImportModal from './components/Modals/TripExportImportModal';
 import SmartImportModal from './components/Modals/SmartImportModal';
 import NotificationSystem from './components/Shared/NotificationSystem';
+import OfflineBanner from './components/Shared/OfflineBanner';
 import { useNotifications } from './hooks/useNotifications';
 import AIGeminiModal from './components/Modals/AIGeminiModal';
 
@@ -26,8 +27,8 @@ import {
     TIMEZONES, LANGUAGE_OPTIONS, DEFAULT_BG_IMAGE,
     TAB_LABELS, INSURANCE_SUGGESTIONS, INSURANCE_RESOURCES
 } from './constants/appData';
-const APP_VERSION = "V0.17.0";
-console.log("Travel Together Version Logic Triggered: V0.17.0");
+export const APP_VERSION = "V0.19.0";
+console.log("Travel Together Version Logic Triggered: V0.19.0");
 
 import {
     glassCard, getHolidayMap, getLocalizedCountryName,
@@ -102,6 +103,31 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
         if (!showNotif && onMarkNotificationsRead) onMarkNotificationsRead();
     };
 
+    const [notifTab, setNotifTab] = useState('all'); // all, alert, system
+
+    const filteredNotifs = notifications.filter(n => {
+        if (notifTab === 'all') return true;
+        if (notifTab === 'alert') return n.type === 'warning' || n.type === 'error';
+        if (notifTab === 'system') return n.type === 'success' || n.type === 'info';
+        return true;
+    });
+
+    const handleClearAll = () => {
+        if (confirm("確定清除所有通知？")) {
+            // Need a prop for clearAll, but currently only onRemoveNotification (single).
+            // We can iterate or if onRemoveNotification accepts 'all' or we need a new prop?
+            // The user didn't providing onClearAll prop in App.jsx Header usage?
+            // Let's check App.jsx usage of Header.
+            // If strictly following props, I might need to add onClearAll to Header props and App.
+            // For now, I will use a loop or assume onRemoveNotification handles it if I pass special ID?
+            // Safer: Add onClearAll prop.
+            if (onRemoveNotification) {
+                // Iterate reverse to avoid index shifting issues if array
+                notifications.forEach(n => onRemoveNotification(n.id));
+            }
+        }
+    };
+
     return (
         <header className={`sticky top-0 z-50 p-4 transition-all duration-300 ${isDarkMode ? 'bg-gray-900/95 border-b border-gray-800' : 'bg-gray-50/95 border-b border-gray-200'} shadow-sm`}>
             <div className="flex items-center justify-between max-w-7xl mx-auto">
@@ -119,18 +145,35 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                             {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>}
                         </button>
                         {showNotif && <div className={`absolute top-12 right-0 w-96 p-4 rounded-xl shadow-2xl border z-50 backdrop-blur-xl ${isDarkMode ? 'bg-gray-900/95 border-white/10' : 'bg-white/95 border-gray-200'}`}>
-                            <h4 className="font-bold px-3 py-2 text-sm border-b border-gray-500/10 mb-2">通知中心</h4>
+                            <div className="flex justify-between items-center border-b border-gray-500/10 pb-2 mb-2">
+                                <h4 className="font-bold text-sm">通知中心</h4>
+                                <button onClick={handleClearAll} className="text-xs text-red-400 hover:text-red-500 flex items-center gap-1"><Trash2 className="w-3 h-3" /> 清除全部</button>
+                            </div>
+
+                            {/* Categories */}
+                            <div className="flex gap-1 mb-2">
+                                {[{ id: 'all', label: '全部' }, { id: 'alert', label: '警報' }, { id: 'system', label: '系統' }].map(t => (
+                                    <button
+                                        key={t.id}
+                                        onClick={() => setNotifTab(t.id)}
+                                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${notifTab === t.id ? 'bg-indigo-500 text-white' : 'hover:bg-gray-500/10 opacity-60'}`}
+                                    >
+                                        {t.label}
+                                    </button>
+                                ))}
+                            </div>
+
                             <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-1">
-                                {notifications.length === 0 ? (
-                                    <div className="text-xs opacity-60 text-center py-6">目前沒有新的通知。</div>
-                                ) : notifications.map(n => (
+                                {filteredNotifs.length === 0 ? (
+                                    <div className="text-xs opacity-60 text-center py-6">目前沒有相關通知。</div>
+                                ) : filteredNotifs.map(n => (
                                     <div key={n.id} className="p-3 rounded-lg border border-gray-500/20 text-xs flex flex-col gap-1 bg-white/5">
                                         <div className="flex justify-between items-center gap-2">
-                                            <span className="font-semibold">{n.title || '系統通知'}</span>
+                                            <span className={`font-semibold ${n.type === 'warning' || n.type === 'error' ? 'text-orange-400' : ''}`}>{n.title || '系統通知'}</span>
                                             <button onClick={() => onRemoveNotification && onRemoveNotification(n.id)} className="text-red-400 hover:text-red-600"><X className="w-3 h-3" /></button>
                                         </div>
-                                        <p className="opacity-80">{n.message}</p>
-                                        <div className="flex justify-between text-[10px] opacity-60">
+                                        <p className="opacity-80 leading-relaxed">{n.message}</p>
+                                        <div className="flex justify-between text-[10px] opacity-60 mt-1">
                                             <span>{n.time}</span>
                                             {n.url && <a href={n.url} target="_blank" className="text-indigo-400 flex items-center gap-1">查看<ArrowUpRight className="w-3 h-3" /></a>}
                                         </div>
@@ -165,7 +208,10 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                                     <button onClick={() => { setHoverMenu(false); onOpenUserSettings(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><Edit3 className="w-4 h-4" /> 個人設定</button>
                                     <button onClick={() => { setHoverMenu(false); onOpenVersion(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><History className="w-4 h-4" /> 版本資訊</button>
                                     <div className="h-px bg-gray-500/10 my-1"></div>
-                                    <button onClick={toggleDarkMode} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>{isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />} 切換模式</button>
+                                    <button onClick={toggleDarkMode} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                                        {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                                        切換模式
+                                    </button>
                                     <button onClick={onLogout} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg text-red-500 transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-red-50'}`}><LogOut className="w-4 h-4" /> 登出</button>
                                 </div>
                             </div>
@@ -331,7 +377,7 @@ const VersionModal = ({ isOpen, onClose, isDarkMode, globalSettings }) => {
 // --- Files & Attachments Tab ---
 
 // --- Trip Detail Wrapper (handles ALL data loading, TripDetailContent only renders when trip is ready) ---
-const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, globalSettings, exchangeRates, onOpenSmartImport, weatherData }) => {
+const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, globalSettings, exchangeRates, onOpenSmartImport, weatherData, onUpdateSimulationTrip }) => {
     // ALL hooks in wrapper - consistent on every render
     const [realTrip, setRealTrip] = useState(null);
     const [isLoading, setIsLoading] = useState(!isSimulation);
@@ -508,6 +554,12 @@ const App = () => {
         cities: []
     });
 
+    // Dark Mode Effect
+    useEffect(() => {
+        if (isDarkMode) document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+    }, [isDarkMode]);
+
     // --- Notification System Hook ---
     const { notifications, sendNotification, setNotifications, markNotificationsRead, removeNotification } = useNotifications(user);
 
@@ -648,6 +700,7 @@ const App = () => {
     return (
         <div className={`min-h-screen transition-colors duration-500 font-sans selection:bg-indigo-500/30 ${isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-slate-50 text-gray-900'} ${isSmartImportModalOpen ? 'blur-sm scale-[0.99]' : ''}`}>
             <NotificationSystem notifications={notifications} setNotifications={setNotifications} />
+            <OfflineBanner isDarkMode={isDarkMode} />
             {/* Background Image (Global) */}
             <div className="fixed inset-0 z-0 opacity-20 pointer-events-none transition-all duration-1000" style={{ backgroundImage: `url(${globalBg})`, backgroundSize: 'cover' }}></div>
             <div className="relative z-10 flex-grow">
@@ -665,7 +718,7 @@ const App = () => {
                         onOpenSettings={() => setIsSettingsOpen(true)}
                     />
                 )}
-                {view === 'detail' && <TripDetail tripData={selectedTrip} user={user} isDarkMode={isDarkMode} setGlobalBg={setGlobalBg} isSimulation={false} globalSettings={globalSettings} onBack={() => setView('dashboard')} exchangeRates={exchangeRates} />}
+                {view === 'detail' && <TripDetail tripData={selectedTrip} user={user} isDarkMode={isDarkMode} setGlobalBg={setGlobalBg} isSimulation={false} globalSettings={globalSettings} onBack={() => setView('dashboard')} exchangeRates={exchangeRates} weatherData={weatherData} />}
                 {view === 'tutorial' && <div className="h-screen flex flex-col"><div className="p-4 border-b flex gap-4"><button onClick={() => setView('dashboard')}><ChevronLeft /></button> 模擬模式 (東京範例)</div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} globalSettings={globalSettings} exchangeRates={exchangeRates} weatherData={weatherData} /></div></div>}
             </div>
             {view !== 'tutorial' && <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} />}

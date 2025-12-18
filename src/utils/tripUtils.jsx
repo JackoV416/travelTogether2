@@ -92,12 +92,25 @@ export const getTimeDiff = (userRegion, destCountry) => {
 
 export const getLocalCityTime = (tz) => new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit' });
 
-export const getWeatherForecast = (country) => {
+export const getWeatherForecast = (country, currentTempStr, customDesc, customIcon) => {
     const region = getSafeCountryInfo(country).region;
     const iconUrl = OUTFIT_IMAGES[region] || OUTFIT_IMAGES.north;
-    if (region === "hot") return { temp: "30°C", clothes: "短袖、墨鏡、防曬", icon: <Sun className="text-orange-500" />, desc: "炎熱", outfitIcon: iconUrl };
-    if (region === "south") return { temp: "24°C", clothes: "薄襯衫、輕薄外套", icon: <CloudSun className="text-yellow-500" />, desc: "舒適", outfitIcon: iconUrl };
-    return { temp: "10°C", clothes: "大衣、圍巾、暖包", icon: <Snowflake className="text-blue-300" />, desc: "寒冷", outfitIcon: iconUrl };
+
+    // If real temp is provided (e.g. "28°C"), use distinct logic
+    if (currentTempStr) {
+        const temp = parseInt(currentTempStr);
+        if (temp >= 28) return { temp: currentTempStr, clothes: "背心、短褲、防曬", icon: customIcon || <Sun className="text-orange-500" />, desc: customDesc || "炎熱", outfitIcon: iconUrl };
+        if (temp >= 23) return { temp: currentTempStr, clothes: "短袖、透氣帆布鞋", icon: customIcon || <Sun className="text-yellow-500" />, desc: customDesc || "溫暖", outfitIcon: iconUrl };
+        if (temp >= 18) return { temp: currentTempStr, clothes: "薄長袖、針織衫", icon: customIcon || <CloudSun className="text-emerald-500" />, desc: customDesc || "舒適", outfitIcon: iconUrl };
+        if (temp >= 12) return { temp: currentTempStr, clothes: "夾克、帽T、牛仔褲", icon: customIcon || <CloudSun className="text-blue-400" />, desc: customDesc || "微涼", outfitIcon: iconUrl };
+        return { temp: currentTempStr, clothes: "厚大衣、圍巾、發熱衣", icon: customIcon || <Snowflake className="text-blue-600" />, desc: customDesc || "寒冷", outfitIcon: iconUrl };
+    }
+
+    // Variations for mockup / off-season
+    const rand = Math.floor(Math.random() * 3);
+    if (region === "hot") return { temp: (28 + rand) + "°C", clothes: "短袖、墨鏡、人字拖", icon: <Sun className="text-orange-500" />, desc: "炎熱", outfitIcon: iconUrl };
+    if (region === "south") return { temp: (20 + rand) + "°C", clothes: rand === 1 ? "薄襯衫、休閒褲" : "輕便 T-shirt、薄外套", icon: <CloudSun className="text-yellow-500" />, desc: "舒適", outfitIcon: iconUrl };
+    return { temp: (5 + rand) + "°C", clothes: "羽絨、手套、毛帽", icon: <Snowflake className="text-blue-300" />, desc: "寒冷", outfitIcon: iconUrl };
 };
 
 export const buildDailyReminder = (date, items = []) => {

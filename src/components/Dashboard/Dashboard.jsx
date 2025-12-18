@@ -303,7 +303,10 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                                 currentLang={currentLang}
                                 onSelect={onSelectTrip}
                                 setGlobalBg={setGlobalBg}
-                                cardWeather={getWeatherForecast(t.country)}
+                                cardWeather={(() => {
+                                    const wData = weatherData?.[t.city];
+                                    return getWeatherForecast(t.country, wData?.temp, wData?.desc, wData?.icon);
+                                })()}
                             />
                         ))}
                         <div className={`${glassCard(isDarkMode)} h-60 flex flex-col items-center justify-center text-center opacity-60 hover:opacity-100 cursor-pointer border-dashed hover:border-indigo-500 transition-all`} onClick={() => setIsCreateModalOpen(true)}>

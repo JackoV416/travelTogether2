@@ -3,12 +3,14 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db, storage } from '../../../firebase';
 import { FileUp, Loader2, FileText, Trash2, Upload } from 'lucide-react';
+import SearchFilterBar from '../../Shared/SearchFilterBar';
 
-const FilesTab = ({ trip, user, isOwner, language = "zh-TW", onOpenSmartImport }) => {
+const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, onOpenSmartImport }) => {
     const [uploading, setUploading] = useState(false);
     const [files, setFiles] = useState(trip.files || []);
     const fileInputRef = useRef(null);
     const [dragActive, setDragActive] = useState(false);
+    const [searchValue, setSearchValue] = useState("");
 
     // Sync files from trip data
     useEffect(() => {
@@ -102,6 +104,12 @@ const FilesTab = ({ trip, user, isOwner, language = "zh-TW", onOpenSmartImport }
 
     return (
         <div className="animate-fade-in space-y-6">
+            <SearchFilterBar
+                searchValue={searchValue}
+                onSearchChange={setSearchValue}
+                placeholder="搜尋文件..."
+                isDarkMode={isDarkMode}
+            />
             {/* Smart Import Banner & Upload Area */}
             <div
                 className={`mb-6 p-8 rounded-2xl border-2 border-dashed transition-all cursor-pointer group flex flex-col items-center justify-center text-center space-y-3 ${dragActive ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-indigo-500/30 bg-indigo-500/5 hover:bg-indigo-500/10'}`}
@@ -148,7 +156,7 @@ const FilesTab = ({ trip, user, isOwner, language = "zh-TW", onOpenSmartImport }
                         {language === 'zh-TW' ? "暫無檔案" : "No files uploaded"}
                     </div>
                 )}
-                {files.map(file => (
+                {files.filter(f => !searchValue || f.name.toLowerCase().includes(searchValue.toLowerCase())).map(file => (
                     <div key={file.id} className="group relative bg-white dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-lg transition-all flex gap-4 items-start">
                         <div className="w-16 h-16 flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center overflow-hidden">
                             {isImage(file.type) ? (

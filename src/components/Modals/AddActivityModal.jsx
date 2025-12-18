@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Map as MapIcon, Utensils, ShoppingBag, Bus, PlaneTakeoff, Hotel } from 'lucide-react';
+import { X, Map as MapIcon, Utensils, ShoppingBag, Bus, PlaneTakeoff, Hotel, Shirt, Sparkles, Smartphone, FileText, Pill, Package } from 'lucide-react';
 import { inputClasses, formatDate, getWeekday } from '../../utils/tripUtils';
 import { buttonPrimary } from '../../constants/styles';
 import { CURRENCIES } from '../../constants/appData';
@@ -11,8 +11,9 @@ const AddActivityModal = ({ isOpen, onClose, onSave, isDarkMode, date, defaultTy
     const [currency, setCurrency] = useState('HKD');
     const [payer, setPayer] = useState('');
     const [splitType, setSplitType] = useState('group');
-    const [details, setDetails] = useState({ isRefund: false, refund: '', tax: '', taxCurrency: 'HKD', layover: false });
+    const [details, setDetails] = useState({ isRefund: false, refund: '', tax: '', taxCurrency: 'HKD', layover: false, time: '', location: '' });
     const [estPrice, setEstPrice] = useState('');
+    const [category, setCategory] = useState('misc');
 
     useEffect(() => {
         if (isOpen) {
@@ -20,15 +21,17 @@ const AddActivityModal = ({ isOpen, onClose, onSave, isDarkMode, date, defaultTy
                 setName(editData.name || editData.desc || ''); setCost(editData.cost || ''); setType(editData.type || editData.category || 'spot'); setCurrency(editData.currency || 'HKD');
                 setPayer(editData.payer || members[0]?.name);
                 setSplitType(editData.splitType || 'group');
-                setDetails(editData.details || { isRefund: false, refund: '', tax: '', taxCurrency: 'HKD', layover: false });
+                setDetails(editData.details || { isRefund: false, refund: '', tax: '', taxCurrency: 'HKD', layover: false, time: '', location: '' });
                 setEstPrice(editData.estPrice || '');
+                setCategory(editData.category || 'misc');
             } else {
                 // Reset for new item
                 setName(''); setCost(''); setType(defaultType); setCurrency('HKD');
                 setPayer(members[0]?.name || '');
                 setSplitType('group');
-                setDetails({ isRefund: false, refund: '', tax: '', taxCurrency: 'HKD', layover: false });
+                setDetails({ isRefund: false, refund: '', tax: '', taxCurrency: 'HKD', layover: false, time: '', location: '' });
                 setEstPrice('');
+                setCategory('misc');
             }
         }
     }, [isOpen, editData, defaultType, members]);
@@ -44,13 +47,26 @@ const AddActivityModal = ({ isOpen, onClose, onSave, isDarkMode, date, defaultTy
         { id: 'hotel', label: '住宿', icon: Hotel, color: 'text-indigo-500', bg: 'bg-indigo-500/10' }
     ];
 
+    const packingCategories = [
+        { id: 'clothes', label: '衣物鞋履', icon: Shirt },
+        { id: 'toiletries', label: '個人護理', icon: Sparkles },
+        { id: 'electronics', label: '電子產品', icon: Smartphone },
+        { id: 'documents', label: '證件/文件', icon: FileText },
+        { id: 'medicine', label: '藥品/急救', icon: Pill },
+        { id: 'misc', label: '其他雜項', icon: Package }
+    ];
+
+    const isPacking = type === 'packing' || defaultType === 'packing';
+
     return (
         <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-md">
             <div className={`w-full max-w-xl p-6 rounded-2xl ${isDarkMode ? 'bg-gray-900 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-200'} shadow-2xl border transition-all max-h-[90vh] overflow-y-auto custom-scrollbar`}>
                 <div className="flex items-start justify-between mb-6">
                     <div>
-                        <h3 className="font-bold text-2xl tracking-tight">{editData ? '編輯行程項目' : '加入行程項目'}</h3>
-                        {date && (
+                        <h3 className="font-bold text-2xl tracking-tight">
+                            {editData ? (isPacking ? '編輯行李項目' : '編輯行程項目') : (isPacking ? '加入行李項目' : '加入行程項目')}
+                        </h3>
+                        {date && !isPacking && (
                             <div className="text-sm font-medium opacity-60 mt-1 flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
                                 {formatDate(date)}（{getWeekday(date)}）
@@ -62,37 +78,68 @@ const AddActivityModal = ({ isOpen, onClose, onSave, isDarkMode, date, defaultTy
                     </button>
                 </div>
 
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-6">
-                    {categories.map(cat => (
-                        <button
-                            key={cat.id}
-                            onClick={() => setType(cat.id)}
-                            className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-200 ${type === cat.id ? `${isDarkMode ? 'bg-gray-800 border-gray-600 ring-2 ring-indigo-500/50' : 'bg-white border-gray-300 ring-2 ring-indigo-500/20'} shadow-lg transform scale-105` : 'border-transparent opacity-60 hover:opacity-100 hover:bg-gray-500/5'} `}
-                        >
-                            <div className={`p-2 rounded-full mb-2 ${type === cat.id ? (isDarkMode ? 'bg-gray-700' : 'bg-gray-100') : ''}`}>
-                                <cat.icon className={`w-6 h-6 ${type === cat.id ? 'text-indigo-500' : ''}`} />
-                            </div>
-                            <span className={`text-[11px] font-bold ${type === cat.id ? 'text-indigo-500' : ''}`}>{cat.label}</span>
-                        </button>
-                    ))}
-                </div>
+                {!isPacking ? (
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-6">
+                        {categories.map(cat => (
+                            <button
+                                key={cat.id}
+                                onClick={() => setType(cat.id)}
+                                className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-200 ${type === cat.id ? `${isDarkMode ? 'bg-gray-800 border-gray-600 ring-2 ring-indigo-500/50' : 'bg-white border-gray-300 ring-2 ring-indigo-500/20'} shadow-lg transform scale-105` : 'border-transparent opacity-60 hover:opacity-100 hover:bg-gray-500/5'} `}
+                            >
+                                <div className={`p-2 rounded-full mb-2 ${type === cat.id ? (isDarkMode ? 'bg-gray-700' : 'bg-gray-100') : ''}`}>
+                                    <cat.icon className={`w-6 h-6 ${type === cat.id ? 'text-indigo-500' : ''}`} />
+                                </div>
+                                <span className={`text-[11px] font-bold ${type === cat.id ? 'text-indigo-500' : ''}`}>{cat.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-6">
+                        {packingCategories.map(cat => (
+                            <button
+                                key={cat.id}
+                                onClick={() => setCategory(cat.id)}
+                                className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-200 ${category === cat.id ? `${isDarkMode ? 'bg-gray-800 border-gray-600 ring-2 ring-indigo-500/50' : 'bg-white border-gray-300 ring-2 ring-indigo-500/20'} shadow-lg transform scale-105` : 'border-transparent opacity-60 hover:opacity-100 hover:bg-gray-500/5'} `}
+                            >
+                                <div className={`p-2 rounded-full mb-2 ${category === cat.id ? (isDarkMode ? 'bg-gray-700' : 'bg-gray-100') : ''}`}>
+                                    <cat.icon className={`w-6 h-6 ${category === cat.id ? 'text-indigo-500' : ''}`} />
+                                </div>
+                                <span className={`text-[11px] font-bold ${category === cat.id ? 'text-indigo-500' : ''}`}>{cat.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                )}
 
                 <div className="space-y-5">
                     <div>
-                        <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">名稱</label>
-                        <input value={name} onChange={e => setName(e.target.value)} placeholder="給這個行程一個名字..." className={inputClasses(isDarkMode)} />
+                        <div className="flex justify-between items-center mb-2 ml-1">
+                            <label className="block text-xs font-bold opacity-70 uppercase tracking-wider">名稱</label>
+                            {!isPacking && (
+                                <button
+                                    onClick={() => {/* In a real app, this would call AI to suggest based on trip/type */
+                                        setName(type === 'food' ? '一蘭拉麵 新宿中央東口店' : type === 'spot' ? '代代木公園 散策' : '當地特色行程');
+                                    }}
+                                    className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all ${isDarkMode ? 'border-purple-500/50 text-purple-400 hover:bg-purple-500/10' : 'border-purple-200 text-purple-600 hover:bg-purple-50'}`}
+                                >
+                                    <Sparkles className="w-2.5 h-2.5" /> AI 靈感
+                                </button>
+                            )}
+                        </div>
+                        <input value={name} onChange={e => setName(e.target.value)} placeholder={isPacking ? "輸入行李項目名稱..." : "給這個行程一個名字..."} className={inputClasses(isDarkMode)} />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-5">
-                        <div>
-                            <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">時間</label>
-                            <input type="time" value={details.time || ''} onChange={e => setDetails({ ...details, time: e.target.value })} className={inputClasses(isDarkMode)} />
+                    {!isPacking && (
+                        <div className="grid grid-cols-2 gap-5">
+                            <div>
+                                <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">時間</label>
+                                <input type="time" value={details.time || ''} onChange={e => setDetails({ ...details, time: e.target.value })} className={inputClasses(isDarkMode)} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">地點</label>
+                                <input value={details.location || ''} onChange={e => setDetails({ ...details, location: e.target.value })} placeholder="輸入地點" className={inputClasses(isDarkMode)} />
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">地點</label>
-                            <input value={details.location || ''} onChange={e => setDetails({ ...details, location: e.target.value })} placeholder="輸入地點" className={inputClasses(isDarkMode)} />
-                        </div>
-                    </div>
+                    )}
 
                     {type === 'flight' && (
                         <div className="p-5 border rounded-2xl bg-gray-500/5 border-gray-500/10 transition-all hover:bg-gray-500/10">
@@ -162,7 +209,7 @@ const AddActivityModal = ({ isOpen, onClose, onSave, isDarkMode, date, defaultTy
 
                 <div className="flex gap-4 mt-8 pt-6 border-t border-gray-500/10">
                     <button onClick={onClose} className="flex-1 py-3.5 rounded-xl border border-gray-500/30 font-bold opacity-70 hover:opacity-100 hover:bg-gray-500/5 transition-all">取消</button>
-                    <button onClick={() => { onSave({ id: editData?.id, name, cost: Number(cost), estPrice: Number(estPrice), currency, type, details, payer, splitType }); onClose(); }} className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl py-3.5 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+                    <button onClick={() => { onSave({ id: editData?.id, name, cost: Number(cost), estPrice: Number(estPrice), currency, type, details, payer, splitType, category }); onClose(); }} className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl py-3.5 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
                         {editData ? '儲存變更' : '確認加入'}
                     </button>
                 </div>

@@ -49,12 +49,14 @@
 ## 版本資訊
 
   * **作者：** Jamie Kwok
-  * **當前版本：** V0.17.0
+  * **當前版本：** V0.19.0
 
 ## 版本更新歷史 (Version History)
 
 | 版本 | 日期 | 主要更新 |
 |------|------|---------| 
+| **V0.19.0** | 2025-12-18 | 🌙 Dark Mode: 搜尋欄深色模式全面修正; ✨ Micro-Interactions: 按鈕回饋/載入/成功微動畫; 📴 Offline Banner: 離線提示組件; 🧠 Expert Guide: AI 歷史與購物理由; 💱 Dual Currency: 支援外幣與 HKD 雙幣顯示 |
+| **V0.18.0** | 2025-12-18 | 🧳 AI Packing: 智能行李清單生成、分類管理與清空功能; 🌤️ Weather: '--' 佔位符修復與真實數據對比; 🐛 Fix: 修復 `isManageMenuOpen` 崩潰與圖標引用錯誤 |
 | **V0.17.0** | 2025-12-18 | ✨ AI Preferences: 支援 AI 偏好設定與個性化推薦; ⚡️ Code Splitting: TripDetailContent 懶加載，優化首屏加載; ☁️ Sync: 用戶設置雲端同步; 🎨 UI: Settings Tabs 優化 |
 | **V0.16.2** | 2025-12-18 | 🐛 Bug Fixes: 修正 `CreateTripModal` 日曆選擇器; ♻️ 重構: `tripUtils.js`, `App.jsx` 常數提取; 🔧 Dashboard: 組件獨立化 |
 | **V0.16.1** | 2025-12-17 | ⚡️ 效能優化: 重構行程與檔案分頁組件; 🔧 ItineraryTab: 獨立組件化，提升維護性; 📂 FilesTab: 優化檔案管理介面與整合; 📱 PWA: 更新緩存策略，提升離線體驗 |

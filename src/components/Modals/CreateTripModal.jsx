@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Search, CheckCircle } from 'lucide-react';
-import { inputClasses, getLocalizedCountryName, getLocalizedCityName } from '../../utils/tripUtils';
+import { X, Search, CheckCircle, Sparkles, Loader2 } from 'lucide-react';
+import { inputClasses, getLocalizedCountryName, getLocalizedCityName, getHolidayMap } from '../../utils/tripUtils';
+import { generateAiTripName } from '../../services/ai';
 import { COUNTRIES_DATA } from '../../constants/appData';
 import DateRangePicker from '../Shared/DateRangePicker';
 
@@ -8,6 +9,29 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
     const currentLang = globalSettings.language;
     const [countrySearch, setCountrySearch] = useState("");
     const [citySearch, setCitySearch] = useState("");
+    const [generatingName, setGeneratingName] = useState(false);
+
+    // Calculate Holidays for Calendar - MUST be before any early return
+    const holidays = React.useMemo(() => {
+        const homeHolidays = getHolidayMap(globalSettings?.countryCode || 'HK', new Date().getFullYear());
+        const destCountry = form?.countries?.[0];
+        const destHolidays = destCountry ? getHolidayMap(destCountry, new Date().getFullYear()) : {};
+        return { ...homeHolidays, ...destHolidays };
+    }, [form?.countries, globalSettings]);
+
+    const handleAiNameGen = async () => {
+        if (form.cities.length === 0 && form.countries.length === 0) return;
+        setGeneratingName(true);
+        try {
+            const city = form.cities[0] || form.countries[0];
+            const name = await generateAiTripName(city, form.startDate, form.endDate);
+            onInputChange('name', name);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setGeneratingName(false);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -32,6 +56,7 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
         .filter(c => getLocalizedCityName(c, currentLang).toLowerCase().includes(citySearch.toLowerCase()) || c.toLowerCase().includes(citySearch.toLowerCase()))
         .sort();
 
+
     return (
         <div className="fixed inset-0 bg-black/60 z-[85] flex items-center justify-center p-4 backdrop-blur-md transition-all duration-300">
             <div className={`w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 sm:p-8 ${isDarkMode ? 'bg-gray-900 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-200'} shadow-2xl border transition-all transform scale-100`}>
@@ -48,7 +73,22 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2 space-y-2">
                         <label className="text-xs font-bold opacity-70 uppercase tracking-wider ml-1">行程名稱</label>
-                        <input value={form.name} onChange={e => onInputChange('name', e.target.value)} placeholder="如：歐洲文化深度遊" className={inputClasses(isDarkMode)} />
+                        <div className="relative">
+                            <input
+                                value={form.name}
+                                onChange={e => onInputChange('name', e.target.value)}
+                                placeholder="如：歐洲文化深度遊"
+                                className={inputClasses(isDarkMode) + " pr-10"}
+                            />
+                            <button
+                                onClick={handleAiNameGen}
+                                disabled={generatingName || (form.cities.length === 0 && form.countries.length === 0)}
+                                className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all ${generatingName ? 'text-indigo-400 cursor-wait' : 'text-indigo-500 hover:bg-indigo-500/10 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed'}`}
+                                title="AI 自動命名 (需先選擇目的地)"
+                            >
+                                {generatingName ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Country Search */}
@@ -159,6 +199,7 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
                             }}
                             isDarkMode={isDarkMode}
                             placeholder="選擇開始與結束日期"
+                            holidays={holidays}
                         />
                     </div>
                 </div>

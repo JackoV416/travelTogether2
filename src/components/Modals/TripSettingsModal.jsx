@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, MoveRight } from 'lucide-react';
-import { inputClasses } from '../../utils/tripUtils';
+import { inputClasses, getHolidayMap } from '../../utils/tripUtils';
 import { buttonPrimary } from '../../constants/styles';
 import { COUNTRIES_DATA } from '../../constants/appData';
+import DateRangePicker from '../Shared/DateRangePicker';
 
 const TripSettingsModal = ({ isOpen, onClose, trip, onUpdate, isDarkMode }) => {
     const [form, setForm] = useState(trip);
     useEffect(() => { if (trip) setForm(trip) }, [trip]);
+
+    const tripHolidays = React.useMemo(() => {
+        if (!form.country) return {};
+        const homeHolidays = getHolidayMap('HK'); // Default to HK or logic from globalSettings
+        const destHolidays = getHolidayMap(form.country);
+        return { ...homeHolidays, ...destHolidays };
+    }, [form.country]);
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-md">
@@ -25,29 +33,14 @@ const TripSettingsModal = ({ isOpen, onClose, trip, onUpdate, isDarkMode }) => {
                     </div>
                     <div className="space-y-2">
                         <label className="block text-xs font-bold opacity-70 uppercase tracking-wider ml-1">行程日期</label>
-                        <div className="flex items-center gap-2 p-1 border rounded-xl bg-gray-50/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
-                            <div className="flex-1 relative group">
-                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50 group-hover:text-indigo-500 transition-colors" />
-                                <input
-                                    type="date"
-                                    value={form.startDate}
-                                    max={form.endDate}
-                                    onChange={e => setForm({ ...form, startDate: e.target.value })}
-                                    className="w-full bg-transparent border-none py-3 pl-10 pr-2 text-sm font-medium focus:ring-0 cursor-pointer"
-                                />
-                            </div>
-                            <div className="opacity-30"><MoveRight className="w-4 h-4" /></div>
-                            <div className="flex-1 relative group">
-                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50 group-hover:text-indigo-500 transition-colors" />
-                                <input
-                                    type="date"
-                                    value={form.endDate}
-                                    min={form.startDate}
-                                    onChange={e => setForm({ ...form, endDate: e.target.value })}
-                                    className="w-full bg-transparent border-none py-3 pl-10 pr-2 text-sm font-medium focus:ring-0 cursor-pointer"
-                                />
-                            </div>
-                        </div>
+                        <DateRangePicker
+                            startDate={form.startDate}
+                            endDate={form.endDate}
+                            onSelect={({ startDate, endDate }) => setForm({ ...form, startDate, endDate })}
+                            isDarkMode={isDarkMode}
+                            placeholder="選擇行程日期"
+                            holidays={tripHolidays}
+                        />
                     </div>
                     <div className="grid grid-cols-2 gap-5">
                         <div>

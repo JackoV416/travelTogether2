@@ -90,18 +90,30 @@ export const INSURANCE_RESOURCES = [
 ];
 
 export const AUTHOR_NAME = "Jamie Kwok";
-export const APP_VERSION = "V0.16.2";
+export const APP_VERSION = "V0.19.0";
 export const VERSION_HISTORY = [
     {
-        ver: "V0.16.2",
+        ver: "V0.19.0",
         date: "2025-12-18",
         desc: {
-            "zh-TW": "Dashboard 重構 & 代碼清理",
-            "en": "Dashboard Refactoring & Code Cleanup"
+            "zh-TW": "AI 經驗豐富的領隊 V19",
+            "en": "AI Expert Guide V19"
         },
         details: {
-            "zh-TW": "• 數據分離：將靜態常量移至 appData.js\n• 工具函數抽取：建立 tripUtils.js\n• 組件提取：Dashboard, TripCard, CreateTripModal 獨立化\n• App.jsx 瘦身：移除數百行冗餘代碼",
-            "en": "• Data Separation: Constants moved to appData.js\n• Utils Extraction: Created tripUtils.js\n• Component Extraction: Independent Dashboard, TripCard, CreateTripModal\n• App.jsx Slimming: Hundreds of lines removed"
+            "zh-TW": "• 豐富 AI 洞察：景點歷史背景、購物必買理由全面加入\n• 雙幣顯示：行程卡片同步顯示當地貨幣與本地貨幣 ($ HKD)\n• 智能合併：AI 建議不再覆蓋用戶手動行程，優先尊重用戶規劃\n• UI 優化：空行程介面 AI 入口搬移，視覺更直觀",
+            "en": "• Rich AI Insights: Historical context & shopping rationales\n• Dual Currency: Card display for both local & destination currencies\n• Intelligent Merge: AI suggestions respect user-created plans\n• UI Polish: Entry points moved to empty states for better UX"
+        }
+    },
+    {
+        ver: "V0.18.0",
+        date: "2025-12-18",
+        desc: {
+            "zh-TW": "AI Packing & UI 優化",
+            "en": "AI Packing & UI Refinement"
+        },
+        details: {
+            "zh-TW": "• 智能行李清單：AI 生成、分類管理與清空功能\n• Add Modal 升級：自動識別行李/行程模式，隱藏無關欄位\n• 搜尋欄優化：深色模式全面適配，文字清晰可見\n• 天氣系統：精確顯示 '--' 佔位符，避免假數據誤導\n• 模擬模式增強：支援行李項目即時互動測試",
+            "en": "• Smart Packing: AI generation, categorization & clear all\n• Enhanced Add Modal: Auto-switch modes, tailored fields\n• Search UI: Dark mode polish for better visibility\n• Weather System: Accurate '--' placeholders\n• Simulation Mode: Interactive packing list for tutorials"
         }
     },
     {

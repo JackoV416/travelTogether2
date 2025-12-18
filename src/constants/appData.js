@@ -5,11 +5,35 @@ import {
 
 // --- Versioning & Metadata ---
 export const AUTHOR_NAME = "Jamie Kwok";
-export const APP_VERSION = "V0.17.0";
+export const APP_VERSION = "V0.19.0-PreRelease";
 
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V0.19.0",
+        date: "2025-12-18",
+        desc: {
+            "zh-TW": "AI 經驗豐富的領隊 V19",
+            "en": "AI Expert Guide V19"
+        },
+        details: {
+            "zh-TW": "• 豐富 AI 洞察：景點歷史背景、購物必買理由全面加入\n• 雙幣顯示：行程卡片同步顯示當地貨幣與本地貨幣 ($ HKD)\n• 智能合併：AI 建議不再覆蓋用戶手動行程，優先尊重用戶規劃\n• UI 優化：空行程介面 AI 入口搬移，視覺更直觀",
+            "en": "• Rich AI Insights: Historical context & shopping rationales\n• Dual Currency: Card display for both local & destination currencies\n• Intelligent Merge: AI suggestions respect user-created plans\n• UI Polish: Entry points moved to empty states for better UX"
+        }
+    },
+    {
+        ver: "V0.18.0",
+        date: "2025-12-18",
+        desc: {
+            "zh-TW": "AI Packing & UI 優化",
+            "en": "AI Packing & UI Refinement"
+        },
+        details: {
+            "zh-TW": "• 智能行李清單：AI 生成、分類管理與清空功能\n• Add Modal 升級：自動識別行李/行程模式，隱藏無關欄位\n• 搜尋欄優化：深色模式全面適配，文字清晰可見\n• 天氣系統：精確顯示 '--' 佔位符，避免假數據誤導\n• 模擬模式增強：支援行李項目即時互動測試",
+            "en": "• Smart Packing: AI generation, categorization & clear all\n• Enhanced Add Modal: Auto-switch modes, tailored fields\n• Search UI: Dark mode polish for better visibility\n• Weather System: Accurate '--' placeholders\n• Simulation Mode: Interactive packing list for tutorials"
+        }
+    },
     {
         ver: "V0.17.0",
         date: "2025-12-18",
@@ -20,42 +44,6 @@ export const VERSION_HISTORY = [
         details: {
             "zh-TW": "• AI 偏好設定：支援歷史、美食、冒險等多種興趣選擇\n• 雲端同步：用戶設置與偏好自動備份至 Firebase\n• Code Splitting：TripDetailContent 懶加載，提升首屏速度\n• 架構優化：大幅拆分 App.jsx，模組化管理",
             "en": "• AI Preferences: Personalized suggestions based on interests\n• Cloud Sync: Settings & preferences synced to Firebase\n• Code Splitting: Lazy loading for Trip Details\n• Architecture: Modularized App.jsx for better maintainability"
-        }
-    },
-    {
-        ver: "V0.16.2",
-        date: "2025-12-18",
-        desc: {
-            "zh-TW": "Dashboard 重構 & 代碼清理",
-            "en": "Dashboard Refactoring & Code Cleanup"
-        },
-        details: {
-            "zh-TW": "• 數據分離：將靜態常量移至 appData.js\n• 工具函數抽取：建立 tripUtils.js\n• 組件提取：Dashboard, TripCard, CreateTripModal 獨立化\n• App.jsx 瘦身：移除數百行冗餘代碼",
-            "en": "• Data Separation: Constants moved to appData.js\n• Utils Extraction: Created tripUtils.js\n• Component Extraction: Independent Dashboard, TripCard, CreateTripModal\n• App.jsx Slimming: Hundreds of lines removed"
-        }
-    },
-    {
-        ver: "V0.16.1",
-        date: "2025-12-17",
-        desc: {
-            "zh-TW": "效能優化 + 組件重構",
-            "en": "Performance Optimization + Refactoring"
-        },
-        details: {
-            "zh-TW": "• ItineraryTab: 獨立組件化，提升維護性\n• FilesTab: 上傳介面優化與智能匯入整合\n• PWA: 更新緩存策略，提升離線體驗\n• Code Cleanup: 移除冗餘代碼",
-            "en": "• ItineraryTab: Extracted for maintainability\n• FilesTab: Optimized upload UI with Smart Import\n• PWA: Updated cache strategy\n• Code Cleanup: Removed redundancy"
-        }
-    },
-    {
-        ver: "V0.16.0-Beta",
-        date: "2025-12-17",
-        desc: {
-            "zh-TW": "組件重構 + 版本規劃",
-            "en": "Component Refactoring + Version Roadmap"
-        },
-        details: {
-            "zh-TW": "1. TripDetail Tabs 抽取：7 個獨立組件\n2. App.jsx 減少 187 行\n3. Future Features 按版本整理",
-            "en": "1. TripDetail Tabs Extraction: 7 components\n2. App.jsx reduced 187 lines\n3. Future Features organized by version"
         }
     }
 ];
@@ -115,10 +103,117 @@ export const COUNTRIES_DATA = {
     "Other": { cities: [], image: DEFAULT_BG_IMAGE, region: "north", emergency: "112 (國際通用)", taxRefund: "Check Local", entryInfo: "Check Visa", insuranceInfo: "請查詢當地外交部建議", consulate: "當地領事館", tz: "UK" }
 };
 
+// Detailed Emergency Info by Country (for EmergencyTab)
+export const EMERGENCY_DETAILS_DB = {
+    "Japan (日本)": {
+        police: "110",
+        fire: "119",
+        ambulance: "119",
+        consulate: {
+            name: "駐日經濟文化代表處（東京）",
+            address: "東京都港區白金台5-20-2",
+            phone: "+81-3-3280-7811",
+            emergencyHotline: "+81-90-4746-6065",
+            hours: "週一至週五 09:00-12:00, 14:00-18:00"
+        },
+        hospitals: [
+            { name: "聖路加國際醫院 (中/英語)", address: "東京都中央區明石町9-1", phone: "+81-3-3541-5151" },
+            { name: "東京慈惠會醫科大學附屬醫院", address: "東京都港區西新橋3-25-8", phone: "+81-3-3433-1111" }
+        ],
+        tips: ["報警說「Kotsu-jiko」(交通事故) 或「Dorobo」(小偷)", "醫院不收刷卡，帶現金", "下載「Safety Tips」App"]
+    },
+    "Korea (韓國)": {
+        police: "112",
+        fire: "119",
+        ambulance: "119",
+        consulate: {
+            name: "駐韓國代表處（首爾）",
+            address: "首爾特別市鐘路區世宗大路149 光化門大廈6樓",
+            phone: "+82-2-399-2780",
+            emergencyHotline: "+82-10-9080-2761",
+            hours: "週一至週五 09:00-12:00, 13:30-18:00"
+        },
+        hospitals: [
+            { name: "新村延世大學附設醫院 (中/英)", address: "首爾市西大門區延世路50-1", phone: "+82-2-2228-5800" },
+            { name: "首爾大學醫院", address: "首爾市鐘路區大學路101", phone: "+82-2-2072-2114" }
+        ],
+        tips: ["外國人急難求助 1345（多語言服務）", "地鐵站有急救箱", "藥局營業至晚上10點"]
+    },
+    "Thailand (泰國)": {
+        police: "191",
+        fire: "199",
+        ambulance: "1669",
+        consulate: {
+            name: "駐泰國代表處（曼谷）",
+            address: "曼谷市Wireless路40巷20號Empire Tower 1",
+            phone: "+66-2-670-0200",
+            emergencyHotline: "+66-81-666-4006",
+            hours: "週一至週五 09:00-12:00, 13:30-17:30"
+        },
+        hospitals: [
+            { name: "曼谷醫院 Bangkok Hospital (中/英)", address: "2 Soi Soonvijai 7, New Petchburi Road", phone: "+66-2-310-3000" },
+            { name: "BNH 醫院", address: "9/1 Convent Road, Silom", phone: "+66-2-686-2700" }
+        ],
+        tips: ["旅遊警察熱線 1155（24小時）", "機車意外險很重要", "避免買路邊藥品"]
+    },
+    "Taiwan (台灣)": {
+        police: "110",
+        fire: "119",
+        ambulance: "119",
+        consulate: {
+            name: "（本地無需代表處）",
+            address: "-",
+            phone: "1999 市民專線",
+            emergencyHotline: "110 / 119",
+            hours: "24小時"
+        },
+        hospitals: [
+            { name: "台大醫院", address: "台北市中正區中山南路7號", phone: "+886-2-2312-3456" },
+            { name: "台北榮民總醫院", address: "台北市北投區石牌路二段201號", phone: "+886-2-2871-2121" }
+        ],
+        tips: ["全民健保涵蓋急診", "藥局很常見，可諮詢藥師", "7-11 有 ibon 可叫計程車"]
+    },
+    "Singapore (新加坡)": {
+        police: "999",
+        fire: "995",
+        ambulance: "995",
+        consulate: {
+            name: "駐新加坡代表處",
+            address: "460 Alexandra Road #23-00 PSA Building",
+            phone: "+65-6500-0100",
+            emergencyHotline: "+65-9638-9436",
+            hours: "週一至週五 09:00-17:00"
+        },
+        hospitals: [
+            { name: "新加坡中央醫院 (SGH)", address: "Outram Road", phone: "+65-6222-3322" },
+            { name: "萊佛士醫院 Raffles Hospital", address: "585 North Bridge Road", phone: "+65-6311-1111" }
+        ],
+        tips: ["公立醫院較便宜", "亂丟垃圾/口香糖會被罰款", "Grab 叫車很方便"]
+    },
+    "United States (美國)": {
+        police: "911",
+        fire: "911",
+        ambulance: "911",
+        consulate: {
+            name: "駐美國代表處（華盛頓）",
+            address: "4201 Wisconsin Avenue, NW, Washington, DC 20016",
+            phone: "+1-202-895-1800",
+            emergencyHotline: "+1-202-669-0180",
+            hours: "週一至週五 09:00-17:00"
+        },
+        hospitals: [
+            { name: "Mass General Hospital (波士頓)", address: "55 Fruit Street, Boston, MA", phone: "+1-617-726-2000" },
+            { name: "UCLA Medical Center (洛杉磯)", address: "757 Westwood Plaza, LA, CA", phone: "+1-310-825-9111" }
+        ],
+        tips: ["醫療費極高，務必買保險", "緊急室 ER 24小時開放", "Uber/Lyft 可叫車去醫院"]
+    }
+};
+
 export const LANGUAGE_OPTIONS = {
     "zh-TW": { label: "繁體中文" },
     "en": { label: "English" }
 };
+
 
 export const COUNTRY_TRANSLATIONS = {
     "Australia (澳洲)": { "zh-TW": "澳洲", "en": "Australia" },
@@ -298,60 +393,104 @@ export const INSURANCE_SUGGESTIONS = {
 };
 
 export const SIMULATION_DATA = {
-    id: 'sim', name: "教學：東京 5 天 4 夜自由行", country: "Japan (日本)", city: "Tokyo", startDate: "2025-04-01", endDate: "2025-04-05",
+    id: "sim-tokyo-2025",
+    name: "🇯🇵 東京冬日爆食之旅 2025",
+    city: "Tokyo",
+    country: "Japan (日本)",
+    startDate: "2025-12-24",
+    endDate: "2025-12-29",
     members: [
-        { id: 'me', name: "我 (Owner)", role: "owner" },
-        { id: 'friend1', name: "小明 (Editor)", role: "editor" },
-        { id: 'friend2', name: "小華 (Viewer)", role: "viewer" }
+        { id: "sim-user-1", name: "Alex", role: "owner" },
+        { id: "sim-user-2", name: "Travel Buddy", role: "editor" }
     ],
     itinerary: {
-        "2025-04-01": [
-            { id: "f1", name: "TPE -> NRT (BR198)", type: "flight", cost: 16000, currency: "TWD", details: { provider: "EVA Air", number: "BR198", time: "08:50", location: "Taoyuan Airport T2", layover: false }, createdBy: { name: "我" } },
-            { id: "t1", name: "領取 JR Pass & Suica 儲值", type: "transport", cost: 5000, currency: "JPY", details: { time: "13:30", location: "Narita Airport JR Office" }, createdBy: { name: "小明" } },
-            { id: "t2", name: "Skyliner 前往上野", type: "transport", cost: 2570, currency: "JPY", details: { time: "14:20", location: "Narita Airport Station" }, createdBy: { name: "我" } },
-            { id: "h1", name: "新宿格拉斯麗飯店 Check-in", type: "hotel", cost: 60000, currency: "JPY", details: { time: "16:30", location: "Shinjuku Gracery Hotel", tax: 5000 }, createdBy: { name: "我" } },
-            { id: "d1", name: "晚餐：AFURI 拉麵", type: "food", cost: 1200, currency: "JPY", details: { time: "19:00", location: "Lumine Shinjuku" }, createdBy: { name: "小明" } }
+        "2025-12-24": [
+            { id: "it-1", time: "09:00", name: "前往成田機場 (JL736)", type: "flight", cost: 4200, currency: "HKD", details: { location: "HKG -> NRT", desc: "國泰航空豪華版" }, smartTag: "✈️ 已確認" },
+            { id: "it-2", time: "15:00", name: "新宿格拉斯麗酒店 Check-in", type: "hotel", cost: 0, currency: "JPY", details: { location: "新宿", desc: "哥吉拉主題房" }, smartTag: "🏨 必住" },
+            { id: "it-1-1", time: "16:30", name: "歌舞伎町一番街散策", type: "spot", cost: 0, currency: "JPY", details: { location: "新宿", desc: "霓虹燈下的繁華街區" } },
+            { id: "it-3", time: "18:30", name: "六本木之丘聖誕燈飾", type: "spot", cost: 2000, currency: "JPY", details: { location: "Roppongi Hills", desc: "絕美聖誕燈火" } },
+            { id: "it-4", time: "20:30", name: "AFURI 阿夫利拉麵", type: "food", cost: 1200, currency: "JPY", details: { location: "六本木店", desc: "柚子鹽味拉麵首選" }, smartTag: "🍜 必吃" }
         ],
-        "2025-04-02": [
-            { id: "s1", name: "東京迪士尼樂園", type: "spot", cost: 9800, currency: "JPY", details: { time: "08:30", location: "Tokyo Disneyland" }, createdBy: { name: "我" } },
-            { id: "f2", name: "午餐：紅心女王宴會大廳", type: "food", cost: 2500, currency: "JPY", details: { time: "11:30", location: "Fantasyland" }, createdBy: { name: "小華" } },
-            { id: "s2", name: "日間遊行：Harmony in Color", type: "spot", cost: 0, currency: "JPY", details: { time: "14:00", location: "Parade Route" }, createdBy: { name: "我" } },
-            { id: "s3", name: "夜間遊行與煙火", type: "spot", cost: 0, currency: "JPY", details: { time: "19:30", location: "Cinderella Castle" }, createdBy: { name: "我" } }
+        "2025-12-25": [
+            { id: "it-5", time: "10:00", name: "築地場外市場", type: "food", cost: 5000, currency: "JPY", details: { location: "Tsukiji", desc: "海鮮丼大餐" } },
+            { id: "it-5-1", time: "12:00", name: "銀座東急廣場 購物", type: "shopping", cost: 10000, currency: "JPY", details: { location: "Ginza", desc: "設計師品牌與咖啡店" } },
+            { id: "it-6", time: "14:00", name: "淺草寺 / 雷門", type: "spot", cost: 0, currency: "JPY", details: { location: "Asakusa", desc: "求一支好籤" } },
+            { id: "it-6-1", time: "15:30", name: "隅田川遊船", type: "transport", cost: 1600, currency: "JPY", details: { location: "Asakusa Pier", desc: "水上展望東京晴空塔" } },
+            { id: "it-7", time: "16:30", name: "秋葉原電器街", type: "shopping", cost: 30000, currency: "JPY", details: { location: "Akihabara", desc: "尋找復古遊戲機" }, smartTag: "🎮 玩家天堂" }
         ],
-        "2025-04-03": [
-            { id: "s4", name: "明治神宮參拜", type: "spot", cost: 0, currency: "JPY", details: { time: "10:00", location: "Meiji Jingu" }, createdBy: { name: "我" } },
-            { id: "s5", name: "原宿竹下通逛街", type: "shopping", cost: 15000, currency: "JPY", details: { time: "11:30", location: "Takeshita Street", refund: 1000 }, createdBy: { name: "小明" } },
-            { id: "s6", name: "澀谷 SKY 觀景台 (日落)", type: "spot", cost: 2200, currency: "JPY", details: { time: "17:30", location: "Shibuya Scramble Square" }, createdBy: { name: "我" } },
-            { id: "d2", name: "晚餐：敘敘苑燒肉 (已訂位)", type: "food", cost: 15000, currency: "JPY", details: { time: "20:00", location: "Shibuya Branch" }, createdBy: { name: "小明" } }
+        "2025-12-26": [
+            { id: "it-8", time: "09:00", name: "富士山河口湖一日遊", type: "transport", cost: 8400, currency: "JPY", details: { location: "河口湖", desc: "富士迴遊特急來回" }, smartTag: "🗻 必看" },
+            { id: "it-8-1", time: "12:00", name: "不動茶屋 (鳳凰店)", type: "food", cost: 1800, currency: "JPY", details: { location: "河口湖", desc: "當地特色味噌麵" } },
+            { id: "it-9", time: "18:00", name: "忍野八海", type: "spot", cost: 0, currency: "JPY", details: { location: "Oshino Hakkai", desc: "清澈見底的池水" } },
+            { id: "it-9-1", time: "21:00", name: "新宿居酒屋小路", type: "food", cost: 3500, currency: "JPY", details: { location: "Omoide Yokocho", desc: "體驗在地深夜食堂" } }
         ],
-        "2025-04-04": [
-            { id: "s7", name: "富士山一日遊 (巴士)", type: "transport", cost: 9000, currency: "JPY", details: { time: "07:30", location: "Shinjuku Station", provider: "Highland Express" }, createdBy: { name: "我" } },
-            { id: "s8", name: "河口湖散步＋午餐", type: "food", cost: 3500, currency: "JPY", details: { time: "12:30", location: "Lake Kawaguchi" }, createdBy: { name: "小華" } },
-            { id: "s9", name: "忍野八海集章", type: "spot", cost: 1000, currency: "JPY", details: { time: "15:00", location: "Oshino Hakkai" }, createdBy: { name: "我" } }
+        "2025-12-27": [
+            { id: "it-10", time: "10:00", name: "TeamLab Borderless 麻布台之丘", type: "spot", cost: 4200, currency: "JPY", details: { location: "Azabudai Hills", desc: "沉浸式光影藝術" }, smartTag: "📸 必打卡" },
+            { id: "it-10-1", time: "12:30", name: "藍瓶咖啡 麻布台之丘店", type: "food", cost: 800, currency: "JPY", details: { location: "Azabudai Hills", desc: "享受寧靜午後" } },
+            { id: "it-11", time: "13:30", name: "原宿竹下通漫步", type: "shopping", cost: 5000, currency: "JPY", details: { location: "Harajuku", desc: "體驗日本流行文化" } },
+            { id: "it-11-1", time: "16:00", name: "明治神宮參拜", type: "spot", cost: 0, currency: "JPY", details: { location: "Harajuku", desc: "繁華市中心的一抹寧靜" } },
+            { id: "it-12", time: "19:00", name: "澀谷 Shibuya Sky", type: "spot", cost: 2500, currency: "JPY", details: { location: "Shibuya", desc: "俯瞰東京最美夜景" }, smartTag: "🌆 浪漫推薦" }
         ],
-        "2025-04-05": [
-            { id: "s10", name: "築地市場早餐", type: "food", cost: 2500, currency: "JPY", details: { time: "08:30", location: "Tsukiji Outer Market" }, createdBy: { name: "我" } },
-            { id: "s11", name: "TeamLab Planets", type: "spot", cost: 3800, currency: "JPY", details: { time: "11:00", location: "Toyosu" }, createdBy: { name: "小明" } },
-            { id: "f3", name: "NRT -> TPE (CI107)", type: "flight", cost: 15000, currency: "TWD", details: { time: "16:20", location: "Narita T2", number: "CI107", layover: false }, createdBy: { name: "我" } }
+        "2025-12-28": [
+            { id: "it-13", time: "09:00", name: "前往東京迪士尼樂園", type: "transport", cost: 800, currency: "JPY", details: { location: "JR 舞濱站", desc: "全日狂歡開始" } },
+            { id: "it-13-1", time: "10:00", name: "東京迪士尼樂園", type: "spot", cost: 10900, currency: "JPY", details: { location: "Maihama", desc: "夢想與魔法的王國" }, smartTag: "🏰 全日行程" },
+            { id: "it-14", time: "20:00", name: "伊勢丹百貨 B1 熟食採買", type: "food", cost: 3000, currency: "JPY", details: { location: "Shinjuku", desc: "回飯店享用豪華晚餐" } }
+        ],
+        "2025-12-29": [
+            { id: "it-15", time: "10:00", name: "最後採買：唐吉訶德 新宿店", type: "shopping", cost: 15000, currency: "JPY", details: { location: "Shinjuku", desc: "藥妝、零食最後衝刺" } },
+            { id: "it-15-1", time: "12:30", name: "松屋 牛丼 (快速午餐)", type: "food", cost: 650, currency: "JPY", details: { location: "新宿站前", desc: "收拾心情準備回程" } },
+            { id: "it-16", time: "14:00", name: "成田快線 N'EX 前往機場", type: "transport", cost: 3200, currency: "JPY", details: { location: "Shinjuku Station", desc: "舒適快速直達機場" } },
+            { id: "it-17", time: "18:20", name: "搭機返程 (JL735)", type: "flight", cost: 0, currency: "HKD", details: { location: "NRT -> HKG", desc: "帶著滿滿的回憶回家" }, smartTag: "✈️ 已確認" }
         ]
     },
-    budget: [
-        { id: "b1", name: "機票 (我代墊)", cost: 32000, currency: "TWD", category: "flight", payer: "我", splitType: 'group' },
-        { id: "b2", name: "住宿 3 晚", cost: 60000, currency: "JPY", category: "hotel", payer: "小明", splitType: 'group', details: { tax: 5000 } },
-        { id: "b3", name: "迪士尼門票", cost: 9800, currency: "JPY", category: "spot", payer: "我", splitType: 'group' }
+    packingList: [
+        { id: "pkg-1", name: "護照與簽證", category: "documents", checked: true },
+        { id: "pkg-2", name: "日幣現金 (10萬JPY)", category: "documents", checked: true },
+        { id: "pkg-3", name: "保暖厚大衣", category: "clothes", checked: false, aiSuggested: true },
+        { id: "pkg-4", name: "手機充電器 / 行動電源", category: "electronics", checked: true },
+        { id: "pkg-5", name: "休閒步行鞋", category: "clothes", checked: true },
+        { id: "pkg-6", name: "Heattech 發熱衣", category: "clothes", checked: false, aiSuggested: true },
+        { id: "pkg-7", name: "維他命 / 常用藥物", category: "medicine", checked: false }
     ],
     shoppingList: [
-        { id: "s1", name: "Dyson 吹風機", estPrice: 45000, bought: false },
-        { id: "s2", name: "合利他命 EX Plus", estPrice: 5500, bought: true, realCost: 5200 },
-        { id: "s3", name: "Tokyo Banana 伴手禮", estPrice: 3000, bought: false }
+        { id: "shp-1", name: "Tokyo Banana 伴手禮", estPrice: "JPY 1500", desc: "限定口味", bought: false, aiSuggested: true },
+        { id: "shp-2", name: "Uniqlo 本地版發熱衣", estPrice: "JPY 990", desc: "比香港便宜超多", bought: false },
+        { id: "shp-3", name: "EVE 止痛藥", estPrice: "JPY 800", desc: "囤貨必備", bought: false, aiSuggested: true }
     ],
-    notes: "### 行前準備\n- [x] 護照影本備份\n- [x] Visit Japan Web 註冊 (截圖 QR Code)\n- [x] 網卡 (esim) 設定\n\n### 交通備忘\n- 記得在機場儲值 Suica 3000 日圓\n- 回程 N'EX 車票要提早劃位",
+    budget: [
+        { id: "b-1", name: "機票總計", cost: 8400, currency: "HKD", category: "flight", payer: "Alex", splitType: "group" },
+        { id: "b-2", name: "第一晚燒肉", cost: 12000, currency: "JPY", category: "food", payer: "Alex", splitType: "group" }
+    ],
+    notes: "### 旅遊備忘錄\n- 聖誕節期間很多餐廳需要提前預約。\n- 記得帶足夠衣服，晚上只有 5 度左右。\n- Visit Japan Web 要預先填好 QR Code。",
     insurance: {
-        "sim": { provider: "富邦產險", policyNo: "T55667788", status: "insured" },
-        "local": { name: "Visit Japan Web", status: "done", user: "我" }
+        "sim-user-1": { provider: "AIG 旅安保", policyNo: "AIG-2025-001", phone: "+852 1234 5678", notes: "涵蓋滑雪活動" }
     },
-    visa: { "sim": { status: "printed", number: "免簽入境", expiry: "2025-07-01", needsPrint: false } }
+    visa: {
+        "sim-user-1": { status: "printed", number: "HKG-PASS-123", expiry: "2029-12-24", needsPrint: false }
+    },
+    emergency: {
+        police: "110",
+        fire: "119",
+        ambulance: "119",
+        consulate: {
+            name: "駐日經濟文化代表處（東京）",
+            address: "東京都港區白金台5-20-2",
+            phone: "+81-3-3280-7811",
+            emergencyHotline: "+81-90-4746-6065",
+            hours: "週一至週五 09:00-12:00, 14:00-18:00"
+        },
+        hospitals: [
+            { name: "聖路加國際醫院 (中/英語對應)", address: "東京都中央區明石町9-1", phone: "+81-3-3541-5151" },
+            { name: "東京慈惠會醫科大學附屬醫院", address: "東京都港區西新橋3-25-8", phone: "+81-3-3433-1111" }
+        ],
+        tips: [
+            "日本報警要說「Kotsu-jiko」(交通事故) 或「Dorobo」(小偷)",
+            "醫院不收刷卡，要帶現金",
+            "語言不通可用 Google 翻譯或下載「Safety Tips」App"
+        ]
+    }
 };
+
 
 export const TAB_LABELS = {
     itinerary: { "zh-TW": "行程", "en": "Itinerary" },
