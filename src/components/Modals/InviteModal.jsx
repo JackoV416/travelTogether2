@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { inputClasses, buttonPrimary } from '../../utils/tripHelpers';
+import { inputClasses } from '../../utils/tripUtils';
+import { buttonPrimary } from '../../constants/styles';
 
 const InviteModal = ({ isOpen, onClose, tripId, onInvite, isDarkMode }) => {
     const [email, setEmail] = useState("");

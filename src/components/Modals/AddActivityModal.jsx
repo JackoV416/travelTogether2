@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { MapIcon, Utensils, ShoppingBag, Bus, PlaneTakeoff, Hotel, X } from 'lucide-react';
-import { inputClasses, formatDate, getWeekday } from '../../utils/tripHelpers';
-import { CURRENCIES } from '../../constants/tripData';
+import { X, Map as MapIcon, Utensils, ShoppingBag, Bus, PlaneTakeoff, Hotel } from 'lucide-react';
+import { inputClasses, formatDate, getWeekday } from '../../utils/tripUtils';
+import { buttonPrimary } from '../../constants/styles';
+import { CURRENCIES } from '../../constants/appData';
 
 const AddActivityModal = ({ isOpen, onClose, onSave, isDarkMode, date, defaultType = 'spot', editData = null, members = [] }) => {
     const [name, setName] = useState('');

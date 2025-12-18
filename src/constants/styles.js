@@ -1,0 +1,1 @@
+export const buttonPrimary = "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-95";

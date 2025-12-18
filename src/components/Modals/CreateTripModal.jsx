@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, Search, CheckCircle, Calendar, MoveRight } from 'lucide-react';
+import { X, Search, CheckCircle } from 'lucide-react';
 import { inputClasses, getLocalizedCountryName, getLocalizedCityName } from '../../utils/tripUtils';
 import { COUNTRIES_DATA } from '../../constants/appData';
+import DateRangePicker from '../Shared/DateRangePicker';
 
 const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, onAddCity, newCityInput, setNewCityInput, onSubmit, isDarkMode, globalSettings }) => {
     const currentLang = globalSettings.language;
@@ -33,7 +34,7 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
 
     return (
         <div className="fixed inset-0 bg-black/60 z-[85] flex items-center justify-center p-4 backdrop-blur-md transition-all duration-300">
-            <div className={`w-full max-w-3xl rounded-2xl p-8 ${isDarkMode ? 'bg-gray-900 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-200'} shadow-2xl border transition-all transform scale-100`}>
+            <div className={`w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 sm:p-8 ${isDarkMode ? 'bg-gray-900 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-200'} shadow-2xl border transition-all transform scale-100`}>
                 <div className="flex justify-between items-start mb-8">
                     <div>
                         <h3 className="text-2xl font-bold tracking-tight">建立新行程</h3>
@@ -149,30 +150,16 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
 
                     <div className="space-y-2 md:col-span-2">
                         <label className="block text-xs font-bold opacity-70 uppercase tracking-wider ml-1">行程日期</label>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <span className="text-[10px] opacity-50 ml-1">開始日期</span>
-                                <input
-                                    type="date"
-                                    value={form.startDate}
-                                    max={form.endDate || undefined}
-                                    onChange={e => onInputChange('startDate', e.target.value)}
-                                    style={{ colorScheme: isDarkMode ? 'dark' : 'light' }}
-                                    className={`w-full py-3 px-4 text-sm font-medium cursor-pointer rounded-xl appearance-none ${isDarkMode ? 'bg-gray-800 text-white border-gray-600 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert' : 'bg-white text-gray-900 border-gray-300'} border-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500`}
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <span className="text-[10px] opacity-50 ml-1">結束日期</span>
-                                <input
-                                    type="date"
-                                    value={form.endDate}
-                                    min={form.startDate || undefined}
-                                    onChange={e => onInputChange('endDate', e.target.value)}
-                                    style={{ colorScheme: isDarkMode ? 'dark' : 'light' }}
-                                    className={`w-full py-3 px-4 text-sm font-medium cursor-pointer rounded-xl appearance-none ${isDarkMode ? 'bg-gray-800 text-white border-gray-600 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert' : 'bg-white text-gray-900 border-gray-300'} border-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500`}
-                                />
-                            </div>
-                        </div>
+                        <DateRangePicker
+                            startDate={form.startDate}
+                            endDate={form.endDate}
+                            onSelect={({ startDate, endDate }) => {
+                                onInputChange('startDate', startDate);
+                                onInputChange('endDate', endDate);
+                            }}
+                            isDarkMode={isDarkMode}
+                            placeholder="選擇開始與結束日期"
+                        />
                     </div>
                 </div>
 

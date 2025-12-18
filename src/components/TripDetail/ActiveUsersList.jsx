@@ -1,20 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { doc, collection, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../../firebase'; // Adjust path as needed
-import { getUserInitial } from '../../helpers'; // Assuming helpers are moved or imported
-
-const TAB_LABELS = {
-    itinerary: { "zh-TW": "行程", "en": "Itinerary" },
-    shopping: { "zh-TW": "購物", "en": "Shopping" },
-    budget: { "zh-TW": "預算", "en": "Budget" },
-    files: { "zh-TW": "文件", "en": "Files" },
-    insurance: { "zh-TW": "保險", "en": "Insurance" },
-    emergency: { "zh-TW": "緊急", "en": "Emergency" },
-    visa: { "zh-TW": "簽證", "en": "Visa" },
-    notes: { "zh-TW": "筆記", "en": "Notes" },
-    currency: { "zh-TW": "匯率", "en": "Currency" },
-    settings: { "zh-TW": "設定", "en": "Settings" }
-};
+import { doc, setDoc, collection, onSnapshot, deleteDoc } from 'firebase/firestore';
+import { db } from '../../firebase';
+import { getUserInitial } from '../../utils/tripUtils';
+import { TAB_LABELS } from '../../constants/appData';
 
 const ActiveUsersList = ({ tripId, user, activeTab, language = "zh-TW" }) => {
     const [activeUsers, setActiveUsers] = useState([]);

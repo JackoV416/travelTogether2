@@ -65,7 +65,11 @@ self.addEventListener('fetch', (event) => {
             })
             .catch(() => {
                 // Fallback to cache when offline
-                return caches.match(event.request);
+                return caches.match(event.request)
+                    .then((cachedResponse) => {
+                        // Return cached response or a simple 404 response
+                        return cachedResponse || new Response('Not found', { status: 404, statusText: 'Not found' });
+                    });
             })
     );
 });

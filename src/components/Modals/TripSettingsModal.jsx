@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, MoveRight } from 'lucide-react';
-import { inputClasses, buttonPrimary } from '../../utils/tripHelpers';
-import { COUNTRIES_DATA } from '../../constants/tripData';
+import { inputClasses } from '../../utils/tripUtils';
+import { buttonPrimary } from '../../constants/styles';
+import { COUNTRIES_DATA } from '../../constants/appData';
 
 const TripSettingsModal = ({ isOpen, onClose, trip, onUpdate, isDarkMode }) => {
     const [form, setForm] = useState(trip);

@@ -5,11 +5,23 @@ import {
 
 // --- Versioning & Metadata ---
 export const AUTHOR_NAME = "Jamie Kwok";
-export const APP_VERSION = "V0.16.2";
+export const APP_VERSION = "V0.17.0";
 
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V0.17.0",
+        date: "2025-12-18",
+        desc: {
+            "zh-TW": "AI 2.0 基礎 & 架構重構",
+            "en": "AI 2.0 Foundation & Refactoring"
+        },
+        details: {
+            "zh-TW": "• AI 偏好設定：支援歷史、美食、冒險等多種興趣選擇\n• 雲端同步：用戶設置與偏好自動備份至 Firebase\n• Code Splitting：TripDetailContent 懶加載，提升首屏速度\n• 架構優化：大幅拆分 App.jsx，模組化管理",
+            "en": "• AI Preferences: Personalized suggestions based on interests\n• Cloud Sync: Settings & preferences synced to Firebase\n• Code Splitting: Lazy loading for Trip Details\n• Architecture: Modularized App.jsx for better maintainability"
+        }
+    },
     {
         ver: "V0.16.2",
         date: "2025-12-18",
@@ -221,7 +233,7 @@ export const INFO_DB = {
     hotels: [
         { name: "APA Shinjuku", country: "Japan", price: "$800", star: 4.2, img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400", url: "https://www.agoda.com", details: "雙人房 • 01/04/2025 • Agoda" },
         { name: "W Taipei", country: "Taiwan", price: "$2500", star: 4.8, img: "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=400", url: "https://www.marriott.com", details: "景觀房 • 20/05/2025 • 官網" },
-        { name: "The Fullerton Bay", country: "Singapore", price: "$3200", star: 4.9, img: "https://images.unsplash.com/photo-1501117716987-c8e1ecb210cc?w=400", url: "https://www.fullertonhotels.com", details: "濱海灣景 • 早餐" },
+        { name: "The Fullerton Bay", country: "Singapore", price: "$3200", star: 4.9, img: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400", url: "https://www.fullertonhotels.com", details: "濱海灣景 • 早餐" },
         { name: "Park Hyatt Seoul", country: "Korea", price: "$2100", star: 4.7, img: "https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?w=400", url: "https://www.hyatt.com", details: "江南夜景 • 泳池" }
     ],
     flights: [

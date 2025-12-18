@@ -1,6 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { getUserInitial } from '../../utils/tripHelpers';
+import { getUserInitial } from '../../utils/tripUtils';
 
 const MemberSettingsModal = ({ isOpen, onClose, members, onUpdateRole, isDarkMode }) => {
     if (!isOpen) return null;

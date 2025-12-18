@@ -1,16 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { BrainCircuit, X, Loader2, List, BusFront, Wallet, TrainFront, Car, Route } from 'lucide-react';
-// import { generateAISuggestions } from '../../services/ai'; // If we were using the real one
+import { BrainCircuit, X, Loader2, List, BusFront, Wallet, TrainFront, Car, Route, ShoppingBag, Sparkles } from 'lucide-react';
+import { generateShoppingSuggestions } from '../../services/ai';
 import { inputClasses } from '../../utils/tripHelpers';
 
-const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, existingItems }) => {
+const SHOPPING_CATEGORIES = [
+    { id: 'food', label: '🍱 美食/伴手禮', types: ['food', 'alcohol'] },
+    { id: 'cosmetic', label: '💄 藥妝/護膚', types: ['cosmetic'] },
+    { id: 'fashion', label: '👗 服飾/時尚', types: ['clothing', 'fashion'] },
+    { id: 'electronics', label: '⚡ 電器/3C', types: ['electronics'] },
+    { id: 'others', label: '🎁 其他雜貨', types: ['gift', 'lifestyle', 'shopping'] }
+];
+
+const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, existingItems, mode = 'full', userPreferences = [] }) => {
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
-    const [activeTab, setActiveTab] = useState('itinerary'); // itinerary, transport, budget
+    const [activeTab, setActiveTab] = useState(mode === 'shopping' ? 'shopping' : 'itinerary');
+    const [shoppingStep, setShoppingStep] = useState('selection');
+    const [selectedCats, setSelectedCats] = useState(['food', 'cosmetic', 'fashion', 'electronics', 'others']);
+
+    useEffect(() => {
+        if (isOpen && mode === 'shopping') setActiveTab('shopping');
+        else if (isOpen && mode === 'full') setActiveTab('itinerary');
+    }, [isOpen, mode]);
 
     // Mock "Unlimited API" Logic
     const generateEnhancedAI = async (city) => {
-        await new Promise(r => setTimeout(r, 1500)); // Simulate API/Thinking time
+        // Parallel fetch for efficiency
+        const [_, shoppingData] = await Promise.all([
+            new Promise(r => setTimeout(r, 1500)), // Simulate API/Thinking time
+            generateShoppingSuggestions(city)
+        ]);
 
         // Dynamic mock data based on city
         const isJapan = city === "Tokyo" || city === "Osaka" || city === "Kyoto";
@@ -20,9 +39,12 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
         return {
             itinerary: [
                 { time: "09:00", name: `${city} 必去早市`, desc: "體驗當地早餐文化，推薦海鮮丼", cost: 150 * rate, currency, type: "food" },
+                ...(userPreferences?.includes('history') ? [{ time: "10:30", name: "古代遺跡探險", desc: "探索千年歷史遺跡 [AI客製]", cost: 120 * rate, currency, type: "spot" }] : []),
                 { time: "11:00", name: `${city} 歷史博物館`, desc: "了解城市歷史與文化背景", cost: 80 * rate, currency, type: "spot" },
+                ...(userPreferences?.includes('food') ? [{ time: "12:30", name: "隱藏版美食地圖", desc: "在地人推薦小吃 [AI客製]", cost: 200 * rate, currency, type: "food" }] : []),
                 { time: "13:00", name: "米其林推薦午餐", desc: "當地排隊名店，建議提早預約", cost: 300 * rate, currency, type: "food" },
                 { time: "15:00", name: "特色商店街購物", desc: "購買伴手禮與特色工藝品", cost: 500 * rate, currency, type: "shopping" },
+                ...(userPreferences?.includes('adventure') ? [{ time: "16:00", name: "極限運動體驗", desc: "追求刺激的首選 [AI客製]", cost: 800 * rate, currency, type: "spot" }] : []),
                 { time: "18:00", name: "夜景展望台", desc: "俯瞰全城絕美夜景", cost: 100 * rate, currency, type: "spot" },
             ],
             transport: [
@@ -38,7 +60,8 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
                     { label: "交通", amt: 200 * rate, percent: 10 },
                     { label: "門票", amt: 200 * rate, percent: 10 },
                 ]
-            }
+            },
+            shopping: shoppingData
         };
     };
 
@@ -46,11 +69,37 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
         if (isOpen) {
             setLoading(true);
             setResult(null);
-            generateEnhancedAI(contextCity || "Tokyo")
-                .then(res => { setResult(res); setLoading(false); })
-                .catch(() => setLoading(false));
+            if (mode === 'shopping') {
+                setShoppingStep('selection');
+                setLoading(false); // Wait for user selection
+            } else {
+                generateEnhancedAI(contextCity || "Tokyo")
+                    .then(res => { setResult(res); setLoading(false); })
+                    .catch(() => setLoading(false));
+            }
         }
-    }, [isOpen, contextCity]);
+    }, [isOpen, contextCity, mode]);
+
+    const handleShoppingAnalyze = () => {
+        setLoading(true);
+        const mappedCats = selectedCats.flatMap(catId => {
+            const found = SHOPPING_CATEGORIES.find(c => c.id === catId);
+            return found ? found.types : [];
+        });
+
+        generateShoppingSuggestions(contextCity || "Tokyo", mappedCats)
+            .then(res => {
+                setResult({ shopping: res });
+                setShoppingStep('result');
+                setLoading(false);
+            })
+            .catch(() => setLoading(false));
+    };
+
+    const toggleCat = (id) => {
+        if (selectedCats.includes(id)) setSelectedCats(prev => prev.filter(c => c !== id));
+        else setSelectedCats(prev => [...prev, id]);
+    };
 
     if (!isOpen) return null;
 
@@ -61,8 +110,9 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
                 {/* Header */}
                 <div className="p-6 border-b border-gray-500/10 flex justify-between items-center bg-gradient-to-r from-indigo-600/10 to-purple-600/10">
                     <div>
-                        <h3 className="text-xl font-bold flex items-center gap-2 text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">
-                            <BrainCircuit className="w-6 h-6 text-indigo-500" /> AI 智能領隊
+                        <h3 className="font-bold flex items-center gap-2 text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">
+                            {mode === 'shopping' ? <Sparkles className="w-6 h-6 text-purple-500" /> : <BrainCircuit className="w-6 h-6 text-indigo-500" />}
+                            {mode === 'shopping' ? 'AI 購物助手' : 'AI 智能領隊'}
                         </h3>
                         <p className="text-xs opacity-60 mt-1">針對 {contextCity} 為您生成的深度分析</p>
                     </div>
@@ -79,11 +129,35 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
                                 <p className="text-xs opacity-50">正在分析數百萬筆旅遊數據</p>
                             </div>
                         </div>
+                    ) : (mode === 'shopping' && shoppingStep === 'selection') ? (
+                        <div className="space-y-6 animate-fade-in">
+                            <div className="text-center space-y-2">
+                                <h4 className="text-lg font-bold">您想尋找什麼類型的商品？</h4>
+                                <p className="text-sm opacity-60">選擇感興趣的類別，讓 AI 為您精準推薦</p>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {SHOPPING_CATEGORIES.map(cat => (
+                                    <label key={cat.id} className={`p-4 border rounded-xl flex items-center gap-3 cursor-pointer transition-all ${selectedCats.includes(cat.id) ? 'bg-indigo-500/10 border-indigo-500/50' : 'border-gray-500/10 hover:bg-gray-500/5'}`}>
+                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedCats.includes(cat.id) ? 'bg-indigo-500 border-transparent' : 'border-gray-400'}`}>
+                                            {selectedCats.includes(cat.id) && <Sparkles className="w-3 h-3 text-white" />}
+                                        </div>
+                                        <input type="checkbox" className="hidden" checked={selectedCats.includes(cat.id)} onChange={() => toggleCat(cat.id)} />
+                                        <span className="font-bold">{cat.label}</span>
+                                    </label>
+                                ))}
+                            </div>
+                            <button onClick={handleShoppingAnalyze} className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" disabled={selectedCats.length === 0}>
+                                開始分析
+                            </button>
+                        </div>
                     ) : result ? (
                         <div className="space-y-6">
                             {/* Tabs */}
                             <div className="flex p-1 bg-gray-500/10 rounded-xl">
-                                {[{ id: 'itinerary', label: '行程建議', icon: List }, { id: 'transport', label: '交通分析', icon: BusFront }, { id: 'budget', label: '預算預估', icon: Wallet }].map(t => (
+                                {(mode === 'shopping'
+                                    ? [{ id: 'shopping', label: '購物推薦', icon: ShoppingBag }]
+                                    : [{ id: 'itinerary', label: '行程建議', icon: List }, { id: 'transport', label: '交通分析', icon: BusFront }, { id: 'budget', label: '預算預估', icon: Wallet }, { id: 'shopping', label: '購物推薦', icon: ShoppingBag }]
+                                ).map(t => (
                                     <button
                                         key={t.id}
                                         onClick={() => setActiveTab(t.id)}
@@ -160,6 +234,27 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
                                     </div>
                                 </div>
                             )}
+
+                            {/* Shopping Tab (New) */}
+                            {activeTab === 'shopping' && result.shopping && (
+                                <div className="space-y-3 animate-fade-in">
+                                    {result.shopping.map((item, i) => (
+                                        <div key={i} className="flex gap-4 items-center p-4 rounded-xl border border-purple-500/10 hover:bg-purple-500/5 transition-colors group">
+                                            <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500 shrink-0">
+                                                <ShoppingBag className="w-5 h-5" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="font-bold">{item.name}</div>
+                                                <div className="text-xs opacity-60">{item.desc}</div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="font-mono font-bold text-sm text-purple-400">{item.estPrice}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <p className="text-xs opacity-50 text-center pt-2">AI 根據當地熱門手信推薦</p>
+                                </div>
+                            )}
                         </div>
                     ) : null}
                 </div>
@@ -167,8 +262,8 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
                 {/* Footer */}
                 <div className="p-4 border-t border-gray-500/10 bg-gray-50/5 flex justify-end gap-3">
                     <button onClick={onClose} className="px-5 py-2 rounded-xl border border-gray-500/30 font-bold opacity-70 hover:opacity-100">關閉</button>
-                    <button onClick={() => { onApply(result?.itinerary); onClose(); }} className="px-5 py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" disabled={!result}>
-                        將行程加入
+                    <button onClick={() => { onApply(mode === 'shopping' ? result?.shopping : result?.itinerary); onClose(); }} className="px-5 py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" disabled={!result}>
+                        將{mode === 'shopping' ? '所有建議加入清單' : '行程加入'}
                     </button>
                 </div>
             </div>

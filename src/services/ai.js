@@ -6,6 +6,68 @@
  * 目前為高級模擬模式，未來可接入 Gemini / OpenAI API
  */
 
+// 專用購物建議數據庫
+const SHOPPING_DB = {
+    "Japan": [
+        { name: "Tokyo Banana", estPrice: "JPY 1200", type: "food", desc: "必買伴手禮" },
+        { name: "白戀人朱古力", estPrice: "JPY 800", type: "food", desc: "北海道名產" },
+        { name: "藥妝 (EVE, LuLuLun)", estPrice: "JPY 5000", type: "cosmetic", desc: "囤貨必備" },
+        { name: "Bic Camera 電器", estPrice: "JPY 30000", type: "electronics", desc: "免稅更抵" },
+        { name: "Uniqlo/GU", estPrice: "JPY 10000", type: "clothing", desc: "日本限定款" }
+    ],
+    "Korea": [
+        { name: "Olive Young 面膜", estPrice: "KRW 30000", type: "cosmetic", desc: "韓妹必備" },
+        { name: "Gentle Monster", estPrice: "KRW 250000", type: "fashion", desc: "潮流墨鏡" },
+        { name: "HBAF 杏仁", estPrice: "KRW 5000", type: "food", desc: "多種口味" },
+        { name: "Line Friends 周邊", estPrice: "KRW 40000", type: "gift", desc: "可愛實用" }
+    ],
+    "Taiwan": [
+        { name: "微熱山丘鳳梨酥", estPrice: "TWD 420", type: "food", desc: "土鳳梨內餡" },
+        { name: "佳德蔥軋餅", estPrice: "TWD 300", type: "food", desc: "排隊名店" },
+        { name: "Kavalan 威士忌", estPrice: "TWD 2500", type: "alcohol", desc: "台灣之光" },
+        { name: "文創商品 (誠品)", estPrice: "TWD 1000", type: "gift", desc: "質感設計" }
+    ],
+    "Thailand": [
+        { name: "NaRaYa 曼谷包", estPrice: "THB 500", type: "fashion", desc: "平價實用" },
+        { name: "Pocky (芒果/香蕉)", estPrice: "THB 20", type: "food", desc: "泰國限定" },
+        { name: "泰式奶茶手標茶", estPrice: "THB 150", type: "food", desc: "在家沖泡" },
+        { name: "香氛精油", estPrice: "THB 800", type: "lifestyle", desc: "SPA 享受" }
+    ]
+};
+
+const FALLBACK_SHOPPING = [
+    { name: "當地特色零食", estPrice: "HKD 100", type: "food", desc: "超市尋寶" },
+    { name: "明信片與磁貼", estPrice: "HKD 50", type: "gift", desc: "旅行紀念" },
+    { name: "機場免稅品", estPrice: "HKD 1000", type: "shopping", desc: "最後衝刺" }
+];
+
+/**
+ * 生成 AI 購物建議
+ * @param {string} location 國家或城市
+ * @returns {Promise<Array>}
+ */
+export async function generateShoppingSuggestions(location, categories = []) {
+    const delay = 800 + Math.random() * 800; // 模擬思考時間
+    await new Promise(resolve => setTimeout(resolve, delay));
+
+    // 簡單匹配邏輯 (優先匹配國家)
+    let suggestions = FALLBACK_SHOPPING;
+    for (const key of Object.keys(SHOPPING_DB)) {
+        if (location.includes(key) || (key === 'Japan' && (location.includes('Tokyo') || location.includes('Osaka'))) ||
+            (key === 'Korea' && location.includes('Seoul')) || (key === 'Taiwan' && location.includes('Taipei'))) {
+            suggestions = SHOPPING_DB[key];
+
+            // Filter by categories if provided
+            if (categories && categories.length > 0) {
+                suggestions = suggestions.filter(item => categories.includes(item.type));
+            }
+            break;
+        }
+    }
+
+    return suggestions;
+}
+
 // 模擬數據庫：針對不同城市的精選行程
 const MOCK_DB = {
     "Tokyo": [
