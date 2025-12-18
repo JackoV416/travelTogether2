@@ -27,8 +27,8 @@ import {
     TIMEZONES, LANGUAGE_OPTIONS, DEFAULT_BG_IMAGE,
     TAB_LABELS, INSURANCE_SUGGESTIONS, INSURANCE_RESOURCES
 } from './constants/appData';
-export const APP_VERSION = "V0.20.2";
-console.log("Travel Together Version Logic Triggered: V0.20.2");
+export const APP_VERSION = "V0.21.0";
+console.log("Travel Together Version Logic Triggered: V0.21.0");
 
 import {
     glassCard, getHolidayMap, getLocalizedCountryName,

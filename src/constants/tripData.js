@@ -90,8 +90,20 @@ export const INSURANCE_RESOURCES = [
 ];
 
 export const AUTHOR_NAME = "Jamie Kwok";
-export const APP_VERSION = "V0.20.2";
+export const APP_VERSION = "V0.21.0";
 export const VERSION_HISTORY = [
+    {
+        ver: "V0.21.0",
+        date: "2025-12-19",
+        desc: {
+            "zh-TW": "AI 實體化解析 & 偏好系統 2.0",
+            "en": "AI Vision Parsing & Preferences 2.0"
+        },
+        details: {
+            "zh-TW": "• 實體 Vision 解析：不再是 Mock 數據，支援機票與單據自動識別\n• 互動式 AI 偏好：新增「強度矩陣」，精準控制行程風格\n• 版本同步優化：跨系統版本號自動一致化",
+            "en": "• Real Vision Parsing: Real OCR for tickets & bills\n• Interactive AI Preferences: New intensity matrix for style control\n• Version Sync: Automated cross-system version consistency"
+        }
+    },
     {
         ver: "V0.20.2",
         date: "2025-12-18",

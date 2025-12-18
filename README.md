@@ -2,7 +2,7 @@
 > **智能旅遊規劃與實時協作平台**  
 > AI-Powered Itinerary Planner & Real-time Collaboration Tool
 
-[![Version](https://img.shields.io/badge/version-v0.20.2-indigo)](https://github.com/JackoV416/travelTogether2)
+[![Version](https://img.shields.io/badge/version-v0.21.0-blue?style=for-the-badge)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-19.0-blue)](https://reactjs.org/)
 [![Firebase](https://img.shields.io/badge/Firebase-Firestore-orange)](https://firebase.google.com/)
 [![Tailwind](https://img.shields.io/badge/Tailwind-3.4-cyan)](https://tailwindcss.com/)
@@ -55,6 +55,7 @@ graph TD
 
 | 版本 | 主要亮點 | 狀態 |
 | :--- | :--- | :--- |
+| **V0.21.0** | **AI Evolution**: Real AI Import, 偏好矩陣, 流程優化 | 🏗️ 開發中 |
 | **V0.20.2** | **Grand Evolution**: AI Time Buckets, 運輸精細化, Smart Packing 擴充, UI 拋光 | ✅ 已發布 |
 | **V0.19.0** | **Premium UI**: 深色模式修正、Micro-interactions、雙幣顯示、離線 Banner | ✅ 已發布 |
 | **V0.18.0** | **Smart Packing**: 行李清單分類、天氣同步校對、Add Modal 智能切換 | ✅ 已發布 |

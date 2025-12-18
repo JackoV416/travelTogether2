@@ -259,49 +259,75 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
         const targetTrip = trips.find(t => t.id === targetTripId);
         if (!targetTrip) return alert("找不到目標行程");
 
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const base64 = e.target.result;
-            const docRef = doc(db, "trips", targetTripId);
+        const docRef = doc(db, "trips", targetTripId);
 
-            try {
-                if (type === 'itinerary') {
-                    const dateKey = targetTrip.startDate || new Date().toISOString().split('T')[0];
-                    const newItem = {
-                        id: Date.now().toString(),
-                        name: "AI 識別行程: " + file.name,
-                        type: 'spot',
-                        time: '10:00',
-                        cost: 0,
-                        currency: globalSettings.currency,
-                        details: { location: "Parsed from Image" },
-                        attachment: base64,
-                        createdBy: { name: user.displayName, id: user.uid }
-                    };
-                    await updateDoc(docRef, { [`itinerary.${dateKey}`]: arrayUnion(newItem) });
-                    sendNotification("匯入成功 ✅", `已將行程加入至 ${targetTrip.name}`, 'success');
-                }
-                else if (type === 'budget') {
-                    const newItem = {
-                        id: Date.now().toString(),
-                        name: "單據導入: " + file.name,
-                        cost: 0,
-                        currency: globalSettings.currency,
-                        category: 'misc',
-                        payer: user.displayName,
-                        attachment: base64,
-                        date: new Date().toISOString()
-                    };
-                    await updateDoc(docRef, { budget: arrayUnion(newItem) });
-                    sendNotification("預算上傳成功 💰", "已加入單據至預算表", 'success');
-                }
-                setIsSmartImportModalOpen(false);
-            } catch (err) {
-                console.error(err);
-                sendNotification("匯入失敗 ❌", "資料處理出錯", 'error');
+        try {
+            // --- V0.21: Call AI Parsing Service ---
+            sendNotification("AI 識別中 🔍", "正在掃描文件...", 'info');
+            const { parseTripImage } = await import('../../services/ai');
+            const parsedItems = await parseTripImage(file);
+
+            if (!parsedItems || parsedItems.length === 0) {
+                sendNotification("識別失敗 ⚠️", "無法從檔案中解析內容", 'warning');
+                return;
             }
-        };
-        reader.readAsDataURL(file);
+
+            // Optionally read file as base64 for attachment
+            const base64 = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(file);
+            });
+
+            const reliability = parsedItems[0]?.reliability || 0.5;
+            const reliabilityLabel = reliability >= 0.8 ? '高' : reliability >= 0.6 ? '中' : '低';
+
+            if (type === 'itinerary') {
+                const dateKey = targetTrip.startDate || new Date().toISOString().split('T')[0];
+                const itemsToAdd = parsedItems.map(item => ({
+                    id: item.id || Date.now().toString(),
+                    name: item.name,
+                    type: item.type || 'spot',
+                    time: item.time || item.details?.time || '10:00',
+                    cost: item.cost || 0,
+                    currency: item.currency || globalSettings.currency,
+                    details: {
+                        ...item.details,
+                        location: item.details?.location || 'AI Parsed'
+                    },
+                    attachment: base64,
+                    createdBy: { name: user.displayName, id: user.uid },
+                    aiParsed: true
+                }));
+
+                await Promise.all(itemsToAdd.map(newItem =>
+                    updateDoc(docRef, { [`itinerary.${dateKey}`]: arrayUnion(newItem) })
+                ));
+                sendNotification(`匯入成功 ✅ (可信度: ${reliabilityLabel})`, `已加入 ${itemsToAdd.length} 項至 ${targetTrip.name}`, 'success');
+            }
+            else if (type === 'budget') {
+                const itemsToAdd = parsedItems.map(item => ({
+                    id: item.id || Date.now().toString(),
+                    name: item.name,
+                    cost: item.cost || 0,
+                    currency: item.currency || globalSettings.currency,
+                    category: item.category || 'misc',
+                    payer: user.displayName,
+                    attachment: base64,
+                    date: item.date || new Date().toISOString(),
+                    aiParsed: true
+                }));
+
+                await Promise.all(itemsToAdd.map(newItem =>
+                    updateDoc(docRef, { budget: arrayUnion(newItem) })
+                ));
+                sendNotification(`預算上傳成功 💰 (可信度: ${reliabilityLabel})`, `已加入 ${itemsToAdd.length} 筆至預算表`, 'success');
+            }
+            setIsSmartImportModalOpen(false);
+        } catch (err) {
+            console.error(err);
+            sendNotification("匯入失敗 ❌", "資料處理出錯: " + err.message, 'error');
+        }
     };
 
     return (

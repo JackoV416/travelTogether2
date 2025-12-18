@@ -19,10 +19,14 @@ const SHOPPING_CATEGORIES = [
 
 const ITINERARY_PREFS = [
     { id: 'rest', label: '多啲休息時間', icon: '💤', desc: '唔好咁趕，多啲自由時間' },
-    { id: 'shopping', label: '購物行程', icon: '🛍️', desc: '主要去商場、購物街' },
     { id: 'souvenir', label: '買手信行程', icon: '🎁', desc: '推薦必買伴手禮店' },
-    { id: 'culture', label: '深度文化之旅', icon: '🏛️', desc: '參觀名勝古蹟、博物館' },
-    { id: 'foodie', label: '美食巡禮', icon: '🍜', desc: '專攻排隊名店與地道小吃' }
+];
+
+const INTENSITY_PREFS = [
+    { id: 'culture', label: '🏛️ 歷史文化', desc: '古蹟、博物館、寺廟' },
+    { id: 'nature', label: '🌲 自然景觀', desc: '公園、山岳、湖泊' },
+    { id: 'foodie', label: '🍜 美食巡禮', desc: '排隊名店、道地小食' },
+    { id: 'shopping', label: '🛍️ 購物商圈', desc: '百貨公司、藥妝、市集' }
 ];
 
 const AIGeminiModal = ({
@@ -40,11 +44,17 @@ const AIGeminiModal = ({
     const [result, setResult] = useState(null);
     const [activeTab, setActiveTab] = useState(mode === 'shopping' ? 'shopping' : (mode === 'packing' ? 'packing' : 'itinerary'));
     const [shoppingStep, setShoppingStep] = useState('selection'); // selection -> result
-    const [itineraryStep, setItineraryStep] = useState('selection'); // selection -> preferences -> logistics -> result
+    const [itineraryStep, setItineraryStep] = useState('preferences'); // Changed from selection to preferences (survey)
     const [packingStep, setPackingStep] = useState('selection'); // result only
     const [inputText, setInputText] = useState('');
     const [selectedCats, setSelectedCats] = useState(['food', 'cosmetic']);
     const [selectedPrefs, setSelectedPrefs] = useState(['culture', 'foodie']);
+    const [intensities, setIntensities] = useState({
+        culture: 2,
+        nature: 2,
+        foodie: 2,
+        shopping: 2
+    });
     const [logistics, setLogistics] = useState({
         flightInfo: '',
         hotelStatus: 'none',
@@ -308,7 +318,7 @@ const AIGeminiModal = ({
                             {/* Visual Option Cards */}
                             <div className="grid grid-cols-2 gap-4">
                                 <button
-                                    onClick={() => setItineraryStep('preferences')}
+                                    onClick={() => setItineraryStep('logistics')}
                                     className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-center gap-3 transition-all hover:shadow-lg hover:-translate-y-1 active:scale-95 ${isDarkMode ? 'border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20' : 'border-indigo-200 bg-indigo-50 hover:bg-indigo-100'}`}
                                 >
                                     <div className={`p-3 rounded-2xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-white shadow-sm'}`}>
@@ -390,51 +400,77 @@ const AIGeminiModal = ({
                                 >
                                     <Plus className="w-4 h-4" /> 我想手動新增行程項目
                                 </button>
+                                <button
+                                    onClick={() => setItineraryStep('preferences')}
+                                    className="text-xs opacity-40 hover:opacity-100 transition-opacity ml-4"
+                                >
+                                    重設偏好 ⚙️
+                                </button>
                             </div>
                         </div>
                     ) : itineraryStep === 'preferences' ? (
                         <div className="space-y-6 animate-fade-in">
                             <div className="text-center space-y-2">
-                                <h4 className="text-lg font-bold">您的旅行偏好是？</h4>
-                                <p className="text-sm opacity-60">AI 會根據您的選擇來調整行程的節奏與內容</p>
+                                <h4 className="text-lg font-bold">自訂行程風格 (強度矩陣)</h4>
+                                <p className="text-sm opacity-60">調整各項目的比重，讓 AI 了解您的口味</p>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-3">
-                                {ITINERARY_PREFS.map(pref => (
-                                    <button
-                                        key={pref.id}
-                                        onClick={() => togglePref(pref.id)}
-                                        className={`p-4 rounded-xl border-2 flex items-center gap-4 transition-all text-left ${selectedPrefs.includes(pref.id) ? 'border-indigo-500 bg-indigo-500/5' : 'border-gray-500/10 hover:bg-gray-500/5'}`}
-                                    >
-                                        <div className="text-2xl w-10 h-10 flex items-center justify-center bg-gray-500/10 rounded-full">{pref.icon}</div>
-                                        <div className="flex-1">
-                                            <div className="font-bold text-sm">{pref.label}</div>
-                                            <div className="text-xs opacity-50">{pref.desc}</div>
+                            <div className="space-y-6 bg-gray-500/5 p-4 rounded-2xl border border-gray-500/10">
+                                {INTENSITY_PREFS.map(pref => (
+                                    <div key={pref.id} className="space-y-3">
+                                        <div className="flex justify-between items-center px-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-bold text-sm">{pref.label}</span>
+                                            </div>
+                                            <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${intensities[pref.id] === 1 ? 'bg-gray-500/20 text-gray-500' :
+                                                intensities[pref.id] === 2 ? 'bg-indigo-500/20 text-indigo-500' :
+                                                    'bg-rose-500/20 text-rose-500'
+                                                }`}>
+                                                {intensities[pref.id] === 1 ? '低 (Low)' : intensities[pref.id] === 2 ? '中 (Mid)' : '高 (High)'}
+                                            </span>
                                         </div>
-                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedPrefs.includes(pref.id) ? 'border-indigo-500 bg-indigo-500' : 'border-gray-400'}`}>
-                                            {selectedPrefs.includes(pref.id) && <Check size={12} className="text-white" />}
+                                        <div className="relative h-2 flex items-center">
+                                            <div className="absolute inset-0 bg-gray-500/20 rounded-full h-1 my-auto"></div>
+                                            <div className="absolute inset-0 flex justify-between px-1">
+                                                {[1, 2, 3].map(val => (
+                                                    <button
+                                                        key={val}
+                                                        onClick={() => setIntensities(prev => ({ ...prev, [pref.id]: val }))}
+                                                        className={`w-4 h-4 rounded-full border-2 transform -translate-y-1.5 transition-all shadow-sm ${intensities[pref.id] === val
+                                                            ? 'bg-indigo-500 border-indigo-400 scale-125 z-10'
+                                                            : 'bg-white border-gray-300 hover:border-indigo-300'
+                                                            }`}
+                                                    ></button>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </button>
+                                        <p className="text-[10px] opacity-40 px-1 italic">{pref.desc}</p>
+                                    </div>
                                 ))}
                             </div>
 
-                            <div className="flex gap-3">
+                            <div className="space-y-3">
+                                <div className="text-xs font-bold opacity-70 ml-1">其他細節偏好</div>
+                                <div className="flex flex-wrap gap-2">
+                                    {ITINERARY_PREFS.map(pref => (
+                                        <button
+                                            key={pref.id}
+                                            onClick={() => togglePref(pref.id)}
+                                            className={`px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-2 transition-all ${selectedPrefs.includes(pref.id) ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-gray-500/10 opacity-60'
+                                                }`}
+                                        >
+                                            {pref.icon} {pref.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
                                 <button
                                     onClick={() => setItineraryStep('selection')}
-                                    className={`flex-1 py-3 rounded-xl border font-bold transition-all ${isDarkMode ? 'border-gray-600 hover:bg-gray-800' : 'border-gray-300 hover:bg-gray-50'}`}
+                                    className="flex-1 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 group"
                                 >
-                                    返回
-                                </button>
-                                <button
-                                    onClick={() => setItineraryStep('logistics')}
-                                    className="flex-[2] py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg transition-all transform active:scale-95"
-                                >
-                                    下一步 (物流資訊)
-                                </button>
-                                <button // Direct bypass for quick generation if needed, or we just force logistics
-                                    onClick={() => setItineraryStep('logistics')}
-                                    className="hidden"
-                                >
+                                    設定完成，開始規劃 <ArrowRightLeft className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                 </button>
                             </div>
                         </div>
