@@ -82,24 +82,93 @@ export default function SmartImportModal({ isOpen, onClose, onImport, isDarkMode
                 {/* Content */}
                 <div className="p-8 overflow-y-auto custom-scrollbar flex-1">
 
-                    {/* Stage 1: Upload */}
+                    {/* Stage 1: Select Type + Upload */}
                     {!file ? (
-                        <div
-                            className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 cursor-pointer group ${isDarkMode ? 'border-white/10 hover:border-indigo-500/50 hover:bg-white/5' : 'border-gray-300 hover:border-indigo-500/50 hover:bg-gray-50'}`}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={handleDrop}
-                            onClick={() => fileInputRef.current?.click()}
-                        >
-                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*,application/pdf" onChange={handleFileChange} />
-                            <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                                <Upload className="w-10 h-10 text-indigo-400" />
+                        <div className="space-y-6">
+                            {/* Import Type Selection */}
+                            <div>
+                                <h3 className="text-lg font-bold mb-4 opacity-80">選擇匯入類型</h3>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                    {/* Option 1: Itinerary Screenshot */}
+                                    <button
+                                        onClick={() => setImportType('itinerary')}
+                                        className={`relative p-4 rounded-xl border text-left transition-all duration-300 group ${importType === 'itinerary' ? 'bg-indigo-600 border-indigo-500 ring-2 ring-indigo-400/30' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-indigo-500/50'}`}
+                                    >
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${importType === 'itinerary' ? 'bg-white/20 text-white' : 'bg-indigo-500/20 text-indigo-400'}`}>
+                                            <FileText className="w-4 h-4" />
+                                        </div>
+                                        <h4 className="font-bold text-sm mb-1">行程截圖</h4>
+                                        <p className="text-[10px] opacity-60">上傳行程圖片</p>
+                                        {importType === 'itinerary' && <div className="absolute top-2 right-2 text-white"><CheckCircle2 className="w-4 h-4" /></div>}
+                                    </button>
+
+                                    {/* Option 2: Budget Receipt */}
+                                    <button
+                                        onClick={() => setImportType('budget')}
+                                        className={`relative p-4 rounded-xl border text-left transition-all duration-300 group ${importType === 'budget' ? 'bg-emerald-600 border-emerald-500 ring-2 ring-emerald-400/30' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-emerald-500/50'}`}
+                                    >
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${importType === 'budget' ? 'bg-white/20 text-white' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                                            <Receipt className="w-4 h-4" />
+                                        </div>
+                                        <h4 className="font-bold text-sm mb-1">消費單據</h4>
+                                        <p className="text-[10px] opacity-60">加入預算表</p>
+                                        {importType === 'budget' && <div className="absolute top-2 right-2 text-white"><CheckCircle2 className="w-4 h-4" /></div>}
+                                    </button>
+
+                                    {/* Option 3: Memory */}
+                                    <button
+                                        onClick={() => setImportType('memory')}
+                                        className={`relative p-4 rounded-xl border text-left transition-all duration-300 group ${importType === 'memory' ? 'bg-pink-600 border-pink-500 ring-2 ring-pink-400/30' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-pink-500/50'}`}
+                                    >
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${importType === 'memory' ? 'bg-white/20 text-white' : 'bg-pink-500/20 text-pink-400'}`}>
+                                            <ImageIcon className="w-4 h-4" />
+                                        </div>
+                                        <h4 className="font-bold text-sm mb-1">回憶相片</h4>
+                                        <p className="text-[10px] opacity-60">儲存至文件庫</p>
+                                        {importType === 'memory' && <div className="absolute top-2 right-2 text-white"><CheckCircle2 className="w-4 h-4" /></div>}
+                                    </button>
+
+                                    {/* Option 4: JSON Import */}
+                                    <button
+                                        onClick={() => setImportType('json')}
+                                        className={`relative p-4 rounded-xl border text-left transition-all duration-300 group ${importType === 'json' ? 'bg-amber-600 border-amber-500 ring-2 ring-amber-400/30' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-amber-500/50'}`}
+                                    >
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${importType === 'json' ? 'bg-white/20 text-white' : 'bg-amber-500/20 text-amber-400'}`}>
+                                            <span className="text-xs font-bold">{'{}'}</span>
+                                        </div>
+                                        <h4 className="font-bold text-sm mb-1">JSON 匯入</h4>
+                                        <p className="text-[10px] opacity-60">完整行程數據</p>
+                                        {importType === 'json' && <div className="absolute top-2 right-2 text-white"><CheckCircle2 className="w-4 h-4" /></div>}
+                                    </button>
+
+                                    {/* Option 5: CSV Import */}
+                                    <button
+                                        onClick={() => setImportType('csv')}
+                                        className={`relative p-4 rounded-xl border text-left transition-all duration-300 group ${importType === 'csv' ? 'bg-cyan-600 border-cyan-500 ring-2 ring-cyan-400/30' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-cyan-500/50'}`}
+                                    >
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${importType === 'csv' ? 'bg-white/20 text-white' : 'bg-cyan-500/20 text-cyan-400'}`}>
+                                            <span className="text-[10px] font-bold">CSV</span>
+                                        </div>
+                                        <h4 className="font-bold text-sm mb-1">CSV 匯入</h4>
+                                        <p className="text-[10px] opacity-60">試算表格式</p>
+                                        {importType === 'csv' && <div className="absolute top-2 right-2 text-white"><CheckCircle2 className="w-4 h-4" /></div>}
+                                    </button>
+                                </div>
                             </div>
-                            <h3 className="text-xl font-bold mb-2">點擊或拖放檔案至此</h3>
-                            <p className="opacity-60 text-sm mb-6">支援 JPG, PNG, PDF 格式</p>
-                            <div className="flex justify-center gap-4 text-xs opacity-50">
-                                <span className="flex items-center gap-1"><FileText className="w-3 h-3" /> 行程截圖</span>
-                                <span className="flex items-center gap-1"><Receipt className="w-3 h-3" /> 消費單據</span>
-                                <span className="flex items-center gap-1"><ImageIcon className="w-3 h-3" /> 旅途回憶</span>
+
+                            {/* File Upload Area */}
+                            <div
+                                className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 cursor-pointer group ${isDarkMode ? 'border-white/10 hover:border-indigo-500/50 hover:bg-white/5' : 'border-gray-300 hover:border-indigo-500/50 hover:bg-gray-50'}`}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={handleDrop}
+                                onClick={() => fileInputRef.current?.click()}
+                            >
+                                <input type="file" ref={fileInputRef} className="hidden" accept="image/*,application/pdf,.json,.csv,text/csv,application/json" onChange={handleFileChange} />
+                                <div className="w-14 h-14 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                                    <Upload className="w-7 h-7 text-indigo-400" />
+                                </div>
+                                <h3 className="text-lg font-bold mb-1">點擊或拖放檔案</h3>
+                                <p className="opacity-60 text-sm">支援圖片、PDF、JSON、CSV</p>
                             </div>
                         </div>
                     ) : (
@@ -127,54 +196,16 @@ export default function SmartImportModal({ isOpen, onClose, onImport, isDarkMode
                                 </div>
                             </div>
 
-                            {/* Stage 2: Routing Selection */}
-                            <div>
-                                <h3 className="text-lg font-bold mb-4 opacity-80">您想將此檔案用於？</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    {/* Option 1: AI Schedule */}
-                                    <button
-                                        onClick={() => setImportType('itinerary')}
-                                        className={`relative p-4 rounded-xl border text-left transition-all duration-300 group ${importType === 'itinerary' ? 'bg-indigo-600 border-indigo-500 ring-2 ring-indigo-400/30' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-indigo-500/50'}`}
-                                    >
-                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${importType === 'itinerary' ? 'bg-white/20 text-white' : 'bg-indigo-500/20 text-indigo-400'}`}>
-                                            <FileText className="w-5 h-5" />
-                                        </div>
-                                        <h4 className="font-bold mb-1">AI 行程識別</h4>
-                                        <p className="text-xs opacity-60 leading-relaxed">
-                                            自動分析截圖或 PDF 中的行程，將景點加入時間軸。
-                                        </p>
-                                        {importType === 'itinerary' && <div className="absolute top-3 right-3 text-white"><CheckCircle2 className="w-5 h-5" /></div>}
-                                    </button>
-
-                                    {/* Option 2: Budget Receipt */}
-                                    <button
-                                        onClick={() => setImportType('budget')}
-                                        className={`relative p-4 rounded-xl border text-left transition-all duration-300 group ${importType === 'budget' ? 'bg-emerald-600 border-emerald-500 ring-2 ring-emerald-400/30' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-emerald-500/50'}`}
-                                    >
-                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${importType === 'budget' ? 'bg-white/20 text-white' : 'bg-emerald-500/20 text-emerald-400'}`}>
-                                            <Receipt className="w-5 h-5" />
-                                        </div>
-                                        <h4 className="font-bold mb-1">消費單據</h4>
-                                        <p className="text-xs opacity-60 leading-relaxed">
-                                            識別金額與項目，加入預算表並附上單據圖片。
-                                        </p>
-                                        {importType === 'budget' && <div className="absolute top-3 right-3 text-white"><CheckCircle2 className="w-5 h-5" /></div>}
-                                    </button>
-
-                                    {/* Option 3: Memory / File */}
-                                    <button
-                                        onClick={() => setImportType('memory')}
-                                        className={`relative p-4 rounded-xl border text-left transition-all duration-300 group ${importType === 'memory' ? 'bg-pink-600 border-pink-500 ring-2 ring-pink-400/30' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-pink-500/50'}`}
-                                    >
-                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${importType === 'memory' ? 'bg-white/20 text-white' : 'bg-pink-500/20 text-pink-400'}`}>
-                                            <ImageIcon className="w-5 h-5" />
-                                        </div>
-                                        <h4 className="font-bold mb-1">回憶與文件</h4>
-                                        <p className="text-xs opacity-60 leading-relaxed">
-                                            單純儲存至文件庫或相簿，作為旅途記錄。
-                                        </p>
-                                        {importType === 'memory' && <div className="absolute top-3 right-3 text-white"><CheckCircle2 className="w-5 h-5" /></div>}
-                                    </button>
+                            {/* Selected Import Type Confirmation */}
+                            <div className="p-4 rounded-xl border border-white/10 bg-white/5">
+                                <div className="text-sm opacity-60 mb-1">匯入類型</div>
+                                <div className="font-bold flex items-center gap-2">
+                                    {importType === 'itinerary' && <><FileText className="w-4 h-4 text-indigo-400" /> 行程截圖</>}
+                                    {importType === 'budget' && <><Receipt className="w-4 h-4 text-emerald-400" /> 消費單據</>}
+                                    {importType === 'memory' && <><ImageIcon className="w-4 h-4 text-pink-400" /> 回憶相片</>}
+                                    {importType === 'json' && <><span className="text-xs text-amber-400">{'{}'}</span> JSON 匯入</>}
+                                    {importType === 'csv' && <><span className="text-xs text-cyan-400">CSV</span> CSV 匯入</>}
+                                    <button onClick={() => setFile(null)} className="ml-auto text-xs text-indigo-400 hover:underline">更改</button>
                                 </div>
                             </div>
 

@@ -9,7 +9,8 @@ const BudgetTab = ({
     onOpenSectionModal,
     onExportPdf,
     handleReceiptUpload,
-    glassCard
+    glassCard,
+    onOpenSmartImport
 }) => {
     const [dragActive, setDragActive] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -65,7 +66,7 @@ const BudgetTab = ({
                 isDarkMode={isDarkMode}
             />
             <div className="flex justify-end gap-2">
-                <button onClick={() => onOpenSectionModal('import', 'budget')} className="px-3 py-1 rounded-lg border border-white/30 text-xs">匯入</button>
+                <button onClick={() => onOpenSmartImport ? onOpenSmartImport() : onOpenSectionModal('import', 'budget')} className="px-3 py-1 rounded-lg border border-white/30 text-xs">匯入</button>
                 <button onClick={() => onOpenSectionModal('export', 'budget')} className="px-3 py-1 rounded-lg border border-white/30 text-xs">匯出</button>
                 <button onClick={onExportPdf} className="px-3 py-1 rounded-lg border border-indigo-400 text-xs text-indigo-200">匯出 PDF</button>
             </div>

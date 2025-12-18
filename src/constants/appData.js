@@ -5,11 +5,23 @@ import {
 
 // --- Versioning & Metadata ---
 export const AUTHOR_NAME = "Jamie Kwok";
-export const APP_VERSION = "V0.21.0";
+export const APP_VERSION = "V0.21.1";
 
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V0.21.1",
+        date: "2025-12-19",
+        desc: {
+            "zh-TW": "匯入功能統一 & Bug 修復",
+            "en": "Import Consolidation & Bug Fixes"
+        },
+        details: {
+            "zh-TW": "• SmartImportModal 統一入口：整合 5 種匯入方式 (截圖/單據/回憶/JSON/CSV)\n• 酒店數據擴充：新增大阪 4 間酒店\n• 移除 Mock 數據：匯入功能不再顯示假資料\n• 購物類別優化：6 類精準分類\n• 交通選項加入自駕租車",
+            "en": "• SmartImportModal: Unified 5 import types (Image/Receipt/Memory/JSON/CSV)\n• Osaka Hotels: Added 4 hotels\n• Removed Mock Data: Import shows real file info only\n• Shopping Categories: 6 refined categories\n• Transport: Added self-driving option"
+        }
+    },
     {
         ver: "V0.21.0",
         date: "2025-12-19",

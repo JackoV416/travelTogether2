@@ -64,7 +64,8 @@ const ItineraryTab = ({
     onDrop,
     openSectionModal,
     onOptimize,
-    onOpenAIModal
+    onOpenAIModal,
+    onOpenSmartImport
 }) => {
     const [searchValue, setSearchValue] = useState("");
     const [activeFilters, setActiveFilters] = useState({ type: 'all' });
@@ -162,7 +163,7 @@ const ItineraryTab = ({
 
                         <button onClick={() => setViewMode(viewMode === 'list' ? 'map' : 'list')} className={`p-2 rounded-lg border transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100'}`}>{viewMode === 'list' ? <MapIcon className="w-5 h-5" /> : <List className="w-5 h-5" />}</button>
                         {canEdit && <button onClick={onOptimize} className={`p-2 rounded-lg border transition-all ${isDarkMode ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/30' : 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'}`} title="AI 智能排程優化"><Wand2 className="w-5 h-5" /></button>}
-                        <button onClick={() => openSectionModal('import', 'itinerary')} className={`px-3 py-1 rounded-lg border text-xs ${isDarkMode ? 'border-white/20 hover:bg-white/10' : 'border-gray-200 hover:bg-gray-50'}`}>匯入</button>
+                        <button onClick={() => onOpenSmartImport ? onOpenSmartImport() : openSectionModal('import', 'itinerary')} className={`px-3 py-1 rounded-lg border text-xs ${isDarkMode ? 'border-white/20 hover:bg-white/10' : 'border-gray-200 hover:bg-gray-50'}`}>匯入</button>
                         <button onClick={() => openSectionModal('export', 'itinerary')} className={`px-3 py-1 rounded-lg border text-xs ${isDarkMode ? 'border-white/20 hover:bg-white/10' : 'border-gray-200 hover:bg-gray-50'}`}>匯出</button>
                         {canEdit && <button onClick={() => onAddItem(currentDisplayDate, 'spot')} className="text-xs bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-3 py-1.5 rounded-lg font-bold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 active:scale-95">+ 新增</button>}
                     </div>
@@ -225,7 +226,7 @@ const ItineraryTab = ({
 
                                                 <div className="mt-2 text-center">
                                                     <button
-                                                        onClick={() => openSectionModal('import', 'itinerary')}
+                                                        onClick={() => onOpenSmartImport ? onOpenSmartImport() : openSectionModal('import', 'itinerary')}
                                                         className={`flex items-center justify-center gap-2 py-2 px-4 mx-auto rounded-xl transition-all text-[10px] opacity-40 hover:opacity-100 ${isDarkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'}`}
                                                     >
                                                         <List className="w-3.5 h-3.5" /> 從其他行程匯入數據

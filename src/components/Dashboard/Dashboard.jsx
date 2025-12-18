@@ -262,71 +262,132 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
         const docRef = doc(db, "trips", targetTripId);
 
         try {
-            // --- V0.21: Call AI Parsing Service ---
-            sendNotification("AI 識別中 🔍", "正在掃描文件...", 'info');
-            const { parseTripImage } = await import('../../services/ai');
-            const parsedItems = await parseTripImage(file);
+            // --- V0.21.1: Call AI Parsing Service ---
+            sendNotification("處理中 🔍", "正在處理文件...", 'info');
 
-            if (!parsedItems || parsedItems.length === 0) {
-                sendNotification("識別失敗 ⚠️", "無法從檔案中解析內容", 'warning');
-                return;
-            }
-
-            // Optionally read file as base64 for attachment
+            // Read file as base64 for attachment
             const base64 = await new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.onload = (e) => resolve(e.target.result);
                 reader.readAsDataURL(file);
             });
 
-            const reliability = parsedItems[0]?.reliability || 0.5;
-            const reliabilityLabel = reliability >= 0.8 ? '高' : reliability >= 0.6 ? '中' : '低';
-
             if (type === 'itinerary') {
+                // For itinerary - attach file and prompt manual input
                 const dateKey = targetTrip.startDate || new Date().toISOString().split('T')[0];
-                const itemsToAdd = parsedItems.map(item => ({
-                    id: item.id || Date.now().toString(),
-                    name: item.name,
-                    type: item.type || 'spot',
-                    time: item.time || item.details?.time || '10:00',
-                    cost: item.cost || 0,
-                    currency: item.currency || globalSettings.currency,
+                const newItem = {
+                    id: Date.now().toString(),
+                    name: `📎 已上傳: ${file.name}`,
+                    type: 'spot',
+                    time: '10:00',
+                    cost: 0,
+                    currency: globalSettings.currency,
                     details: {
-                        ...item.details,
-                        location: item.details?.location || 'AI Parsed'
+                        location: "請手動編輯",
+                        desc: "已附加原始檔案，點擊編輯填入詳情"
                     },
                     attachment: base64,
                     createdBy: { name: user.displayName, id: user.uid },
-                    aiParsed: true
-                }));
-
-                await Promise.all(itemsToAdd.map(newItem =>
-                    updateDoc(docRef, { [`itinerary.${dateKey}`]: arrayUnion(newItem) })
-                ));
-                sendNotification(`匯入成功 ✅ (可信度: ${reliabilityLabel})`, `已加入 ${itemsToAdd.length} 項至 ${targetTrip.name}`, 'success');
+                    needsManualInput: true
+                };
+                await updateDoc(docRef, { [`itinerary.${dateKey}`]: arrayUnion(newItem) });
+                sendNotification("已上傳行程截圖 📸", "請點擊編輯填入行程詳情", 'success');
             }
             else if (type === 'budget') {
-                const itemsToAdd = parsedItems.map(item => ({
-                    id: item.id || Date.now().toString(),
-                    name: item.name,
-                    cost: item.cost || 0,
-                    currency: item.currency || globalSettings.currency,
-                    category: item.category || 'misc',
+                // For budget - attach file and prompt manual input
+                const newItem = {
+                    id: Date.now().toString(),
+                    name: `📎 單據: ${file.name}`,
+                    cost: 0,
+                    currency: globalSettings.currency,
+                    category: 'misc',
                     payer: user.displayName,
                     attachment: base64,
-                    date: item.date || new Date().toISOString(),
-                    aiParsed: true
-                }));
-
-                await Promise.all(itemsToAdd.map(newItem =>
-                    updateDoc(docRef, { budget: arrayUnion(newItem) })
-                ));
-                sendNotification(`預算上傳成功 💰 (可信度: ${reliabilityLabel})`, `已加入 ${itemsToAdd.length} 筆至預算表`, 'success');
+                    date: new Date().toISOString(),
+                    needsManualInput: true
+                };
+                await updateDoc(docRef, { budget: arrayUnion(newItem) });
+                sendNotification("已上傳單據 🧾", "請點擊編輯填入金額", 'success');
             }
+            else if (type === 'memory') {
+                // For memory/files - just store the file
+                const newFile = {
+                    id: Date.now().toString(),
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    data: base64,
+                    uploadedBy: user.displayName,
+                    uploadedAt: new Date().toISOString()
+                };
+                await updateDoc(docRef, { files: arrayUnion(newFile) });
+                sendNotification("回憶已儲存 📷", "檔案已加入至文件庫", 'success');
+            }
+            else if (type === 'json') {
+                // JSON full trip import
+                try {
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+
+                    // Merge imported data into trip
+                    const updates = {};
+                    if (data.itinerary) updates.itinerary = data.itinerary;
+                    if (data.budget) updates.budget = data.budget;
+                    if (data.shopping) updates.shopping = data.shopping;
+                    if (data.packing) updates.packing = data.packing;
+                    if (data.notes) updates.notes = data.notes;
+
+                    if (Object.keys(updates).length > 0) {
+                        await updateDoc(docRef, updates);
+                        sendNotification("JSON 匯入成功 📥", `已匯入 ${Object.keys(updates).length} 個分類`, 'success');
+                    } else {
+                        sendNotification("無可匯入數據 ⚠️", "JSON 格式不符", 'warning');
+                    }
+                } catch (parseErr) {
+                    sendNotification("JSON 解析失敗 ❌", "請確認 JSON 格式正確", 'error');
+                    return;
+                }
+            }
+            else if (type === 'csv') {
+                // CSV import - parse and add to itinerary
+                try {
+                    const text = await file.text();
+                    const lines = text.split('\n').filter(l => l.trim());
+                    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+
+                    const dateKey = targetTrip.startDate || new Date().toISOString().split('T')[0];
+                    const itemsToAdd = [];
+
+                    for (let i = 1; i < lines.length; i++) {
+                        const values = lines[i].split(',');
+                        const item = {
+                            id: `csv-${Date.now()}-${i}`,
+                            name: values[headers.indexOf('name')] || values[0] || `項目 ${i}`,
+                            type: values[headers.indexOf('type')] || 'spot',
+                            time: values[headers.indexOf('time')] || '10:00',
+                            cost: parseFloat(values[headers.indexOf('cost')]) || 0,
+                            currency: values[headers.indexOf('currency')] || globalSettings.currency,
+                            details: { location: values[headers.indexOf('location')] || '' },
+                            createdBy: { name: user.displayName, id: user.uid },
+                            csvImported: true
+                        };
+                        itemsToAdd.push(item);
+                    }
+
+                    await Promise.all(itemsToAdd.map(newItem =>
+                        updateDoc(docRef, { [`itinerary.${dateKey}`]: arrayUnion(newItem) })
+                    ));
+                    sendNotification("CSV 匯入成功 📊", `已匯入 ${itemsToAdd.length} 個項目`, 'success');
+                } catch (parseErr) {
+                    sendNotification("CSV 解析失敗 ❌", "請確認 CSV 格式正確", 'error');
+                    return;
+                }
+            }
+
             setIsSmartImportModalOpen(false);
         } catch (err) {
             console.error(err);
-            sendNotification("匯入失敗 ❌", "資料處理出錯: " + err.message, 'error');
+            sendNotification("上傳失敗 ❌", err.message, 'error');
         }
     };
 
@@ -341,7 +402,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                     <div className="flex flex-wrap gap-3">
                         <button onClick={() => setIsCreateModalOpen(true)} className="px-5 py-3 rounded-xl bg-indigo-600 text-white font-bold flex items-center gap-2 transition-all hover:scale-105"><Plus className="w-4 h-4" /> 打開建立視窗</button>
                         <button onClick={() => { setForm({ name: '', countries: [], cities: [], startDate: '', endDate: '' }); setSelectedCountryImg(DEFAULT_BG_IMAGE); }} className="px-4 py-3 rounded-xl border border-white/30 text-sm hover:bg-white/10 transition-all">重設預覽</button>
-                        <button onClick={() => setIsImportModalOpen(true)} className="px-4 py-3 rounded-xl bg-green-500/20 text-green-200 font-bold text-sm hover:bg-green-500/30 transition-all">匯入行程</button>
+                        <button onClick={() => setIsSmartImportModalOpen(true)} className="px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-sm flex items-center gap-2 hover:shadow-lg transition-all"><Upload className="w-4 h-4" /> 智能匯入</button>
                         <button onClick={() => setIsExportModalOpen(true)} className="px-4 py-3 rounded-xl bg-purple-500/20 text-purple-100 font-bold text-sm hover:bg-purple-500/30 transition-all">匯出行程</button>
                     </div>
                 </div>
@@ -352,8 +413,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
                     <h2 className="text-2xl font-bold border-l-4 border-indigo-500 pl-3">我的行程</h2>
                     <div className="flex gap-2">
-                        <button onClick={() => setIsSmartImportModalOpen(true)} className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105 transition-all"><Upload className="w-4 h-4" /> 智能匯入</button>
-                        <button onClick={() => setIsImportModalOpen(true)} className="px-4 py-2 rounded-xl border border-indigo-500/40 text-sm hover:bg-indigo-500/5 transition-colors">全行程匯入</button>
+                        <button onClick={() => setIsSmartImportModalOpen(true)} className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105 transition-all"><Upload className="w-4 h-4" /> 匯入</button>
                         <button onClick={() => setIsExportModalOpen(true)} className="px-4 py-2 rounded-xl border border-purple-500/40 text-sm hover:bg-purple-500/5 transition-colors">匯出</button>
                         <button onClick={() => setIsCreateModalOpen(true)} className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm flex items-center gap-2 hover:bg-indigo-700 transition-colors"><Plus className="w-4 h-4" /> 建立</button>
                     </div>

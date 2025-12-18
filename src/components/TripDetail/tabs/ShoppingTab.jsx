@@ -10,7 +10,8 @@ const ShoppingTab = ({
     onAddItem,
     handleReceiptUpload,
     receiptPreview,
-    glassCard
+    glassCard,
+    onOpenSmartImport
 }) => {
     const [dragActive, setDragActive] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -52,7 +53,7 @@ const ShoppingTab = ({
                 isDarkMode={isDarkMode}
             />
             <div className="flex justify-end gap-2">
-                <button onClick={() => onOpenSectionModal('import', 'shopping')} className={`px-3 py-1 rounded-lg border text-xs ${isDarkMode ? 'border-white/30 hover:bg-white/10' : 'border-gray-300 hover:bg-gray-100'}`}>匯入</button>
+                <button onClick={() => onOpenSmartImport ? onOpenSmartImport() : onOpenSectionModal('import', 'shopping')} className={`px-3 py-1 rounded-lg border text-xs ${isDarkMode ? 'border-white/30 hover:bg-white/10' : 'border-gray-300 hover:bg-gray-100'}`}>匯入</button>
                 <button onClick={() => onOpenSectionModal('export', 'shopping')} className={`px-3 py-1 rounded-lg border text-xs ${isDarkMode ? 'border-white/30 hover:bg-white/10' : 'border-gray-300 hover:bg-gray-100'}`}>匯出</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

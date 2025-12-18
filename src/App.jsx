@@ -27,8 +27,8 @@ import {
     TIMEZONES, LANGUAGE_OPTIONS, DEFAULT_BG_IMAGE,
     TAB_LABELS, INSURANCE_SUGGESTIONS, INSURANCE_RESOURCES
 } from './constants/appData';
-export const APP_VERSION = "V0.21.0";
-console.log("Travel Together Version Logic Triggered: V0.21.0");
+export const APP_VERSION = "V0.21.1";
+console.log("Travel Together Version Logic Triggered: V0.21.1");
 
 import {
     glassCard, getHolidayMap, getLocalizedCountryName,
@@ -725,12 +725,23 @@ const App = () => {
                         onOpenSettings={() => setIsSettingsOpen(true)}
                     />
                 )}
-                {view === 'detail' && <TripDetail tripData={selectedTrip} user={user} isDarkMode={isDarkMode} setGlobalBg={setGlobalBg} isSimulation={false} globalSettings={globalSettings} onBack={() => setView('dashboard')} exchangeRates={exchangeRates} weatherData={weatherData} />}
-                {view === 'tutorial' && <div className="h-screen flex flex-col"><div className="p-4 border-b flex gap-4"><button onClick={() => setView('dashboard')}><ChevronLeft /></button> 模擬模式 (東京範例)</div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} globalSettings={globalSettings} exchangeRates={exchangeRates} weatherData={weatherData} /></div></div>}
+                {view === 'detail' && <TripDetail tripData={selectedTrip} user={user} isDarkMode={isDarkMode} setGlobalBg={setGlobalBg} isSimulation={false} globalSettings={globalSettings} onBack={() => setView('dashboard')} exchangeRates={exchangeRates} weatherData={weatherData} onOpenSmartImport={() => setIsSmartImportModalOpen(true)} />}
+                {view === 'tutorial' && <div className="h-screen flex flex-col"><div className="p-4 border-b flex gap-4"><button onClick={() => setView('dashboard')}><ChevronLeft /></button> 模擬模式 (東京範例)</div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} globalSettings={globalSettings} exchangeRates={exchangeRates} weatherData={weatherData} onOpenSmartImport={() => setIsSmartImportModalOpen(true)} /></div></div>}
             </div>
             {view !== 'tutorial' && <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} />}
             <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} globalSettings={globalSettings} setGlobalSettings={setGlobalSettings} isDarkMode={isDarkMode} />
             <VersionModal isOpen={isVersionOpen} onClose={() => setIsVersionOpen(false)} isDarkMode={isDarkMode} globalSettings={globalSettings} />
+            <SmartImportModal
+                isOpen={isSmartImportModalOpen}
+                onClose={() => setIsSmartImportModalOpen(false)}
+                isDarkMode={isDarkMode}
+                trips={[selectedTrip].filter(Boolean)}
+                onImport={async (file, type, targetTripId) => {
+                    // Placeholder - actual import handled in Dashboard
+                    console.log('Import from TripDetail:', file.name, type, targetTripId);
+                    setIsSmartImportModalOpen(false);
+                }}
+            />
         </div>
     );
 };

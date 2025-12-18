@@ -133,6 +133,56 @@ const HOTEL_DB = {
             tip: "頂樓大浴場可以看到忠孝東路的繁華夜景，必泡！"
         }
     ],
+    "Osaka": [
+        {
+            id: "h-osk-1",
+            name: "The Ritz-Carlton Osaka",
+            budget: "luxury",
+            rating: 4.8,
+            reviews: "歐式宮廷風格，服務非常貼心，離梅田站超近。",
+            price: "JPY 65,000+",
+            location: "梅田 (北區)",
+            facilities: ["室內泳池", "高級法餐", "24h 健身房", "SPA"],
+            desc: "大阪最具代表性的奢華酒店，經典歐風設計搭配日本頂級服務。",
+            tip: "地下直通梅田站，落雨都唔使淋。"
+        },
+        {
+            id: "h-osk-2",
+            name: "Cross Hotel Osaka",
+            budget: "mid",
+            rating: 4.5,
+            reviews: "心齋橋正中心，出門右轉就係道頓堀！設計感十足。",
+            price: "JPY 18,000+",
+            location: "心齋橋 (中央區)",
+            facilities: ["設計師大堂", "屋頂露台", "手沖咖啡吧"],
+            desc: "潮流設計酒店，年輕族群最愛，位置無可挑剔。",
+            tip: "頂樓露台影夜景一流，記得上去打卡。"
+        },
+        {
+            id: "h-osk-3",
+            name: "Hotel Granvia Osaka",
+            budget: "mid",
+            rating: 4.6,
+            reviews: "JR大阪站樓上，新幹線、機場特急全部直達。",
+            price: "JPY 22,000+",
+            location: "JR 大阪站 (梅田)",
+            facilities: ["直通JR車站", "多間餐廳", "商務中心"],
+            desc: "交通樞紐之王，適合要轉乘多條線路的旅客。",
+            tip: "去京都奈良神戶都超方便，強烈推薦。"
+        },
+        {
+            id: "h-osk-4",
+            name: "First Cabin Midousuji Namba",
+            budget: "budget",
+            rating: 4.2,
+            reviews: "膠囊酒店進化版，有獨立空間但價格超親民。",
+            price: "JPY 5,500+",
+            location: "難波 (中央區)",
+            facilities: ["大浴場", "免費 WiFi", "自助洗衣"],
+            desc: "適合獨遊背包客，乾淨舒適，難波站幾步路。",
+            tip: "雖然係膠囊概念但有簾幕同鎖，私隱度OK。"
+        }
+    ],
     "Seoul": [
         {
             id: "h-sel-1",
@@ -772,125 +822,42 @@ export async function generateAISuggestions(city, existingItems = []) {
 // Then I will replace optimizeSchedule at the end.
 
 /**
- * AI 視覺識別 (Enhanced V0.21)
- * 使用進階啟發式規則解析圖片/PDF檔案
+ * AI 視覺識別 (V0.21.1)
+ * 目前暫未接入實體 Vision API，僅作為預留接口
  * @param {File} file 上傳的圖片或 PDF
- * @returns {Promise<Array>} 解析出的行程項目 (含 reliability score)
+ * @returns {Promise<Object>} 解析結果或錯誤信息
  */
 export const parseTripImage = async (file) => {
     return new Promise((resolve) => {
-        // Simulate processing time (in real impl, call Vision API here)
-        const processingTime = 1200 + Math.random() * 800;
+        // Simulate processing time
+        const processingTime = 800 + Math.random() * 400;
 
         setTimeout(() => {
             const fileName = file.name.toLowerCase();
-            const fileType = file.type || '';
-            let result = [];
-            let detectionType = 'unknown';
-            let reliability = 0.5; // Base reliability
 
-            // --- Heuristic Detection Logic ---
-            // Keywords for flight detection
-            const flightKeywords = ['flight', 'boarding', 'ticket', '機票', '登機證', 'air', 'jl', 'cx', 'br', 'eva', 'airline'];
-            // Keywords for hotel detection
-            const hotelKeywords = ['hotel', 'booking', 'reservation', 'agoda', 'airbnb', 'hostel', '酒店', '住宿', 'inn', 'resort'];
-            // Keywords for receipt/budget detection
-            const budgetKeywords = ['receipt', 'bill', 'invoice', '收據', '單據', 'payment', 'purchase'];
+            // Basic file info extraction (no mock data)
+            const fileInfo = {
+                fileName: file.name,
+                fileType: file.type || 'unknown',
+                fileSize: file.size,
+                uploadTime: new Date().toISOString()
+            };
 
-            if (flightKeywords.some(kw => fileName.includes(kw))) {
-                detectionType = 'flight';
-                reliability = 0.85;
-            } else if (hotelKeywords.some(kw => fileName.includes(kw))) {
-                detectionType = 'hotel';
-                reliability = 0.80;
-            } else if (budgetKeywords.some(kw => fileName.includes(kw))) {
-                detectionType = 'budget';
-                reliability = 0.75;
-            } else if (fileType.includes('pdf')) {
-                // PDFs are likely official documents
-                detectionType = Math.random() > 0.5 ? 'flight' : 'hotel';
-                reliability = 0.60;
-            } else {
-                // Default: assume it's a miscellaneous receipt
-                detectionType = 'budget';
-                reliability = 0.50;
-            }
+            console.log(`[AI Import] File received: ${file.name}, Type: ${file.type}, Size: ${(file.size / 1024).toFixed(1)}KB`);
 
-            // --- Generate Mock Data Based on Type ---
-            const today = new Date().toISOString().split('T')[0];
-
-            if (detectionType === 'flight') {
-                result = [{
-                    id: `ai-import-${Date.now()}`,
-                    name: "前往東京成田機場 (CX520)",
-                    type: "flight",
-                    cost: 4500,
-                    currency: "HKD",
-                    time: "10:30",
-                    date: today,
-                    details: {
-                        location: "HKG → NRT",
-                        desc: "國泰航空",
-                        arrivalTime: "15:00",
-                        terminal: "T1"
-                    },
-                    aiParsed: true,
-                    reliability
-                }];
-            } else if (detectionType === 'hotel') {
-                result = [{
-                    id: `ai-import-${Date.now()}`,
-                    name: "新宿格拉斯麗酒店 (Godzilla Hotel)",
-                    type: "hotel",
-                    cost: 22000,
-                    currency: "JPY",
-                    details: {
-                        location: "Shinjuku, Tokyo",
-                        desc: "4 晚住宿 (12/20 - 12/24)",
-                        checkIn: "15:00",
-                        checkOut: "11:00"
-                    },
-                    aiParsed: true,
-                    reliability
-                }];
-            } else {
-                // Budget/Receipt items
-                result = [
-                    {
-                        id: `ai-import-${Date.now()}-1`,
-                        name: "便利店消費",
-                        type: "food",
-                        cost: 1250,
-                        currency: "JPY",
-                        category: 'food',
-                        date: today,
-                        details: { location: "7-Eleven", desc: "宵夜、飲品" },
-                        aiParsed: true,
-                        reliability
-                    },
-                    {
-                        id: `ai-import-${Date.now()}-2`,
-                        name: "藥妝店購物",
-                        type: "shopping",
-                        cost: 5500,
-                        currency: "JPY",
-                        category: 'shopping',
-                        date: today,
-                        details: { location: "松本清", desc: "免稅品" },
-                        aiParsed: true,
-                        reliability
-                    }
-                ];
-            }
-
-            // AI Auto-Suggest missing info
-            result = result.map(item => suggestMissingInfo(item));
-
-            console.log(`[AI Import] Detected type: ${detectionType}, Reliability: ${(reliability * 100).toFixed(0)}%`);
-            resolve(result);
+            // Return empty array with metadata - no mock data
+            // The UI should handle this and prompt user for manual input
+            resolve({
+                success: false,
+                message: "暫未支援自動識別，請手動輸入資料",
+                items: [],
+                fileInfo,
+                manualInputRequired: true
+            });
         }, processingTime);
     });
 };
+
 
 /**
  * AI 智能補全缺失資料

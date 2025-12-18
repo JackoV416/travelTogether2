@@ -626,6 +626,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                         openSectionModal={openSectionModal}
                         onOptimize={handleOptimizeSchedule}
                         onOpenAIModal={handleOpenAIModal}
+                        onOpenSmartImport={onOpenSmartImport}
                     />
                 )
             }
@@ -691,6 +692,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                         onExportPdf={handleExportPdf}
                         handleReceiptUpload={handleReceiptUpload}
                         glassCard={glassCard}
+                        onOpenSmartImport={onOpenSmartImport}
                     />
                 )
             }
@@ -759,6 +761,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                         handleReceiptUpload={handleReceiptUpload}
                         receiptPreview={receiptPreview}
                         glassCard={glassCard}
+                        onOpenSmartImport={onOpenSmartImport}
                     />
                 )
             }

@@ -595,9 +595,24 @@ const AIGeminiModal = ({
                                         <div className="space-y-2">
                                             <label className="text-xs font-bold opacity-70 ml-1">✨ AI 為您精選的最佳住宿</label>
                                             <div className="space-y-3">
-                                                {(HOTEL_DB[Object.keys(HOTEL_DB).find(k => (trip?.city || contextCity || "Tokyo").toLowerCase().includes(k.toLowerCase()))] || [])
-                                                    .filter(h => h.budget === logistics.budget)
-                                                    .map(hotel => (
+                                                {(() => {
+                                                    const cityName = trip?.city || contextCity || "Tokyo";
+                                                    const hotelKey = Object.keys(HOTEL_DB).find(k =>
+                                                        cityName.toLowerCase().includes(k.toLowerCase()) ||
+                                                        k.toLowerCase().includes(cityName.toLowerCase())
+                                                    );
+                                                    const hotels = (HOTEL_DB[hotelKey] || []).filter(h => h.budget === logistics.budget);
+
+                                                    if (hotels.length === 0) {
+                                                        return (
+                                                            <div className="text-center py-6 opacity-50">
+                                                                <p className="text-sm">暫無 {logistics.budget === 'budget' ? '經濟' : logistics.budget === 'mid' ? '舒適' : '奢華'} 級別住宿資料</p>
+                                                                <p className="text-xs mt-1">試試其他預算範圍？</p>
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    return hotels.map(hotel => (
                                                         <div
                                                             key={hotel.id}
                                                             onClick={() => setLogistics(prev => ({ ...prev, selectedHotel: hotel }))}
@@ -625,8 +640,8 @@ const AIGeminiModal = ({
                                                                 💬 "{hotel.reviews}"
                                                             </div>
                                                         </div>
-                                                    ))
-                                                }
+                                                    ));
+                                                })()}
                                             </div>
                                         </div>
                                     </div>
