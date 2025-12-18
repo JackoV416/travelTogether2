@@ -59,3 +59,6 @@ Desktop.ini
 # Markdown (除咗 README.md)
 *.md
 !README.md
+
+# Local Backups
+.backup/
