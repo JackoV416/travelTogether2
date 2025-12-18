@@ -10,11 +10,12 @@ import { CURRENCIES } from '../../constants/appData';
 import { inputClasses } from '../../utils/tripUtils'; // Fixed import path
 
 const SHOPPING_CATEGORIES = [
-    { id: 'food', label: '🍱 美食/伴手禮', types: ['food', 'alcohol'] },
-    { id: 'cosmetic', label: '💄 藥妝/護膚', types: ['cosmetic'] },
-    { id: 'fashion', label: '👗 服飾/時尚', types: ['clothing', 'fashion'] },
-    { id: 'electronics', label: '⚡ 電器/3C', types: ['electronics'] },
-    { id: 'others', label: '🎁 其他雜貨', types: ['gift', 'lifestyle', 'shopping'] }
+    { id: 'food', label: '🍱 美食伴手禮', types: ['food', 'snack', 'alcohol'] },
+    { id: 'cosmetic', label: '💄 藥妝護膚', types: ['cosmetic', 'skincare'] },
+    { id: 'fashion', label: '👗 服飾時尚', types: ['clothing', 'fashion', 'accessory'] },
+    { id: 'electronics', label: '⚡ 電器3C', types: ['electronics', 'gadget'] },
+    { id: 'souvenir', label: '🎁 特色紀念品', types: ['gift', 'souvenir', 'craft'] },
+    { id: 'lifestyle', label: '🏠 生活雜貨', types: ['lifestyle', 'home', 'shopping'] }
 ];
 
 const ITINERARY_PREFS = [
@@ -97,9 +98,10 @@ const AIGeminiModal = ({
         return {
             itinerary,
             transport: [
-                { id: 'ai-tr-1', type: "metro", name: "地鐵一日券", price: `${currency} ${45 * rate}`, desc: "最划算選擇，涵蓋主要景點", recommended: true },
-                { id: 'ai-tr-2', type: "bus", name: "市中心觀光巴士", price: `${currency} ${30 * rate}`, desc: "漫遊市區，適合短途接駁" },
-                { id: 'ai-tr-3', type: "taxi", name: "計程車/Uber", price: `約 ${currency} ${200 * rate}/趟`, desc: "適合多人分攤，節省時間" }
+                { id: 'ai-tr-1', type: "metro", name: "地鐵/捷運一日券", price: `${currency} ${45 * rate}`, desc: "最划算選擇，涵蓋主要景點", recommended: true },
+                { id: 'ai-tr-2', type: "bus", name: "市區觀光巴士", price: `${currency} ${30 * rate}`, desc: "漫遊市區，適合短途接駁" },
+                { id: 'ai-tr-3', type: "taxi", name: "的士/Uber", price: `約 ${currency} ${200 * rate}/趟`, desc: "適合多人分攤，節省時間" },
+                { id: 'ai-tr-4', type: "rental", name: "自駕租車", price: `約 ${currency} ${800 * rate}/日`, desc: "自由度最高，適合郊區行程" }
             ],
             budget: {
                 total: 1500 * rate * totalDays,
@@ -350,15 +352,23 @@ const AIGeminiModal = ({
                                     onClick={() => {
                                         // Trigger packing generation
                                         setLoading(true);
-                                        const cityKey = contextCity || "Tokyo";
-                                        const cityWeather = weatherData?.[cityKey] || { temp: "24°C", desc: "Sunny" };
+                                        const cityKey = contextCity || trip?.city || "Tokyo";
+                                        // Pass the city-specific weather or a fallback
+                                        const cityWeather = weatherData?.[cityKey] || weatherData?.Tokyo || { temp: "24°C", desc: "Sunny" };
                                         generatePackingList(trip || { city: cityKey, itinerary: {} }, cityWeather)
                                             .then(res => {
-                                                const structured = res.map((item, idx) => ({ ...item, id: `ai-pkg-${idx}` }));
+                                                if (!res || res.length === 0) {
+                                                    console.warn("[AI] Packing list returned empty");
+                                                }
+                                                const structured = (res || []).map((item, idx) => ({ ...item, id: `ai-pkg-${idx}` }));
                                                 setResult(prev => ({ ...(prev || {}), packing: structured }));
                                                 setSelections(prev => ({ ...prev, packing: structured.map(i => i.id) }));
                                                 setActiveTab('packing');
                                                 setPackingStep('result');
+                                                setLoading(false);
+                                            })
+                                            .catch(err => {
+                                                console.error("[AI] Packing list error:", err);
                                                 setLoading(false);
                                             });
                                     }}
