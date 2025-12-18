@@ -28,6 +28,7 @@ import CreateTripModal from '../Modals/CreateTripModal';
 import TripCard from './TripCard';
 import { convertCurrency } from '../../services/exchangeRate';
 import { fetchNews } from '../../services/news';
+import { travelInfoService } from '../../services/travelInfoService';
 
 const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSettings, setGlobalBg, globalSettings, exchangeRates, weatherData }) => {
     const [trips, setTrips] = useState([]);
@@ -47,6 +48,15 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
     const [lastReminderCheck, setLastReminderCheck] = useState(null);
     const [newsData, setNewsData] = useState([]);
     const [loadingNews, setLoadingNews] = useState(false);
+
+    // Travel Info States
+    const [hotels, setHotels] = useState([]);
+    const [loadingHotels, setLoadingHotels] = useState(true);
+    const [flights, setFlights] = useState([]);
+    const [loadingFlights, setLoadingFlights] = useState(true);
+    const [transports, setTransports] = useState([]);
+    const [loadingTransports, setLoadingTransports] = useState(true);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const { sendNotification } = useNotifications(user);
 
@@ -78,9 +88,37 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
             setLoadingNews(false);
         };
         loadNews();
-    }, [trips, selectedExportTrip, globalSettings?.lang]);
 
-    // Reminder Checker Logic
+        // Fetch Travel Info
+        const loadTravelInfo = async () => {
+            const userCurrency = globalSettings?.currency || 'HKD';
+            const rates = exchangeRates || {};
+
+            setLoadingHotels(true); setLoadingFlights(true); setLoadingTransports(true);
+
+            // Hotels
+            try {
+                const hData = await travelInfoService.getHotels('all', userCurrency, rates);
+                setHotels(hData.slice(0, 3));
+            } catch (e) { console.error(e); } finally { setLoadingHotels(false); }
+
+            // Flights
+            try {
+                const fData = await travelInfoService.getFlights(userCurrency, rates);
+                setFlights(fData.slice(0, 4));
+            } catch (e) { console.error(e); } finally { setLoadingFlights(false); }
+
+            // Transports
+            try {
+                const tData = await travelInfoService.getTransports(userCurrency, rates);
+                setTransports(tData);
+            } catch (e) { console.error(e); } finally { setLoadingTransports(false); }
+        };
+        loadTravelInfo();
+
+    }, [trips, selectedExportTrip, globalSettings?.lang, globalSettings?.currency, exchangeRates, refreshTrigger]);
+
+
     useEffect(() => {
         if (!trips.length || !sendNotification) return;
 
@@ -319,7 +357,15 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
 
             {/* Travel Information Hub */}
             <div className="pb-10">
-                <h2 className="text-2xl font-bold border-l-4 border-indigo-500 pl-3 mb-6">旅遊資訊中心</h2>
+                <div className="flex items-center justify-between mb-6 border-l-4 border-indigo-500 pl-3">
+                    <h2 className="text-2xl font-bold">旅遊資訊中心</h2>
+                    <button
+                        onClick={() => setRefreshTrigger(prev => prev + 1)}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-xs font-bold transition-all active:scale-95"
+                    >
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> 實時連線中 (點擊刷新)
+                    </button>
+                </div>
                 <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
 
                     {/* Weather & Time Widget */}
@@ -387,23 +433,35 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                         <div className={`${glassCard(isDarkMode)} p-6 flex flex-col`}>
                             <div className="flex justify-between items-center mb-4">
                                 <h4 className="font-bold flex items-center gap-2 text-pink-400"><Hotel className="w-5 h-5" /> 酒店推薦</h4>
-                                <span className="text-[9px] opacity-40 bg-white/10 px-2 py-0.5 rounded font-mono uppercase tracking-widest">Static</span>
+                                <span className="text-[9px] opacity-40 bg-white/10 px-2 py-0.5 rounded font-mono uppercase tracking-widest">{loadingHotels ? 'Loading...' : 'Live'}</span>
                             </div>
                             <div className="space-y-3">
-                                {INFO_DB.hotels?.slice(0, 3).map((h, i) => (
-                                    <a key={i} href={h.url} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-all flex items-center gap-3 group">
-                                        <img src={h.img} alt={h.name} className="w-14 h-14 rounded-lg object-cover" />
-                                        <div className="flex-1 min-w-0">
-                                            <div className="font-semibold text-sm truncate group-hover:text-pink-400 transition-colors">{h.name}</div>
-                                            <div className="text-[10px] opacity-50 flex items-center gap-2">
-                                                <span>{h.country}</span>
-                                                <span className="flex items-center gap-0.5"><Star className="w-3 h-3 text-amber-400" />{h.star}</span>
+                                {loadingHotels ? (
+                                    [...Array(3)].map((_, i) => (
+                                        <div key={i} className="p-3 bg-white/5 rounded-xl border border-white/5 flex gap-3 animate-pulse">
+                                            <div className="w-14 h-14 bg-white/10 rounded-lg"></div>
+                                            <div className="flex-1 space-y-2 py-1">
+                                                <div className="h-3 bg-white/10 rounded w-3/4"></div>
+                                                <div className="h-2 bg-white/10 rounded w-1/2"></div>
                                             </div>
-                                            <div className="text-xs text-pink-400 font-bold mt-0.5">{h.price}</div>
                                         </div>
-                                        <ArrowUpRight className="w-4 h-4 opacity-30 group-hover:opacity-100 group-hover:text-pink-400 transition-all" />
-                                    </a>
-                                ))}
+                                    ))
+                                ) : (
+                                    hotels.map((h, i) => (
+                                        <a key={i} href={h.url} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-all flex items-center gap-3 group">
+                                            <img src={h.img} alt={h.name} className="w-14 h-14 rounded-lg object-cover" />
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-semibold text-sm truncate group-hover:text-pink-400 transition-colors">{h.name}</div>
+                                                <div className="text-[10px] opacity-50 flex items-center gap-2">
+                                                    <span>{h.country}</span>
+                                                    <span className="flex items-center gap-0.5"><Star className="w-3 h-3 text-amber-400" />{h.star}</span>
+                                                </div>
+                                                <div className="text-xs text-pink-400 font-bold mt-0.5">{h.price} {h.remaining && <span className="ml-1 text-[9px] text-red-400 border border-red-500/30 px-1 rounded">最後 {h.remaining} 間</span>}</div>
+                                            </div>
+                                            <ArrowUpRight className="w-4 h-4 opacity-30 group-hover:opacity-100 group-hover:text-pink-400 transition-all" />
+                                        </a>
+                                    ))
+                                )}
                             </div>
                             <div className="mt-3 text-[9px] opacity-40 text-center">Data: Agoda / Booking.com</div>
                         </div>
@@ -414,21 +472,33 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                         <div className={`${glassCard(isDarkMode)} p-6 flex flex-col`}>
                             <div className="flex justify-between items-center mb-4">
                                 <h4 className="font-bold flex items-center gap-2 text-sky-400"><Plane className="w-5 h-5" /> 機票優惠</h4>
-                                <span className="text-[9px] opacity-40 bg-white/10 px-2 py-0.5 rounded font-mono uppercase tracking-widest">Static</span>
+                                <span className="text-[9px] opacity-40 bg-white/10 px-2 py-0.5 rounded font-mono uppercase tracking-widest">{loadingFlights ? 'Loading...' : 'Live'}</span>
                             </div>
                             <div className="space-y-2">
-                                {INFO_DB.flights?.slice(0, 4).map((f, i) => (
-                                    <a key={i} href={f.url} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-all flex items-center justify-between gap-2 group">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="font-semibold text-sm group-hover:text-sky-400 transition-colors">{f.route}</div>
-                                            <div className="text-[10px] opacity-50">{f.airline} • {f.details}</div>
+                                {loadingFlights ? (
+                                    [...Array(4)].map((_, i) => (
+                                        <div key={i} className="p-3 bg-white/5 rounded-xl border border-white/5 flex justify-between animate-pulse">
+                                            <div className="h-4 bg-white/10 rounded w-1/3"></div>
+                                            <div className="h-4 bg-white/10 rounded w-1/4"></div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            {f.tag && <span className="text-[9px] bg-sky-500/20 text-sky-400 px-1.5 py-0.5 rounded">{f.tag}</span>}
-                                            <span className="font-bold text-sm text-sky-400">{f.price}</span>
-                                        </div>
-                                    </a>
-                                ))}
+                                    ))
+                                ) : (
+                                    flights.map((f, i) => (
+                                        <a key={i} href={f.url} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-all flex items-center justify-between gap-2 group">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-semibold text-sm group-hover:text-sky-400 transition-colors flex items-center gap-1.5">
+                                                    {f.route}
+                                                    {f.isHot && <span className="text-[8px] bg-red-500 text-white px-1 rounded animate-pulse">HOT</span>}
+                                                </div>
+                                                <div className="text-[10px] opacity-50">{f.airline} • {f.details}</div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                {f.tag && <span className="text-[9px] bg-sky-500/20 text-sky-400 px-1.5 py-0.5 rounded">{f.tag}</span>}
+                                                <span className="font-bold text-sm text-sky-400">{f.price}</span>
+                                            </div>
+                                        </a>
+                                    ))
+                                )}
                             </div>
                             <div className="mt-3 text-[9px] opacity-40 text-center">Data: Airlines / Skyscanner</div>
                         </div>
@@ -439,20 +509,29 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                         <div className={`${glassCard(isDarkMode)} p-6 flex flex-col`}>
                             <div className="flex justify-between items-center mb-4">
                                 <h4 className="font-bold flex items-center gap-2 text-violet-400"><TrainFront className="w-5 h-5" /> 交通票券</h4>
-                                <span className="text-[9px] opacity-40 bg-white/10 px-2 py-0.5 rounded font-mono uppercase tracking-widest">Static</span>
+                                <span className="text-[9px] opacity-40 bg-white/10 px-2 py-0.5 rounded font-mono uppercase tracking-widest">{loadingTransports ? 'Loading...' : 'Live'}</span>
                             </div>
                             <div className="space-y-2">
-                                {INFO_DB.transports?.map((t, i) => (
-                                    <a key={i} href={t.url} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-all flex items-center justify-between gap-2 group">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="font-semibold text-sm group-hover:text-violet-400 transition-colors">{t.name}</div>
-                                            <div className="text-[10px] opacity-50">{t.provider} • {t.details}</div>
+                                {loadingTransports ? (
+                                    [...Array(3)].map((_, i) => (
+                                        <div key={i} className="p-3 bg-white/5 rounded-xl border border-white/5 flex justify-between animate-pulse">
+                                            <div className="h-4 bg-white/10 rounded w-1/3"></div>
+                                            <div className="h-4 bg-white/10 rounded w-1/4"></div>
                                         </div>
-                                        <span className="font-bold text-sm text-violet-400">{t.price}</span>
-                                    </a>
-                                ))}
+                                    ))
+                                ) : (
+                                    transports.map((t, i) => (
+                                        <a key={i} href={t.url} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-all flex items-center justify-between gap-2 group">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-semibold text-sm group-hover:text-violet-400 transition-colors">{t.name}</div>
+                                                <div className="text-[10px] opacity-50">{t.provider} • {t.details}</div>
+                                            </div>
+                                            <span className="font-bold text-sm text-violet-400">{t.price}</span>
+                                        </a>
+                                    ))
+                                )}
                             </div>
-                            <div className="mt-3 text-[9px] opacity-40 text-center">Data: {INFO_DB.transports?.map(t => t.source).filter((v, i, a) => a.indexOf(v) === i).join(' / ')}</div>
+                            <div className="mt-3 text-[9px] opacity-40 text-center">Data: Rome2Rio / Official Sites</div>
                         </div>
                     </div>
 
