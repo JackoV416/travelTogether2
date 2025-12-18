@@ -90,8 +90,20 @@ export const INSURANCE_RESOURCES = [
 ];
 
 export const AUTHOR_NAME = "Jamie Kwok";
-export const APP_VERSION = "V0.19.0";
+export const APP_VERSION = "V0.20.2";
 export const VERSION_HISTORY = [
+    {
+        ver: "V0.20.2",
+        date: "2025-12-18",
+        desc: {
+            "zh-TW": "V0.20 全面進化總結 (Phase 3 & 4)",
+            "en": "V0.20 Grand Evolution (Phase 3 & 4)"
+        },
+        details: {
+            "zh-TW": "• AI Engine 2.0：實作時間桶 (Time Buckets) 邏輯，徹底解決早午晚行程錯亂問題。\n• 運輸數據校正：區分地鐵與巴士，提供城市專屬真實車費與預計時間。\n• 智能打包擴充：根據行程活動 (行山/沙灘/高級餐飲) 自動推薦 6 大分類裝備。\n• UI 拋光：AddActivityModal 動態 Placeholder、README Premium 重製、彈窗一致性校正。\n• 穩定性：Weather API Circuit Breaker 與 429 退避邏輯，確保極端情況不崩潰。",
+            "en": "• AI Engine 2.0: Implemented Time Buckets logic to fix scheduling conflicts.\n• Transport Calibration: Metro/Bus distinction with real-world fares and durations.\n• Smart Packing: Activity-aware items (Hiking/Beach/Dining) across 6 categories.\n• UI Polish: Dynamic Modal Placeholders, Premium README remaster, and consistency fixes.\n• Stability: Weather API Circuit Breaker & 429 backoff logic integration."
+        }
+    },
     {
         ver: "V0.19.0",
         date: "2025-12-18",

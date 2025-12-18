@@ -5,10 +5,12 @@ import { v4 as uuidv4 } from 'uuid';
 
 export const useNotifications = (user) => {
     const [notifications, setNotifications] = useState([]);
-    const [permission, setPermission] = useState(Notification.permission);
+    const [permission, setPermission] = useState(
+        typeof Notification !== 'undefined' ? Notification.permission : 'denied'
+    );
 
     useEffect(() => {
-        if (Notification.permission !== 'granted') {
+        if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
             Notification.requestPermission().then(setPermission);
         }
     }, []);
@@ -28,9 +30,13 @@ export const useNotifications = (user) => {
 
         setNotifications(prev => [newNotif, ...prev]);
 
-        // 2. Browser Notification
-        if (permission === 'granted' && document.hidden) {
-            new Notification(title, { body, icon: '/vite.svg' });
+        // 2. Browser Notification (Safe Check)
+        if (typeof Notification !== 'undefined' && permission === 'granted' && document.hidden) {
+            try {
+                new Notification(title, { body, icon: '/vite.svg' });
+            } catch (e) {
+                console.warn("Notification API error:", e);
+            }
         }
 
         // Auto-dismiss toast after 5 seconds

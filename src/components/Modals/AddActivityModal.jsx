@@ -58,6 +58,29 @@ const AddActivityModal = ({ isOpen, onClose, onSave, isDarkMode, date, defaultTy
 
     const isPacking = type === 'packing' || defaultType === 'packing';
 
+    const getPlaceholder = (itemType, itemCategory, packing) => {
+        if (packing) {
+            const map = {
+                clothes: "例如: 發熱內衣, 羽絨, 運動鞋...",
+                toiletries: "例如: 牙刷, 洗面奶, 防曬乳...",
+                electronics: "例如: 行動電源, 相機, 萬能插頭...",
+                documents: "例如: 護照副本, 保險單, 酒店預約信...",
+                medicine: "例如: 止痛藥, 感冒藥, 胃藥...",
+                misc: "輸入行李項目名稱..."
+            };
+            return map[itemCategory] || "輸入行李項目名稱...";
+        }
+        const typeMap = {
+            spot: "例如: 代代木公園, 台北101...",
+            food: "例如: 一蘭拉麵, 築地市場...",
+            shopping: "例如: 澀谷109, 多慶屋...",
+            transport: "例如: 東京地鐵, 機場接送...",
+            flight: "例如: 長榮航空 BR198...",
+            hotel: "例如: 希爾頓酒店, 民宿..."
+        };
+        return typeMap[itemType] || "給這個行程一個名字...";
+    };
+
     return (
         <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-md">
             <div className={`w-full max-w-xl p-6 rounded-2xl ${isDarkMode ? 'bg-gray-900 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-200'} shadow-2xl border transition-all max-h-[90vh] overflow-y-auto custom-scrollbar`}>
@@ -116,7 +139,7 @@ const AddActivityModal = ({ isOpen, onClose, onSave, isDarkMode, date, defaultTy
                             <label className="block text-xs font-bold opacity-70 uppercase tracking-wider">名稱</label>
                             {!isPacking && (
                                 <button
-                                    onClick={() => {/* In a real app, this would call AI to suggest based on trip/type */
+                                    onClick={() => {
                                         setName(type === 'food' ? '一蘭拉麵 新宿中央東口店' : type === 'spot' ? '代代木公園 散策' : '當地特色行程');
                                     }}
                                     className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all ${isDarkMode ? 'border-purple-500/50 text-purple-400 hover:bg-purple-500/10' : 'border-purple-200 text-purple-600 hover:bg-purple-50'}`}
@@ -125,7 +148,12 @@ const AddActivityModal = ({ isOpen, onClose, onSave, isDarkMode, date, defaultTy
                                 </button>
                             )}
                         </div>
-                        <input value={name} onChange={e => setName(e.target.value)} placeholder={isPacking ? "輸入行李項目名稱..." : "給這個行程一個名字..."} className={inputClasses(isDarkMode)} />
+                        <input
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            placeholder={getPlaceholder(type, category, isPacking)}
+                            className={inputClasses(isDarkMode)}
+                        />
                     </div>
 
                     {!isPacking && (

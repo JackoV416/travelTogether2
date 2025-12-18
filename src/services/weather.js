@@ -34,30 +34,76 @@ export const weatherCodes = {
     99: { icon: '⛈️', desc: '大雷暴伴隨冰雹', descEn: 'Thunderstorm with heavy hail' }
 };
 
+const CACHE_KEY_PREFIX = 'weather_cache_';
+const CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 hours
+const ERROR_BACKOFF = 30 * 60 * 1000; // 30 mins backoff on 429
+
 /**
  * 獲取天氣數據 (Open-Meteo 免費 API)
  * @param {number} latitude 緯度
  * @param {number} longitude 經度
+ * @param {string} cityName 城市名稱 (用於緩存鍵)
  * @returns {Promise<Object>} 天氣數據
  */
-export async function getWeather(latitude, longitude) {
+export async function getWeather(latitude, longitude, cityName = 'default') {
+    const cacheKey = `${CACHE_KEY_PREFIX}${cityName}`;
+    const backoffKey = 'weather_api_backoff';
+
     try {
+        // 0. 檢查全域 Circuit Breaker
+        const lastError = localStorage.getItem(backoffKey);
+        if (lastError && (Date.now() - parseInt(lastError) < ERROR_BACKOFF)) {
+            const cachedStr = localStorage.getItem(cacheKey);
+            if (cachedStr) {
+                return JSON.parse(cachedStr).data;
+            }
+            return null;
+        }
+
+        // 1. 檢查緩存
+        const cachedStr = localStorage.getItem(cacheKey);
+        if (cachedStr) {
+            const cachedData = JSON.parse(cachedStr);
+            const now = Date.now();
+            if (now - cachedData.timestamp < CACHE_DURATION) {
+                return cachedData.data;
+            }
+        }
+
         const params = new URLSearchParams({
             latitude,
             longitude,
             current: 'temperature_2m,weathercode,relative_humidity_2m,wind_speed_10m',
-            daily: 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset', // 用於日夜判斷等
-            timezone: 'auto' // 自動偵測時區
+            daily: 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset',
+            timezone: 'auto'
         });
 
         const response = await fetch(`${WEATHER_API}?${params}`);
         if (!response.ok) {
-            throw new Error('Weather API response not ok');
+            if (response.status === 429) {
+                console.warn(`[Weather] 429 Limit Hit. Activating 30-min backoff.`);
+                localStorage.setItem(backoffKey, Date.now().toString());
+                // Silently return cache or null instead of throwing to avoid console noise/crash
+                const fallback = localStorage.getItem(cacheKey);
+                return fallback ? JSON.parse(fallback).data : null;
+            }
+            throw new Error(`Weather API response not ok: ${response.status}`);
         }
 
-        return await response.json();
+        const data = await response.json();
+
+        // 2. 儲存緩存
+        localStorage.setItem(cacheKey, JSON.stringify({
+            timestamp: Date.now(),
+            data: data
+        }));
+
+        return data;
     } catch (error) {
         console.error('Failed to fetch weather:', error);
+        // 如果有舊緩存，即使過期也先用著
+        const cachedStr = localStorage.getItem(cacheKey);
+        if (cachedStr) return JSON.parse(cachedStr).data;
         return null;
     }
 }

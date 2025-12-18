@@ -27,8 +27,8 @@ import {
     TIMEZONES, LANGUAGE_OPTIONS, DEFAULT_BG_IMAGE,
     TAB_LABELS, INSURANCE_SUGGESTIONS, INSURANCE_RESOURCES
 } from './constants/appData';
-export const APP_VERSION = "V0.19.0";
-console.log("Travel Together Version Logic Triggered: V0.19.0");
+export const APP_VERSION = "V0.20.2";
+console.log("Travel Together Version Logic Triggered: V0.20.2");
 
 import {
     glassCard, getHolidayMap, getLocalizedCountryName,
@@ -567,38 +567,83 @@ const App = () => {
     const [exchangeRates, setExchangeRates] = useState(null);
     const [weatherData, setWeatherData] = useState({}); // {[CityName]: weatherObj }
 
-    // 新增：獲取匯率數據
+    // --- External Data Fetching (Weather & Rates) ---
     useEffect(() => {
-        async function fetchRates() {
-            const rates = await getExchangeRates('HKD'); // 預設以 HKD 為基準
+        if (!user) return;
+
+        async function fetchData() {
+            // 1. Fetch Rates
+            const rates = await getExchangeRates('HKD');
             setExchangeRates(rates);
-        }
-        fetchRates();
-    }, []);
 
-    // 新增：獲取天氣數據
-    useEffect(() => {
-        async function fetchAllWeather() {
+            // 2. Fetch Weather (Targeted & Staggered)
             const newWeatherData = {};
-            const cities = Object.keys(CITY_COORDS);
 
-            for (const city of cities) {
-                const { lat, lon } = CITY_COORDS[city];
-                const data = await getWeather(lat, lon);
-                if (data && data.current) {
-                    const info = getWeatherInfo(data.current.weathercode);
-                    newWeatherData[city] = {
-                        temp: `${Math.round(data.current.temperature_2m)}°C`,
-                        desc: info.desc,
-                        icon: info.icon,
-                        details: data
-                    };
+            // Get cities from active selection or fallback to defaults
+            const activeCities = new Set();
+            if (view === 'detail' && selectedTrip?.city) {
+                activeCities.add(selectedTrip.city);
+            }
+
+            // Note: Since 'trips' list is currently local to Dashboard.jsx, we prioritize current trip + defaults.
+            const targetCities = activeCities.size > 0
+                ? Array.from(activeCities)
+                : ["Tokyo", "Taipei", "London", "Osaka", "Seoul", "Bangkok"];
+
+            for (let i = 0; i < targetCities.length; i++) {
+                const city = targetCities[i];
+                // Case-insensitive lookup for coordinates
+                const cityKey = Object.keys(CITY_COORDS).find(k => k.toLowerCase() === city.toLowerCase());
+                const coords = CITY_COORDS[cityKey || city];
+
+                if (coords) {
+                    // Check backoff BEFORE calling service to avoid noise
+                    const backoff = localStorage.getItem('weather_api_backoff');
+                    if (backoff && (Date.now() - parseInt(backoff) < 1800000)) { // 30 mins
+                        // Try to use cache silently
+                        const cached = localStorage.getItem(`weather_cache_${city}`);
+                        if (cached) {
+                            const { data: cachedData } = JSON.parse(cached);
+                            if (cachedData?.current) {
+                                const info = getWeatherInfo(cachedData.current.weathercode);
+                                newWeatherData[city] = {
+                                    temp: `${Math.round(cachedData.current.temperature_2m)}°C`,
+                                    desc: info.desc,
+                                    icon: info.icon,
+                                    details: cachedData
+                                };
+                            }
+                        }
+                        continue;
+                    }
+
+                    const { lat, lon } = coords;
+                    try {
+                        const data = await getWeather(lat, lon, city);
+                        if (data && data.current) {
+                            const info = getWeatherInfo(data.current.weathercode);
+                            newWeatherData[city] = {
+                                temp: `${Math.round(data.current.temperature_2m)}°C`,
+                                desc: info.desc,
+                                icon: info.icon,
+                                details: data
+                            };
+                        }
+                    } catch (err) {
+                        console.warn(`[App] Weather fetch failed for ${city}:`, err.message);
+                    }
+
+                    // Stagger intentional delay to respect API
+                    if (i < targetCities.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
                 }
             }
             setWeatherData(newWeatherData);
         }
-        fetchAllWeather();
-    }, []);
+
+        fetchData();
+    }, [user]);
 
     // --- Smart Alerts (Weather / Currency) ---
     useEffect(() => {
@@ -617,13 +662,10 @@ const App = () => {
             }, 1000);
         }
 
-        // 2. Weather Alerts (Simulated check on data load)
+        // 2. Weather Alerts
         if (Object.keys(weatherData).length > 0) {
             Object.entries(weatherData).forEach(([city, data]) => {
                 if (data.desc.includes('雨') || data.desc.includes('Rain') || data.desc.includes('Snow')) {
-                    // Prevent spamming: check if we already notified for this city recently (omitted for simplicity, or use simple simple logic)
-                    // For now, just a one-off demo trigger could be annoying if it fires every render.
-                    // We'll rely on a simple session flag check or just let it fire once per load for demo.
                     const key = `weather_alert_${city}`;
                     if (!sessionStorage.getItem(key)) {
                         sendNotification(
@@ -637,9 +679,8 @@ const App = () => {
             });
         }
 
-        // 3. Currency Alerts (Rates < Threshold)
-        if (exchangeRates) { // Assuming exchangeRates is {JPY: 0.051, KRW: 0.0058 ... } based on HKD
-            // Demo logic: If JPY < 0.052 (Cheap!)
+        // 3. Currency Alerts
+        if (exchangeRates) {
             const jpyRate = exchangeRates['JPY'];
             if (jpyRate && jpyRate < 0.052) {
                 const key = 'currency_alert_JPY';
@@ -654,43 +695,9 @@ const App = () => {
             }
         }
 
-    }, [user, weatherData, exchangeRates, globalSettings.notifications, sendNotification, globalSettings.language]); // Added sendNotification and globalSettings.language to dependencies
-
+    }, [user, weatherData, exchangeRates, globalSettings.notifications, sendNotification, globalSettings.language]);
 
     useEffect(() => { onAuthStateChanged(auth, setUser); }, []);
-
-    // 新增：獲取匯率數據
-    useEffect(() => {
-        async function fetchRates() {
-            const rates = await getExchangeRates('HKD'); // 預設以 HKD 為基準
-            setExchangeRates(rates);
-        }
-        fetchRates();
-    }, []);
-
-    // 新增：獲取天氣數據
-    useEffect(() => {
-        async function fetchAllWeather() {
-            const newWeatherData = {};
-            const cities = Object.keys(CITY_COORDS);
-
-            for (const city of cities) {
-                const { lat, lon } = CITY_COORDS[city];
-                const data = await getWeather(lat, lon);
-                if (data && data.current) {
-                    const info = getWeatherInfo(data.current.weathercode);
-                    newWeatherData[city] = {
-                        temp: `${Math.round(data.current.temperature_2m)}°C`,
-                        desc: info.desc,
-                        icon: info.icon,
-                        details: data
-                    };
-                }
-            }
-            setWeatherData(newWeatherData);
-        }
-        fetchAllWeather();
-    }, []);
 
 
 

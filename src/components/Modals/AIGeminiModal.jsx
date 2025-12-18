@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { BrainCircuit, X, Loader2, List, BusFront, Wallet, TrainFront, Car, Route, ShoppingBag, Sparkles, CheckSquare, Square, Plus, PackageCheck } from 'lucide-react';
+import { BrainCircuit, X, Loader2, List, BusFront, Wallet, TrainFront, Car, Route, ShoppingBag, Sparkles, CheckSquare, Square, Plus, PackageCheck, Check, ArrowRightLeft } from 'lucide-react';
 import {
     generateShoppingSuggestions,
     generatePackingList,
-    generateFullItinerary
+    generateFullItinerary,
+    HOTEL_DB
 } from '../../services/ai';
 import { CURRENCIES } from '../../constants/appData';
 import { inputClasses } from '../../utils/tripUtils'; // Fixed import path
@@ -16,19 +17,45 @@ const SHOPPING_CATEGORIES = [
     { id: 'others', label: '🎁 其他雜貨', types: ['gift', 'lifestyle', 'shopping'] }
 ];
 
-const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, existingItems, mode = 'full', userPreferences = [], onAddItem, trip, weatherData }) => {
+const ITINERARY_PREFS = [
+    { id: 'rest', label: '多啲休息時間', icon: '💤', desc: '唔好咁趕，多啲自由時間' },
+    { id: 'shopping', label: '購物行程', icon: '🛍️', desc: '主要去商場、購物街' },
+    { id: 'souvenir', label: '買手信行程', icon: '🎁', desc: '推薦必買伴手禮店' },
+    { id: 'culture', label: '深度文化之旅', icon: '🏛️', desc: '參觀名勝古蹟、博物館' },
+    { id: 'foodie', label: '美食巡禮', icon: '🍜', desc: '專攻排隊名店與地道小吃' }
+];
+
+const AIGeminiModal = ({
+    isOpen,
+    onClose,
+    onApply,
+    onAddItem,
+    isDarkMode,
+    contextCity = "Tokyo",
+    trip = null,
+    weatherData = null,
+    mode = 'full'
+}) => {
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [activeTab, setActiveTab] = useState(mode === 'shopping' ? 'shopping' : (mode === 'packing' ? 'packing' : 'itinerary'));
-    const [shoppingStep, setShoppingStep] = useState('selection');
-    const [itineraryStep, setItineraryStep] = useState('selection');
-    const [packingStep, setPackingStep] = useState('selection'); // New state for packing step
+    const [shoppingStep, setShoppingStep] = useState('selection'); // selection -> result
+    const [itineraryStep, setItineraryStep] = useState('selection'); // selection -> preferences -> logistics -> result
+    const [packingStep, setPackingStep] = useState('selection'); // result only
     const [inputText, setInputText] = useState('');
-    const [selectedCats, setSelectedCats] = useState(['food', 'cosmetic', 'fashion', 'electronics', 'others']);
+    const [selectedCats, setSelectedCats] = useState(['food', 'cosmetic']);
+    const [selectedPrefs, setSelectedPrefs] = useState(['culture', 'foodie']);
+    const [logistics, setLogistics] = useState({
+        flightInfo: '',
+        hotelStatus: 'none',
+        budget: 'mid',
+        selectedHotel: null,
+        transportMode: 'public'
+    });
 
-    // Selection State: Map of Tab -> Set of Indices/IDs
-    // Structure: { itinerary: [0, 1, ...], shopping: [0, ...], transport: [], packing: [] }
     const [selections, setSelections] = useState({ itinerary: [], shopping: [], transport: [], packing: [] });
+    const [analyzingFile, setAnalyzingFile] = useState(false);
+    const [fileResults, setFileResults] = useState(null);
 
     useEffect(() => {
         if (isOpen && mode === 'shopping') setActiveTab('shopping');
@@ -51,7 +78,7 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
         const totalDays = Math.max(1, Math.min(diffDays, 14)); // Cap at 14 days for sanity
 
-        const itinerary = await generateFullItinerary(city, totalDays);
+        const itinerary = await generateFullItinerary(city, totalDays, selectedPrefs);
 
         // Placeholder for currency and rate if not defined elsewhere
         const currency = trip?.currency || 'NTD';
@@ -109,15 +136,63 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
 
     const handleItineraryAnalyze = (isQuick = false) => {
         setLoading(true);
-        // If text is provided, we simulate analysis, otherwise quick generate
-        generateEnhancedAI(contextCity || "Tokyo", isQuick ? null : inputText)
+        const days = trip?.days || 3;
+
+        generateFullItinerary(contextCity || "Tokyo", days, isQuick ? [] : selectedPrefs, logistics)
             .then(res => {
                 setResult(res);
-                initSelections(res);
+                if (res.itinerary) {
+                    setSelections(prev => ({
+                        ...prev,
+                        itinerary: res.itinerary.map(i => i.id)
+                    }));
+                }
                 setItineraryStep('result');
+                setActiveTab('itinerary');
                 setLoading(false);
             })
-            .catch(() => setLoading(false));
+            .catch(err => {
+                console.error("AI Generation Status Exception:", err);
+                setLoading(false);
+            });
+    };
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setAnalyzingFile(true);
+        try {
+            const { parseTripImage } = await import('../../services/ai');
+            const results = await parseTripImage(file);
+            setFileResults(results);
+
+            // Auto-fill flight info if found
+            const flight = results.find(r => r.type === 'flight');
+            if (flight) {
+                setLogistics(prev => ({
+                    ...prev,
+                    flightInfo: `${flight.name} (${flight.details.location})`
+                }));
+            }
+
+            // Auto-fill hotel if found
+            const hotel = results.find(r => r.type === 'hotel');
+            if (hotel) {
+                setLogistics(prev => ({ ...prev, hotelStatus: 'booked' }));
+            }
+
+        } catch (err) {
+            console.error("File Analysis Error:", err);
+        } finally {
+            setAnalyzingFile(false);
+        }
+    };
+
+    const togglePref = (id) => {
+        setSelectedPrefs(prev =>
+            prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
+        );
     };
 
     const handleShoppingAnalyze = () => {
@@ -129,10 +204,25 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
 
         generateShoppingSuggestions(contextCity || "Tokyo", mappedCats)
             .then(res => {
-                const structured = { shopping: res.map((item, idx) => ({ ...item, id: `ai-shp-${idx}` })) };
-                setResult(structured);
+                const structured = res.map((item, idx) => ({ ...item, id: `ai-shp-${idx}` }));
+                setResult(prev => ({ ...(prev || {}), shopping: structured }));
+                setSelections(prev => ({ ...prev, shopping: structured.map(i => i.id) }));
+                setActiveTab('shopping');
                 setShoppingStep('result');
-                setSelections(prev => ({ ...prev, shopping: structured.shopping.map(i => i.id) }));
+                setLoading(false);
+            })
+            .catch(() => setLoading(false));
+    };
+
+    const handlePackingAnalyze = () => {
+        setLoading(true);
+        generatePackingList(trip || { itinerary: {} }, weatherData)
+            .then(res => {
+                const structured = res.map((item, idx) => ({ ...item, id: `ai-pkg-${idx}` }));
+                setResult(prev => ({ ...(prev || {}), packing: structured }));
+                setSelections(prev => ({ ...prev, packing: structured.map(i => i.id) }));
+                setActiveTab('packing');
+                setPackingStep('result');
                 setLoading(false);
             })
             .catch(() => setLoading(false));
@@ -168,7 +258,7 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
         } else {
             // Full mode: Return an object with all selections
             const allSelected = {
-                itinerary: result.itinerary.filter(i => selections.itinerary.includes(i.id)),
+                itinerary: (result.itinerary || []).filter(i => selections.itinerary.includes(i.id)),
                 shopping: (result.shopping || []).filter(i => (selections.shopping || []).includes(i.id)),
                 packing: (result.packing || []).filter(i => (selections.packing || []).includes(i.id))
             };
@@ -208,7 +298,7 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
                                 <p className="text-xs opacity-50">正在分析數百萬筆旅遊數據</p>
                             </div>
                         </div>
-                    ) : ((mode === 'itinerary' || mode === 'full' || mode === 'packing') && itineraryStep === 'selection') ? (
+                    ) : ((mode === 'itinerary' || mode === 'full' || mode === 'packing') && (itineraryStep === 'selection' && activeTab === 'itinerary')) ? (
                         <div className="space-y-6 animate-fade-in">
                             <div className="text-center space-y-2">
                                 <h4 className="text-lg font-bold">{mode === 'packing' ? '準備好出發了嗎？' : '您需要什麼幫助？'}</h4>
@@ -218,15 +308,15 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
                             {/* Visual Option Cards */}
                             <div className="grid grid-cols-2 gap-4">
                                 <button
-                                    onClick={() => handleItineraryAnalyze(true)}
+                                    onClick={() => setItineraryStep('preferences')}
                                     className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-center gap-3 transition-all hover:shadow-lg hover:-translate-y-1 active:scale-95 ${isDarkMode ? 'border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20' : 'border-indigo-200 bg-indigo-50 hover:bg-indigo-100'}`}
                                 >
                                     <div className={`p-3 rounded-2xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-white shadow-sm'}`}>
                                         <Sparkles className="w-8 h-8 text-indigo-500" />
                                     </div>
                                     <div className="text-center">
-                                        <div className="font-bold">快速生成</div>
-                                        <div className="text-[10px] opacity-60 mt-1">1 秒完成整個行程</div>
+                                        <div className="font-bold">客製化行程</div>
+                                        <div className="text-[10px] opacity-60 mt-1">自選偏好，精準規劃</div>
                                     </div>
                                 </button>
 
@@ -248,15 +338,16 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
 
                                 <button
                                     onClick={() => {
-                                        setActiveTab('packing');
-                                        setPackingStep('selection');
                                         // Trigger packing generation
                                         setLoading(true);
-                                        generatePackingList(trip || { city: contextCity, itinerary: {} }, weatherData?.[contextCity] || { temp: "24°C", desc: "Sunny" })
+                                        const cityKey = contextCity || "Tokyo";
+                                        const cityWeather = weatherData?.[cityKey] || { temp: "24°C", desc: "Sunny" };
+                                        generatePackingList(trip || { city: cityKey, itinerary: {} }, cityWeather)
                                             .then(res => {
-                                                const structured = { packing: res };
-                                                setResult(prev => ({ ...(prev || {}), ...structured }));
-                                                setSelections(prev => ({ ...prev, packing: res.map(i => i.id) }));
+                                                const structured = res.map((item, idx) => ({ ...item, id: `ai-pkg-${idx}` }));
+                                                setResult(prev => ({ ...(prev || {}), packing: structured }));
+                                                setSelections(prev => ({ ...prev, packing: structured.map(i => i.id) }));
+                                                setActiveTab('packing');
                                                 setPackingStep('result');
                                                 setLoading(false);
                                             });
@@ -301,6 +392,216 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
                                 </button>
                             </div>
                         </div>
+                    ) : itineraryStep === 'preferences' ? (
+                        <div className="space-y-6 animate-fade-in">
+                            <div className="text-center space-y-2">
+                                <h4 className="text-lg font-bold">您的旅行偏好是？</h4>
+                                <p className="text-sm opacity-60">AI 會根據您的選擇來調整行程的節奏與內容</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-3">
+                                {ITINERARY_PREFS.map(pref => (
+                                    <button
+                                        key={pref.id}
+                                        onClick={() => togglePref(pref.id)}
+                                        className={`p-4 rounded-xl border-2 flex items-center gap-4 transition-all text-left ${selectedPrefs.includes(pref.id) ? 'border-indigo-500 bg-indigo-500/5' : 'border-gray-500/10 hover:bg-gray-500/5'}`}
+                                    >
+                                        <div className="text-2xl w-10 h-10 flex items-center justify-center bg-gray-500/10 rounded-full">{pref.icon}</div>
+                                        <div className="flex-1">
+                                            <div className="font-bold text-sm">{pref.label}</div>
+                                            <div className="text-xs opacity-50">{pref.desc}</div>
+                                        </div>
+                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedPrefs.includes(pref.id) ? 'border-indigo-500 bg-indigo-500' : 'border-gray-400'}`}>
+                                            {selectedPrefs.includes(pref.id) && <Check size={12} className="text-white" />}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setItineraryStep('selection')}
+                                    className={`flex-1 py-3 rounded-xl border font-bold transition-all ${isDarkMode ? 'border-gray-600 hover:bg-gray-800' : 'border-gray-300 hover:bg-gray-50'}`}
+                                >
+                                    返回
+                                </button>
+                                <button
+                                    onClick={() => setItineraryStep('logistics')}
+                                    className="flex-[2] py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg transition-all transform active:scale-95"
+                                >
+                                    下一步 (物流資訊)
+                                </button>
+                                <button // Direct bypass for quick generation if needed, or we just force logistics
+                                    onClick={() => setItineraryStep('logistics')}
+                                    className="hidden"
+                                >
+                                </button>
+                            </div>
+                        </div>
+                    ) : itineraryStep === 'logistics' ? (
+                        <div className="space-y-6 animate-fade-in">
+                            <div className="text-center space-y-2">
+                                <h4 className="text-lg font-bold">最後確認物流資訊</h4>
+                                <p className="text-sm opacity-60">提供機票與酒店狀態，AI 能更精準對接行程</p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold opacity-70 ml-1">✈️ 機票資訊 (選填)</label>
+                                    <textarea
+                                        value={logistics.flightInfo}
+                                        onChange={(e) => setLogistics(prev => ({ ...prev, flightInfo: e.target.value }))}
+                                        placeholder="貼上機票號碼或時間，或由下方上傳憑證..."
+                                        className={`w-full h-24 p-4 rounded-xl border resize-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'}`}
+                                    />
+
+                                    <div className="relative">
+                                        <input
+                                            type="file"
+                                            id="ai-file-upload"
+                                            className="hidden"
+                                            onChange={handleFileUpload}
+                                            accept="image/*,.pdf"
+                                        />
+                                        <label
+                                            htmlFor="ai-file-upload"
+                                            className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed cursor-pointer transition-all ${analyzingFile ? 'opacity-50 cursor-not-allowed' : 'hover:border-indigo-500 hover:bg-indigo-500/5'} ${isDarkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-300 bg-gray-50'}`}
+                                        >
+                                            {analyzingFile ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
+                                                    <span className="text-sm font-medium">深度解析中...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Plus className="w-4 h-4 text-indigo-500" />
+                                                    <span className="text-sm font-medium">上傳機票/酒店收據 (Image/PDF)</span>
+                                                </>
+                                            )}
+                                        </label>
+
+                                        {fileResults && (
+                                            <div className="mt-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20 animate-fade-in">
+                                                <div className="flex items-center gap-2 text-xs font-bold text-green-500">
+                                                    <Check size={14} /> 解析成功！已自動填入相關資料
+                                                </div>
+                                                <div className="text-[10px] opacity-60 mt-1">
+                                                    偵測到: {fileResults.map(r => r.name).join(', ')}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold opacity-70 ml-1">🏨 住宿狀態</label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            onClick={() => setLogistics(prev => ({ ...prev, hotelStatus: 'booked' }))}
+                                            className={`py-3 rounded-xl border font-bold text-sm transition-all ${logistics.hotelStatus === 'booked' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-gray-500/10 hover:bg-gray-500/5'}`}
+                                        >
+                                            已訂好酒店
+                                        </button>
+                                        <button
+                                            onClick={() => setLogistics(prev => ({ ...prev, hotelStatus: 'none' }))}
+                                            className={`py-3 rounded-xl border font-bold text-sm transition-all ${logistics.hotelStatus === 'none' ? 'border-orange-500 bg-orange-500/10 text-orange-400' : 'border-gray-500/10 hover:bg-gray-500/5'}`}
+                                        >
+                                            仲未搵到住宿
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold opacity-70 ml-1">🚗 市內交通偏好</label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            onClick={() => setLogistics(prev => ({ ...prev, transportMode: 'public' }))}
+                                            className={`py-3 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${logistics.transportMode === 'public' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-gray-500/10 hover:bg-gray-500/5'}`}
+                                        >
+                                            <TrainFront className="w-4 h-4" /> 大眾運輸
+                                        </button>
+                                        <button
+                                            onClick={() => setLogistics(prev => ({ ...prev, transportMode: 'driving' }))}
+                                            className={`py-3 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${logistics.transportMode === 'driving' ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-gray-500/10 hover:bg-gray-500/5'}`}
+                                        >
+                                            <Car className="w-4 h-4" /> 自駕 / 的士
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {logistics.hotelStatus === 'none' && (
+                                    <div className="space-y-4 animate-slide-up">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold opacity-70 ml-1">💰 住宿預算案偏好</label>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {['budget', 'mid', 'luxury'].map(b => (
+                                                    <button
+                                                        key={b}
+                                                        onClick={() => setLogistics(prev => ({ ...prev, budget: b, selectedHotel: null }))}
+                                                        className={`py-2 rounded-lg border font-bold text-[10px] capitalize transition-all ${logistics.budget === b ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-gray-500/10'}`}
+                                                    >
+                                                        {b === 'budget' ? '經濟' : b === 'mid' ? '舒適' : '奢華'}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold opacity-70 ml-1">✨ AI 為您精選的最佳住宿</label>
+                                            <div className="space-y-3">
+                                                {(HOTEL_DB[Object.keys(HOTEL_DB).find(k => (trip?.city || contextCity || "Tokyo").toLowerCase().includes(k.toLowerCase()))] || [])
+                                                    .filter(h => h.budget === logistics.budget)
+                                                    .map(hotel => (
+                                                        <div
+                                                            key={hotel.id}
+                                                            onClick={() => setLogistics(prev => ({ ...prev, selectedHotel: hotel }))}
+                                                            className={`p-4 rounded-xl border-2 transition-all cursor-pointer group ${logistics.selectedHotel?.id === hotel.id ? 'border-indigo-500 bg-indigo-500/5' : 'border-gray-500/10 hover:bg-gray-500/5'}`}
+                                                        >
+                                                            <div className="flex justify-between items-start mb-2">
+                                                                <div>
+                                                                    <div className="font-bold text-sm flex items-center gap-2">
+                                                                        {hotel.name}
+                                                                        <span className="text-[10px] text-yellow-500">⭐ {hotel.rating}</span>
+                                                                    </div>
+                                                                    <div className="text-[10px] opacity-50">{hotel.location} · {hotel.price}</div>
+                                                                </div>
+                                                                <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${logistics.selectedHotel?.id === hotel.id ? 'bg-indigo-500 border-transparent shadow-sm' : 'border-gray-300'}`}>
+                                                                    {logistics.selectedHotel?.id === hotel.id && <Check size={10} className="text-white" />}
+                                                                </div>
+                                                            </div>
+                                                            <p className="text-[10px] opacity-70 mb-2 leading-relaxed">{hotel.desc}</p>
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {hotel.facilities.map(f => (
+                                                                    <span key={f} className="text-[8px] px-1.5 py-0.5 bg-gray-500/10 rounded-md opacity-70">{f}</span>
+                                                                ))}
+                                                            </div>
+                                                            <div className="mt-2 text-[9px] bg-indigo-500/10 text-indigo-400 p-2 rounded italic">
+                                                                💬 "{hotel.reviews}"
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setItineraryStep('preferences')}
+                                    className={`flex-1 py-3 rounded-xl border font-bold transition-all ${isDarkMode ? 'border-gray-600 hover:bg-gray-800' : 'border-gray-300 hover:bg-gray-50'}`}
+                                >
+                                    返回
+                                </button>
+                                <button
+                                    onClick={() => handleItineraryAnalyze(false)}
+                                    className="flex-[2] py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg transition-all transform active:scale-95"
+                                >
+                                    開始分析行程
+                                </button>
+                            </div>
+                        </div>
                     ) : itineraryStep === 'text-input' ? (
                         <div className="space-y-6 animate-fade-in">
                             <div className="text-center space-y-2">
@@ -334,7 +635,7 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
                                 </div>
                             </div>
                         </div>
-                    ) : (mode === 'shopping' && shoppingStep === 'selection') ? (
+                    ) : (activeTab === 'shopping' && shoppingStep === 'selection') ? (
                         <div className="space-y-6 animate-fade-in">
                             <div className="text-center space-y-2">
                                 <h4 className="text-lg font-bold">您想尋找什麼類型的商品？</h4>
@@ -351,9 +652,12 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
                                     </label>
                                 ))}
                             </div>
-                            <button onClick={handleShoppingAnalyze} className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" disabled={selectedCats.length === 0}>
-                                開始分析
-                            </button>
+                            <div className="flex gap-3">
+                                <button onClick={() => { setActiveTab('itinerary'); setItineraryStep('selection'); }} className={`flex-1 py-3 rounded-xl border font-bold transition-all ${isDarkMode ? 'border-gray-600 hover:bg-gray-800' : 'border-gray-300 hover:bg-gray-50'}`}>返回</button>
+                                <button onClick={handleShoppingAnalyze} className="flex-[2] py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" disabled={selectedCats.length === 0}>
+                                    開始分析
+                                </button>
+                            </div>
                         </div>
                     ) : result ? (
                         <div className="space-y-6">
@@ -417,11 +721,29 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
                                                                         item.type === 'transport' ? '交通' :
                                                                             '景點'
                                                                 }</span>
+                                                            {item.smartTag && <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 font-bold">{item.smartTag}</span>}
                                                         </div>
-                                                        <p className="text-xs opacity-70 mt-1">{item.desc}</p>
-                                                        {(item.details?.insight || item.details?.reason) && (
-                                                            <div className="mt-2 text-[10px] bg-indigo-500/10 text-indigo-400 p-2 rounded-lg italic">
-                                                                💡 {item.details.insight || item.details.reason}
+                                                        {/* Transport Options if available */}
+                                                        {item.type === 'transport' && item.details?.options && (
+                                                            <div className="mt-3 space-y-2">
+                                                                <div className="text-[10px] font-bold opacity-50 mb-1 flex items-center gap-1">
+                                                                    <ArrowRightLeft className="w-3 h-3" /> 可選交通方式：
+                                                                </div>
+                                                                <div className="flex flex-col gap-2">
+                                                                    {item.details.options.map((opt, idx) => (
+                                                                        <div
+                                                                            key={idx}
+                                                                            className={`p-2 rounded-lg border text-[10px] flex justify-between items-center transition-all ${idx === 0 ? 'border-indigo-500/30 bg-indigo-500/5 ring-1 ring-indigo-500/20' : 'border-gray-500/10 opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
+                                                                        >
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="font-bold">{opt.name}</span>
+                                                                                <span className="opacity-60">{opt.desc}</span>
+                                                                            </div>
+                                                                            <div className="font-mono font-bold text-indigo-400">{opt.currency} {opt.cost}</div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                                <div className="text-[9px] opacity-40 italic mt-1">＊AI 已根據您的偏好優先排好首選方式</div>
                                                             </div>
                                                         )}
                                                     </div>
@@ -480,69 +802,108 @@ const AIGeminiModal = ({ isOpen, onClose, onApply, isDarkMode, contextCity, exis
 
                             {/* Shopping Tab */}
                             {activeTab === 'shopping' && result.shopping && (
-                                <div className="space-y-3 animate-fade-in">
-                                    <div className="flex justify-between items-center px-2 mb-2">
-                                        <span className="text-xs font-bold opacity-60">共 {result.shopping.length} 個推薦商品</span>
+                                <div className="space-y-6 animate-fade-in">
+                                    <div className="flex justify-between items-center px-2">
+                                        <span className="text-xs font-bold opacity-60 flex items-center gap-2">
+                                            <ShoppingBag size={14} className="text-purple-500" />
+                                            AI 精選購物清單 (共 {result.shopping.length} 項)
+                                        </span>
                                         <button
                                             onClick={() => toggleSelectAll('shopping', result.shopping.map(i => i.id))}
-                                            className="text-xs text-purple-500 hover:underline flex items-center gap-1"
+                                            className="text-xs text-purple-500 hover:underline font-bold"
                                         >
                                             {selections.shopping.length === result.shopping.length ? '取消全選' : '全選'}
                                         </button>
                                     </div>
-                                    {result.shopping.map((item) => (
-                                        <div
-                                            key={item.id}
-                                            onClick={() => toggleSelection('shopping', item.id)}
-                                            className={`flex gap-4 items-center p-4 rounded-xl border transition-all cursor-pointer group ${selections.shopping.includes(item.id) ? 'border-purple-500 bg-purple-500/5' : 'border-purple-500/10 hover:bg-purple-500/5'}`}
+
+                                    {/* Group by category if possible, or just list with better labels */}
+                                    {['food', 'cosmetic', 'fashion', 'electronics', 'medicine', 'alcohol', 'gift'].map(catType => {
+                                        const items = result.shopping.filter(i => i.type === catType || (catType === 'food' && i.type === 'alcohol'));
+                                        if (items.length === 0) return null;
+
+                                        const catLabel = SHOPPING_CATEGORIES.find(c => c.types.includes(catType))?.label || "🎁 其他精選";
+
+                                        return (
+                                            <div key={catType} className="space-y-3">
+                                                <div className="flex items-center gap-2 px-2">
+                                                    <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">{catLabel}</span>
+                                                    <div className="h-[1px] flex-1 bg-purple-500/10"></div>
+                                                </div>
+                                                <div className="grid grid-cols-1 gap-3">
+                                                    {items.map((item) => (
+                                                        <div
+                                                            key={item.id}
+                                                            onClick={() => toggleSelection('shopping', item.id)}
+                                                            className={`flex gap-4 items-center p-4 rounded-xl border transition-all cursor-pointer group ${selections.shopping.includes(item.id) ? 'border-purple-500 bg-purple-500/5' : 'border-gray-500/10 hover:bg-gray-500/5'}`}
+                                                        >
+                                                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors flex-shrink-0 ${selections.shopping.includes(item.id) ? 'bg-purple-500 border-transparent' : 'border-gray-300'}`}>
+                                                                {selections.shopping.includes(item.id) && <CheckSquare className="w-3 h-3 text-white" />}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="font-bold text-sm">{item.name}</div>
+                                                                <div className="text-[10px] opacity-60 truncate">{item.desc}</div>
+                                                            </div>
+                                                            <div className="text-right shrink-0">
+                                                                <div className="font-mono font-bold text-xs text-purple-400">{item.estPrice}</div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+
+                                    <div className="pt-4 flex justify-center">
+                                        <button
+                                            onClick={handleShoppingAnalyze}
+                                            className="text-xs font-bold text-purple-500/60 hover:text-purple-500 flex items-center gap-2 transition-all p-2 rounded-lg hover:bg-purple-500/5"
                                         >
-                                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors flex-shrink-0 ${selections.shopping.includes(item.id) ? 'bg-purple-500 border-transparent' : 'border-gray-300'}`}>
-                                                {selections.shopping.includes(item.id) && <CheckSquare className="w-3 h-3 text-white" />}
-                                            </div>
-                                            <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500 shrink-0">
-                                                <ShoppingBag className="w-5 h-5" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="font-bold">{item.name}</div>
-                                                <div className="text-xs opacity-60">{item.desc}</div>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="font-mono font-bold text-sm text-purple-400">{item.estPrice}</div>
-                                            </div>
-                                        </div>
-                                    ))}
+                                            <Sparkles className="w-4 h-4" /> 換一批推薦 / 探索更多
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 
                             {/* Packing Tab */}
                             {activeTab === 'packing' && result.packing && (
-                                <div className="space-y-3 animate-fade-in">
-                                    <div className="flex justify-between items-center px-2 mb-2">
-                                        <span className="text-xs font-bold opacity-60">共 {result.packing.length} 個必備項目</span>
+                                <div className="space-y-6 animate-fade-in">
+                                    <div className="flex justify-between items-center px-2">
+                                        <span className="text-xs font-bold opacity-60 flex items-center gap-2">
+                                            <PackageCheck size={14} className="text-indigo-500" />
+                                            智能行李清單
+                                        </span>
                                         <button
                                             onClick={() => toggleSelectAll('packing', result.packing.map(i => i.id))}
-                                            className="text-xs text-indigo-500 hover:underline flex items-center gap-1"
+                                            className="text-xs text-indigo-500 hover:underline font-bold"
                                         >
                                             {selections.packing.length === result.packing.length ? '取消全選' : '全選'}
                                         </button>
                                     </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        {result.packing.map((item) => (
-                                            <div
-                                                key={item.id}
-                                                onClick={() => toggleSelection('packing', item.id)}
-                                                className={`flex gap-3 items-center p-3 rounded-xl border transition-all cursor-pointer group ${selections.packing.includes(item.id) ? 'border-indigo-500 bg-indigo-500/5' : 'border-gray-500/10 hover:bg-gray-500/5'}`}
-                                            >
-                                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors flex-shrink-0 ${selections.packing.includes(item.id) ? 'bg-indigo-500 border-transparent' : 'border-gray-300'}`}>
-                                                    {selections.packing.includes(item.id) && <CheckSquare className="w-3 h-3 text-white" />}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="font-bold text-sm truncate">{item.name}</div>
-                                                    <div className="text-[10px] opacity-50 uppercase tracking-tighter">{item.category}</div>
-                                                </div>
+
+                                    {/* Group Packing by Category */}
+                                    {Array.from(new Set(result.packing.map(i => i.category))).map(cat => (
+                                        <div key={cat} className="space-y-3">
+                                            <div className="px-2">
+                                                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{cat}</span>
                                             </div>
-                                        ))}
-                                    </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 px-1">
+                                                {result.packing.filter(i => i.category === cat).map((item) => (
+                                                    <div
+                                                        key={item.id}
+                                                        onClick={() => toggleSelection('packing', item.id)}
+                                                        className={`flex gap-3 items-center p-3 rounded-xl border transition-all cursor-pointer group ${selections.packing.includes(item.id) ? 'border-indigo-500 bg-indigo-500/5' : 'border-gray-500/10 hover:bg-gray-500/5'}`}
+                                                    >
+                                                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0 ${selections.packing.includes(item.id) ? 'bg-indigo-500 border-transparent' : 'border-gray-300'}`}>
+                                                            {selections.packing.includes(item.id) && <CheckSquare className="w-2 h-2 text-white" />}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="font-bold text-xs truncate">{item.name}</div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                         </div>

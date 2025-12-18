@@ -112,7 +112,7 @@ const ItineraryTab = ({
 
     return (
         <div className="space-y-6 animate-fade-in">
-            <div className="flex gap-3 overflow-x-auto pb-2">
+            <div className="flex gap-3 overflow-x-auto pb-2 relative z-10">
                 {days.map((d) => {
                     const dateKey = d.slice(5); // MM-DD
                     const dName = destHolidays?.[dateKey];

@@ -7,162 +7,721 @@
  */
 
 // 模擬導出數據庫以供 UI 使用
-export { SHOPPING_DB, MOCK_DB };
 
-/**
- * 根據城市與天數生成完整行程建議
- * 確保每日景點唔重複（除非用戶手動安排）
- */
-export const generateFullItinerary = async (city, days = 3) => {
-    await new Promise(r => setTimeout(r, 800));
-
-    const dbItems = MOCK_DB[city] || FALLBACK_SUGGESTIONS(city);
-
-    // 將所有可用項目打亂，並建立一個不重複的池
-    const shuffledPool = [...dbItems].sort(() => 0.5 - Math.random());
-    let poolIndex = 0;
-
-    const fullPlan = [];
-
-    for (let d = 1; d <= days; d++) {
-        // 第一天加入航班
-        if (d === 1) {
-            fullPlan.push({
-                id: `ai-it-f1`, day: 1, time: "08:00", name: `前往 ${city} 的航班`,
-                type: "flight", cost: 4500, currency: "HKD",
-                details: { location: `HKG -> ${city}`, desc: "預留充足時間辦理登機", insight: "早班機雖然辛苦，但能為您的第一天爭取更多探索時間。" }
-            });
+const HOTEL_DB = {
+    "Tokyo": [
+        {
+            id: "h-tyo-1",
+            name: "Park Hyatt Tokyo",
+            budget: "luxury",
+            rating: 4.8,
+            reviews: "服務頂尖，新宿夜景一絕。甚至可以看到富士山。",
+            price: "JPY 85,000+",
+            location: "新宿 (Shinjuku)",
+            facilities: ["室內泳池", "頂級SPA", "紐約吧 (New York Bar)", "24h 健身房"],
+            desc: "位於新宿中心點，完美融合現代奢華與日式細膩。",
+            tip: "即便未入住，亦強烈建議去 52 樓的 New York Bar 飲杯嘢。"
+        },
+        {
+            id: "h-tyo-2",
+            name: "APA Hotel Shinjuku Gyoen",
+            budget: "budget",
+            rating: 4.2,
+            reviews: "地點無敵，新宿御苑站出口即達。房型較小但非常乾淨。",
+            price: "JPY 12,000+",
+            location: "新宿 (Shinjuku)",
+            facilities: ["大浴場", "自助洗衣", "自動入住機"],
+            desc: "性價比之王，緊鄰新宿地鐵站，房間雖小五臟俱全。",
+            tip: "酒店對面就有連鎖超市，買晚餐非常方便。"
+        },
+        {
+            id: "h-tyo-3",
+            name: "Hoshinoya Tokyo",
+            budget: "luxury",
+            rating: 4.9,
+            reviews: "都市中的頂級溫泉旅館，赤腳進出的文化體驗非常獨特。",
+            price: "JPY 120,000+",
+            location: "大手町 (Otemachi)",
+            facilities: ["頂樓露天溫泉", "茶室", "管事服務"],
+            desc: "星野集團旗艦店，全館榻榻米設計，展現現代日本工藝美學。",
+            tip: "每晚都有傳統表演，入住後記得查詢時間表。"
+        },
+        {
+            id: "h-tyo-4",
+            name: "Shibuya Stream Excel Hotel Tokyu",
+            budget: "mid",
+            rating: 4.6,
+            reviews: "位於澀谷新地標，設計感強，樓下就是購物美食街。",
+            price: "JPY 35,000+",
+            location: "澀谷 (Shibuya)",
+            facilities: ["空中大堂", "直通澀谷站", "時尚酒吧"],
+            desc: "工業風設計，落地大玻璃窗，非常適合年輕族群與潮流人士。",
+            tip: "步行即可抵達澀谷十字路口，是拍照打卡的最佳據點。"
+        },
+        {
+            id: "h-tyo-5",
+            name: "Gracery Shinjuku (哥吉拉飯店)",
+            budget: "mid",
+            rating: 4.4,
+            reviews: "哥吉拉頭像超吸睛！就在歌舞伎町中心，生活機能極佳。",
+            price: "JPY 22,000+",
+            location: "新宿 (Shinjuku)",
+            facilities: ["哥吉拉觀景台", "電影院直通", "景觀餐廳"],
+            desc: "位於著名的歌舞伎町，交通便利，是新宿最具代表性的酒店之一。",
+            tip: "特定房型可以看到哥吉拉頭的特寫，怪獸迷必住。"
         }
-
-        // 從池中順序取出 2-3 個項目（確保唔重複）
-        const itemsPerDay = Math.min(3, shuffledPool.length - poolIndex);
-        for (let idx = 0; idx < itemsPerDay; idx++) {
-            if (poolIndex >= shuffledPool.length) {
-                // 如果池用盡，重新打亂（但標記為「進階/隱藏版」）
-                poolIndex = 0;
-            }
-            const item = { ...shuffledPool[poolIndex] };
-            poolIndex++;
-
-            fullPlan.push({
-                ...item,
-                id: `ai-it-${d}-${idx}`,
-                day: d,
-                time: item.time
-            });
+    ],
+    "Taipei": [
+        {
+            id: "h-tpe-1",
+            name: "台北晶華酒店 (Regent Taipei)",
+            budget: "luxury",
+            rating: 4.7,
+            reviews: "台北老牌星級酒店，服務非常親切，早餐選擇極多。",
+            price: "TWD 8,500+",
+            location: "中山區",
+            facilities: ["露天泳池", "頂級自助餐 (栢麗廳)", "國際精品街", "SPA"],
+            desc: "結合國際時尚與東方文化，地理位置優越，中山站步行 5 分鐘。",
+            tip: "推薦嘗試酒店內的紅燒牛肉麵，曾獲多項獎項。"
+        },
+        {
+            id: "h-tpe-2",
+            name: "CitizenM Taipei North Gate",
+            budget: "mid",
+            rating: 4.5,
+            reviews: "智能科技感十足，落地窗看北門風景非常美。酒吧 24 小時開放。",
+            price: "TWD 3,500+",
+            location: "中正區 (西門町旁)",
+            facilities: ["24h 酒吧", "全智能客房控制", "多功能公共區"],
+            desc: "來自荷蘭的潮牌酒店，專為現代旅行者設計，房間緊湊精緻。",
+            tip: "入住時可以自選不同風景的房間，優先選高樓層。"
+        },
+        {
+            id: "h-tpe-3",
+            name: "台北文華東方酒店",
+            budget: "luxury",
+            rating: 4.9,
+            reviews: "極致奢華的代表，服務無微不至，像宮殿一樣。",
+            price: "TWD 15,000+",
+            location: "松山區",
+            facilities: ["米芝蓮餐廳", "恆溫泳池", "頂級水療", "下午茶服務"],
+            desc: "歐式經典風格，壯麗的建築與細膩的服務，是台北頂級住宿首選。",
+            tip: "Mandarin Cake Shop 的甜點非常有名，離去前記得買些伴手禮。"
+        },
+        {
+            id: "h-tpe-4",
+            name: "台北路徒行旅 (Roaders Hotel)",
+            budget: "budget",
+            rating: 4.3,
+            reviews: "西門町中心，非常有特色的工業美式風，公共空間很驚艷。",
+            price: "TWD 2,200+",
+            location: "萬華區 (西門町)",
+            facilities: ["免費零食區", "飛鏢/遊戲區", "自助登機流程"],
+            desc: "適合年輕遊客的設計型旅館，大廳設有 24 小時免費零食吧。",
+            tip: "大廳的爆米花和懷舊零食都是無限開放的，宵夜好去處。"
+        },
+        {
+            id: "h-tpe-5",
+            name: "台北和苑三井花園飯店",
+            budget: "mid",
+            rating: 4.7,
+            reviews: "純正日系服務，頂樓大浴場完全像在日本一樣，超級乾淨。",
+            price: "TWD 4,800+",
+            location: "大安區 (忠孝新生站)",
+            facilities: ["日式大浴場", "精緻日式早餐", "直通地鐵站"],
+            desc: "日本三井集團直送台北，簡約質感的設計，深受商務與旅遊人士喜愛。",
+            tip: "頂樓大浴場可以看到忠孝東路的繁華夜景，必泡！"
         }
-
-        // 每天加入一個交通建議 (第一天除外，因為已有航班)
-        if (d > 1 || days === 1) {
-            fullPlan.push({
-                id: `ai-it-${d}-tr`, day: d, time: "10:30", name: "市內大眾運輸建議",
-                type: "transport", cost: 50, currency: "HKD",
-                details: { location: city, desc: "推薦使用一日交通券", insight: "這座城市的公共交通網絡極其發達，地鐵或巴士是最高效的選擇。" }
-            });
+    ],
+    "Seoul": [
+        {
+            id: "h-sel-1",
+            name: "Signiel Seoul",
+            budget: "luxury",
+            rating: 4.9,
+            reviews: "位於樂天世界塔高層，俯瞰整個首爾，裝修極致夢幻。",
+            price: "KRW 650,000+",
+            location: "松坡區 (蠶室)",
+            facilities: ["高空泳池", "米芝蓮韓餐", "專屬直升機坪", "香檳大廳"],
+            desc: "韓國最高建築內的顶级奢華，每間房都有壯麗的漢江或市景景觀。",
+            tip: "入住客人可以免費進入 79 樓的 Salon de Signiel 享用點心。"
+        },
+        {
+            id: "h-sel-2",
+            name: "L7 Hongdae By Lotte",
+            budget: "mid",
+            rating: 4.6,
+            reviews: "就在弘大商圈入口，去夜生活或街頭表演區超級方便。",
+            price: "KRW 180,000+",
+            location: "麻浦區 (弘大)",
+            facilities: ["頂樓室外泳池", "潮流大堂", "黑膠唱片區"],
+            desc: "輕奢潮牌飯店，充滿藝術氛圍，正對弘益大學校園。",
+            tip: "夏天的頂樓池畔派對非常有質感，入住的話記得帶泳衣。"
+        },
+        {
+            id: "h-sel-3",
+            name: "Nine Tree Hotel Myeongdong",
+            budget: "budget",
+            rating: 4.4,
+            reviews: "明洞街頭一下換電梯就到，購物買化妝品完全不累。",
+            price: "KRW 95,000+",
+            location: "中區 (明洞)",
+            facilities: ["明洞直通", "自助行李寄存", "枕頭菜單"],
+            desc: "主打功能性與地理位置的精品酒店，是明洞購物的最佳基地。",
+            tip: "酒店提供多種枕頭選擇，對睡眠品質要求高的人一定要試試。"
         }
-    }
-
-    return fullPlan.sort((a, b) => {
-        if (a.day !== b.day) return a.day - b.day;
-        return a.time.localeCompare(b.time);
-    });
+    ],
+    "Bangkok": [
+        {
+            id: "h-bkk-1",
+            name: "The Siam Hotel",
+            budget: "luxury",
+            rating: 4.9,
+            reviews: "這不是酒店是博物館，黑白裝飾藝術風格美到不行。",
+            price: "THB 18,000+",
+            location: "律實縣 (河畔)",
+            facilities: ["泰式拳擊場", "私人遊艇對接", "古董圖書館", "私人泳池別墅"],
+            desc: "由設計大師 Bill Bensley 操刀，充滿歷史韻味與寧靜感的顶级渡假村。",
+            tip: "如果你有預算，一定要預約酒店的私人接駁小船前往市區，非常優雅。"
+        },
+        {
+            id: "h-bkk-2",
+            name: "Sindhorn Midtown Bangkok",
+            budget: "mid",
+            rating: 4.7,
+            reviews: "頂樓無邊際泳池絕美，房間很大，就在 Langsuan 高級住宅區。",
+            price: "THB 4,500+",
+            location: "朗雙區 (Chit Lom)",
+            facilities: ["無邊際泳池", "頂級健身房", "威士忌酒吧"],
+            desc: "現代簡約風與泰式精緻的完美結合，性價比極高，鄰近購物區。",
+            tip: "頂樓泳池是曼谷最熱門的打卡位之一，建議早上前往避開人潮。"
+        },
+        {
+            id: "h-bkk-3",
+            name: "Lub d Bangkok Siam Square",
+            budget: "budget",
+            rating: 4.2,
+            reviews: "雖然是青年旅館但非常乾淨，地點無敵，就在 Siam Square 心臟地帶。",
+            price: "THB 1,200+",
+            location: "暹羅區 (Siam)",
+            facilities: ["社交大廳", "共用/獨立空間", "電影區"],
+            desc: "曼谷最出名的連鎖青旅，擁有极佳的社群氛圍與便利的地理位置。",
+            tip: "即便是一個人旅行，這裡也有提供帶洗手間的單人套房，隱私性很好。"
+        }
+    ]
 };
 
-// 專用購物建議數據庫
+/**
+ * 助手函數：解析文字中的時間 (例如 "12:00", "3pm")
+ */
+const parseArrivalTime = (text) => {
+    if (!text) return null;
+    const timeMatch = text.match(/(\d{1,2})[:：](\d{1,2})/);
+    if (timeMatch) return parseInt(timeMatch[1]) + (parseInt(timeMatch[2]) / 60);
+
+    const simpleHourMatch = text.match(/(\d{1,2})\s*(am|pm|AM|PM)/);
+    if (simpleHourMatch) {
+        let hour = parseInt(simpleHourMatch[1]);
+        if (simpleHourMatch[2].toLowerCase() === 'pm' && hour < 12) hour += 12;
+        return hour;
+    }
+    return null;
+};
+
+/**
+ * 城市交通數據庫 (Realistic 2024 Data)
+ */
+const CITY_TRANSPORT_DATA = {
+    "Tokyo": {
+        metro: { name: "🚇 東京地鐵 (Tokyo Metro)", cost: 210, currency: "JPY", duration: "15-25 min" },
+        bus: { name: "🚌 都營巴士 (Toei Bus)", cost: 210, currency: "JPY", duration: "20-35 min" },
+        taxi: { name: "🚕 的士 / Uber", cost: 1500, currency: "JPY", duration: "10-20 min" }
+    },
+    "Taipei": {
+        metro: { name: "🚇 台北捷運 (MRT)", cost: 25, currency: "TWD", duration: "10-20 min" },
+        bus: { name: "🚌 台北市公車 (Bus)", cost: 15, currency: "TWD", duration: "15-30 min" },
+        taxi: { name: "🚕 的士 / LINE TAXI", cost: 150, currency: "TWD", duration: "10-15 min" }
+    },
+    "Seoul": {
+        metro: { name: "🚇 首爾地鐵 (Subway)", cost: 1400, currency: "KRW", duration: "15-30 min" },
+        bus: { name: "🚌 首爾巴士 (Bus)", cost: 1300, currency: "KRW", duration: "20-40 min" },
+        taxi: { name: "🚕 Kakao T / Taxi", cost: 6800, currency: "KRW", duration: "10-25 min" }
+    },
+    "Bangkok": {
+        metro: { name: "🚇 曼谷 MRT/BTS", cost: 35, currency: "THB", duration: "10-25 min" },
+        bus: { name: "🚌 當地巴士 (Local Bus)", cost: 12, currency: "THB", duration: "30-50 min" },
+        taxi: { name: "🚕 Grab / Taxi", cost: 120, currency: "THB", duration: "15-30 min" }
+    },
+    "Default": {
+        metro: { name: "🚆 大眾運輸", cost: 300, currency: "JPY", duration: "20 min" },
+        bus: { name: "🚌 巴士", cost: 200, currency: "JPY", duration: "30 min" },
+        taxi: { name: "🚗 的士", cost: 2000, currency: "JPY", duration: "15 min" }
+    }
+};
+
+/**
+ * 助手函數：獲取交通選項 (真實車費 + 時間)
+ */
+const getTransportOptions = (from, to, preference = 'public', city = "Tokyo") => {
+    // Normalize city
+    const cityName = Object.keys(CITY_TRANSPORT_DATA).find(k => city.toLowerCase().includes(k.toLowerCase())) || "Default";
+    const data = CITY_TRANSPORT_DATA[cityName];
+
+    const options = {
+        metro: {
+            ...data.metro,
+            mode: "public",
+            desc: `從 ${from} 搭乘地鐵前往 ${to}，最準時的選擇`,
+            insight: "建議使用當地的智慧交通卡 (如 Suica / 悠遊卡)。"
+        },
+        bus: {
+            ...data.bus,
+            mode: "public",
+            desc: `搭乘巴士前往 ${to}，沿途欣賞街景`,
+            insight: "通常比地鐵便宜，但需注意路面交通狀況。"
+        },
+        driving: {
+            ...data.taxi,
+            mode: "driving",
+            desc: `叫車或搭乘的士前往 ${to}，省去轉乘麻煩`,
+            insight: "多人共乘的話非常划算，且能直達目的地。"
+        }
+    };
+
+    if (preference === 'driving') return [options.driving, options.metro, options.bus];
+    return [options.metro, options.bus, options.driving];
+};
+
+export const generateFullItinerary = async (city, days = 3, preferences = [], logistics = {}) => {
+    await new Promise(r => setTimeout(r, 800));
+
+    // Normalize city name for DB lookup
+    const cityName = Object.keys(MOCK_DB).find(k => city.toLowerCase().includes(k.toLowerCase())) || "Default";
+    const dbItems = MOCK_DB[cityName] || FALLBACK_SUGGESTIONS(city);
+
+    const fullPlan = [];
+    let poolIndex = 0;
+
+    // Helper: Categorize items by time suitability
+    const categorizeByTime = (items) => {
+        const morning = items.filter(i => {
+            const h = parseInt(i.time?.split(':')[0] || "10");
+            return h < 12 || i.name.includes("早") || i.type === "spot";
+        });
+        const afternoon = items.filter(i => {
+            const h = parseInt(i.time?.split(':')[0] || "14");
+            return (h >= 12 && h < 18) || i.type === "shopping" || i.type === "spot";
+        });
+        const evening = items.filter(i => {
+            const h = parseInt(i.time?.split(':')[0] || "19");
+            return h >= 18 || i.name.includes("夜") || i.name.includes("居酒屋") || i.name.includes("塔") || i.type === "food";
+        });
+        return { morning, afternoon, evening };
+    };
+
+    const timeBuckets = categorizeByTime(dbItems);
+
+    // TRACKER: Prevent duplicates across ALL days
+    const globalUsedIds = new Set();
+
+    // Parse Arrival Logistics
+    const arrivalHour = parseArrivalTime(logistics.flightInfo) || 9; // Default 9am if not specified
+    const transportPref = logistics.transportMode || 'public';
+
+    for (let d = 1; d <= days; d++) {
+        // --- Breakfast / Morning Routine (Every Day) ---
+        fullPlan.push({
+            id: `ai-it-${d}-bf`, day: d, time: "08:00",
+            name: d === 1 && arrivalHour > 8 ? "☕️ 抵達前準備" : "🍳 在地式早餐體驗",
+            type: "food", cost: 800, currency: "JPY",
+            details: {
+                location: d === 1 ? "機場/機上" : "酒店附近",
+                desc: d === 1 ? "確認文件，整理心情準備出發" : "找一家在地人推薦的早點店，開啟活力的一天",
+                insight: "旅行的精髓往往在於清晨的咖啡與在地早餐。"
+            }
+        });
+
+        // --- DAY 1 SPECIAL LOGIC: Flight & Arrival Optimization ---
+        if (d === 1) {
+            fullPlan.push({
+                id: `ai-it-f1`, day: 1, time: "07:00", name: `✈️ 前往 ${city} 的航班`,
+                type: "flight", cost: 4500, currency: "HKD",
+                details: {
+                    location: `HKG -> ${city}`,
+                    desc: logistics.flightInfo || "預留充足時間辦理登機",
+                    insight: arrivalHour > 15 ? "由於是晚班機，建議第一天以放鬆和入住為主。" : "早班機雖然辛苦，但能為您的第一天爭取更多探索時間。"
+                }
+            });
+
+            // Transport to Hotel depends on arrival
+            const hotelTransTime = `${Math.floor(arrivalHour + 1).toString().padStart(2, '0')}:30`;
+            const hOptions = getTransportOptions("機場", "酒店", transportPref, city);
+            fullPlan.push({
+                id: `ai-it-1-tr0`, day: 1, time: hotelTransTime,
+                name: hOptions[0].name,
+                type: "transport", cost: hOptions[0].cost, currency: hOptions[0].currency,
+                details: {
+                    location: city,
+                    desc: hOptions[0].desc,
+                    insight: hOptions[0].insight,
+                    options: hOptions
+                }
+            });
+
+            fullPlan.push({
+                id: `ai-it-1-h1`, day: 1, time: `${Math.floor(arrivalHour + 2).toString().padStart(2, '0')}:30`,
+                name: logistics.hotelStatus === 'booked' ? "🏨 酒店辦理入住/寄存" : "🏨 抵達先行安排行李",
+                type: "hotel", cost: 0, currency: "HKD",
+                details: {
+                    location: `${city} 酒店區`,
+                    desc: logistics.selectedHotel ? `預計入住: ${logistics.selectedHotel.name}` : "前往酒店區或儲物櫃放低重物",
+                    insight: arrivalHour >= 15 ? "現已到入住時間，建議先回房稍事休息再出發。" : "即便未到入住時間，亦可先將行李寄存在櫃檯。"
+                }
+            });
+        }
+
+        // Fill items for the day
+        const timeSlots = ["10:30", "13:00", "15:30", "18:00", "20:30"];
+        for (let slotTime of timeSlots) {
+            const slotHour = parseInt(slotTime.split(':')[0]);
+
+            // Skip Day 1 slots before arrival + 4 hours (buffer for airport -> hotel -> first spot)
+            if (d === 1 && slotHour < arrivalHour + 4) continue;
+
+            // Select bucket based on slotHour
+            let targetBucket = [];
+            if (slotHour < 12) targetBucket = timeBuckets.morning;
+            else if (slotHour < 18) targetBucket = timeBuckets.afternoon;
+            else targetBucket = timeBuckets.evening;
+
+            // Find NEXT available item from target bucket
+            let item = null;
+            // Shuffle bucket for variety
+            const shuffledBucket = [...targetBucket].sort(() => 0.5 - Math.random());
+
+            for (const candidate of shuffledBucket) {
+                const normName = candidate.name.trim().toLowerCase();
+                if (!globalUsedIds.has(normName)) {
+                    item = { ...candidate };
+                    globalUsedIds.add(normName);
+                    break;
+                }
+            }
+
+            // Fallback to general pool if bucket empty
+            if (!item) {
+                const fallbackPool = [...dbItems].sort(() => 0.5 - Math.random());
+                for (const candidate of fallbackPool) {
+                    const normName = candidate.name.trim().toLowerCase();
+                    if (!globalUsedIds.has(normName)) {
+                        item = { ...candidate };
+                        globalUsedIds.add(normName);
+                        break;
+                    }
+                }
+            }
+
+            if (item) {
+                // Add Transport before each major spot
+                const transportTime = slotTime.split(':').map((val, idx) => idx === 0 ? (parseInt(val) - (slotHour > 12 ? 1 : 0)).toString().padStart(2, '0') : "45").join(':');
+
+                // --- WALKING DISTANCE LOGIC ---
+                const prevItem = fullPlan[fullPlan.length - 1];
+                const cleanLoc = (l) => (l || "").toLowerCase();
+                const isSameArea = prevItem && prevItem.details?.location && item.details?.location && (
+                    cleanLoc(prevItem.details.location) === cleanLoc(item.details.location) ||
+                    (cleanLoc(prevItem.details.location).includes("101") && cleanLoc(item.details.location).includes("信義")) ||
+                    (cleanLoc(prevItem.details.location).includes("信義") && cleanLoc(item.details.location).includes("101")) ||
+                    (cleanLoc(prevItem.details.location).includes("新宿") && cleanLoc(item.details.location).includes("新宿")) ||
+                    (cleanLoc(prevItem.details.location).includes("淺草") && cleanLoc(item.details.location).includes("淺草")) ||
+                    (cleanLoc(prevItem.details.location).includes("明洞") && cleanLoc(item.details.location).includes("明洞")) ||
+                    (cleanLoc(prevItem.details.location).includes("弘大") && cleanLoc(item.details.location).includes("弘大"))
+                );
+
+                if (isSameArea) {
+                    fullPlan.push({
+                        id: `ai-it-${d}-tr-${slotTime}`, day: d,
+                        time: transportTime,
+                        name: "🚶 步行前往",
+                        type: "transport", cost: 0, currency: item.currency,
+                        details: {
+                            location: item.details.location,
+                            desc: "鄰近區域，只需步行即可抵達",
+                            insight: "這兩個地方距離非常近，步行更能感受城市氛圍。",
+                            options: [{ name: "🚶 步行", mode: "walking", cost: 0, currency: item.currency, desc: "步行約 5-10 分鐘" }]
+                        }
+                    });
+                } else {
+                    const tOptions = getTransportOptions("上一個景點", item.name, transportPref, city);
+                    fullPlan.push({
+                        id: `ai-it-${d}-tr-${slotTime}`, day: d,
+                        time: transportTime,
+                        name: tOptions[0].name,
+                        type: "transport", cost: tOptions[0].cost, currency: tOptions[0].currency,
+                        details: {
+                            location: city,
+                            desc: tOptions[0].desc,
+                            insight: tOptions[0].insight,
+                            options: tOptions
+                        }
+                    });
+                }
+
+                fullPlan.push({
+                    ...item,
+                    id: `ai-it-${d}-${slotTime}`,
+                    day: d,
+                    time: slotTime
+                });
+            } else {
+                // ... (random fallbacks)
+                const fallbacks = [
+                    { name: "🍵 巷弄深處的在地文化慢步", desc: "這段時間建議放下地圖，隨心所欲地探索附近的寶藏小店。", insight: "您可以嘗試在附近的小巷中尋找沒有招牌的在地食肆。" },
+                    { name: "📷 城市觀察者：捕捉在地街頭瞬間", desc: "走進當地的生活區，觀察居民的日常生活，尋找最地道的風景。", insight: "建議前往非觀光區的大型超市，會有意想不到的發現。" },
+                    { name: "🧘 城市綠洲：公園與休憩空間體驗", desc: "在繁華市中心找一片綠地，體驗當地人的休閒時光。", insight: "這是整理相片和撰寫旅途感悟的最佳時機。" }
+                ];
+                const selected = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+                fullPlan.push({
+                    id: `ai-it-free-${d}-${slotTime}`, day: d, time: slotTime,
+                    name: selected.name, type: "spot", cost: 0, currency: "HKD",
+                    details: { location: "Citywide", desc: selected.desc, insight: selected.insight }
+                });
+            }
+        }
+
+        // --- Evening Routine: Return to Hotel (Every Day) ---
+        const lastTransportOptions = getTransportOptions("市中心", "酒店", transportPref, city);
+        fullPlan.push({
+            id: `ai-it-${d}-return`, day: d, time: "22:30",
+            name: `🏨 返回酒店 (${lastTransportOptions[0].name})`,
+            type: "transport", cost: lastTransportOptions[0].cost, currency: lastTransportOptions[0].currency,
+            details: {
+                location: "市區 -> 酒店",
+                desc: lastTransportOptions[0].desc,
+                insight: "早點休息，為明天的旅程保持體力。",
+                options: lastTransportOptions
+            }
+        });
+    }
+
+    // Budget Calculation
+    const totalCost = fullPlan.reduce((acc, item) => acc + (item.cost || 0), 0);
+
+    return {
+        itinerary: fullPlan.sort((a, b) => {
+            if (a.day !== b.day) return a.day - b.day;
+            return a.time.localeCompare(b.time);
+        }),
+        transport: [
+            { id: 'tr-1', name: '地鐵 (Metro)', type: 'metro', price: 'JPY 200', desc: '站點密集，班次極準時，是自由行首選。', recommended: true },
+            { id: 'tr-2', name: '巴士/地面電車', type: 'bus', price: 'JPY 210', desc: '可以欣賞沿途風景，適合短途接駁。' },
+            { id: 'tr-3', name: '的士 / Uber', type: 'taxi', price: 'JPY 1500+', desc: '四人合乘其實性價比唔低，特別係去啲偏遠景點。' }
+        ],
+        budget: {
+            total: Math.floor(totalCost / days),
+            breakdown: [
+                { label: '景點門票', percent: 25, amt: Math.floor(totalCost * 0.25) },
+                { label: '餐飲美食', percent: 45, amt: Math.floor(totalCost * 0.45) },
+                { label: '交通交通', percent: 15, amt: Math.floor(totalCost * 0.15) },
+                { label: '雜項預備', percent: 15, amt: Math.floor(totalCost * 0.15) }
+            ]
+        }
+    };
+};
+
+// 專用購物建議數據庫 (REAL DATA)
 const SHOPPING_DB = {
-    "Japan": [
-        { name: "Tokyo Banana", estPrice: "JPY 1200", type: "food", desc: "必買伴手禮", reason: "東京最有代表性的伴手禮，口感綿密且包裝精美，不論送禮或自用都非常合適。" },
-        { name: "白色戀人巧克力", estPrice: "JPY 800", type: "food", desc: "北海道名產", reason: "雖然是北海道產，但全日本機場都能買到。夾心巧克力餅乾的經典之作，長輩最愛。" },
-        { name: "藥妝 (EVE, LuLuLun)", estPrice: "JPY 5000", type: "cosmetic", desc: "囤貨必備", reason: "日本藥妝品質保證，價格通常是香港的 6-7 折。推薦買止痛藥與保濕面膜。" },
-        { name: "Bic Camera 電器", estPrice: "JPY 30000", type: "electronics", desc: "免稅更抵", reason: "日本電器設計先進且耐用。搭配免稅與優惠券，購入相機或吹風機非常划算。" },
-        { name: "Uniqlo/GU", estPrice: "JPY 10000", type: "clothing", desc: "日本限定款", reason: "價格比海外便宜不少，且常有日本限定的設計師聯名款，值得多入手幾件。" }
+    Japan: [
+        { name: "一蘭拉麵外帶包", type: "food", estPrice: "¥2,000", desc: "福岡發跡的名店味，在家也能煮出正宗豚骨味。" },
+        { name: "SK-II 神仙水", type: "cosmetic", estPrice: "¥18,000", desc: "日本國民專櫃保妝，免稅店價格極具競爭力。" },
+        { name: "Porter 吉田包", type: "fashion", estPrice: "¥25,000", desc: "日本在地手工職人精神，耐用且款式經典。" },
+        { name: "白色戀人巧克力", type: "food", estPrice: "¥1,500", desc: "北海道必買經典，酥脆貓舌餅配上濃郁白夾心。" },
+        { name: "資生堂安耐曬防曬", type: "cosmetic", estPrice: "¥3,000", desc: "藥妝店長年銷售冠軍，最強防曬力的代表。" },
+        { name: "大正製藥感冒粉 (黃金包)", type: "medicine", estPrice: "¥1,200", desc: "日本人家中常備，對初期感冒症狀非常有感。" },
+        { name: "獺祭 45 純米大吟釀", type: "alcohol", estPrice: "¥5,000", desc: "清酒入門首選，果香濃郁且口感滑順。" },
+        { name: "Donki 情熱價格零食", type: "food", estPrice: "¥500", desc: "驚安殿堂自有品牌，性價比極高。" },
+        { name: "參天玫瑰眼藥水", type: "medicine", estPrice: "¥1,500", desc: "眼藥水中的愛馬仕，有效緩解眼部疲勞。" },
+        { name: "Uniqlo 日本限定款", type: "fashion", estPrice: "¥2,990", desc: "日本定價通常比香港便宜 30-40%。" },
+        { name: "Panasonic 奈米水離子吹風機", type: "electronics", estPrice: "¥28,000", desc: "旗艦級護髮神機，日本買價差大。" },
+        { name: "EVE 止痛藥 (A錠/Quick)", type: "medicine", estPrice: "¥980", desc: "緩解頭痛、經痛的神物，掃貨必備。" },
+        { name: "Kinto 保溫瓶/咖啡器具", type: "electronics", estPrice: "¥3,500", desc: "極簡美學日系品牌，非常有質感。" },
+        { name: "LUSH 日本限定版氣泡彈", type: "cosmetic", estPrice: "¥850", desc: "比香港便宜不少，款式也比較豐富。" },
+        { name: "無印良品行李箱", type: "fashion", estPrice: "¥19,900", desc: "輪子安靜極了，日本買省不少匯差。" }
     ],
-    "Korea": [
-        { name: "Olive Young 面膜", estPrice: "KRW 30000", type: "cosmetic", desc: "韓妹必備", reason: "韓國美妝店龍頭，面膜種類繁多，是送禮自用兩相宜的選擇。" },
-        { name: "Gentle Monster", estPrice: "KRW 250000", type: "fashion", desc: "潮流墨鏡", reason: "韓國設計師品牌，以獨特前衛的設計聞名，深受時尚潮人喜愛。" },
-        { name: "HBAF 杏仁", estPrice: "KRW 5000", type: "food", desc: "多種口味", reason: "韓國超人氣零食，多種創新口味，是追劇、下酒的好夥伴。" },
-        { name: "Line Friends 周邊", estPrice: "KRW 40000", type: "gift", desc: "可愛實用", reason: "Line Friends 角色在全球擁有高人氣，周邊商品從文具到生活用品應有盡有，可愛又實用。" }
+    Taiwan: [
+        { name: "佳德鳳梨酥", type: "food", estPrice: "NT$450", desc: "微甜而不膩，皮薄餡多，台北排隊名店。" },
+        { name: "微熱山丘鳳梨酥", type: "food", estPrice: "NT$500", desc: "全土鳳梨製作，纖維感十足，適合解膩。" },
+        { name: "糖村牛軋糖", type: "food", estPrice: "NT$350", desc: "奶香味極濃，不黏牙，伴手禮首選。" },
+        { name: "森田藥妝面膜", type: "cosmetic", estPrice: "NT$299", desc: "台灣本土之光，CP值極高的玻尿酸保濕系列。" },
+        { name: "大同電鍋", type: "electronics", estPrice: "NT$2,500", desc: "台灣廚房靈魂，耐操好用。" },
+        { name: "快車肉乾", type: "food", estPrice: "NT$250", desc: "超薄脆紙肉乾，口感獨特，追劇必備。" },
+        { name: "金門高粱酒 (58度)", type: "alcohol", estPrice: "NT$600", desc: "台灣最具代表性的烈酒，陳香醇厚。" },
+        { name: "義美小泡芙", type: "food", estPrice: "NT$35", desc: "從小到大的經典零嘴，牛奶與巧克力口味最受歡迎。" },
+        { name: "DR.WU 杏仁酸亮白精華", type: "cosmetic", estPrice: "NT$850", desc: "醫美品牌首選，代謝角質、改善暗沈。" },
+        { name: "誠品書店選物 (Esente)", type: "fashion", estPrice: "NT$980", desc: "充滿文青感的高質感文具或配件。" },
+        { name: "大同復古小電扇", type: "electronics", estPrice: "NT$699", desc: "經典外觀卻非常耐用，送禮自用兩相宜。" },
+        { name: "寵愛之名面膜", type: "cosmetic", estPrice: "NT$1,200", desc: "生物纖維面膜始祖，台灣價格最甜。" }
     ],
-    "Taiwan": [
-        { name: "微熱山丘鳳梨酥", estPrice: "TWD 420", type: "food", desc: "土鳳梨內餡", reason: "台灣鳳梨酥的代表品牌，以純天然土鳳梨內餡聞名，酸甜適中，口感紮實。" },
-        { name: "佳德蔥軋餅", estPrice: "TWD 300", type: "food", desc: "排隊名店", reason: "將香蔥蘇打餅乾與牛軋糖結合，鹹甜交織，口感豐富，是台灣獨特的伴手禮。" },
-        { name: "Kavalan 威士忌", estPrice: "TWD 2500", type: "alcohol", desc: "台灣之光", reason: "台灣金車集團旗下的威士忌品牌，多次獲得國際大獎，是台灣精品威士忌的代表。" },
-        { name: "文創商品 (誠品)", estPrice: "TWD 1000", type: "gift", desc: "質感設計", reason: "誠品書店不僅是書店，更是文創商品的集散地，能找到許多獨具台灣特色的設計品。" }
+    Korea: [
+        { name: "雪花秀潤燥精華", type: "cosmetic", estPrice: "₩85,000", desc: "韓國頂級保養，漢方成分有效穩定肌膚。" },
+        { name: "Gentle Monster 太陽眼鏡", type: "fashion", estPrice: "₩260,000", desc: "設計感爆棚，韓劇歐爸歐逆必備款式。" },
+        { name: "正官庄高麗蔘精", type: "medicine", estPrice: "₩120,000", desc: "純正六年根紅蔘，送長輩最體面的健康禮物。" },
+        { name: "HBAF 杏仁果系列", type: "food", estPrice: "₩7,000", desc: "超多口味（蜂蜜奶油、芥末），隨手小食首選。" },
+        { name: "Innisfree 火山泥面膜", type: "cosmetic", estPrice: "₩15,000", desc: "韓國藥妝店長青款，深層清潔毛孔好幫手。" },
+        { name: "OSULLOC 抹茶抹醬", type: "food", estPrice: "₩8,500", desc: "濟州島直送濃郁抹茶，配多士或餅乾一流。" },
+        { name: "Market O 布朗尼", type: "food", estPrice: "₩5,000", desc: "經典韓系手信，口感綿密，獨立包裝方便分享。" },
+        { name: "Mediheal 面膜", type: "cosmetic", estPrice: "₩2,000", desc: "專業級保濕敷片，明洞掃貨必買清單。" },
+        { name: "Olive Young 排隊護膚貼", type: "cosmetic", estPrice: "₩6,000", desc: "針對痘痘修復力超強，藥妝店必搶項目。" },
+        { name: "Mardi Mercredi 衛衣", type: "fashion", estPrice: "₩75,000", desc: "當紅小雞雛菊 Logo，韓國買便宜很多。" },
+        { name: "Samyang 辣雞麵 (各種口味)", type: "food", estPrice: "₩5,500", desc: "香港未必有齊的各種辣度與聯名款。" },
+        { name: "韓國真露燒酒 (JINRO)", type: "alcohol", estPrice: "₩1,800", desc: "超市買超便宜，體驗韓國飲酒文化必備。" }
     ],
-    "Thailand": [
-        { name: "NaRaYa 曼谷包", estPrice: "THB 500", type: "fashion", desc: "平價實用", reason: "泰國國民品牌，以緞面材質和蝴蝶結設計聞名，款式多樣，價格親民，是送禮自用皆宜的選擇。" },
-        { name: "Pocky (芒果/香蕉)", estPrice: "THB 20", type: "food", desc: "泰國限定", reason: "泰國限定的芒果和香蕉口味 Pocky，是其他地方買不到的特色零食，口感香甜。" },
-        { name: "泰式奶茶手標茶", estPrice: "THB 150", type: "food", desc: "在家沖泡", reason: "泰國經典手標泰奶茶葉，在家也能輕鬆沖泡出地道的泰式奶茶風味。" },
-        { name: "香氛精油", estPrice: "THB 800", type: "lifestyle", desc: "SPA 享受", reason: "泰國是香氛產品的天堂，各種天然精油和香氛產品，能帶來身心放鬆的 SPA 體驗。" }
+    Thailand: [
+        { name: "小浣熊烤海苔", type: "food", estPrice: "฿150", desc: "酥脆辣味十足，看劇必備的大量裝零嘴。" },
+        { name: "Mistine 彩妝系列", type: "cosmetic", estPrice: "฿250", desc: "泰國第一彩妝品牌，防水防汗能力極強。" },
+        { name: "SRICHAND 蜜粉", type: "cosmetic", estPrice: "฿320", desc: "經典老牌翻新，控油效果驚人。" },
+        { name: "臥佛牌青草膏", type: "medicine", estPrice: "฿80", desc: "舒緩蚊蟲叮咬或肌肉痠痛。" },
+        { name: "Jim Thompson 絲巾", type: "fashion", estPrice: "฿2,800", desc: "泰國國寶級絲綢，設計充滿南洋風情。" },
+        { name: "手標泰式茶 (粉裝)", type: "food", estPrice: "฿130", desc: "在家也能沖出正宗街頭泰奶的味道。" },
+        { name: "NaRaYa 曼谷包", type: "fashion", estPrice: "฿450", desc: "泰國代表性手提袋，款式多樣。" },
+        { name: "蛇牌爽身粉 (酷涼型)", type: "cosmetic", estPrice: "฿45", desc: "夏日消暑神器，洗澡後塗抹全身清爽透涼。" },
+        { name: "泰國 Counterpain 痠痛膏", type: "medicine", estPrice: "฿150", desc: "針對運動損傷非常有效，紅藍包裝效果不同。" },
+        { name: "Elephant Pants (大象褲)", type: "fashion", estPrice: "฿100", desc: "泰國旅遊標配，通爽舒服，穿完即棄都唔心痛。" },
+        { name: "THANN / HARNN 香氛產品", type: "cosmetic", estPrice: "฿1,200", desc: "頂級泰式香薰，木質香調非常有質感。" }
     ]
 };
 
 const FALLBACK_SHOPPING = [
-    { name: "當地特色零食", estPrice: "HKD 100", type: "food", desc: "超市尋寶" },
-    { name: "明信片與磁貼", estPrice: "HKD 50", type: "gift", desc: "旅行紀念" },
-    { name: "機場免稅品", estPrice: "HKD 1000", type: "shopping", desc: "最後衝刺" }
+    { name: "當地特色伴手禮", estPrice: "HKD 150", type: "food", desc: "在地老店出品", reason: "每座城市都有自己的味道，建議去超市或傳統市場發掘。" },
+    { name: "手作工藝品", estPrice: "HKD 300", type: "gift", desc: "獨一無二紀念", reason: "支持當地創作者，留下獨特的旅行回憶。" }
 ];
 
 /**
- * 生成 AI 購物建議
- * @param {string} location 國家或城市
- * @returns {Promise<Array>}
+ * 生成 AI 購物建議 (修補為真實數據)
  */
 export async function generateShoppingSuggestions(location, categories = []) {
-    const delay = 800 + Math.random() * 800; // 模擬思考時間
+    const delay = 800 + Math.random() * 800;
     await new Promise(resolve => setTimeout(resolve, delay));
 
-    // 簡單匹配邏輯 (優先匹配國家)
-    let suggestions = FALLBACK_SHOPPING;
-    for (const key of Object.keys(SHOPPING_DB)) {
-        if (location.includes(key) || (key === 'Japan' && (location.includes('Tokyo') || location.includes('Osaka'))) ||
-            (key === 'Korea' && location.includes('Seoul')) || (key === 'Taiwan' && location.includes('Taipei'))) {
-            suggestions = SHOPPING_DB[key];
+    let country = "General";
+    const locLower = location.toLowerCase();
+    if (locLower.includes("日本") || locLower.includes("tokyo") || locLower.includes("japan") || locLower.includes("osaka")) country = "Japan";
+    else if (locLower.includes("台灣") || locLower.includes("taiwan") || locLower.includes("taipei")) country = "Taiwan";
+    else if (locLower.includes("韓國") || locLower.includes("korea") || locLower.includes("seoul")) country = "Korea";
+    else if (locLower.includes("泰國") || locLower.includes("thailand") || locLower.includes("bangkok")) country = "Thailand";
 
-            // Filter by categories if provided
-            if (categories && categories.length > 0) {
-                suggestions = suggestions.filter(item => categories.includes(item.type));
-            }
-            break;
-        }
+    let suggestions = (SHOPPING_DB[country] || FALLBACK_SHOPPING).map(s => ({ ...s, country }));
+
+    if (categories && categories.length > 0) {
+        suggestions = suggestions.filter(item => {
+            return categories.includes(item.type) ||
+                (categories.includes('food') && item.type === 'alcohol') ||
+                (categories.includes('others') && (item.type === 'gift' || item.type === 'medicine'));
+        });
     }
 
-    return suggestions;
+    // Return more results and shuffle
+    return suggestions.sort(() => 0.5 - Math.random()).slice(0, 15);
 }
 
-// 模擬數據庫：針對不同城市的精選行程
+// 模擬數據庫：針對不同城市的精選行程 (REAL DATA)
 const MOCK_DB = {
     "Tokyo": [
-        { time: "09:00", name: "築地場外市場早餐", type: "food", cost: 3000, currency: "JPY", details: { location: "Tsukiji Outer Market", desc: "新鮮壽司與海鮮丼", insight: "築地市場曾是世界最大的魚市場。場外市場依然保留著江戶時代的活力，是品嚐正宗壽司的首選地。" } },
-        { time: "11:00", name: "淺草寺參拜與雷門", type: "spot", cost: 0, currency: "JPY", details: { location: "Senso-ji", desc: "東京最古老寺廟", insight: "創建於 628 年，是東京都內最古老的寺院。巨大的紅色燈籠和仲見世通商店街是必拍景點。" } },
-        { time: "14:00", name: "東京晴空塔展望台", type: "spot", cost: 3500, currency: "JPY", details: { location: "Tokyo Skytree", desc: "俯瞰東京全景", insight: "高度達 634 公尺，是世界最高塔。在展望塔上可以 360 度俯瞰關東平原，天氣好時還能見到富士山。" } },
-        { time: "17:00", name: "秋葉原電器街購物", type: "shopping", cost: 15000, currency: "JPY", details: { location: "Akihabara", desc: "動漫迷聖地", insight: "戰後作為電器零件轉運站起家，現已演變為全球動漫與電子遊戲文化的中心，充滿無限創意。" } },
-        { time: "20:00", name: "銀座高級燒肉晚餐", type: "food", cost: 8000, currency: "JPY", details: { location: "Ginza", desc: "A5 和牛體驗", insight: "銀座是日本最昂貴的地段。在這裡品嚐頂級和牛，不僅是味覺享受，更是一種極致的文化體驗。" } }
-    ],
-    "Osaka": [
-        { time: "10:00", name: "大阪城公園", type: "spot", cost: 600, currency: "JPY", details: { location: "Osaka Castle", desc: "歷史名勝", insight: "大阪的象徵，由豐臣秀吉於 16 世紀建造。天守閣內有博物館，可了解其歷史，周圍的公園也是賞櫻勝地。" } },
-        { time: "13:00", name: "黑門市場掃街", type: "food", cost: 4000, currency: "JPY", details: { location: "Kuromon Market", desc: "大阪的廚房", insight: "擁有 190 年歷史的市場，被譽為「大阪的廚房」。新鮮海產、水果、小吃應有盡有，是品嚐當地美食的好去處。" } },
-        { time: "16:00", name: "心齋橋瘋狂購物", type: "shopping", cost: 20000, currency: "JPY", details: { location: "Shinsaibashi", desc: "藥妝店一級戰區", insight: "大阪最繁華的購物區之一，從百貨公司到藥妝店、潮流服飾店，滿足各種購物需求。" } },
-        { time: "19:00", name: "道頓堀固力果跑跑人", type: "spot", cost: 0, currency: "JPY", details: { location: "Dotonbori", desc: "必拍打卡位", insight: "大阪的代表性觀光地，霓虹燈招牌林立，其中固力果跑跑人招牌是必拍地標。沿河道有許多美食餐廳。" } }
+        { name: "築地場外市場 (Tsukiji Outer Market)", type: "food", cost: 3000, currency: "JPY", details: { location: "築地", desc: "新鮮壽司與海鮮丼", insight: "即便是批發市場遷走，場外區域依然是遊客品嚐新鮮海鮮的首選。" } },
+        { name: "淺草寺 (Senso-ji Temple)", type: "spot", cost: 0, currency: "JPY", details: { location: "淺草", desc: "東京最古老的寺廟", history: "創立於 628 年，雷門上的大紅燈籠是其標誌。" } },
+        { name: "東京晴空塔 (Tokyo Skytree)", type: "spot", cost: 3100, currency: "JPY", details: { location: "墨田區", desc: "世界最高自立式電波塔", insight: "高度 634 公尺，天氣晴朗時可遠眺富士山。" } },
+        { name: "明治神宮 (Meiji Jingu)", type: "spot", cost: 0, currency: "JPY", details: { location: "原宿", desc: "東京市中心的森林", history: "供奉明治天皇與昭憲皇太后。" } },
+        { name: "新宿 Omoide Yokocho", type: "food", cost: 4000, currency: "JPY", details: { location: "新宿", desc: "懷舊居酒屋巷弄", reason: "炭火燒鳥的味道是這裡的靈魂。" } },
+        { name: "澀谷 Shibuya Crossing", type: "spot", cost: 0, currency: "JPY", details: { location: "澀谷", desc: "全球最繁忙的交叉路口", insight: "每分鐘有三千人同時過馬路。" } },
+        { name: "代代木公園 (Yoyogi Park)", type: "spot", cost: 0, currency: "JPY", details: { location: "原宿", desc: "當地人最愛的休閒勝地", insight: "週末常有街頭藝人表演。" } },
+        { name: "阿美橫丁 (Ameyoko)", type: "shopping", cost: 2000, currency: "JPY", details: { location: "上野", desc: "充滿平民氣息的商店街", reason: "買便宜零食與藥妝的好地方。" } },
+        { name: "六本木之丘展望台", type: "spot", cost: 2000, currency: "JPY", details: { location: "六本木", desc: "欣賞東京鐵塔最佳觀景點", insight: "戶外 Sky Deck 非常震撼。" } },
+        { name: "銀座 (Ginza) 步行者天國", type: "shopping", cost: 0, currency: "JPY", details: { location: "銀座", desc: "頂級購物區的假日特權", insight: "週六日馬路全封，變身行人步行街。" } },
+        { name: "上野公園博物館群", type: "spot", cost: 600, currency: "JPY", details: { location: "上野", desc: "文化藝術氣息濃厚", history: "包含國立科學博物館與國立西洋美術館。" } },
+        { name: "新宿御苑 (Shinjuku Gyoen)", type: "spot", cost: 500, currency: "JPY", details: { location: "新宿", desc: "以前的皇家園林", insight: "春天賞櫻，秋天看銀杏，四季如畫。" } },
+        { name: "秋葉原 (Akihabara)", type: "shopping", cost: 0, currency: "JPY", details: { location: "千代田區", desc: "電子產品與ACG中心", reason: "二次元文化的天堂。" } },
+        { name: "中目黑目黑川漫步", type: "spot", cost: 0, currency: "JPY", details: { location: "中目黑", desc: "最Chill的河畔咖啡區", insight: "滿滿的質感小店。" } },
+        { name: "台場 TeamLab Borderless", type: "spot", cost: 3800, currency: "JPY", details: { location: "江東區", desc: "光影藝術沈浸式體驗", reason: "全球最紅的數位藝術展覽。" } },
+        { name: "三鷹之森吉卜力美術館", type: "spot", cost: 1000, currency: "JPY", details: { location: "三鷹", desc: "宮崎駿的夢幻世界", insight: "必看限定短篇動畫，門票需預約。" } },
+        { name: "惠比壽花園廣場 (Yebisu)", type: "spot", cost: 0, currency: "JPY", details: { location: "澀谷", desc: "時尚與懷舊並存的歐風廣場", insight: "惠比壽啤酒發源地。" } },
+        { name: "一蘭拉麵 (澀谷店)", type: "food", cost: 1200, currency: "JPY", details: { location: "澀谷", desc: "經典豚骨拉麵", reason: "自選湯頭鹹淡，必試加麵文化。" } },
+        { name: "敘敘苑燒肉 (新宿店)", type: "food", cost: 8000, currency: "JPY", details: { location: "新宿", desc: "家庭式高級燒肉", insight: "午餐時段性價比極高。" } },
+        { name: "篝 Kagari (雞白湯拉麵)", type: "food", cost: 1500, currency: "JPY", details: { location: "築地/銀座", desc: "米芝蓮推薦拉麵", reason: "濃郁奶香味的雞湯，極致順滑。" } }
     ],
     "Taipei": [
-        { time: "09:30", name: "故宮博物院", type: "spot", cost: 350, currency: "TWD", details: { location: "National Palace Museum", desc: "中華文化瑰寶", insight: "世界五大博物館之一，典藏近 70 萬件中華文物，其中翠玉白菜、肉形石等是鎮館之寶。" } },
-        { time: "12:30", name: "鼎泰豐小籠包", type: "food", cost: 800, currency: "TWD", details: { location: "Taipei 101", desc: "世界級美食", insight: "享譽國際的台灣小籠包名店，以皮薄餡多、湯汁鮮美聞名，是許多觀光客來台必訪的餐廳。" } },
-        { time: "15:00", name: "台北 101 觀景台", type: "spot", cost: 600, currency: "TWD", details: { location: "Taipei 101", desc: "市景盡收眼底", insight: "曾是世界第一高樓，登上觀景台可 360 度俯瞰台北市景，感受城市脈動。" } },
-        { time: "18:00", name: "士林夜市", type: "food", cost: 500, currency: "TWD", details: { location: "Shilin Night Market", desc: "雞排、珍珠奶茶", insight: "台北最具規模的夜市之一，匯集各式台灣小吃，如豪大大雞排、大腸包小腸、珍珠奶茶等，是體驗台灣夜市文化的好地方。" } }
+        { name: "國立故宮博物院", type: "spot", cost: 350, currency: "TWD", details: { location: "士林", desc: "中華文化瑰寶", history: "收藏世界首屈一指的中華文物。" } },
+        { name: "鼎泰豐 (101店)", type: "food", cost: 800, currency: "TWD", details: { location: "信義區", desc: "全球知名小籠包", reason: "米芝蓮推薦名店。" } },
+        { name: "台北 101 觀景台", type: "spot", cost: 600, currency: "TWD", details: { location: "信義區", desc: "曾為世界第一高樓", insight: "擁有全球最大的風阻尼球。" } },
+        { name: "大稻埕/迪化街", type: "spot", cost: 0, currency: "TWD", details: { location: "大同區", desc: "歷史悠久的貿易街區", history: "保留了清末到民國初年的紅磚建築。" } },
+        { name: "饒河街觀光夜市", type: "food", cost: 400, currency: "TWD", details: { location: "松山區", desc: "排隊小吃集散地", reason: "必食米芝蓮推介的胡椒餅。" } },
+        { name: "中正紀念堂", type: "spot", cost: 0, currency: "TWD", details: { location: "中正區", desc: "宏偉的藍白建築", history: "必看整點換崗儀式。" } },
+        { name: "淡水老街 & 漁人碼頭", type: "spot", cost: 100, currency: "TWD", details: { location: "淡水", desc: "日落最美的海邊小鎮", insight: "必吃阿給跟鐵蛋。" } },
+        { name: "松山文創園區", type: "spot", cost: 0, currency: "TWD", details: { location: "信義區", desc: "菸廠遺產轉型文創空間", insight: "裡面有全台最美的誠品書店。" } },
+        { name: "龍山寺", type: "spot", cost: 0, currency: "TWD", details: { location: "萬華", desc: "台北最具歷史的寺廟", history: "建築雕刻精美，香火鼎盛。" } },
+        { name: "寧夏夜市", type: "food", cost: 300, currency: "TWD", details: { location: "大同區", desc: "美食密度最高的夜市", insight: "在地台北人最愛去的夜市。" } },
+        { name: "華山 1914 文創園區", type: "spot", cost: 0, currency: "TWD", details: { location: "中正區", desc: "酒廠變身藝術天堂", insight: "常有特色展覽與選物店。" } },
+        { name: "象山登山步道", type: "spot", cost: 0, currency: "TWD", details: { location: "信義區", desc: "俯瞰 101 最美角度", insight: "爬 20 分鐘即可看到震撼夜景。" } },
+        { name: "林東芳牛肉麵", type: "food", cost: 300, currency: "TWD", details: { location: "中山區", desc: "台北牛肉麵代表", reason: "必加特製花椒牛油。" } },
+        { name: "阜杭豆漿 (華山市場)", type: "food", cost: 150, currency: "TWD", details: { location: "中正區", desc: "傳統台式早餐天花板", insight: "厚餅夾蛋是靈魂。" } },
+        { name: "上引水產 (Addiction Aquatic)", type: "food", cost: 1200, currency: "TWD", details: { location: "中山區", desc: "台版築地市場", reason: "立吞壽司新鮮又划算。" } },
+        { name: "永康街牛肉麵 & 芒果冰", type: "food", cost: 500, currency: "TWD", details: { location: "大安區", desc: "觀光客必訪美食街", insight: "思慕昔芒果冰消暑首選。" } },
+        { name: "大直 RAW 餐廳", type: "food", cost: 5800, currency: "TWD", details: { location: "中山區", desc: "米芝蓮二星江振誠主廚", reason: "預約困難，體驗精緻台法融合。" } }
+    ],
+    "Seoul": [
+        { name: "景福宮 (Gyeongbokgung)", type: "spot", cost: 3000, currency: "KRW", details: { location: "鐘路區", desc: "朝鮮王朝主要宮殿", history: "必看門將換崗儀式。" } },
+        { name: "廣藏市場 (Gwangjang Market)", type: "food", cost: 15000, currency: "KRW", details: { location: "鐘路區", desc: "百年傳統市場", reason: "綠豆餅與生牛肉是必嚐料理。" } },
+        { name: "北村韓屋村", type: "spot", cost: 0, currency: "KRW", details: { location: "三清洞", desc: "傳統韓屋建築群", insight: "穿著韓服在此拍照非常有韻味。" } },
+        { name: "南山首爾塔 (N Seoul Tower)", type: "spot", cost: 16000, currency: "KRW", details: { location: "南山", desc: "首爾永恆的地標", insight: "情人掛鎖的地點非常有名。" } },
+        { name: "明洞步行街 (Myeongdong)", type: "shopping", cost: 0, currency: "KRW", details: { location: "中區", desc: "購物與街頭甜點天堂", reason: "韓國美妝產品最齊全的地方。" } },
+        { name: "東大門設計廣場 (DDP)", type: "spot", cost: 0, currency: "KRW", details: { location: "東大門", desc: "紮哈·哈迪德設計的科幻建築", insight: "夜晚的 LED 玫瑰花海很美。" } },
+        { name: "弘大商圈 (Hongdae)", type: "spot", cost: 0, currency: "KRW", details: { location: "麻浦區", desc: "充滿青春活力的藝術區", insight: "晚上有很多街頭表演 (Busking)。" } },
+        { name: "聖水洞 (Seongsu-dong)", type: "spot", cost: 0, currency: "KRW", details: { location: "城東區", desc: "首爾的布魯克林", insight: "廢棄工廠改建成各式特色 Cafe。" } },
+        { name: "漢江公園 (漢江炸雞體驗)", type: "food", cost: 25000, currency: "KRW", details: { location: "各江邊", desc: "在漢江草地上叫外賣炸雞", insight: "這才是真正的首爾庶民浪漫。" } },
+        { name: "Starfield COEX 圖書館", type: "spot", cost: 0, currency: "KRW", details: { location: "江南區", desc: "超巨型開放式圖書館", insight: "巨大的書牆是拍照打卡之冠。" } },
+        { name: "鷺梁津水產市場", type: "food", cost: 50000, currency: "KRW", details: { location: "鷺梁津", desc: "首爾最大的海鮮市場", reason: "現買現煮，必吃長腳蟹與活章魚。" } },
+        { name: "神仙雪濃湯 (明洞店)", type: "food", cost: 12000, currency: "KRW", details: { location: "明洞", desc: "清爽滑順的牛骨湯", insight: "早午晚都適合吃的暖心美食。" } },
+        { name: "陳玉華一隻雞 (Dongdaemun)", type: "food", cost: 28000, currency: "KRW", details: { location: "東大門", desc: "蒜味濃郁的嫩煮全雞", reason: "最後加麵疙瘩簡直無敵。" } },
+        { name: "土俗村參雞湯", type: "food", cost: 19000, currency: "KRW", details: { location: "景福宮旁", desc: "韓國宮廷式補體名菜", insight: "裡面包著一整顆人蔘。" } },
+        { name: "BHC / Kyochon 炸雞", type: "food", cost: 22000, currency: "KRW", details: { location: "Citywide", desc: "韓式脆皮炸雞", reason: "蒜味蜂蜜與辣味是經典首選。" } }
+    ],
+    "Bangkok": [
+        { name: "大皇宮 & 玉佛寺", type: "spot", cost: 500, currency: "THB", details: { location: "拍那空", desc: "泰國王室建築瑰寶", history: "泰國最神聖的寺廟。" } },
+        { name: "Jay Fai (痣姐熱炒)", type: "food", cost: 1500, currency: "THB", details: { location: "舊城區", desc: "傳奇米芝蓮一星路邊攤", reason: "招牌黃金螃蟹蛋捲是世界級美味。" } },
+        { name: "鄭王廟 (Wat Arun)", type: "spot", cost: 100, currency: "THB", details: { location: "湄南河西岸", desc: "黎明寺", history: "瓷器碎片鑲嵌而成的主塔非常壯觀。" } },
+        { name: "鄭王廟伴手禮街", type: "shopping", cost: 0, currency: "THB", details: { location: "各處", desc: "便宜好買的民俗小物", insight: "大象褲跟絲巾應有盡有。" } },
+        { name: "唐人街 (Yaowarat Road)", type: "food", cost: 400, currency: "THB", details: { location: "耀華力路", desc: "夜晚的街頭美食天堂", reason: "必吃炭烤吐司跟魚翅撈飯。" } },
+        { name: "乍都乍週末市場 (Chatuchak)", type: "shopping", cost: 0, currency: "THB", details: { location: "莫奇", desc: "全球最大規模市集", insight: "超過一萬五千個攤位，逛到腿軟。" } },
+        { name: "ICONSIAM 暹羅天地", type: "shopping", cost: 0, currency: "THB", details: { location: "河畔", desc: "最奢華的購物商場", insight: "室內水上市場 SookSiam 很好逛。" } },
+        { name: "美功鐵道市場 (Maeklong)", type: "spot", cost: 200, currency: "THB", details: { location: "夜功府", desc: "火車穿過市場的神奇景象", insight: "攤販在火車經過時收合遮雨棚。" } },
+        { name: "丹能莎朵水上市場", type: "spot", cost: 500, currency: "THB", details: { location: "叻丕府", desc: "最經典的東方威尼斯", reason: "體驗小船購物與吃船麵。" } },
+        { name: "瑪哈泰寺 (樹中佛頭)", type: "spot", cost: 50, currency: "THB", details: { location: "大城 (Ayutthaya)", desc: "世界文化遺產", insight: "佛頭被菩提樹根包覆，奇景必看。" } },
+        { name: "王權 Mahanakhon Skywalk", type: "spot", cost: 900, currency: "THB", details: { location: "沙吞", desc: "泰國最高玻璃觀景台", insight: "站在 314 公尺高的透明地板上。" } },
+        { name: "建興酒家 (Somboon Seafood)", type: "food", cost: 1000, currency: "THB", details: { location: "Citywide", desc: "曼谷海鮮名店", reason: "招牌咖哩炒螃蟹濃郁下飯。" } },
+        { name: "Saneh Jaan (米芝蓮泰餐)", type: "food", cost: 2500, currency: "THB", details: { location: "無線電路", desc: "體驗古代泰國皇室料理", history: "追求極致正宗的傳統泰味。" } },
+        { name: "Thip Samai (泰式炒金邊粉)", type: "food", cost: 200, currency: "THB", details: { location: "各分店", desc: "曼谷最強 Pad Thai", reason: "必點蛋包炒麵配鮮榨甜橙汁。" } },
+        { name: "After You 甜點店", type: "food", cost: 350, currency: "THB", details: { location: "各商場", desc: "曼谷最強冰品甜點", insight: "泰奶挫冰 (Kakigori) 必吃。" } }
+    ],
+    "Singapore": [
+        { time: "10:00", name: "濱海灣花園 (Gardens by the Bay)", type: "spot", cost: 28, currency: "SGD", details: { location: "Marina Bay", desc: "未來感大花園", insight: "擎天樹叢 (Supertree Grove) 在夜晚的燈光秀非常震撼，花穹內種滿了世界各地的植物。" } },
+        { time: "13:00", name: "天天海南雞飯 (麥士威)", type: "food", cost: 8, currency: "SGD", details: { location: "Maxwell Food Centre", desc: "星級國民美食", reason: "雞肉鮮嫩多汁，配上雞油飯，是新加坡最經典的午餐選擇。" } }
     ],
     "London": [
-        { time: "15:30", name: "倫敦塔橋", type: "spot", cost: 12, currency: "GBP", details: { location: "Tower Bridge", desc: "標誌性建築" } },
-        { time: "19:00", name: "西區音樂劇", type: "spot", cost: 80, currency: "GBP", details: { location: "West End", desc: "世界級表演" } }
+        { time: "15:30", name: "倫敦塔橋", type: "spot", cost: 12, currency: "GBP", details: { location: "Tower Bridge", desc: "標誌性建築", history: "建於 1886-1894 年，為維多利亞時代的工程奇蹟。橋身可開合讓大船通過，是倫敦泰晤士河上的地標。" } },
+        { time: "19:00", name: "西區音樂劇", type: "spot", cost: 80, currency: "GBP", details: { location: "West End", desc: "世界級表演", history: "倫敦西區與紐約百老匯齊名，是世界英語戲劇的中心，擁有數百年歷史的劇院群。" } }
     ]
 };
 
-// 通用後備數據
 const FALLBACK_SUGGESTIONS = (city) => [
-    { time: "09:00", name: `${city} 市中心地標導覽`, type: "spot", cost: 0, details: { location: `${city} City Center`, desc: "探索城市核心區" } },
-    { time: "12:30", name: `${city} 人氣餐廳午餐`, type: "food", cost: 20, details: { location: `${city} Popular Restaurant`, desc: "品嚐當地特色料理" } },
-    { time: "15:00", name: `${city} 博物館/美術館`, type: "spot", cost: 15, details: { location: `${city} Museum`, desc: "文化藝術之旅" } },
-    { time: "18:00", name: `${city} 購物區/夜市`, type: "shopping", cost: 50, details: { location: `${city} Shopping District`, desc: "購買紀念品與特產" } }
+    {
+        time: "15:00", name: `${city} 國立博物館`, type: "spot", cost: 15,
+        details: {
+            location: `${city} National Museum`,
+            desc: "文化藝術之旅",
+            insight: "館藏豐富，是了解該國歷史文化的最佳窗口。",
+            history: "成立於 19 世紀，建築本身就是一項藝術品，經歷多次擴建以容納不斷增加的藏品。"
+        }
+    },
+    { time: "18:00", name: `${city} 購物大道`, type: "shopping", cost: 50, details: { location: `${city} Main Street`, desc: "購買紀念品與特產", insight: "匯集國際品牌與當地設計師小店，是購物狂的天堂。" } }
 ];
 
 /**
@@ -195,6 +754,23 @@ export async function generateAISuggestions(city, existingItems = []) {
     // 隨機選擇 3-4 個建議
     return suggestions.sort(() => 0.5 - Math.random()).slice(0, 4);
 }
+
+// ... (parseTripImage, suggestMissingInfo, generateAiTripName, generatePackingList remain similar)
+// But I need to preserve them. The tool `replace_file_content` replaces a chunk. 
+// I am replacing from line 134 to end, which is where MOCK_DB and optimiseSchedule were.
+// Wait, generatePackingList and others were IN BETWEEN MOCK_DB and optimizeSchedule in original file?
+// No, MOCK_DB was line 134-158. FALLBACK was 161. generateAISuggestions 174.
+// parseTripImage 203. suggestMissingInfo 250. generateAiTripName 279. generatePackingList 296.
+// optimizeSchedule 361.
+
+// I must be careful not to delete the middle functions.
+// I will use `replace_file_content` for MOCK_DB first, then a separate one for `optimizeSchedule`.
+
+// Let's replace MOCK_DB and FALLBACK_SUGGESTIONS and generateAISuggestions first.
+// Range: Line 134 to 197.
+
+// Then I will replace optimizeSchedule at the end.
+
 /**
  * 模擬 AI 視覺識別 (取代真實 API)
  * @param {File} file 上傳的圖片或 PDF
@@ -298,56 +874,87 @@ export const generatePackingList = async (trip, weatherData) => {
     await new Promise(r => setTimeout(r, 1500));
 
     const items = [];
-    const pushItem = (name, cat) => items.push({ id: Date.now() + Math.random(), name, category: cat, checked: false, aiSuggested: true });
+    const pushItem = (name, catLabel) => items.push({ id: Date.now() + Math.random(), name, category: catLabel, checked: false, aiSuggested: true });
 
-    // 1. Basics (Documents & Electronics)
-    pushItem("護照 / 簽證", "documents");
-    pushItem("身份證 / 駕照", "documents");
-    pushItem("機票 / 酒店確認單", "documents");
-    pushItem("手機 / 充電線", "electronics");
-    pushItem("外遊萬能插座", "electronics");
-    pushItem("外幣現金 / 信用卡", "documents");
-    pushItem("個人藥物 / 暈浪丸", "medicine");
+    // 1. 📋 必要文件 (Always Required)
+    pushItem("護照 / 簽證 / 身份證", "📋 必要文件");
+    pushItem("機票行程單 / 酒店預訂確認信", "📋 必要文件");
+    pushItem("外幣現金 / 信用卡 / 提款卡", "📋 必要文件");
+    pushItem("旅遊保險單副本", "📋 必要文件");
 
-    // 2. Weather Based
+    // 2. 🔌 電子設備
+    pushItem("手機 / 充電線 / 充電頭", "🔌 電子設備");
+    pushItem("大容量行動電源 (火牛)", "🔌 電子設備");
+    pushItem("外遊萬能插座 (萬國頭)", "🔌 電子設備");
+    pushItem("eSIM / SIM 卡 / WiFi 蛋", "🔌 電子設備");
+    pushItem("耳機 (降噪效果佳者佳)", "🔌 電子設備");
+
+    // 3. 💊 醫藥與個人衛生
+    pushItem("個人長期藥物 / 止痛藥", "💊 醫藥盒");
+    pushItem("感冒成藥 / 腸胃藥 / 暈浪丸", "💊 醫藥盒");
+    pushItem("酒精抹紙 / 口罩 / 濕紙巾", "🩹 衛生防護");
+    pushItem("牙刷 / 牙膏 / 牙線", "🧴 洗護保養");
+    pushItem("洗面奶 / 保濕乳液", "🧴 洗護保養");
+    pushItem("小型摺疊衣架", "🎒 隨身裝備");
+
+    // 4. 👕 衣物鞋履 (Weather & Activity Based)
     const temp = parseInt(weatherData?.temp || "20");
     const desc = (weatherData?.desc || "").toLowerCase();
 
     if (temp < 15) {
-        pushItem("保暖大衣 / 羽絨", "clothes");
-        pushItem("頸巾 / 手套", "clothes");
-        pushItem("發熱衣 (Heattech)", "clothes");
-    } else if (temp > 25) {
-        pushItem("短袖 T-Shirt", "clothes");
-        pushItem("短褲 / 短裙", "clothes");
-        pushItem("太陽眼鏡", "misc");
-        pushItem("防曬乳", "toiletries");
+        pushItem("保暖大衣 / 羽絨", "👕 衣物鞋履");
+        pushItem("發熱內衣 (Heattech)", "👕 衣物鞋履");
+        pushItem("保暖圍巾 / 手套 / 毛帽", "👕 衣物鞋履");
+        pushItem("潤唇膏 / 強力護手霜", "🧴 洗護保養");
+    } else if (temp > 28) {
+        pushItem("通爽排汗短袖 T-Shirt", "👕 衣物鞋履");
+        pushItem("遮陽帽 / 太陽眼鏡", "🕶️ 時尚配件");
+        pushItem("止汗噴霧 / 涼感濕紙巾", "🧴 洗護保養");
+        pushItem("防曬乳액 (高系數)", "🧴 洗護保養");
     } else {
-        pushItem("薄外套 / 針織衫", "clothes");
-        pushItem("長褲 / 牛仔褲", "clothes");
+        pushItem("薄外套 (早晚防風)", "👕 衣物鞋履");
+        pushItem("長褲 / 牛仔褲", "👕 衣物鞋履");
     }
 
-    if (desc.includes("雨") || desc.includes("rain")) {
-        pushItem("雨傘 / 雨衣", "misc");
-        pushItem("防水鞋", "clothes");
+    if (desc.includes('rain') || desc.includes('shower') || desc.includes('雨')) {
+        pushItem("摺疊傘 / 輕便雨衣", "🌂 雨具/雜務");
+        pushItem("鞋子防水防污噴霧", "🌂 雨具/雜務");
     }
 
-    // 3. Activity Based (Scan Itinerary)
-    // Flatten itinerary
-    const allItems = Object.values(trip.itinerary || {}).flat();
-    const allText = allItems.map(i => (i.name + (i.desc || "")).toLowerCase()).join(" ");
+    // 5. 🎒 隨身裝備 (Smart Detection)
+    const allActivities = trip?.days?.flatMap(d => d.items) || (trip?.itinerary ? Object.values(trip.itinerary).flat() : []);
+    const names = allActivities.map(i => ((i.name || "") + (i.details?.desc || "")).toLowerCase());
 
-    if (allText.includes("游水") || allText.includes("swim") || allText.includes("beach") || allText.includes("海灘")) {
-        pushItem("泳衣 / 泳褲", "clothes");
-        pushItem("拖鞋", "clothes");
-        pushItem("防水袋", "misc");
+    if (names.some(n => n.includes('行山') || n.includes('步道') || n.includes('hiking') || n.includes('山'))) {
+        pushItem("專業行山鞋 / 抓地運動鞋", "👕 衣物鞋履");
+        pushItem("輕便排汗背包", "🎒 隨身裝備");
+        pushItem("水樽 / 折疊水袋", "🎒 隨身裝備");
+        pushItem("防蚊噴霧", "💊 醫藥盒");
     }
 
-    if (allText.includes("行山") || allText.includes("hike") || allText.includes("山")) {
-        pushItem("行山鞋", "clothes");
-        pushItem("運動裝", "clothes");
-        pushItem("蚊怕水", "medicine");
+    if (names.some(n => n.includes('泳') || n.includes('沙灘') || n.includes('beach') || n.includes('pool') || n.includes('水上'))) {
+        pushItem("泳衣 / 泳褲 / 泳鏡", "👕 衣物鞋履");
+        pushItem("超輕量速乾浴巾", "👕 衣物鞋履");
+        pushItem("手機專用防水袋", "🎒 隨身裝備");
     }
+
+    if (names.some(n => n.includes('高級') || n.includes('米芝蓮') || n.includes('fine dining') || n.includes('正裝'))) {
+        pushItem("一套體面西裝 / 優雅連衣裙", "👕 衣物鞋履");
+        pushItem("休閒皮鞋 / 平底鞋", "👕 衣物鞋履");
+    }
+
+    if (names.some(n => n.includes('shopping') || n.includes('市場') || n.includes('夜市') || n.includes('購物'))) {
+        pushItem("大容量可摺疊購物袋", "🎒 隨身裝備");
+        pushItem("舒適耐穿的步行鞋", "👕 衣物鞋履");
+        pushItem("退稅所需現金小筆、夾子", "📋 必要文件");
+    }
+
+    // 6. 🏠 居家與舒適
+    pushItem("旅行裝洗髮精 / 沐浴露", "🧴 洗護保養");
+    pushItem("內衣褲 (建議多帶兩套)", "👕 衣物鞋履");
+    pushItem("襪子 (厚薄適中)", "👕 衣物鞋履");
+    pushItem("舒適睡衣 / 居家服", "👕 衣物鞋履");
+    pushItem("眼罩 / 耳塞 (睡眠保障)", "💤 舒適小物");
 
     return items;
 };
@@ -381,29 +988,54 @@ export async function optimizeSchedule(items) {
         // Add Transport Advice if not present and next item exists
         if (!item.transport && index < newItems.length - 1) {
             const nextItem = newItems[index + 1];
-            // Mock Transport Logic based on random
-            const modes = [
-                { type: 'Walk', duration: '15min', icon: 'footprints' },
-                { type: 'Metro', duration: '20min', price: 'JPY 200', icon: 'train' },
-                { type: 'Taxi', duration: '10min', price: 'JPY 1500', icon: 'car' }
-            ];
-            const mode = modes[Math.floor(Math.random() * modes.length)];
-            item.transport = {
-                mode: mode.type,
-                duration: mode.duration,
-                price: mode.price,
-                desc: `${mode.type} to ${nextItem.name}`
-            };
+
+            // Smart Logic:
+            // 1. If item has explicit transport_tip, use it as a hint
+            // 2. If short distance (mocked by same type or ID proximity), Walk
+            // 3. Else Metro/Taxi
+
+            const isShortDist = Math.random() > 0.6; // Mock distance logic
+
+            if (item.details?.transport_tip) {
+                item.transport = {
+                    mode: 'Tips',
+                    duration: 'See Info',
+                    price: 'Free',
+                    desc: `💡 ${item.details.transport_tip}`
+                };
+            } else if (isShortDist) {
+                item.transport = {
+                    mode: 'Walk',
+                    duration: '15min',
+                    price: 'Free',
+                    desc: `步行前往 ${nextItem.name}，沿途欣賞街景`
+                };
+            } else {
+                item.transport = {
+                    mode: 'Metro',
+                    duration: '20min',
+                    price: 'JPY 200', // Should be dynamic based on city currency but keeping simple mock
+                    desc: `搭乘地鐵至 ${nextItem.name} (最快路線)`
+                };
+            }
         }
 
         // Add "Smart Tag"
         if (!item.smartTag) {
-            const tags = ["🔥 熱門", "📸 打卡", "🍜 必吃", "📅 需預約"];
-            if (Math.random() > 0.7) item.smartTag = tags[Math.floor(Math.random() * tags.length)];
+            if (item.details?.accolades) {
+                item.smartTag = `🏅 ${item.details.accolades[0]}`;
+            } else if (item.details?.history) {
+                item.smartTag = "📜 歷史悠久";
+            } else {
+                const tags = ["🔥 熱門", "📸 打卡", "📅 需預約"];
+                if (Math.random() > 0.7) item.smartTag = tags[Math.floor(Math.random() * tags.length)];
+            }
         }
 
         return item;
     });
 
     return newItems;
-}
+};
+
+export { SHOPPING_DB, MOCK_DB, HOTEL_DB };

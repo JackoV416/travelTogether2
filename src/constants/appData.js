@@ -5,11 +5,23 @@ import {
 
 // --- Versioning & Metadata ---
 export const AUTHOR_NAME = "Jamie Kwok";
-export const APP_VERSION = "V0.19.0-PreRelease";
+export const APP_VERSION = "V0.20.1";
 
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V0.20.1",
+        date: "2025-12-18",
+        desc: {
+            "zh-TW": "AI 數據大爆發 & 行李清單進化",
+            "en": "AI Data Expansion & Smart Packing"
+        },
+        details: {
+            "zh-TW": "• 數據庫擴充：MOCK_DB 新增 60+ 景點美食，長行程不再重覆\n• 購物清單：四大城市類別全面加碼，藥妝時尚齊全\n• 智能行李：根據行山/游水/米芝蓮活動自動推薦裝備\n• 邏輯優化：修正去重與步行檢測，價格對齊在地水平",
+            "en": "• Database Expansion: 60+ new spots in MOCK_DB for variety\n• Shopping Boost: More items in Cosmetics/Fashion/Electronics\n• Activity Packing: Smart gear suggestions for Hiking/Pool/Michelin\n• Logic Refinement: Fixed duplication & localized prices"
+        }
+    },
     {
         ver: "V0.19.0",
         date: "2025-12-18",
