@@ -56,6 +56,8 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
     const [loadingFlights, setLoadingFlights] = useState(true);
     const [transports, setTransports] = useState([]);
     const [loadingTransports, setLoadingTransports] = useState(true);
+    const [connectivity, setConnectivity] = useState([]);
+    const [loadingConnectivity, setLoadingConnectivity] = useState(true);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const { sendNotification } = useNotifications(user);
@@ -94,7 +96,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
             const userCurrency = globalSettings?.currency || 'HKD';
             const rates = exchangeRates || {};
 
-            setLoadingHotels(true); setLoadingFlights(true); setLoadingTransports(true);
+            setLoadingHotels(true); setLoadingFlights(true); setLoadingTransports(true); setLoadingConnectivity(true);
 
             // Hotels
             try {
@@ -113,6 +115,12 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                 const tData = await travelInfoService.getTransports(userCurrency, rates);
                 setTransports(tData);
             } catch (e) { console.error(e); } finally { setLoadingTransports(false); }
+
+            // Connectivity
+            try {
+                const cData = await travelInfoService.getConnectivity(userCurrency, rates);
+                setConnectivity(cData);
+            } catch (e) { console.error(e); } finally { setLoadingConnectivity(false); }
         };
         loadTravelInfo();
 
@@ -540,20 +548,29 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                         <div className={`${glassCard(isDarkMode)} p-6 flex flex-col`}>
                             <div className="flex justify-between items-center mb-4">
                                 <h4 className="font-bold flex items-center gap-2 text-teal-400"><Wifi className="w-5 h-5" /> 網卡 / WiFi</h4>
-                                <span className="text-[9px] opacity-40 bg-white/10 px-2 py-0.5 rounded font-mono uppercase tracking-widest">Static</span>
+                                <span className="text-[9px] opacity-40 bg-white/10 px-2 py-0.5 rounded font-mono uppercase tracking-widest">{loadingConnectivity ? 'Loading...' : 'Live'}</span>
                             </div>
                             <div className="space-y-2">
-                                {INFO_DB.connectivity?.map((c, i) => (
-                                    <a key={i} href={c.url} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-all flex items-center justify-between gap-2 group">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="font-semibold text-sm group-hover:text-teal-400 transition-colors">{c.name}</div>
-                                            <div className="text-[10px] opacity-50">{c.type} • {c.regions}</div>
+                                {loadingConnectivity ? (
+                                    [...Array(3)].map((_, i) => (
+                                        <div key={i} className="p-3 bg-white/5 rounded-xl border border-white/5 flex justify-between animate-pulse">
+                                            <div className="h-4 bg-white/10 rounded w-1/3"></div>
+                                            <div className="h-4 bg-white/10 rounded w-1/4"></div>
                                         </div>
-                                        <span className="font-bold text-sm text-teal-400">{c.price}</span>
-                                    </a>
-                                ))}
+                                    ))
+                                ) : (
+                                    connectivity.map((c, i) => (
+                                        <a key={i} href={c.url} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-all flex items-center justify-between gap-2 group">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-semibold text-sm group-hover:text-teal-400 transition-colors">{c.name}</div>
+                                                <div className="text-[10px] opacity-50">{c.type} • {c.regions}</div>
+                                            </div>
+                                            <span className="font-bold text-sm text-teal-400">{c.price}</span>
+                                        </a>
+                                    ))
+                                )}
                             </div>
-                            <div className="mt-3 text-[9px] opacity-40 text-center">Data: {INFO_DB.connectivity?.map(c => c.provider).join(' / ')}</div>
+                            <div className="mt-3 text-[9px] opacity-40 text-center">Data: Operators / Klook (Simulated)</div>
                         </div>
                     </div>
 

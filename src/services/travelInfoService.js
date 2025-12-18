@@ -111,6 +111,26 @@ class TravelInfoService {
 
         return transports;
     }
+    /**
+     * 獲取網卡/WiFi 方案
+     */
+    async getConnectivity(userCurrency = 'HKD', rates = {}) {
+        await delay(randomInt(200, 800)); // 模擬較快的回應
+
+        let items = [...INFO_DB.connectivity];
+
+        items = items.map(c => {
+            const basePrice = c.priceVal || parseInt(c.price.replace(/[^0-9]/g, '')) || 50;
+            const finalPrice = convertCurrency(basePrice, 'HKD', userCurrency, rates);
+
+            return {
+                ...c,
+                price: formatPrice(finalPrice, userCurrency)
+            };
+        });
+
+        return items;
+    }
 }
 
 export const travelInfoService = new TravelInfoService();
