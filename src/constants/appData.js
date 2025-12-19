@@ -4,13 +4,57 @@ import {
 
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
-export const APP_VERSION = 'V0.24.1';
-export const APP_VERSION_TAG = 'Osaka Express (Hotfix)';
-export const APP_LAST_UPDATE = '2025-02-28';
+export const APP_VERSION = 'V0.26.0-RC';
+export const APP_VERSION_TAG = 'AI Resilience (Release Candidate)';
+export const APP_LAST_UPDATE = '2025-12-19';
 
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V0.26.0-RC",
+        tag: "AI Resilience (RC)",
+        date: "2025-12-19",
+        desc: {
+            "zh-TW": "AI 高可用架構 - 多 Key 輪換 + 每日限額",
+            "en": "AI Resilience - Multi-Key Rotation + Daily User Limits"
+        },
+        details: {
+            "zh-TW": [
+                "🔑 支援 5 個 API Key 自動輪換",
+                "🔄 3 個 Model 自動切換 (gemini-2.5-flash → 2.5-flash-lite → 1.5-flash)",
+                "⏱️ 智能重試 + 指數退避 Backoff",
+                "🛡️ 每用戶每日 20 次 AI 限額",
+                "📊 Console 警告剩餘次數"
+            ],
+            "en": [
+                "🔑 5 API Keys auto-rotation support",
+                "🔄 3 Model fallback chain",
+                "⏱️ Smart retry with exponential backoff",
+                "🛡️ Per-user daily limit (20 calls)",
+                "📊 Console warning for remaining quota"
+            ]
+        }
+    },
+    {
+        ver: "V0.25.0",
+        tag: "Mobile First",
+        date: "2025-02-28",
+        desc: {
+            "zh-TW": "Mobile First - PWA 離線模式與手機介面革新",
+            "en": "Mobile First - PWA Offline Mode & Mobile UI Overhaul"
+        },
+        details: {
+            "zh-TW": "• 📱 PWA 支援：可安裝至手機主畫面，支援離線瀏覽行程。\n• 👆 手指友善：全新底部導航欄 (Itinerary/Packing/Budget)，單手操作更順手。\n• 🛡️ Error Boundary：新增防閃退保護網，提升穩定性。\n• 🚀 效能優化：靜態資源快取策略，載入速度提升。",
+            "en": "• 📱 PWA Support: Installable App with offline capability.\n• 👆 Mobile UI: New Bottom Navigation for one-handed use.\n• 🛡️ Stability: Added Error Boundaries to prevent crashes.\n• 🚀 Performance: Optimized asset caching."
+        },
+        changes: [
+            "Feat: PWA Manifest & Service Worker",
+            "UI: Mobile Bottom Navigation Bar",
+            "Feat: Error Boundary Implementation",
+            "Meta: Viewport user-scalable=no"
+        ]
+    },
     {
         ver: "V0.24.1",
         tag: "Osaka Express Hotfix",

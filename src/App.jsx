@@ -15,8 +15,10 @@ import TripExportImportModal from './components/Modals/TripExportImportModal';
 import SmartImportModal from './components/Modals/SmartImportModal';
 import NotificationSystem from './components/Shared/NotificationSystem';
 import OfflineBanner from './components/Shared/OfflineBanner';
+import ReloadPrompt from './components/Shared/ReloadPrompt';
 import { useNotifications } from './hooks/useNotifications';
 import AIGeminiModal from './components/Modals/AIGeminiModal';
+import ErrorBoundary from './components/Shared/ErrorBoundary';
 
 // --- V0.16.2 Refactored Imports ---
 import {
@@ -769,38 +771,53 @@ const App = () => {
         <div className={`min-h-screen transition-colors duration-500 font-sans selection:bg-indigo-500/30 ${isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-slate-50 text-gray-900'}`}>
             <NotificationSystem notifications={notifications} setNotifications={setNotifications} isDarkMode={isDarkMode} />
             <OfflineBanner isDarkMode={isDarkMode} />
+            <ReloadPrompt />
             {/* Background Image (Global) */}
             <div className="fixed inset-0 z-0 opacity-20 pointer-events-none transition-all duration-1000" style={{ backgroundImage: `url(${globalBg})`, backgroundSize: 'cover' }}></div>
             <div className="relative z-10 flex-grow">
                 {view !== 'tutorial' && <Header title="✈️ Travel Together" user={user} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} onLogout={() => signOut(auth)} onBack={view !== 'dashboard' ? () => setView('dashboard') : null} onTutorialStart={() => setView('tutorial')} onViewChange={setView} onOpenUserSettings={() => setIsSettingsOpen(true)} onOpenVersion={() => setIsVersionOpen(true)} notifications={notifications} onRemoveNotification={removeNotification} onMarkNotificationsRead={markNotificationsRead} />}
                 {view === 'dashboard' && (
-                    <Dashboard
-                        user={user}
-                        onSelectTrip={(t) => { setSelectedTrip(t); setView('detail'); setIsPreviewMode(false); }}
-                        isDarkMode={isDarkMode}
-                        setGlobalBg={setGlobalBg}
-                        globalSettings={globalSettings}
-                        exchangeRates={exchangeRates}
-                        weatherData={weatherData}
-                        onViewChange={setView}
-                        onOpenSettings={() => setIsSettingsOpen(true)}
-                    />
+                    <ErrorBoundary fallbackMessage="儀表板載入失敗，請重新整理">
+                        <Dashboard
+                            user={user}
+                            onSelectTrip={(t) => { setSelectedTrip(t); setView('detail'); setIsPreviewMode(false); }}
+                            isDarkMode={isDarkMode}
+                            setGlobalBg={setGlobalBg}
+                            globalSettings={globalSettings}
+                            exchangeRates={exchangeRates}
+                            weatherData={weatherData}
+                            onViewChange={setView}
+                            onOpenSettings={() => setIsSettingsOpen(true)}
+                        />
+                    </ErrorBoundary>
                 )}
                 {view === 'detail' && (
-                    <TripDetail
-                        tripData={isPreviewMode ? previewTrip : selectedTrip}
-                        user={user}
-                        isDarkMode={isDarkMode}
-                        setGlobalBg={setGlobalBg}
-                        isSimulation={false}
-                        isPreview={isPreviewMode}
-                        globalSettings={globalSettings}
-                        onBack={() => { setView('dashboard'); window.history.replaceState({}, '', '/'); }}
-                        exchangeRates={exchangeRates}
-                        weatherData={weatherData}
-                        onOpenSmartImport={() => setIsSmartImportModalOpen(true)}
-                    />
+                    <ErrorBoundary fallbackMessage="行程詳情載入失敗，請重新整理">
+                        <TripDetail
+                            tripData={isPreviewMode ? previewTrip : selectedTrip}
+                            user={user}
+                            isDarkMode={isDarkMode}
+                            setGlobalBg={setGlobalBg}
+                            isSimulation={false}
+                            isPreview={isPreviewMode}
+                            globalSettings={globalSettings}
+                            onBack={() => { setView('dashboard'); window.history.replaceState({}, '', '/'); }}
+                            exchangeRates={exchangeRates}
+                            weatherData={weatherData}
+                            onOpenSmartImport={() => {
+                                // Smart Import needs trip context.
+                                // It seems onOpenSmartImport is passed to TripDetailContent via TripDetail.
+                                // We need to check if we need to pass a handler here or if TripDetail handles it internally?
+                                // Looking at TripDetail props above, it accepts onOpenSmartImport.
+                                // Let's pass the handler to open the modal state in App
+                                setSelectedImportTrip(isPreviewMode ? previewTrip : selectedTrip);
+                                setIsSmartImportModalOpen(true);
+                            }}
+                            onUpdateSimulationTrip={null} // Not used for real/preview trips here? Or maybe we should?
+                        />
+                    </ErrorBoundary>
                 )}
+
                 {view === 'tutorial' && <div className="h-screen flex flex-col"><div className="p-4 border-b flex gap-4"><button onClick={() => { setView('dashboard'); setIsPreviewMode(false); }}><ChevronLeft /></button> 模擬模式 (東京範例)</div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} isPreview={false} globalSettings={globalSettings} exchangeRates={exchangeRates} weatherData={weatherData} onOpenSmartImport={() => setIsSmartImportModalOpen(true)} /></div></div>}
             </div>
             {view !== 'tutorial' && <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} />}

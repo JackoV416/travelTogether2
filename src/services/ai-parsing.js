@@ -1,7 +1,252 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "YOUR_API_KEY_HERE";
-const genAI = new GoogleGenerativeAI(API_KEY);
+// --- Multi-API Key + Multi-Model Configuration ---
+// Add multiple keys in .env: VITE_GEMINI_API_KEY, VITE_GEMINI_API_KEY_2, etc.
+const API_KEYS = [
+    import.meta.env.VITE_GEMINI_API_KEY,
+    import.meta.env.VITE_GEMINI_API_KEY_2,
+    import.meta.env.VITE_GEMINI_API_KEY_3,
+    import.meta.env.VITE_GEMINI_API_KEY_4,
+    import.meta.env.VITE_GEMINI_API_KEY_5,
+].filter(Boolean); // Remove undefined keys
+
+if (API_KEYS.length === 0) {
+    console.warn("[Gemini AI] No API keys found. Add VITE_GEMINI_API_KEY to .env");
+    API_KEYS.push("YOUR_API_KEY_HERE");
+}
+
+// Model priority chain: Try these in order when one hits quota
+const MODEL_CHAIN = [
+    "gemini-2.5-flash",      // Primary: Good balance of speed/quality
+    "gemini-2.5-flash-lite", // Fallback: Faster, lighter
+    "gemini-1.5-flash",      // Legacy fallback
+];
+
+let currentKeyIndex = 0;
+let currentModelIndex = 0;
+
+// Create GenAI instances for each API key
+const genAIInstances = API_KEYS.map(key => new GoogleGenerativeAI(key));
+
+/**
+ * 🔑 Get current GenAI instance
+ */
+function getGenAI() {
+    return genAIInstances[currentKeyIndex];
+}
+
+/**
+ * 🔄 Get model with automatic fallback on quota errors
+ */
+function getModel() {
+    return getGenAI().getGenerativeModel({ model: MODEL_CHAIN[currentModelIndex] });
+}
+
+/**
+ * 🎯 Switch to next model in chain
+ * @returns {boolean} True if successfully switched
+ */
+function rotateToNextModel() {
+    if (currentModelIndex < MODEL_CHAIN.length - 1) {
+        currentModelIndex++;
+        console.log(`[Gemini AI] 🔄 Rotating to model: ${MODEL_CHAIN[currentModelIndex]}`);
+        return true;
+    }
+    return false;
+}
+
+/**
+ * 🔑 Switch to next API key (and reset model index)
+ * @returns {boolean} True if successfully switched
+ */
+function rotateToNextKey() {
+    if (currentKeyIndex < API_KEYS.length - 1) {
+        currentKeyIndex++;
+        currentModelIndex = 0; // Reset to first model for new key
+        console.log(`[Gemini AI] 🔑 Switching to API Key #${currentKeyIndex + 1} (${API_KEYS.length} total)`);
+        return true;
+    }
+    return false;
+}
+
+/**
+ * ⏱️ Delay helper for retry backoff
+ */
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * 🔁 Smart API call with retry + model rotation + key rotation + usage limit
+ * Strategy: Check limit → Try all models with Key 1 → Try all models with Key 2 → ...
+ * @param {Function} apiFn - Async function that makes the API call
+ * @param {number} maxRetries - Max retry attempts per model
+ * @param {boolean} trackUsage - Whether to track this call against daily limit
+ * @returns {Promise<any>} API response
+ */
+async function callWithSmartRetry(apiFn, maxRetries = 2, trackUsage = true) {
+    // Check usage limit first (if tracking is enabled)
+    if (trackUsage) {
+        const usage = getUsageData();
+        const remaining = DEFAULT_DAILY_LIMIT - usage.count;
+
+        if (usage.count >= DEFAULT_DAILY_LIMIT) {
+            const error = new Error(`AI_LIMIT_EXCEEDED: 你今日已經用咗 ${DEFAULT_DAILY_LIMIT} 次 AI 功能，請聽日再試！`);
+            error.code = "AI_LIMIT_EXCEEDED";
+            error.usage = { used: usage.count, remaining: 0, total: DEFAULT_DAILY_LIMIT };
+            throw error;
+        }
+
+        // Warn if approaching limit
+        if (remaining <= 5) {
+            console.warn(`[AI Limiter] ⚠️ 仲淨返 ${remaining} 次 AI 使用量`);
+        }
+    }
+
+    let lastError = null;
+
+    // Try each API key
+    for (let keyAttempt = 0; keyAttempt < API_KEYS.length; keyAttempt++) {
+        // Try each model in chain
+        for (let modelAttempt = 0; modelAttempt < MODEL_CHAIN.length; modelAttempt++) {
+            // Retry within each model
+            for (let retry = 0; retry <= maxRetries; retry++) {
+                try {
+                    const result = await apiFn(getModel());
+                    // Success! Track usage if enabled
+                    if (trackUsage) {
+                        incrementUsage();
+                    }
+                    return result;
+                } catch (error) {
+                    lastError = error;
+                    const errorMsg = error.message || "";
+
+                    // Rate limit - try waiting first
+                    if (errorMsg.includes("429") || errorMsg.includes("quota")) {
+                        if (retry < maxRetries) {
+                            const waitTime = (retry + 1) * 3000; // 3s, 6s backoff
+                            console.warn(`[Gemini AI] ⏳ Rate limited. Waiting ${waitTime / 1000}s...`);
+                            await delay(waitTime);
+                            continue;
+                        }
+                        // All retries failed for this model, try next model
+                        if (rotateToNextModel()) {
+                            break; // Break retry loop, continue model loop
+                        }
+                        // All models exhausted for this key, try next key
+                        if (rotateToNextKey()) {
+                            break; // Break model loop, continue key loop
+                        }
+                    }
+
+                    // Other errors - don't retry
+                    if (!errorMsg.includes("429") && !errorMsg.includes("503")) {
+                        throw error;
+                    }
+                }
+            }
+        }
+    }
+
+    // All keys, models, and retries exhausted
+    console.error("[Gemini AI] ❌ All API keys and models exhausted!");
+    throw lastError;
+}
+
+// ============================================
+// 🔒 PER-USER DAILY AI USAGE LIMITER
+// ============================================
+
+const AI_USAGE_KEY = "travelTogether_aiUsage";
+const DEFAULT_DAILY_LIMIT = 20; // Configurable: Max AI calls per user per day
+
+/**
+ * 📊 Get today's date string (YYYY-MM-DD)
+ */
+function getTodayKey() {
+    return new Date().toISOString().split('T')[0];
+}
+
+/**
+ * 📈 Get current AI usage data
+ * @returns {{ date: string, count: number }}
+ */
+function getUsageData() {
+    try {
+        const data = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || "{}");
+        const today = getTodayKey();
+
+        // Reset if different day
+        if (data.date !== today) {
+            return { date: today, count: 0 };
+        }
+        return data;
+    } catch {
+        return { date: getTodayKey(), count: 0 };
+    }
+}
+
+/**
+ * ➕ Increment AI usage count
+ */
+function incrementUsage() {
+    const usage = getUsageData();
+    usage.count++;
+    localStorage.setItem(AI_USAGE_KEY, JSON.stringify(usage));
+    console.log(`[AI Limiter] Usage: ${usage.count}/${DEFAULT_DAILY_LIMIT}`);
+    return usage;
+}
+
+/**
+ * ✅ Check if user can make AI call
+ * @returns {{ allowed: boolean, remaining: number, total: number }}
+ */
+export function checkAIUsageLimit() {
+    const usage = getUsageData();
+    const remaining = Math.max(0, DEFAULT_DAILY_LIMIT - usage.count);
+    return {
+        allowed: usage.count < DEFAULT_DAILY_LIMIT,
+        remaining,
+        total: DEFAULT_DAILY_LIMIT,
+        used: usage.count
+    };
+}
+
+/**
+ * 🛡️ Wrapper that checks limit before calling AI
+ * @param {Function} apiFn - The AI function to call
+ * @returns {Promise<any>}
+ * @throws {Error} If limit exceeded
+ */
+export async function callWithUsageLimit(apiFn) {
+    const { allowed, remaining, total, used } = checkAIUsageLimit();
+
+    if (!allowed) {
+        const error = new Error(`AI_LIMIT_EXCEEDED: 你今日已經用咗 ${total} 次 AI 功能，請聽日再試！`);
+        error.code = "AI_LIMIT_EXCEEDED";
+        error.usage = { used, remaining: 0, total };
+        throw error;
+    }
+
+    // Warn if approaching limit
+    if (remaining <= 5 && remaining > 0) {
+        console.warn(`[AI Limiter] ⚠️ 仲淨返 ${remaining} 次 AI 使用量`);
+    }
+
+    // Execute and increment on success
+    const result = await apiFn();
+    incrementUsage();
+
+    return result;
+}
+
+/**
+ * 🔄 Reset AI usage (for testing/admin)
+ */
+export function resetAIUsage() {
+    localStorage.removeItem(AI_USAGE_KEY);
+    console.log("[AI Limiter] Usage reset");
+}
+
 
 // 🌍 Real-world Grounding Data (based on recent 2025 search results/Reddit)
 const REAL_WORLD_GROUNDING = {
@@ -467,10 +712,7 @@ export async function generateItineraryWithGemini({
     budget = 'mid',
     travelStyle = 'balanced'
 }) {
-    try {
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
-
-        const prompt = `你係一個專業嘅香港旅遊領隊 AI。請為 ${city} 生成一個詳細嘅 ${days} 日行程。
+    const prompt = `你係一個專業嘅香港旅遊領隊 AI。請為 ${city} 生成一個詳細嘅 ${days} 日行程。
         
 === 用戶偏好 ===
 預算: ${budget} (budget/mid/luxury)
@@ -483,8 +725,8 @@ ${JSON.stringify(REAL_WORLD_GROUNDING[Object.keys(REAL_WORLD_GROUNDING).find(k =
 
 === EXISTING ITINERARY ===
 ${Object.keys(existingItinerary).length > 0
-                ? JSON.stringify(existingItinerary, null, 2)
-                : 'No existing plans - start fresh'}
+            ? JSON.stringify(existingItinerary, null, 2)
+            : 'No existing plans - start fresh'}
 
 === 核心要求 ===
 1. 語言: 必須使用繁體中文 (香港粵語風格，例如講「去邊度」、「食乜嘢」)。
@@ -544,18 +786,31 @@ ${Object.keys(existingItinerary).length > 0
     "tips": ["Tip 1", "Tip 2"]
 }`;
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
+    try {
+        // Use smart retry with model rotation
+        return await callWithSmartRetry(async (model) => {
+            const result = await model.generateContent(prompt);
+            const text = result.response.text();
 
-        // Parse JSON from response
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            return JSON.parse(jsonMatch[0]);
-        }
-
-        throw new Error("Invalid response format");
+            // Parse JSON from response
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                return JSON.parse(jsonMatch[0]);
+            }
+            throw new Error("Invalid response format");
+        });
     } catch (error) {
         console.error("[Gemini AI] Itinerary generation error:", error);
+
+        // Graceful fallback for Quota/Service errors
+        if (error.message?.includes('429') || error.message?.includes('503') || error.message?.includes('quota')) {
+            console.warn("[Gemini AI] All models exhausted. Returning fallback itinerary.");
+            return {
+                itinerary: [],
+                budget: { total: 0, spending_breakdown: [] },
+                tips: ["AI 限額已用完，請稍後再試。"]
+            };
+        }
         throw error;
     }
 }
@@ -732,26 +987,33 @@ ${question}
 }
 
 /**
- * 🛍️ Generate shopping suggestions using Gemini
+ * 🛍️ Generate shopping suggestions using Gemini (Destination-Aware)
  * @param {string} city - Destination city
  * @param {Array} categories - Shopping categories (food, cosmetic, fashion, etc.)
+ * @param {Object} tripContext - Optional trip context (country, dates)
  * @returns {Promise<Array>} Shopping suggestions
  */
-export async function generateShoppingWithGemini(city, categories = []) {
-    try {
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+export async function generateShoppingWithGemini(city, categories = [], tripContext = {}) {
+    // Get grounding data if available
+    const grounding = REAL_WORLD_GROUNDING[city] || {};
+    const country = tripContext.country || "";
 
-        const prompt = `You are a local shopping expert for ${city}. Generate practical shopping recommendations.
+    const prompt = `You are a local shopping expert for ${city}${country ? `, ${country}` : ''}. Generate practical shopping recommendations.
+
+=== LOCAL KNOWLEDGE ===
+${grounding.tips ? `Tips: ${grounding.tips.join('; ')}` : ''}
+${grounding.food ? `Local Food: ${grounding.food.join(', ')}` : ''}
 
 === PREFERENCES ===
 Categories: ${categories.length > 0 ? categories.join(', ') : 'All categories'}
 
 === REQUIREMENTS ===
 1. Provide 10-15 specific product recommendations
-2. Include actual shop/brand names locals would know
+2. Include actual shop/brand names locals would know (e.g., Don Quijote, Matsumoto Kiyoshi, Bic Camera)
 3. Give realistic prices in local currency
 4. Focus on items unique to ${city} or significantly cheaper there
 5. Include where to buy (department store, drugstore, etc.)
+6. Prioritize items tourists typically want: snacks, cosmetics, electronics, souvenirs
 
 === OUTPUT FORMAT (JSON ONLY) ===
 [
@@ -766,17 +1028,27 @@ Categories: ${categories.length > 0 ? categories.join(', ') : 'All categories'}
     }
 ]`;
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
+    try {
+        return await callWithSmartRetry(async (model) => {
+            const result = await model.generateContent(prompt);
+            const text = result.response.text();
 
-        const jsonMatch = text.match(/\[[\s\S]*\]/);
-        if (jsonMatch) {
-            return JSON.parse(jsonMatch[0]);
-        }
-
-        throw new Error("Invalid response format");
+            const jsonMatch = text.match(/\[[\s\S]*\]/);
+            if (jsonMatch) {
+                return JSON.parse(jsonMatch[0]);
+            }
+            throw new Error("Invalid response format");
+        });
     } catch (error) {
         console.error("[Gemini AI] Shopping generation error:", error);
+
+        // Graceful fallback for Quota/Service errors
+        if (error.message?.includes('429') || error.message?.includes('503') || error.message?.includes('quota')) {
+            console.warn("[Gemini AI] All models exhausted. Returning fallback shopping list.");
+            return [
+                { name: "API 限額已用完", type: "souvenir", estPrice: "--", desc: "暂時無法生成建議，請稍後再試", whereToBuy: "--", reason: "AI 超出使用量", aiSuggested: false }
+            ];
+        }
         throw error;
     }
 }
@@ -788,23 +1060,20 @@ Categories: ${categories.length > 0 ? categories.join(', ') : 'All categories'}
  * @returns {Promise<Array>} Packing suggestions
  */
 export async function generatePackingList(trip, weather = {}) {
-    try {
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+    // Extract activities from itinerary
+    const activities = [];
+    if (trip.itinerary) {
+        Object.values(trip.itinerary).forEach(dayItems => {
+            if (Array.isArray(dayItems)) {
+                dayItems.forEach(item => {
+                    if (item.type) activities.push(item.type);
+                    if (item.name) activities.push(item.name);
+                });
+            }
+        });
+    }
 
-        // Extract activities from itinerary
-        const activities = [];
-        if (trip.itinerary) {
-            Object.values(trip.itinerary).forEach(dayItems => {
-                if (Array.isArray(dayItems)) {
-                    dayItems.forEach(item => {
-                        if (item.type) activities.push(item.type);
-                        if (item.name) activities.push(item.name);
-                    });
-                }
-            });
-        }
-
-        const prompt = `You are a travel packing expert. Generate a smart packing list for a trip to ${trip.city || 'Unknown'}.
+    const prompt = `You are a travel packing expert. Generate a smart packing list for a trip to ${trip.city || 'Unknown'}.
 
 === TRIP DETAILS ===
 Destination: ${trip.city}, ${trip.country}
@@ -830,17 +1099,27 @@ Activities: ${activities.slice(0, 10).join(', ') || 'General sightseeing'}
     }
 ]`;
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
+    try {
+        return await callWithSmartRetry(async (model) => {
+            const result = await model.generateContent(prompt);
+            const text = result.response.text();
 
-        const jsonMatch = text.match(/\[[\s\S]*\]/);
-        if (jsonMatch) {
-            return JSON.parse(jsonMatch[0]);
-        }
-
-        return Array.from(new Set(activities));
+            const jsonMatch = text.match(/\[[\s\S]*\]/);
+            if (jsonMatch) {
+                return JSON.parse(jsonMatch[0]);
+            }
+            return Array.from(new Set(activities));
+        });
     } catch (error) {
         console.error("[Gemini AI] Packing generation error:", error);
+
+        // Graceful fallback for Quota/Service errors
+        if (error.message?.includes('429') || error.message?.includes('503') || error.message?.includes('quota')) {
+            console.warn("[Gemini AI] All models exhausted. Returning fallback packing list.");
+            return [
+                { name: "API 暂時無法使用", category: "documents", essential: false, reason: "AI 限額已用完，請稍後再試", aiSuggested: false }
+            ];
+        }
         throw error;
     }
 }
@@ -908,5 +1187,57 @@ ${JSON.stringify(rawWeatherData, null, 2)}
             };
         }
         throw error;
+    }
+}
+
+/**
+ * 🏷️ AI Trip Naming: Generate a catchy trip name based on destination and dates
+ * @param {Object} trip - Trip object with destination, startDate, cities
+ * @returns {Promise<string>} A creative trip name
+ */
+export async function generateTripName(trip) {
+    try {
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+        const destination = trip.city || trip.cities?.[0] || trip.country || "Unknown";
+        const country = trip.country || "";
+        const startDate = trip.startDate || "";
+
+        // Determine season from startDate
+        let season = "";
+        if (startDate) {
+            const month = new Date(startDate).getMonth() + 1;
+            if (month >= 3 && month <= 5) season = "Spring";
+            else if (month >= 6 && month <= 8) season = "Summer";
+            else if (month >= 9 && month <= 11) season = "Autumn";
+            else season = "Winter";
+        }
+
+        const prompt = `You are a creative travel naming expert. Generate ONE short, catchy trip name.
+
+=== TRIP INFO ===
+Destination: ${destination}, ${country}
+Season: ${season}
+Start Date: ${startDate}
+
+=== REQUIREMENTS ===
+1. Be creative but concise (2-5 words max)
+2. Capture the essence of the destination or season
+3. Use local cultural references when possible
+4. Examples: "Tokyo Sakura Escape", "Osaka Foodie Run", "Winter Hokkaido Bliss"
+
+=== OUTPUT ===
+Return ONLY the trip name, nothing else. No quotes, no explanation.`;
+
+        const result = await model.generateContent(prompt);
+        const text = result.response.text().trim();
+
+        // Clean up any quotes or extra formatting
+        return text.replace(/['"]/g, '').trim();
+    } catch (error) {
+        console.error("[Gemini AI] Trip naming error:", error);
+        // Fallback to simple name
+        const city = trip.city || trip.cities?.[0] || "Adventure";
+        return `${city} Trip`;
     }
 }

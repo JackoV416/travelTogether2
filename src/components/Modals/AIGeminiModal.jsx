@@ -140,7 +140,7 @@ const AIGeminiModal = ({
                         travelStyle: 'balanced'
                     }),
                     generateShoppingWithGemini(city, []).catch(() => generateShoppingSuggestions(city)),
-                    generatePackingWithGemini(trip || { city, itinerary: {} }, weatherData?.[city] || { temp: "24°C", desc: "Sunny" }).catch(() => generatePackingList(trip || { city, itinerary: {} }, weatherData?.[city] || { temp: "24°C", desc: "Sunny" }))
+                    generatePackingList(trip || { city, itinerary: {} }, weatherData?.[city] || { temp: "24°C", desc: "Sunny" })
                 ]);
 
                 // Transform Gemini result to expected format
@@ -240,7 +240,7 @@ const AIGeminiModal = ({
         try {
             const res = await generateEnhancedAI(contextCity || "Tokyo", inputText);
             setResult(res);
-            if (res.itinerary) {
+            if (res.itinerary && Array.isArray(res.itinerary)) {
                 setSelections(prev => ({
                     ...prev,
                     itinerary: res.itinerary.map(i => i.id)
@@ -866,7 +866,7 @@ const AIGeminiModal = ({
                             </div>
 
                             {/* Itinerary Tab */}
-                            {activeTab === 'itinerary' && (
+                            {activeTab === 'itinerary' && Array.isArray(result.itinerary) && result.itinerary.length > 0 && (
                                 <div className="space-y-6 animate-fade-in">
                                     <div className="flex justify-between items-center px-2 mb-2">
                                         <span className="text-xs font-bold opacity-60">分日行程建議 (共 {result.itinerary.length} 項)</span>
@@ -957,6 +957,14 @@ const AIGeminiModal = ({
                                             ))}
                                         </div>
                                     ))}
+                                </div>
+                            )}
+
+                            {/* Itinerary Tab - Empty/Quota Exceeded State */}
+                            {activeTab === 'itinerary' && (!Array.isArray(result.itinerary) || result.itinerary.length === 0) && (
+                                <div className="text-center py-12 opacity-60">
+                                    <p className="text-lg font-bold">暫時無法生成行程建議</p>
+                                    <p className="text-sm mt-2">AI 限額已用完，請稍後再試。</p>
                                 </div>
                             )}
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Search, CheckCircle, Sparkles, Loader2 } from 'lucide-react';
 import { inputClasses, getLocalizedCountryName, getLocalizedCityName, getHolidayMap } from '../../utils/tripUtils';
-import { generateAiTripName } from '../../services/ai';
+import { generateTripName } from '../../services/ai-parsing';
 import { COUNTRIES_DATA } from '../../constants/appData';
 import DateRangePicker from '../Shared/DateRangePicker';
 
@@ -23,8 +23,15 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
         if (form.cities.length === 0 && form.countries.length === 0) return;
         setGeneratingName(true);
         try {
-            const city = form.cities[0] || form.countries[0];
-            const name = await generateAiTripName(city, form.startDate, form.endDate);
+            // Build trip-like object for the new generateTripName function
+            const tripContext = {
+                city: form.cities[0],
+                cities: form.cities,
+                country: form.countries[0],
+                startDate: form.startDate,
+                endDate: form.endDate
+            };
+            const name = await generateTripName(tripContext);
             onInputChange('name', name);
         } catch (e) {
             console.error(e);

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { doc, updateDoc, arrayUnion, deleteDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import {
-    Calendar, Map as MapIcon, Edit3, CalendarDays, ShoppingBag, Wallet, DollarSign, FileText, Shield, Siren, FileCheck, NotebookPen, BrainCircuit, List, Users, UserPlus, Trash2, Plus, ChevronDown, Sparkles, PackageCheck, Share2, Globe, Clock, AlertTriangle, Upload, FileIcon, ArrowLeft, MoreVertical, X, Loader2
+    Calendar, Map as MapIcon, Edit3, CalendarDays, ShoppingBag, Wallet, DollarSign, FileText, Shield, Siren, FileCheck, NotebookPen, BrainCircuit, List, Users, UserPlus, Trash2, Plus, ChevronDown, Sparkles, PackageCheck, Share2, Globe, Clock, AlertTriangle, Upload, FileIcon, ArrowLeft, MoreVertical, X, Loader2, Menu
 } from 'lucide-react';
+import MobileBottomNav from '../Shared/MobileBottomNav';
 import ActiveUsersList from './ActiveUsersList';
 import {
     ItineraryTab, InsuranceTab, VisaTab, EmergencyTab,
@@ -39,6 +40,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     const [isInviteModal, setIsInviteModal] = useState(false);
     const [isTripSettingsOpen, setIsTripSettingsOpen] = useState(false);
     const [isAIModal, setIsAIModal] = useState(false);
+    const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
     const [aiMode, setAIMode] = useState('full');
     const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
     const [selectDate, setSelectDate] = useState(null);
@@ -748,8 +750,8 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                 </div>
             </div>
 
-            {/* Tabs */}
-            <div className="flex gap-2 overflow-x-auto pb-2 mb-4 no-scrollbar">
+            {/* Tabs (Desktop / Mobile Hidden) */}
+            <div className={`hidden md:flex gap-2 overflow-x-auto pb-2 mb-4 no-scrollbar`}>
                 {[{ id: 'itinerary', label: '行程', icon: CalendarDays }, { id: 'packing', label: '行李', icon: ShoppingBag }, { id: 'shopping', label: '購物', icon: ShoppingBag }, { id: 'budget', label: '預算', icon: Wallet }, { id: 'currency', label: '匯率', icon: DollarSign }, { id: 'files', label: '回憶', icon: FileIcon }, { id: 'insurance', label: '保險', icon: Shield }, { id: 'emergency', label: '緊急', icon: Siren }, { id: 'visa', label: '簽證', icon: FileCheck }, { id: 'notes', label: '筆記', icon: NotebookPen }].map(t => (<button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex items-center px-4 py-2 rounded-full font-bold transition-all duration-300 whitespace-nowrap transform hover:scale-105 ${activeTab === t.id ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl scale-105' : (isDarkMode ? 'bg-gray-800/60 text-gray-300 hover:bg-gray-700' : 'bg-gray-100/80 text-gray-600 hover:bg-gray-100')}`}><t.icon className="w-4 h-4 mr-2" />{t.label}</button>))}
             </div>
 
@@ -930,6 +932,41 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                     />
                 )
             }
+
+            {/* Mobile Bottom Nav System */}
+            <MobileBottomNav
+                activeTab={activeTab === 'shopping' || activeTab === 'packing' || activeTab === 'budget' || activeTab === 'itinerary' ? activeTab : 'more'}
+                onTabChange={(tab) => { setActiveTab(tab); setIsMobileMoreOpen(false); }}
+                onMoreClick={() => setIsMobileMoreOpen(!isMobileMoreOpen)}
+                isDarkMode={isDarkMode}
+            />
+
+            {/* Mobile More Menu Overlay */}
+            {isMobileMoreOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm md:hidden animate-fade-in" onClick={() => setIsMobileMoreOpen(false)}>
+                    <div
+                        className={`absolute bottom-24 left-4 right-4 rounded-2xl p-6 shadow-2xl grid grid-cols-4 gap-4 animate-slide-up-fade ${isDarkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="col-span-4 mb-2 flex justify-between items-center opacity-70">
+                            <span className="text-xs font-bold uppercase tracking-wider">更多功能</span>
+                            <button onClick={() => setIsMobileMoreOpen(false)}><X className="w-5 h-5" /></button>
+                        </div>
+                        {[{ id: 'shopping', label: '購物', icon: ShoppingBag }, { id: 'currency', label: '匯率', icon: DollarSign }, { id: 'files', label: '回憶', icon: FileIcon }, { id: 'insurance', label: '保險', icon: Shield }, { id: 'emergency', label: '緊急', icon: Siren }, { id: 'visa', label: '簽證', icon: FileCheck }, { id: 'notes', label: '筆記', icon: NotebookPen }].map(t => (
+                            <button
+                                key={t.id}
+                                onClick={() => { setActiveTab(t.id); setIsMobileMoreOpen(false); }}
+                                className={`flex flex-col items-center gap-2 p-2 rounded-xl transition-all ${activeTab === t.id ? 'bg-indigo-500 text-white' : 'hover:bg-gray-500/10'}`}
+                            >
+                                <div className={`p-3 rounded-full ${activeTab === t.id ? 'bg-white/20' : 'bg-gray-500/10'}`}>
+                                    <t.icon className="w-5 h-5" />
+                                </div>
+                                <span className={`text-[10px] font-bold ${activeTab === t.id ? 'text-white' : ''}`}>{t.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <AddActivityModal isOpen={isAddModal} onClose={() => setIsAddModal(false)} onSave={handleSaveItem} onDelete={handleDeleteItineraryItem} isDarkMode={isDarkMode} date={selectDate} defaultType={addType} editData={editingItem} members={trip.members || [{ id: user.uid, name: user.displayName }]} trip={trip} />
             <TripSettingsModal isOpen={isTripSettingsOpen} onClose={() => setIsTripSettingsOpen(false)} trip={trip} onUpdate={(d) => !isSimulation && updateDoc(doc(db, "trips", trip.id), d)} isDarkMode={isDarkMode} />
