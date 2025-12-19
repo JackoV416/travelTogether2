@@ -1,15 +1,51 @@
-
 import {
     TrainFront, BusFront, Car, Route
 } from 'lucide-react';
 
 // --- Versioning & Metadata ---
-export const AUTHOR_NAME = "Jamie Kwok";
-export const APP_VERSION = "V0.21.2";
+export const APP_AUTHOR = "Jamie Kwok";
+export const APP_VERSION = "V0.22.2"; // Security Hotfix: API Key Protection
+export const APP_LAST_UPDATE = "2025-12-19";
 
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V0.22.2",
+        date: "2025-12-19",
+        desc: {
+            "zh-TW": "緊急保安更新",
+            "en": "Critical Security Hotfix"
+        },
+        details: {
+            "zh-TW": "• 移除 Hardcoded Google Maps API Key，改為環境變數讀取\n• 提升專案安全性",
+            "en": "• Removed hardcoded Google Maps API Key, switched to environment variable\n• Enhanced project security"
+        }
+    },
+    {
+        ver: "V0.22.1",
+        date: "2025-12-19",
+        desc: {
+            "zh-TW": "功能凍結 & 穩定性修復",
+            "en": "Feature Freeze & Stability Fixes"
+        },
+        details: {
+            "zh-TW": "• 暫時封鎖 AI/匯入/匯出功能 (待 V0.22.2 重啟)\n• 修復 SmartImportModal 圖標缺失問題\n• 修復 getDoc 引用錯誤\n• 優化 OCR 中文過濾邏輯",
+            "en": "• Temporarily disabled AI/Import/Export (Planned for V0.22.2)\n• Fixed missing icons in SmartImportModal\n• Fixed getDoc reference error\n• Refined Chinese OCR filtering"
+        }
+    },
+    {
+        ver: "V0.22.0",
+        date: "2025-12-19",
+        desc: {
+            "zh-TW": "匯入匯出統一大整合 & 刪除功能",
+            "en": "Import/Export Consolidation & Delete Features"
+        },
+        details: {
+            "zh-TW": "• SmartExportModal：統一匯出入口 (JSON/文字/PDF/iCal)\n• 刪除單一行程項目：編輯時可直接刪除\n• 清空當日行程：一鍵清除整日計劃\n• 修復 Import Modal 雙重模糊問題\n• 所有 Tab 匯出按鈕正確觸發",
+            "en": "• SmartExportModal: Unified export (JSON/Text/PDF/iCal)\n• Delete individual items: Remove from edit modal\n• Clear daily itinerary: One-click daily reset\n• Fixed Import Modal double-blur issue\n• All tab export buttons now work correctly"
+        }
+    },
     {
         ver: "V0.21.2",
         date: "2025-12-19",

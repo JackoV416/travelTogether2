@@ -24,6 +24,7 @@ import {
 import { useNotifications } from '../../hooks/useNotifications';
 import SmartImportModal from '../Modals/SmartImportModal';
 import TripExportImportModal from '../Modals/TripExportImportModal';
+import SmartExportModal from '../Modals/SmartExportModal';
 import CreateTripModal from '../Modals/CreateTripModal';
 import TripCard from './TripCard';
 import { convertCurrency } from '../../services/exchangeRate';
@@ -38,6 +39,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
     const [isSmartImportModalOpen, setIsSmartImportModalOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+    const [isSmartExportOpen, setIsSmartExportOpen] = useState(false);
     const [selectedExportTrip, setSelectedExportTrip] = useState("");
     const [newCityInput, setNewCityInput] = useState('');
     const currentLang = globalSettings?.lang || 'zh-TW';
@@ -402,8 +404,10 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                     <div className="flex flex-wrap gap-3">
                         <button onClick={() => setIsCreateModalOpen(true)} className="px-5 py-3 rounded-xl bg-indigo-600 text-white font-bold flex items-center gap-2 transition-all hover:scale-105"><Plus className="w-4 h-4" /> 打開建立視窗</button>
                         <button onClick={() => { setForm({ name: '', countries: [], cities: [], startDate: '', endDate: '' }); setSelectedCountryImg(DEFAULT_BG_IMAGE); }} className="px-4 py-3 rounded-xl border border-white/30 text-sm hover:bg-white/10 transition-all">重設預覽</button>
+                        {/* Import/Export Disabled for V0.22.1
                         <button onClick={() => setIsSmartImportModalOpen(true)} className="px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-sm flex items-center gap-2 hover:shadow-lg transition-all"><Upload className="w-4 h-4" /> 智能匯入</button>
-                        <button onClick={() => setIsExportModalOpen(true)} className="px-4 py-3 rounded-xl bg-purple-500/20 text-purple-100 font-bold text-sm hover:bg-purple-500/30 transition-all">匯出行程</button>
+                        <button onClick={() => setIsSmartExportOpen(true)} className="px-4 py-3 rounded-xl bg-purple-500/20 text-purple-100 font-bold text-sm hover:bg-purple-500/30 transition-all">匯出行程</button>
+                        */}
                     </div>
                 </div>
             </div>
@@ -413,8 +417,10 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
                     <h2 className="text-2xl font-bold border-l-4 border-indigo-500 pl-3">我的行程</h2>
                     <div className="flex gap-2">
+                        {/* Import/Export Disabled for V0.22.1
                         <button onClick={() => setIsSmartImportModalOpen(true)} className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105 transition-all"><Upload className="w-4 h-4" /> 匯入</button>
-                        <button onClick={() => setIsExportModalOpen(true)} className="px-4 py-2 rounded-xl border border-purple-500/40 text-sm hover:bg-purple-500/5 transition-colors">匯出</button>
+                        <button onClick={() => setIsSmartExportOpen(true)} className="px-4 py-2 rounded-xl border border-purple-500/40 text-sm hover:bg-purple-500/5 transition-colors">匯出</button>
+                        */}
                         <button onClick={() => setIsCreateModalOpen(true)} className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm flex items-center gap-2 hover:bg-indigo-700 transition-colors"><Plus className="w-4 h-4" /> 建立</button>
                     </div>
                 </div>
@@ -748,6 +754,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                 globalSettings={globalSettings}
             />
 
+            {/* Import/Export Modals Disabled for V0.22.1
             <SmartImportModal
                 isOpen={isSmartImportModalOpen}
                 onClose={() => setIsSmartImportModalOpen(false)}
@@ -778,6 +785,15 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                 setSelectedTripId={setSelectedExportTrip}
                 isDarkMode={isDarkMode}
             />
+
+            <SmartExportModal
+                isOpen={isSmartExportOpen}
+                onClose={() => setIsSmartExportOpen(false)}
+                trip={trips.find(t => t.id === selectedExportTrip) || trips[0]}
+                trips={trips}
+                isDarkMode={isDarkMode}
+            />
+            */}
         </main>
     );
 };

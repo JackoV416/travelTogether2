@@ -10,7 +10,8 @@ const BudgetTab = ({
     onExportPdf,
     handleReceiptUpload,
     glassCard,
-    onOpenSmartImport
+    onOpenSmartImport,
+    onOpenSmartExport
 }) => {
     const [dragActive, setDragActive] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -66,9 +67,7 @@ const BudgetTab = ({
                 isDarkMode={isDarkMode}
             />
             <div className="flex justify-end gap-2">
-                <button onClick={() => { }} className="px-3 py-1 rounded-lg border border-white/30 text-xs opacity-50 cursor-not-allowed" title="匯入 - V0.22 開放">匯入 🚧</button>
-                <button onClick={() => { }} className="px-3 py-1 rounded-lg border border-white/30 text-xs opacity-50 cursor-not-allowed" title="匯出 - V0.22 開放">匯出 🚧</button>
-                <button onClick={() => { }} className="px-3 py-1 rounded-lg border border-indigo-400/50 text-xs text-indigo-200/50 opacity-50 cursor-not-allowed" title="匯出 PDF - V0.22 開放">匯出 PDF 🚧</button>
+                {/* Unified Import/Export is now in Header */}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className={glassCard(isDarkMode) + " p-6 text-center"}>
@@ -94,14 +93,19 @@ const BudgetTab = ({
                     <h3 className="font-bold flex gap-2"><List className="w-4 h-4" /> 支出明細</h3>
                 </div>
 
-
-
                 <div className="max-h-60 overflow-y-auto space-y-2 custom-scrollbar">
                     {filteredBudget.map((b, i) => (
-                        <div key={i} className={`flex justify-between p-3 rounded-lg text-sm border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-100'}`}>
-                            <div>
-                                <div className="font-bold">{b.name || b.desc}</div>
-                                <div className="text-xs opacity-60">{b.payer} • {b.category || '未分類'}</div>
+                        <div key={i} className={`flex justify-between items-center p-3 rounded-lg text-sm border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-100'}`}>
+                            <div className="flex items-center gap-3">
+                                {b.details?.receiptUrl && (
+                                    <a href={b.details.receiptUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-lg overflow-hidden border border-white/20 flex-shrink-0 hover:scale-110 transition-transform">
+                                        <img src={b.details.receiptUrl} alt="Receipt" className="w-full h-full object-cover" />
+                                    </a>
+                                )}
+                                <div>
+                                    <div className="font-bold">{b.name || b.desc}</div>
+                                    <div className="text-xs opacity-60">{b.payer} • {b.category || '未分類'}</div>
+                                </div>
                             </div>
                             <span className="font-mono opacity-80">{b.currency} {b.cost}</span>
                         </div>
@@ -110,40 +114,6 @@ const BudgetTab = ({
                 </div>
             </div>
 
-            {/* Receipt Upload - Drag & Drop Style */}
-            <div
-                className={`p-8 rounded-2xl border-2 border-dashed transition-all cursor-pointer group flex flex-col items-center justify-center text-center space-y-3 ${dragActive
-                    ? 'border-indigo-500 bg-indigo-500/10'
-                    : isDarkMode
-                        ? 'border-indigo-500/30 bg-indigo-500/5 hover:bg-indigo-500/10'
-                        : 'border-indigo-400/30 bg-indigo-50 hover:bg-indigo-100'
-                    }`}
-                onDragEnter={(e) => { e.preventDefault(); setDragActive(true); }}
-                onDragLeave={(e) => { e.preventDefault(); setDragActive(false); }}
-                onDragOver={(e) => { e.preventDefault(); }}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-            >
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*,application/pdf"
-                    className="hidden"
-                    onChange={handleFileSelect}
-                />
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform ${isDarkMode ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-100 text-indigo-500'}`}>
-                    <FileUp className="w-7 h-7" />
-                </div>
-                <div>
-                    <h3 className={`text-lg font-bold ${isDarkMode ? 'text-indigo-300' : 'text-indigo-600'}`}>單據掃描 / 上傳</h3>
-                    <p className="text-sm opacity-60">點擊或拖拉單據至此上傳</p>
-                </div>
-                <button className="px-5 py-2 rounded-full bg-indigo-500 text-white text-sm font-bold shadow-lg hover:shadow-indigo-500/30 hover:bg-indigo-600 transition-all">
-                    選擇檔案
-                </button>
-                <p className="text-[10px] opacity-40">支援圖片/PDF</p>
-                {uploading && <div className="flex items-center gap-2 text-indigo-500"><Loader2 className="animate-spin w-4 h-4" /> 上傳中...</div>}
-            </div>
         </div>
     );
 };

@@ -41,45 +41,7 @@ const AIGeminiModal = ({
     weatherData = null,
     mode = 'full'
 }) => {
-    // V0.21.2: Temporarily show Coming Soon message
-    if (isOpen) {
-        return (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-                <div className={`${isDarkMode ? 'bg-gray-900/90 border-white/10 text-white' : 'bg-white/90 border-white/20 text-gray-900'} backdrop-blur-md border shadow-xl w-full max-w-md rounded-2xl overflow-hidden`}>
-                    <div className="p-6 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-purple-500/10 to-indigo-500/10">
-                        <div>
-                            <h2 className="text-2xl font-bold flex items-center gap-2">
-                                <BrainCircuit className="w-6 h-6 text-purple-400" /> AI 智能領隊
-                            </h2>
-                            <p className="text-sm opacity-60 mt-1">智能行程規劃與推薦</p>
-                        </div>
-                        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                            <X className="w-5 h-5 opacity-70" />
-                        </button>
-                    </div>
-                    <div className="p-8 text-center">
-                        <div className="w-20 h-20 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <span className="text-4xl">🚧</span>
-                        </div>
-                        <h3 className="text-xl font-bold mb-3 text-purple-400">功能優化中</h3>
-                        <p className="opacity-60 text-sm mb-6 leading-relaxed">
-                            AI 推薦功能正在優化中，預計 V0.22 版本開放使用。<br />
-                            屆時將提供更精準的行程規劃與智能推薦。
-                        </p>
-                        <button
-                            onClick={onClose}
-                            className="px-6 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold hover:from-purple-700 hover:to-indigo-700 transition-all"
-                        >
-                            我知道了
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-    return null;
-
-    // ===== Original code below (disabled for V0.21.2) =====
+    // V0.22: Coming Soon removed - Full functionality restored
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [activeTab, setActiveTab] = useState(mode === 'shopping' ? 'shopping' : (mode === 'packing' ? 'packing' : 'itinerary'));

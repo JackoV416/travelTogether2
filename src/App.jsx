@@ -20,16 +20,10 @@ import AIGeminiModal from './components/Modals/AIGeminiModal';
 
 // --- V0.16.2 Refactored Imports ---
 import {
-    CITY_COORDS, CURRENCIES, COUNTRIES_DATA, INFO_DB,
-    HOLIDAYS_BY_REGION, AIRLINE_LOGOS, TRANSPORT_ICONS,
-    OUTFIT_IMAGES, SIMULATION_DATA, TRAVEL_ARTICLES,
-    AUTHOR_NAME, VERSION_HISTORY,
-    TIMEZONES, LANGUAGE_OPTIONS, DEFAULT_BG_IMAGE,
-    TAB_LABELS, INSURANCE_SUGGESTIONS, INSURANCE_RESOURCES
+    APP_VERSION, APP_AUTHOR, APP_LAST_UPDATE,
+    DEFAULT_BG_IMAGE, CITY_COORDS, COUNTRIES_DATA, INFO_DB,
+    SIMULATION_DATA, CURRENCIES, VERSION_HISTORY
 } from './constants/appData';
-export const APP_VERSION = "V0.21.2";
-console.log("Travel Together Version Logic Triggered: V0.21.2");
-
 import {
     glassCard, getHolidayMap, getLocalizedCountryName,
     getLocalizedCityName, getSafeCountryInfo, formatDate,
@@ -358,7 +352,7 @@ const VersionModal = ({ isOpen, onClose, isDarkMode, globalSettings }) => {
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-gray-500/20 text-center text-xs opacity-40 flex justify-between items-center flex-shrink-0">
-                    <span className="font-mono">Author: {AUTHOR_NAME}</span>
+                    <span className="font-mono">Author: {APP_AUTHOR}</span>
                     <span className="font-mono bg-gray-500/10 px-2 py-0.5 rounded">{APP_VERSION}</span>
                 </div>
             </div>
@@ -504,8 +498,8 @@ const App = () => {
     const [globalSettings, setGlobalSettings] = useState({
         notifications: true,
         sound: true,
-        language: 'zh-TW',
         currency: 'HKD',
+        region: 'HK', // Default to Hong Kong
         preferences: [] // Default preferences
     });
 
@@ -705,7 +699,7 @@ const App = () => {
 
 
     return (
-        <div className={`min-h-screen transition-colors duration-500 font-sans selection:bg-indigo-500/30 ${isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-slate-50 text-gray-900'} ${isSmartImportModalOpen ? 'blur-sm scale-[0.99]' : ''}`}>
+        <div className={`min-h-screen transition-colors duration-500 font-sans selection:bg-indigo-500/30 ${isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-slate-50 text-gray-900'}`}>
             <NotificationSystem notifications={notifications} setNotifications={setNotifications} />
             <OfflineBanner isDarkMode={isDarkMode} />
             {/* Background Image (Global) */}
@@ -731,28 +725,29 @@ const App = () => {
             {view !== 'tutorial' && <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} />}
             <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} globalSettings={globalSettings} setGlobalSettings={setGlobalSettings} isDarkMode={isDarkMode} />
             <VersionModal isOpen={isVersionOpen} onClose={() => setIsVersionOpen(false)} isDarkMode={isDarkMode} globalSettings={globalSettings} />
+            {/* Smart Import Disabled for V0.22.1
             <SmartImportModal
                 isOpen={isSmartImportModalOpen}
                 onClose={() => setIsSmartImportModalOpen(false)}
                 isDarkMode={isDarkMode}
                 trips={[selectedTrip].filter(Boolean)}
-                onImport={async (file, type, targetTripId) => {
-                    // Show notification based on type
+                onImport={async ({ type, files, data }) => {
+                    // Just show notification - modal will handle its own closing after showing result
                     const typeLabels = {
-                        itinerary: '行程截圖',
-                        budget: '消費單據',
+                        screenshot: '行程截圖',
+                        receipt: '消費單據',
                         memory: '回憶相片',
                         json: 'JSON',
                         csv: 'CSV'
                     };
                     sendNotification(
                         `${typeLabels[type] || '檔案'}已接收 ✅`,
-                        `${file.name} 已上傳`,
+                        `${files?.[0]?.name || '檔案'} 已上傳`,
                         'success'
                     );
-                    setIsSmartImportModalOpen(false);
+                    // Do NOT close modal here - SmartImportModal will show result and close itself
                 }}
-            />
+            /> */}
         </div>
     );
 };

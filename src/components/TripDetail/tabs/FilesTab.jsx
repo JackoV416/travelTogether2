@@ -1,76 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { ref, deleteObject } from "firebase/storage";
+import { doc, updateDoc } from 'firebase/firestore';
 import { db, storage } from '../../../firebase';
-import { FileUp, Loader2, FileText, Trash2, Upload } from 'lucide-react';
+import { FileText, Trash2 } from 'lucide-react';
 import SearchFilterBar from '../../Shared/SearchFilterBar';
 
-const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, onOpenSmartImport }) => {
-    const [uploading, setUploading] = useState(false);
+const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode }) => {
     const [files, setFiles] = useState(trip.files || []);
-    const fileInputRef = useRef(null);
-    const [dragActive, setDragActive] = useState(false);
     const [searchValue, setSearchValue] = useState("");
 
     // Sync files from trip data
     useEffect(() => {
         setFiles(trip.files || []);
     }, [trip.files]);
-
-    const handleFileUpload = async (e) => {
-        const selectedFiles = e.target.files ? Array.from(e.target.files) : [];
-        if (selectedFiles.length === 0) return;
-        await processUpload(selectedFiles);
-    };
-
-    const handleDrop = async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setDragActive(false);
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            await processUpload(Array.from(e.dataTransfer.files));
-        }
-    };
-
-    const processUpload = async (fileList) => {
-        if (!user) return alert(language === 'zh-TW' ? "請先登入" : "Please login first");
-        setUploading(true);
-        const newFiles = [];
-
-        try {
-            for (const file of fileList) {
-                // Upload to Firebase Storage
-                // Path: trips/{tripId}/files/{timestamp}_{filename}
-                const timestamp = Date.now();
-                const storageRef = ref(storage, `trips/${trip.id}/files/${timestamp}_${file.name}`);
-                const snapshot = await uploadBytes(storageRef, file);
-                const downloadURL = await getDownloadURL(snapshot.ref);
-
-                newFiles.push({
-                    id: `${timestamp}_${Math.random().toString(36).substr(2, 9)}`,
-                    name: file.name,
-                    size: file.size,
-                    type: file.type,
-                    url: downloadURL,
-                    path: snapshot.metadata.fullPath, // For deletion
-                    uploadedBy: user.displayName || user.email.split('@')[0],
-                    uploadedAt: timestamp
-                });
-            }
-
-            // Update Firestore Trip Document
-            await updateDoc(doc(db, "trips", trip.id), {
-                files: arrayUnion(...newFiles)
-            });
-
-        } catch (error) {
-            console.error("Upload failed", error);
-            alert(language === 'zh-TW' ? "上傳失敗，請重試" : "Upload failed, please try again");
-        } finally {
-            setUploading(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
-        }
-    };
 
     const handleDeleteFile = async (file) => {
         if (!confirm(language === 'zh-TW' ? "確定刪除此檔案？" : "Delete this file?")) return;
@@ -80,8 +22,6 @@ const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, onOpenS
             await deleteObject(fileRef).catch(err => console.warn("Storage delete failed (maybe already gone)", err));
 
             // Remove from Firestore
-            // Note: arrayRemove requires exact object match, which is tricky. 
-            // Better to read current files, filter, and update.
             const newFileList = files.filter(f => f.id !== file.id);
             await updateDoc(doc(db, "trips", trip.id), { files: newFileList });
 
@@ -107,37 +47,19 @@ const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, onOpenS
             <SearchFilterBar
                 searchValue={searchValue}
                 onSearchChange={setSearchValue}
-                placeholder="搜尋文件..."
+                placeholder="搜尋回憶..."
                 isDarkMode={isDarkMode}
             />
-            {/* Smart Import Banner & Upload Area (Disabled for V0.21.2) */}
-            <div
-                className={`mb-6 p-8 rounded-2xl border-2 border-dashed transition-all cursor-not-allowed group flex flex-col items-center justify-center text-center space-y-3 opacity-60 ${isDarkMode ? 'border-indigo-500/10 bg-indigo-500/5' : 'border-indigo-500/10 bg-indigo-500/5'}`}
-                onClick={() => { }}
-            >
-                <input ref={fileInputRef} type="file" multiple className="hidden" disabled />
-                <div className="w-16 h-16 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center grayscale">
-                    {onOpenSmartImport ? <Upload className="w-8 h-8" /> : <FileUp className="w-8 h-8" />}
-                </div>
-                <div>
-                    <h3 className="text-lg font-bold text-indigo-300">
-                        {onOpenSmartImport ? "智能匯入中心 🚧" : (language === 'zh-TW' ? "上傳檔案 🚧" : "Upload Files 🚧")}
-                    </h3>
-                    <p className="text-sm opacity-60">
-                        目前功能優化中，預計 V0.22 開放 (Coming V0.22)
-                    </p>
-                </div>
-                <button className="px-6 py-2 rounded-full bg-gray-500 text-white text-sm font-bold shadow-lg cursor-not-allowed opacity-50">
-                    {language === 'zh-TW' ? "暫時關閉" : "Temporarily Disabled"}
-                </button>
-                {uploading && <div className="mt-4 flex items-center gap-2 text-indigo-500"><Loader2 className="animate-spin w-4 h-4" /> Uploading...</div>}
-            </div>
 
             {/* File List */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {files.length === 0 && (
-                    <div className="col-span-full text-center py-10 opacity-50 italic">
-                        {language === 'zh-TW' ? "暫無檔案" : "No files uploaded"}
+                    <div className="col-span-full text-center py-20 flex flex-col items-center justify-center opacity-50">
+                        <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                            <FileText className="w-10 h-10 opacity-50" />
+                        </div>
+                        <div className="text-lg font-bold">暫無回憶</div>
+                        <p className="text-sm mt-1">點擊右上角「智能匯入」加入相片或文件</p>
                     </div>
                 )}
                 {files.filter(f => !searchValue || f.name.toLowerCase().includes(searchValue.toLowerCase())).map(file => (

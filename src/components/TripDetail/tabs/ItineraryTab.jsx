@@ -3,7 +3,7 @@ import SearchFilterBar from '../../Shared/SearchFilterBar';
 import {
     Map as MapIcon, MapPinned, List, Navigation, PlaneTakeoff, Hotel, Utensils,
     Bus, ShoppingBag, Clock, CalendarDays, GripVertical, MapPin, BusFront, Car, Route, TrainFront, Wand2,
-    Plus, Sparkles, BrainCircuit, Edit3, Info, Quote, CheckSquare
+    Plus, Sparkles, BrainCircuit, Edit3, Info, Quote, CheckSquare, Trash2, ExternalLink
 } from 'lucide-react';
 import { CURRENCIES } from '../../../constants/appData';
 
@@ -65,11 +65,18 @@ const ItineraryTab = ({
     openSectionModal,
     onOptimize,
     onOpenAIModal,
-    onOpenSmartImport
+    onOpenSmartImport,
+    onOpenSmartExport,
+    user,
+    glassCard,
+    onClearDaily
 }) => {
-    const [searchValue, setSearchValue] = useState("");
-    const [activeFilters, setActiveFilters] = useState({ type: 'all' });
+    // Local UI State
+    const [mapScope, setMapScope] = useState('daily'); // 'daily' or 'full'
     const [isEditMode, setIsEditMode] = useState(false);
+    const [activeFilters, setActiveFilters] = useState({ type: 'all' });
+    const [searchValue, setSearchValue] = useState("");
+    const [previewLocation, setPreviewLocation] = useState(null); // For map preview
 
     const filters = [{
         key: 'type',
@@ -94,10 +101,13 @@ const ItineraryTab = ({
         return matchesSearch && matchesFilter;
     });
 
-    // Calculate map locations
-    const allLocations = days.flatMap(d => (trip.itinerary?.[d] || []).map(item => ({ date: d, ...item }))).filter(item => item.details?.location);
+    // Calculate map locations based on scope
+    const allLocations = mapScope === 'daily'
+        ? (trip.itinerary?.[currentDisplayDate] || []).map(item => ({ date: currentDisplayDate, ...item })).filter(item => item.details?.location)
+        : days.flatMap(d => (trip.itinerary?.[d] || []).map(item => ({ date: d, ...item }))).filter(item => item.details?.location);
     const mapQuery = allLocations.length ? allLocations.map(item => item.details.location).join(' via ') : `${trip.city} ${trip.country} `;
     const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=12&ie=UTF8&iwloc=&output=embed`;
+
 
     // Types mapping
     const typeStyles = {
@@ -161,10 +171,19 @@ const ItineraryTab = ({
                             {isEditMode ? '完成編輯' : '編輯行程'}
                         </button>
 
-                        <button onClick={() => { }} className={`p-2 rounded-lg border transition-all opacity-50 cursor-not-allowed ${isDarkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'bg-white border-gray-300 text-gray-600'}`} title="Map 檢視 - V0.22 開放">{viewMode === 'list' ? <MapIcon className="w-5 h-5" /> : <List className="w-5 h-5" />}</button>
-                        {canEdit && <button onClick={() => { }} className={`p-2 rounded-lg border transition-all opacity-50 cursor-not-allowed ${isDarkMode ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-indigo-50 border-indigo-200 text-indigo-600'}`} title="AI 優化 - V0.22 開放"><Wand2 className="w-5 h-5" /></button>}
-                        <button onClick={() => { }} className={`px-3 py-1 rounded-lg border text-xs opacity-50 cursor-not-allowed ${isDarkMode ? 'border-white/20' : 'border-gray-200'}`} title="匯入 - V0.22 開放">匯入 🚧</button>
-                        <button onClick={() => { }} className={`px-3 py-1 rounded-lg border text-xs opacity-50 cursor-not-allowed ${isDarkMode ? 'border-white/20' : 'border-gray-200'}`} title="匯出 - V0.22 開放">匯出 🚧</button>
+                        {canEdit && onClearDaily && filteredItems.length > 0 && (
+                            <button
+                                onClick={onClearDaily}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-bold ${isDarkMode ? 'border-red-500/50 text-red-400 hover:bg-red-500/10' : 'border-red-300 text-red-500 hover:bg-red-50'}`}
+                                title="清空當日行程"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                清空當日
+                            </button>
+                        )}
+
+                        <button onClick={() => setViewMode(viewMode === 'list' ? 'map' : 'list')} className={`p-2 rounded-lg border transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100'}`} title="切換地圖/列表">{viewMode === 'list' ? <MapIcon className="w-5 h-5" /> : <List className="w-5 h-5" />}</button>
+                        {/* {canEdit && <button onClick={onOptimize} className={`p-2 rounded-lg border transition-all ${isDarkMode ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/30' : 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'}`} title="AI 智能排程優化"><Wand2 className="w-5 h-5" /></button>} */}
                         {canEdit && <button onClick={() => onAddItem(currentDisplayDate, 'spot')} className="text-xs bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-3 py-1.5 rounded-lg font-bold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 active:scale-95">+ 新增</button>}
                     </div>
                 </div>
@@ -198,41 +217,35 @@ const ItineraryTab = ({
                                                     </div>
                                                 </button>
 
+                                                {/* AI Features Disabled for V0.22.1
                                                 <button
-                                                    onClick={() => { }}
-                                                    className={`group flex items-center gap-4 px-6 py-4 rounded-2xl transition-all opacity-50 cursor-not-allowed ${isDarkMode ? 'bg-purple-500/20' : 'bg-purple-50'} border border-purple-500/20 shadow-lg`}
-                                                    title="AI 智能領隊 - V0.22 開放"
+                                                    onClick={() => onOpenAIModal('full')}
+                                                    className={`group flex items-center gap-4 px-6 py-4 rounded-2xl transition-all active:scale-95 ${isDarkMode ? 'bg-purple-500/20 hover:bg-purple-500/30' : 'bg-purple-50 hover:bg-purple-100'} border border-purple-500/20 shadow-lg`}
                                                 >
-                                                    <div className="p-2.5 bg-purple-500/20 rounded-xl">
+                                                    <div className="p-2.5 bg-purple-500/20 rounded-xl group-hover:bg-purple-500/30 transition-colors">
                                                         <BrainCircuit className="w-5 h-5 text-purple-400" />
                                                     </div>
                                                     <div className="text-left">
-                                                        <div className="font-bold text-sm text-purple-400">AI 智能領隊 🚧</div>
-                                                        <div className="text-[10px] opacity-60 text-purple-400/70">V0.22 開放</div>
+                                                        <div className="font-bold text-sm text-purple-400">AI 智能領隊</div>
+                                                        <div className="text-[10px] opacity-60 text-purple-400/70">一鍵生成完整旅遊計畫</div>
                                                     </div>
                                                 </button>
 
                                                 <button
-                                                    onClick={() => { }}
-                                                    className={`group flex items-center gap-4 px-6 py-4 rounded-2xl transition-all opacity-50 cursor-not-allowed bg-gradient-to-r from-indigo-600/50 via-indigo-600/50 to-indigo-700/50 text-white shadow-xl shadow-indigo-500/10 border border-white/10`}
-                                                    title="AI 快速排程 - V0.22 開放"
+                                                    onClick={onOptimize}
+                                                    className={`group flex items-center gap-4 px-6 py-4 rounded-2xl transition-all active:scale-95 bg-gradient-to-r from-indigo-600 via-indigo-600 to-indigo-700 text-white shadow-xl shadow-indigo-500/20 border border-white/10`}
                                                 >
-                                                    <div className="p-2.5 bg-white/20 rounded-xl">
+                                                    <div className="p-2.5 bg-white/20 rounded-xl group-hover:bg-white/30 transition-colors">
                                                         <Sparkles className="w-5 h-5 text-white" />
                                                     </div>
                                                     <div className="text-left">
-                                                        <div className="font-bold text-sm">AI 快速排程 🚧</div>
-                                                        <div className="text-[10px] opacity-80">V0.22 開放</div>
+                                                        <div className="font-bold text-sm">AI 快速排程</div>
+                                                        <div className="text-[10px] opacity-80">優化當前動線與路線</div>
                                                     </div>
                                                 </button>
+                                                */}
 
                                                 <div className="mt-2 text-center">
-                                                    <button
-                                                        onClick={() => onOpenSmartImport ? onOpenSmartImport() : openSectionModal('import', 'itinerary')}
-                                                        className={`flex items-center justify-center gap-2 py-2 px-4 mx-auto rounded-xl transition-all text-[10px] opacity-40 hover:opacity-100 ${isDarkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'}`}
-                                                    >
-                                                        <List className="w-3.5 h-3.5" /> 從其他行程匯入數據
-                                                    </button>
                                                 </div>
                                             </div>
                                         )}
@@ -349,29 +362,64 @@ const ItineraryTab = ({
                     </div>
                 ) : (
                     <div className="h-[450px] grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Map Embed - Using OpenStreetMap (no API key needed) */}
+                        {/* Map Embed - Using Google Maps Embed */}
+                        {/* Map Embed - Using Google Maps Embed */}
                         <div className="md:col-span-2 w-full h-full rounded-2xl overflow-hidden border border-white/10 relative">
                             <iframe
                                 title="trip-map"
                                 width="100%"
                                 height="100%"
                                 frameBorder="0"
-                                src={`https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(`${trip.city}`)}&layer=mapnik&marker=${encodeURIComponent(trip.city)}`}
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                                src={`https://www.google.com/maps/embed/v1/search?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(
+                                    previewLocation
+                                        ? previewLocation
+                                        : (allLocations.length > 0 ? allLocations.map(item => item.details?.location || trip.city).join('|') : trip.city + ', ' + trip.country)
+                                )}&zoom=${previewLocation ? 16 : 13}`}
                                 style={{ border: 0 }}
                             />
-                            <a
-                                href={`https://www.google.com/maps/dir/${allLocations.map(item => encodeURIComponent(item.details?.location || trip.city)).join('/')}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="absolute bottom-3 right-3 px-3 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg shadow-lg hover:bg-indigo-700 transition-all flex items-center gap-2"
-                            >
-                                <Navigation className="w-4 h-4" /> 開啟完整路線
-                            </a>
+
+                            <div className="absolute bottom-3 right-3 flex gap-2">
+                                {previewLocation && (
+                                    <button
+                                        onClick={() => setPreviewLocation(null)}
+                                        className="px-3 py-2 bg-gray-800/80 backdrop-blur text-white text-xs font-bold rounded-lg shadow-lg hover:bg-gray-700 transition-all flex items-center gap-2"
+                                    >
+                                        <MapIcon className="w-4 h-4" /> 顯示全景
+                                    </button>
+                                )}
+                                <a
+                                    href={`https://www.google.com/maps/dir/${allLocations.map(item => encodeURIComponent(item.details?.location || trip.city)).join('/')}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="px-3 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg shadow-lg hover:bg-indigo-700 transition-all flex items-center gap-2"
+                                >
+                                    <Navigation className="w-4 h-4" /> Google Maps 路線
+                                </a>
+                            </div>
                         </div>
                         {/* Location List */}
                         <div className="space-y-2 overflow-y-auto custom-scrollbar p-0 max-h-[450px]">
-                            <div className="text-xs font-bold opacity-50 mb-2 px-1">行程地點 ({allLocations.length})</div>
-                            {allLocations.length === 0 ? <div className="text-sm opacity-60 p-3">尚未有地點資訊。</div> : allLocations.map((item, idx) => {
+                            {/* Scope Toggle */}
+                            <div className="flex items-center justify-between mb-3 px-1">
+                                <div className="text-xs font-bold opacity-50">行程地點 ({allLocations.length})</div>
+                                <div className="flex gap-1">
+                                    <button
+                                        onClick={() => { setMapScope('daily'); setPreviewLocation(null); }}
+                                        className={`px-2 py-1 text-[10px] rounded font-bold transition-all ${mapScope === 'daily' ? 'bg-indigo-500 text-white' : 'bg-gray-500/20 opacity-60 hover:opacity-100'}`}
+                                    >
+                                        當日
+                                    </button>
+                                    <button
+                                        onClick={() => { setMapScope('full'); setPreviewLocation(null); }}
+                                        className={`px-2 py-1 text-[10px] rounded font-bold transition-all ${mapScope === 'full' ? 'bg-indigo-500 text-white' : 'bg-gray-500/20 opacity-60 hover:opacity-100'}`}
+                                    >
+                                        全程
+                                    </button>
+                                </div>
+                            </div>
+                            {allLocations.length === 0 ? <div className="text-sm opacity-60 p-3">{mapScope === 'daily' ? '當日尚未有地點資訊。' : '尚未有地點資訊。'}</div> : allLocations.map((item, idx) => {
                                 const typeStyle = {
                                     flight: 'border-blue-500/30 bg-blue-500/10',
                                     hotel: 'border-amber-500/30 bg-amber-500/10',
@@ -381,24 +429,33 @@ const ItineraryTab = ({
                                     shopping: 'border-pink-500/30 bg-pink-500/10'
                                 }[item.type] || 'border-gray-500/30 bg-gray-500/10';
 
+                                const isPreviewing = previewLocation === (item.details?.location || trip.city);
+
                                 return (
-                                    <a
+                                    <div
                                         key={`${item.id}-${idx}`}
-                                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.details?.location || trip.city)}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className={`p-3 rounded-xl border flex flex-col gap-1 transition-all hover:shadow-md hover:-translate-y-0.5 cursor-pointer ${typeStyle} ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-white'}`}
+                                        onClick={() => setPreviewLocation(item.details?.location || trip.city)}
+                                        className={`p-3 rounded-xl border flex flex-col gap-1 transition-all cursor-pointer ${isPreviewing ? 'ring-2 ring-indigo-500 shadow-lg scale-[1.02]' : 'hover:shadow-md hover:-translate-y-0.5'} ${typeStyle} ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-white'}`}
                                     >
                                         <div className="flex items-center justify-between">
                                             <div className="text-[10px] opacity-50 flex items-center gap-1">
                                                 <span className="w-4 h-4 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[8px] font-bold">{idx + 1}</span>
                                                 {formatDate(item.date)}
                                             </div>
-                                            <Navigation className="w-3 h-3 text-indigo-400" />
+                                            <a
+                                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.details?.location || trip.city)}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="p-1 hover:bg-black/10 rounded transition-colors"
+                                                title="在 Google Maps 開啟"
+                                            >
+                                                <ExternalLink className="w-3 h-3 text-indigo-400" />
+                                            </a>
                                         </div>
                                         <div className="font-bold text-sm">{item.name}</div>
                                         <div className="text-[10px] opacity-60 truncate">{item.details?.location}</div>
-                                    </a>
+                                    </div>
                                 );
                             })}
                         </div>

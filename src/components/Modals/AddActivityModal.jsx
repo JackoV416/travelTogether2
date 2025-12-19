@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, Map as MapIcon, Utensils, ShoppingBag, Bus, PlaneTakeoff, Hotel, Shirt, Sparkles, Smartphone, FileText, Pill, Package } from 'lucide-react';
+import { X, Map as MapIcon, Utensils, ShoppingBag, Bus, PlaneTakeoff, Hotel, Shirt, Sparkles, Smartphone, FileText, Pill, Package, Trash2 } from 'lucide-react';
 import { inputClasses, formatDate, getWeekday } from '../../utils/tripUtils';
 import { buttonPrimary } from '../../constants/styles';
 import { CURRENCIES } from '../../constants/appData';
 
-const AddActivityModal = ({ isOpen, onClose, onSave, isDarkMode, date, defaultType = 'spot', editData = null, members = [] }) => {
+const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date, defaultType = 'spot', editData = null, members = [] }) => {
     const [name, setName] = useState('');
     const [cost, setCost] = useState('');
     const [type, setType] = useState('spot');
@@ -236,6 +236,14 @@ const AddActivityModal = ({ isOpen, onClose, onSave, isDarkMode, date, defaultTy
                 </div>
 
                 <div className="flex gap-4 mt-8 pt-6 border-t border-gray-500/10">
+                    {editData && onDelete && (
+                        <button
+                            onClick={() => onDelete(editData.id)}
+                            className="px-4 py-3.5 rounded-xl border border-red-500/50 text-red-500 font-bold hover:bg-red-500/10 transition-all flex items-center gap-2"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    )}
                     <button onClick={onClose} className="flex-1 py-3.5 rounded-xl border border-gray-500/30 font-bold opacity-70 hover:opacity-100 hover:bg-gray-500/5 transition-all">取消</button>
                     <button onClick={() => { onSave({ id: editData?.id, name, cost: Number(cost), estPrice: Number(estPrice), currency, type, details, payer, splitType, category }); onClose(); }} className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl py-3.5 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
                         {editData ? '儲存變更' : '確認加入'}

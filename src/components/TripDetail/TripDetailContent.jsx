@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { doc, updateDoc, arrayUnion, deleteDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import {
-    Calendar, Map as MapIcon, Edit3, CalendarDays, ShoppingBag, Wallet, DollarSign, FileText, Shield, Siren, FileCheck, NotebookPen, BrainCircuit, List, Users, UserPlus, Trash2, Plus, ChevronDown, Sparkles, PackageCheck, Share2, Globe, Clock, AlertTriangle
+    Calendar, Map as MapIcon, Edit3, CalendarDays, ShoppingBag, Wallet, DollarSign, FileText, Shield, Siren, FileCheck, NotebookPen, BrainCircuit, List, Users, UserPlus, Trash2, Plus, ChevronDown, Sparkles, PackageCheck, Share2, Globe, Clock, AlertTriangle, Upload, FileIcon, ArrowLeft, MoreVertical, X
 } from 'lucide-react';
 import ActiveUsersList from './ActiveUsersList';
 import {
@@ -17,6 +17,7 @@ import ExportTripModal from '../Modals/ExportTripModal';
 import AddActivityModal from '../Modals/AddActivityModal';
 import AIGeminiModal from '../Modals/AIGeminiModal';
 import TripExportImportModal from '../Modals/TripExportImportModal';
+import SmartExportModal from '../Modals/SmartExportModal';
 import {
     glassCard, getHolidayMap, getLocalizedCountryName, getLocalizedCityName, getSafeCountryInfo, formatDate,
     getDaysArray, getTripSummary, calculateDebts, getTimeDiff, getWeatherForecast, buildDailyReminder,
@@ -47,6 +48,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     const [editingItem, setEditingItem] = useState(null);
     const [sectionModalConfig, setSectionModalConfig] = useState(null); // { mode: 'import'|'export', section: 'shopping'|... }
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+    const [isSmartExportOpen, setIsSmartExportOpen] = useState(false);
     const [isPlanMenuOpen, setIsPlanMenuOpen] = useState(false);
     const [isManageMenuOpen, setIsManageMenuOpen] = useState(false);
     const [receiptPreview, setReceiptPreview] = useState({ shopping: null, budget: null });
@@ -172,6 +174,61 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
         if (!isOwner) return alert("只有擁有者可以刪除");
         if (confirm("確定刪除？")) { await deleteDoc(doc(db, "trips", trip.id)); onBack(); }
     };
+
+    const handleDeleteItineraryItem = (itemId) => {
+        if (!canEdit) return setConfirmConfig({ title: "權限不足", message: "您沒有權限執行此操作", type: "warning" });
+        if (isSimulation) return setConfirmConfig({ title: "模擬模式", message: "模擬模式僅供預覽", type: "warning" });
+
+        setConfirmConfig({
+            title: "刪除確認",
+            message: "確定要刪除這個行程項目嗎？",
+            type: "warning",
+            onConfirm: async () => {
+                setConfirmConfig(null);
+                try {
+                    const docRef = doc(db, "trips", trip.id);
+                    const docSnap = await import('firebase/firestore').then(m => m.getDoc(docRef));
+
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        const items = data.itinerary?.[currentDisplayDate] || [];
+                        const newItems = items.filter(i => i.id !== itemId);
+
+                        if (newItems.length !== items.length) {
+                            await updateDoc(docRef, { [`itinerary.${currentDisplayDate}`]: newItems });
+                            setIsAddModal(false);
+                            setEditingItem(null);
+                        }
+                    }
+                } catch (err) {
+                    console.error("Delete item error:", err);
+                    alert("刪除失敗：" + err.message);
+                }
+            }
+        });
+    };
+
+    const handleClearDailyItinerary = () => {
+        if (!canEdit) return setConfirmConfig({ title: "權限不足", message: "您沒有權限執行此操作", type: "warning" });
+        if (isSimulation) return setConfirmConfig({ title: "模擬模式", message: "模擬模式僅供預覽", type: "warning" });
+
+        setConfirmConfig({
+            title: "清空確認",
+            message: "確定要清空當日所有行程項目？\n此操作無法撤銷！",
+            type: "error",
+            onConfirm: async () => {
+                setConfirmConfig(null);
+                try {
+                    const docRef = doc(db, "trips", trip.id);
+                    await updateDoc(docRef, { [`itinerary.${currentDisplayDate}`]: [] });
+                } catch (err) {
+                    console.error("Clear daily error:", err);
+                    alert("清空失敗：" + err.message);
+                }
+            }
+        });
+    };
+
 
     const handleSaveInsurance = async () => {
         if (isSimulation) return alert("模擬模式");
@@ -470,10 +527,11 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                                     {isOwner && (
                                         <button
                                             onClick={() => setIsTripSettingsOpen(true)}
-                                            className="p-2 hover:bg-white/10 rounded-full transition-colors group/edit"
-                                            title="編輯標題"
+                                            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors flex items-center gap-1.5 border border-white/20"
+                                            title="編輯行程設定"
                                         >
-                                            <Edit3 className="w-3.5 h-3.5 text-white/40 group-hover/edit:text-white" />
+                                            <Edit3 className="w-3.5 h-3.5 text-white/80" />
+                                            <span className="text-[10px] font-bold text-white/80">編輯</span>
                                         </button>
                                     )}
                                 </div>
@@ -488,7 +546,13 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
 
                         <div className="mt-6 flex items-center gap-3 pt-6">
                             <button
-                                onClick={() => setIsExportModalOpen(true)}
+                                onClick={onOpenSmartImport}
+                                className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-[11px] md:text-sm font-bold transition-all shadow-lg border border-white/20 flex items-center gap-2 transform active:scale-95"
+                            >
+                                <Upload className="w-4 h-4" /> 智能匯入
+                            </button>
+                            <button
+                                onClick={() => setIsSmartExportOpen(true)}
                                 className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-[11px] md:text-sm font-bold transition-all shadow-lg shadow-indigo-900/20 flex items-center gap-2 transform active:scale-95"
                             >
                                 <Share2 className="w-4 h-4" /> 分享與匯出
@@ -590,7 +654,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
 
             {/* Tabs */}
             <div className="flex gap-2 overflow-x-auto pb-2 mb-4 no-scrollbar">
-                {[{ id: 'itinerary', label: '行程', icon: CalendarDays }, { id: 'packing', label: '行李', icon: ShoppingBag }, { id: 'shopping', label: '購物', icon: ShoppingBag }, { id: 'budget', label: '預算', icon: Wallet }, { id: 'currency', label: '匯率', icon: DollarSign }, { id: 'files', label: '文件', icon: FileText }, { id: 'insurance', label: '保險', icon: Shield }, { id: 'emergency', label: '緊急', icon: Siren }, { id: 'visa', label: '簽證', icon: FileCheck }, { id: 'notes', label: '筆記', icon: NotebookPen }].map(t => (<button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex items-center px-4 py-2 rounded-full font-bold transition-all duration-300 whitespace-nowrap transform hover:scale-105 ${activeTab === t.id ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl scale-105' : (isDarkMode ? 'bg-gray-800/60 text-gray-300 hover:bg-gray-700' : 'bg-gray-100/80 text-gray-600 hover:bg-gray-100')}`}><t.icon className="w-4 h-4 mr-2" />{t.label}</button>))}
+                {[{ id: 'itinerary', label: '行程', icon: CalendarDays }, { id: 'packing', label: '行李', icon: ShoppingBag }, { id: 'shopping', label: '購物', icon: ShoppingBag }, { id: 'budget', label: '預算', icon: Wallet }, { id: 'currency', label: '匯率', icon: DollarSign }, { id: 'files', label: '回憶', icon: FileIcon }, { id: 'insurance', label: '保險', icon: Shield }, { id: 'emergency', label: '緊急', icon: Siren }, { id: 'visa', label: '簽證', icon: FileCheck }, { id: 'notes', label: '筆記', icon: NotebookPen }].map(t => (<button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex items-center px-4 py-2 rounded-full font-bold transition-all duration-300 whitespace-nowrap transform hover:scale-105 ${activeTab === t.id ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl scale-105' : (isDarkMode ? 'bg-gray-800/60 text-gray-300 hover:bg-gray-700' : 'bg-gray-100/80 text-gray-600 hover:bg-gray-100')}`}><t.icon className="w-4 h-4 mr-2" />{t.label}</button>))}
             </div>
 
             {/* Itinerary Tab */}
@@ -626,7 +690,9 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                         openSectionModal={openSectionModal}
                         onOptimize={handleOptimizeSchedule}
                         onOpenAIModal={handleOpenAIModal}
-                        onOpenSmartImport={onOpenSmartImport}
+                        // onOpenSmartImport={onOpenSmartImport} // Disabled for V0.22.1
+                        // onOpenSmartExport={() => setIsSmartExportOpen(true)} // Disabled for V0.22.1
+                        onClearDaily={handleClearDailyItinerary}
                     />
                 )
             }
@@ -692,7 +758,8 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                         onExportPdf={handleExportPdf}
                         handleReceiptUpload={handleReceiptUpload}
                         glassCard={glassCard}
-                        onOpenSmartImport={onOpenSmartImport}
+                    // onOpenSmartImport={onOpenSmartImport} // Disabled V0.22.1
+                    // onOpenSmartExport={() => setIsSmartExportOpen(true)} // Disabled V0.22.1
                     />
                 )
             }
@@ -743,7 +810,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                         onAddItem={() => { setAddType('packing'); setIsAddModal(true); }}
                         onToggleItem={handlePackingToggle}
                         onDeleteItem={handlePackingDelete}
-                        onGenerateList={handleGeneratePackingList}
+                        // onGenerateList={handleGeneratePackingList} // Disabled V0.22.1 (AI)
                         onClearList={handleClearPackingList}
                         glassCard={glassCard}
                     />
@@ -756,21 +823,27 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                         trip={trip}
                         isDarkMode={isDarkMode}
                         onOpenSectionModal={openSectionModal}
-                        onOpenAIModal={(mode) => { setAIMode(mode); setIsAIModal(true); }}
+                        // onOpenAIModal={(mode) => { setAIMode(mode); setIsAIModal(true); }} // Disabled V0.22.1
                         onAddItem={(type) => { setAddType(type); setIsAddModal(true); }}
                         handleReceiptUpload={handleReceiptUpload}
                         receiptPreview={receiptPreview}
                         glassCard={glassCard}
-                        onOpenSmartImport={onOpenSmartImport}
+                    // onOpenSmartImport={onOpenSmartImport} // Disabled V0.22.1
+                    // onOpenSmartExport={() => setIsSmartExportOpen(true)} // Disabled V0.22.1
                     />
                 )
             }
 
-            <AddActivityModal isOpen={isAddModal} onClose={() => setIsAddModal(false)} onSave={handleSaveItem} isDarkMode={isDarkMode} date={selectDate} defaultType={addType} editData={editingItem} members={trip.members || [{ id: user.uid, name: user.displayName }]} />
+            <AddActivityModal isOpen={isAddModal} onClose={() => setIsAddModal(false)} onSave={handleSaveItem} onDelete={handleDeleteItineraryItem} isDarkMode={isDarkMode} date={selectDate} defaultType={addType} editData={editingItem} members={trip.members || [{ id: user.uid, name: user.displayName }]} />
             <TripSettingsModal isOpen={isTripSettingsOpen} onClose={() => setIsTripSettingsOpen(false)} trip={trip} onUpdate={(d) => !isSimulation && updateDoc(doc(db, "trips", trip.id), d)} isDarkMode={isDarkMode} />
             <MemberSettingsModal isOpen={isMemberModalOpen} onClose={() => setIsMemberModalOpen(false)} members={trip.members || []} onUpdateRole={handleUpdateRole} isDarkMode={isDarkMode} />
             <InviteModal isOpen={isInviteModal} onClose={() => setIsInviteModal(false)} tripId={trip.id} onInvite={handleInvite} isDarkMode={isDarkMode} />
+
+            {/* AI Modal Disabled V0.22.1
             <AIGeminiModal isOpen={isAIModal} onClose={() => setIsAIModal(false)} onApply={handleAIApply} isDarkMode={isDarkMode} contextCity={trip.city} existingItems={itineraryItems} mode={aiMode} userPreferences={globalSettings.preferences} trip={trip} weatherData={weatherData} />
+            */}
+
+            {/* Export/Import Modals Disabled V0.22.1
             <TripExportImportModal
                 isOpen={Boolean(sectionModalConfig)}
                 onClose={closeSectionModal}
@@ -783,15 +856,17 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                 trip={trip}
             />
             {
-                isExportModalOpen && (
-                    <ExportTripModal
-                        isOpen={isExportModalOpen}
-                        onClose={() => setIsExportModalOpen(false)}
+                isSmartExportOpen && (
+                    <SmartExportModal
+                        isOpen={isSmartExportOpen}
+                        onClose={() => setIsSmartExportOpen(false)}
                         trip={trip}
                         isDarkMode={isDarkMode}
+                        onExportPdf={handleExportPdf}
                     />
                 )
             }
+            */}
             {
                 confirmConfig && (
                     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in bg-black/40">
