@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import SearchFilterBar from '../../Shared/SearchFilterBar';
+import EmptyState from '../../Shared/EmptyState';
+import { Search } from 'lucide-react';
 import {
     Map as MapIcon, MapPinned, List, Navigation, PlaneTakeoff, Hotel, Utensils,
     Bus, ShoppingBag, Clock, CalendarDays, GripVertical, MapPin, BusFront, Car, Route, TrainFront, Wand2,
@@ -7,7 +9,7 @@ import {
 } from 'lucide-react';
 import { CURRENCIES } from '../../../constants/appData';
 import { suggestTransportBetweenSpots } from '../../../services/ai-parsing';
-import { formatDuration } from '../../../utils/tripUtils';
+import { formatDuration, getSmartItemImage } from '../../../utils/tripUtils';
 
 // --- Local Helpers ---
 
@@ -72,7 +74,10 @@ const ItineraryTab = ({
     onAddTransportSuggestion,
     user,
     glassCard,
-    onClearDaily
+    onClearDaily,
+    requestedItemId,
+    onItemHandled,
+    onUpdateLocation
 }) => {
     // Local UI State
     const [mapScope, setMapScope] = useState('daily'); // 'daily' or 'full'
@@ -80,6 +85,22 @@ const ItineraryTab = ({
     const [activeFilters, setActiveFilters] = useState({ type: 'all' });
     const [searchValue, setSearchValue] = useState("");
     const [previewLocation, setPreviewLocation] = useState(null); // For map preview
+
+    // Location Editing State
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+    const [locForm, setLocForm] = useState({ country: "", city: "" });
+
+    // Initialize location form when opening
+    const handleOpenLocationModal = () => {
+        const currentLoc = trip.locations?.[currentDisplayDate] || { country: trip.country || "", city: trip.city || "" };
+        setLocForm(currentLoc);
+        setIsLocationModalOpen(true);
+    };
+
+    const handleSaveLocation = () => {
+        onUpdateLocation(currentDisplayDate, locForm);
+        setIsLocationModalOpen(false);
+    };
 
     // AI Transport Suggestions State
     const [transportSuggestions, setTransportSuggestions] = useState({}); // { "itemId-nextItemId": suggestion }
@@ -113,6 +134,41 @@ const ItineraryTab = ({
         }
     };
 
+    // Deep Link Effect
+    useEffect(() => {
+        if (requestedItemId && itineraryItems) {
+            // Find if item exists in current day
+            const target = itineraryItems.find(i => i.id === requestedItemId);
+            if (target) {
+                // Wait for DOM
+                setTimeout(() => {
+                    const el = document.getElementById(`item-${requestedItemId}`);
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        el.classList.add('ring-4', 'ring-indigo-500', 'ring-offset-2', 'ring-offset-slate-900');
+                        setTimeout(() => {
+                            el.classList.remove('ring-4', 'ring-indigo-500', 'ring-offset-2', 'ring-offset-slate-900');
+                        }, 2000);
+                        onItemHandled?.();
+                    }
+                }, 100);
+            } else {
+                // If not found in current day, we might need to search other days (but for now let's assume App.jsx handles date switching if needed, or we just ignore)
+                // Actually App.jsx/TripDetail doesn't know about finding which date the item is in.
+                // Improvement: We should search ALL days to find the item and switch selectDate.
+
+                // Let's implement searching across all days:
+                for (const d of days) {
+                    const items = trip.itinerary?.[d] || [];
+                    if (items.some(i => i.id === requestedItemId)) {
+                        setSelectDate(d); // Switch to that day (this will trigger re-render, and then the above 'if(target)' block will run on next effect)
+                        return;
+                    }
+                }
+            }
+        }
+    }, [requestedItemId, itineraryItems, days, trip.itinerary, setSelectDate, onItemHandled]);
+
     const filters = [{
         key: 'type',
         label: '類型',
@@ -141,8 +197,6 @@ const ItineraryTab = ({
         ? (trip.itinerary?.[currentDisplayDate] || []).map(item => ({ date: currentDisplayDate, ...item })).filter(item => item.details?.location)
         : days.flatMap(d => (trip.itinerary?.[d] || []).map(item => ({ date: d, ...item }))).filter(item => item.details?.location);
     const mapQuery = allLocations.length ? allLocations.map(item => item.details.location).join(' via ') : `${trip.city} ${trip.country} `;
-    const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=12&ie=UTF8&iwloc=&output=embed`;
-
 
     // Types mapping
     const typeStyles = {
@@ -157,7 +211,55 @@ const ItineraryTab = ({
     const glassCardClass = (dark) => `backdrop-blur-sm border shadow-xl rounded-2xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${dark ? 'bg-gray-900/95 border-gray-700 text-gray-100 hover:border-gray-600' : 'bg-slate-50/95 border-gray-200 text-gray-900 hover:border-gray-300'}`;
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6 animate-fade-in relative">
+            {/* Daily Location Modal */}
+            {isLocationModalOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className={`w-full max-w-sm p-6 rounded-2xl shadow-2xl border animate-scale-in ${isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'}`}>
+                        <h4 className="font-bold text-lg mb-4">設定當日位置</h4>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-xs font-bold opacity-70 uppercase mb-1 block">國家</label>
+                                <select
+                                    className={`w-full p-2 rounded-lg border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
+                                    value={locForm.country}
+                                    onChange={e => setLocForm({ ...locForm, country: e.target.value })}
+                                >
+                                    <option value="">選擇國家</option>
+                                    {Object.keys(COUNTRIES_DATA).sort().map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold opacity-70 uppercase mb-1 block">城市</label>
+                                <input
+                                    className={`w-full p-2 rounded-lg border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
+                                    value={locForm.city}
+                                    placeholder="輸入城市名稱"
+                                    onChange={e => setLocForm({ ...locForm, city: e.target.value })}
+                                />
+                                {locForm.country && COUNTRIES_DATA[locForm.country]?.cities && (
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                        {COUNTRIES_DATA[locForm.country].cities.map(c => (
+                                            <button
+                                                key={c}
+                                                onClick={() => setLocForm({ ...locForm, city: c })}
+                                                className={`text-xs px-2 py-1 rounded border transition-colors ${locForm.city === c ? 'bg-indigo-500 text-white border-indigo-500' : 'opacity-60 hover:opacity-100'}`}
+                                            >
+                                                {c}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex gap-3 mt-6">
+                            <button onClick={() => setIsLocationModalOpen(false)} className="flex-1 py-2 rounded-xl border opacity-70 hover:opacity-100">取消</button>
+                            <button onClick={handleSaveLocation} className="flex-1 py-2 rounded-xl bg-indigo-500 text-white font-bold hover:bg-indigo-600">儲存</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex gap-3 overflow-x-auto pb-2 relative z-10">
                 {days.map((d) => {
                     const dateKey = d.slice(5); // MM-DD
@@ -192,11 +294,20 @@ const ItineraryTab = ({
                 </div>
             )}
 
-
-
             <div className={glassCardClass(isDarkMode) + " p-4 min-h-[400px]"}>
                 <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-                    <div className="font-bold text-lg flex items-center gap-3">{formatDate(currentDisplayDate)}</div>
+                    <div className="flex items-center gap-3">
+                        <div className="font-bold text-lg">{formatDate(currentDisplayDate)}</div>
+                        {/* Daily Location Badge */}
+                        <button
+                            onClick={handleOpenLocationModal}
+                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 hover:bg-gray-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                        >
+                            <MapPin className="w-3 h-3 text-indigo-500" />
+                            {trip.locations?.[currentDisplayDate]?.city || trip.locations?.[currentDisplayDate]?.country || (trip.city ? `${trip.city} (預設)` : "設定位置")}
+                        </button>
+                    </div>
+
                     <div className="flex gap-2 flex-wrap justify-end items-center">
                         <button
                             onClick={() => setIsEditMode(!isEditMode)}
@@ -226,78 +337,21 @@ const ItineraryTab = ({
                 {viewMode === 'list' ? (
                     <div className="p-0 space-y-0 relative before:absolute before:left-[17px] before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-indigo-500/50 before:via-purple-500/30 before:to-transparent">
                         {filteredItems.length === 0 ? (
-                            <div className="text-center py-12 opacity-60">
-                                {searchValue || activeFilters.type !== 'all' ? (
-                                    <>
-                                        <div className="text-sm">找不到符合的結果</div>
-                                        <button onClick={() => { setSearchValue(""); setActiveFilters({ type: 'all' }); }} className="text-xs text-indigo-500 hover:underline mt-1">清除搜尋</button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <CalendarDays className="w-16 h-16 mx-auto mb-4 opacity-10" />
-                                        <h3 className="text-xl font-bold mb-8">今日尚未安排行程</h3>
-
-                                        {canEdit && (
-                                            <div className="grid grid-cols-1 gap-3 max-w-sm mx-auto">
-                                                <button
-                                                    onClick={() => onAddItem(currentDisplayDate, 'spot')}
-                                                    className={`group flex items-center gap-4 px-6 py-4 rounded-2xl transition-all active:scale-95 ${isDarkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-100 hover:bg-gray-200'} border border-white/5 backdrop-blur-xl shadow-lg`}
-                                                >
-                                                    <div className="p-2.5 bg-blue-500/20 rounded-xl group-hover:bg-blue-500/30 transition-colors">
-                                                        <Edit3 className="w-5 h-5 text-blue-400" />
-                                                    </div>
-                                                    <div className="text-left">
-                                                        <div className="font-bold text-sm">手動新增行程</div>
-                                                        <div className="text-[10px] opacity-50 text-gray-400">景點、餐廳或交通</div>
-                                                    </div>
-                                                </button>
-
-                                                <button
-                                                    onClick={() => onOpenSmartImport()}
-                                                    className={`group flex items-center gap-4 px-6 py-4 rounded-2xl transition-all active:scale-95 ${isDarkMode ? 'bg-indigo-500/20 hover:bg-indigo-500/30' : 'bg-indigo-50 hover:bg-indigo-100'} border border-indigo-500/20 shadow-lg`}
-                                                >
-                                                    <div className="p-2.5 bg-indigo-500/20 rounded-xl group-hover:bg-indigo-500/30 transition-colors">
-                                                        <FileText className="w-5 h-5 text-indigo-400" />
-                                                    </div>
-                                                    <div className="text-left">
-                                                        <div className="font-bold text-sm text-indigo-400">智能匯入 (V0.22.3)</div>
-                                                        <div className="text-[10px] opacity-60 text-indigo-400/70">圖片/截圖/單據識別</div>
-                                                    </div>
-                                                </button>
-
-                                                <button
-                                                    onClick={() => onOpenAIModal('full')}
-                                                    className={`group flex items-center gap-4 px-6 py-4 rounded-2xl transition-all active:scale-95 ${isDarkMode ? 'bg-purple-500/20 hover:bg-purple-500/30' : 'bg-purple-50 hover:bg-purple-100'} border border-purple-500/20 shadow-lg`}
-                                                >
-                                                    <div className="p-2.5 bg-purple-500/20 rounded-xl group-hover:bg-purple-500/30 transition-colors">
-                                                        <BrainCircuit className="w-5 h-5 text-purple-400" />
-                                                    </div>
-                                                    <div className="text-left">
-                                                        <div className="font-bold text-sm text-purple-400">AI 智能領隊</div>
-                                                        <div className="text-[10px] opacity-60 text-purple-400/70">一鍵生成完整旅遊計畫</div>
-                                                    </div>
-                                                </button>
-
-                                                <button
-                                                    onClick={onOptimize}
-                                                    className={`group flex items-center gap-4 px-6 py-4 rounded-2xl transition-all active:scale-95 bg-gradient-to-r from-indigo-600 via-indigo-600 to-indigo-700 text-white shadow-xl shadow-indigo-500/20 border border-white/10`}
-                                                >
-                                                    <div className="p-2.5 bg-white/20 rounded-xl group-hover:bg-white/30 transition-colors">
-                                                        <Sparkles className="w-5 h-5 text-white" />
-                                                    </div>
-                                                    <div className="text-left">
-                                                        <div className="font-bold text-sm">AI 快速排程</div>
-                                                        <div className="text-[10px] opacity-80">優化當前動線與路線</div>
-                                                    </div>
-                                                </button>
-
-                                                <div className="mt-2 text-center">
-                                                </div>
-                                            </div>
-                                        )}
-                                    </>
-                                )}
-                            </div>
+                            <EmptyState
+                                icon={searchValue ? Search : CalendarDays}
+                                title={searchValue ? "找不到相關行程" : "今日尚未安排行程"}
+                                description={searchValue ? `找不到與「${searchValue}」相關的項目。` : "開始規劃今天的精彩旅程，或者試試 AI 智能生成。"}
+                                isDarkMode={isDarkMode}
+                                action={!searchValue ? {
+                                    label: "AI 智能生成",
+                                    onClick: () => onOpenAIModal('full'),
+                                    icon: BrainCircuit
+                                } : {
+                                    label: "清除搜尋",
+                                    onClick: () => { setSearchValue(""); setActiveFilters({ type: 'all' }); },
+                                    icon: Search
+                                }}
+                            />
                         ) : filteredItems.map((item, i) => {
                             const advice = getTransportAdvice(item, trip.city);
                             const transportMeta = advice ? TRANSPORT_ICONS[advice.mode] : null;
@@ -307,6 +361,7 @@ const ItineraryTab = ({
 
                             return (
                                 <div
+                                    id={`item-${item.id}`}
                                     key={item.id || i}
                                     draggable={canEdit && isEditMode}
                                     onDragStart={(e) => onDragStart && onDragStart(e, i)}
@@ -325,6 +380,17 @@ const ItineraryTab = ({
                                     {/* Time Block */}
                                     <div className="font-mono text-sm font-bold text-indigo-400 pt-1 w-12 flex-shrink-0">
                                         {item.details?.time || item.time || "--:--"}
+                                    </div>
+
+                                    {/* Image Thumbnail */}
+                                    <div className="w-20 h-14 md:w-24 md:h-16 rounded-xl overflow-hidden flex-shrink-0 relative group/img">
+                                        <img
+                                            src={getSmartItemImage(item, trip)}
+                                            alt={item.name}
+                                            className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110"
+                                            onError={(e) => { e.target.src = getSmartItemImage({ type: item.type }, trip); }}
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
                                     </div>
 
                                     {/* Icon & Content Wrapper */}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plane } from 'lucide-react';
 import { glassCard } from '../../../utils/tripUtils';
+import SkeletonLoader from '../../Shared/SkeletonLoader';
 
 /**
  * FlightsWidget - 顯示機票優惠
@@ -17,17 +18,14 @@ const FlightsWidget = ({ isDarkMode, flights, loadingFlights }) => {
                         <Plane className="w-5 h-5" /> 機票優惠
                     </h4>
                     <span className="text-[9px] opacity-40 bg-white/10 px-2 py-0.5 rounded font-mono uppercase tracking-widest">
-                        {loadingFlights ? 'Loading...' : 'Live'}
+                        {loadingFlights ? 'Fetching...' : 'Live'}
                     </span>
                 </div>
                 <div className="space-y-2">
                     {loadingFlights ? (
-                        [...Array(4)].map((_, i) => (
-                            <div key={i} className="p-3 bg-white/5 rounded-xl border border-white/5 flex justify-between animate-pulse">
-                                <div className="h-4 bg-white/10 rounded w-1/3"></div>
-                                <div className="h-4 bg-white/10 rounded w-1/4"></div>
-                            </div>
-                        ))
+                        <div className="space-y-2">
+                            <SkeletonLoader type="list-item" count={4} isDarkMode={isDarkMode} />
+                        </div>
                     ) : (
                         flights.map((f, i) => (
                             <a key={i} href={f.url} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-all flex items-center justify-between gap-2 group">

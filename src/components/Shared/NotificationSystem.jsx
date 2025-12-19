@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Bell, Info, CheckCircle, AlertTriangle, AlertCircle } from 'lucide-react';
 
-const NotificationSystem = ({ notifications, setNotifications, isDarkMode }) => {
+const NotificationSystem = ({ notifications, setNotifications, isDarkMode, onNotificationClick }) => {
     if (!notifications || notifications.length === 0) return null;
 
     const dismiss = (id) => {
@@ -41,7 +41,8 @@ const NotificationSystem = ({ notifications, setNotifications, isDarkMode }) => 
             {notifications.map(notif => (
                 <div
                     key={notif.id}
-                    className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-xl border backdrop-blur-xl animate-slide-in transition-all overflow-hidden relative ${getBgColor(notif.type)}`}
+                    onClick={() => notif.context && onNotificationClick?.(notif)}
+                    className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-xl border backdrop-blur-xl animate-slide-in transition-all overflow-hidden relative ${getBgColor(notif.type)} ${notif.context ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
                 >
                     {/* Accent Bar */}
                     <div className={`absolute left-0 top-0 bottom-0 w-1 ${getAccentBar(notif.type)}`}></div>

@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { List, CheckSquare, FileUp, Upload, Loader2, Trash2, Sparkles, Plus, ShoppingBag, Receipt, Tag } from 'lucide-react';
 import SearchFilterBar from '../../Shared/SearchFilterBar';
+import EmptyState from '../../Shared/EmptyState';
+import { Search } from 'lucide-react';
 
 const ShoppingTab = ({
     trip,
@@ -67,10 +69,17 @@ const ShoppingTab = ({
 
                         <div className="space-y-3 min-h-[100px]">
                             {filteredShopping.filter(i => !i.bought).length === 0 && (
-                                <div className="flex flex-col items-center justify-center py-10 opacity-20 italic text-sm">
-                                    <Tag className="w-8 h-8 mb-2 opacity-50" />
-                                    <span>暫無清單</span>
-                                </div>
+                                <EmptyState
+                                    icon={searchValue ? Search : Tag}
+                                    title={searchValue ? "找不到相關商品" : "清單空空如也"}
+                                    description={searchValue ? `找不到與「${searchValue}」相關的商品。` : "將您想買的東西加入清單，避免錯過心頭好。"}
+                                    isDarkMode={isDarkMode}
+                                    action={!searchValue ? {
+                                        label: "立即新增",
+                                        onClick: () => onAddItem('shopping_plan'),
+                                        icon: Plus
+                                    } : null}
+                                />
                             )}
                             {filteredShopping.filter(i => !i.bought).map((item, i) => (
                                 <div key={i} className={`group p-4 rounded-xl flex justify-between items-center transition-all border ${isDarkMode ? 'bg-white/[0.03] border-white/5 hover:bg-white/[0.06] hover:border-white/10' : 'bg-gray-50 border-gray-100 hover:bg-white hover:shadow-md'} `}>
@@ -122,10 +131,17 @@ const ShoppingTab = ({
 
                         <div className="space-y-3 min-h-[100px]">
                             {filteredBought.length === 0 && (
-                                <div className="flex flex-col items-center justify-center py-10 opacity-20 italic text-sm">
-                                    <Receipt className="w-8 h-8 mb-2 opacity-50" />
-                                    <span>未有購入記錄</span>
-                                </div>
+                                <EmptyState
+                                    icon={searchValue ? Search : Receipt}
+                                    title={searchValue ? "找不到購買記錄" : "尚未有購入記錄"}
+                                    description={searchValue ? `找不到與「${searchValue}」相關的記錄。` : "記錄您的戰利品，自動同步到預算管理中。"}
+                                    isDarkMode={isDarkMode}
+                                    action={!searchValue ? {
+                                        label: "手動記帳",
+                                        onClick: () => onAddItem('shopping'),
+                                        icon: Plus
+                                    } : null}
+                                />
                             )}
                             {filteredBought.map((item, i) => (
                                 <div key={i} className={`p-4 rounded-xl flex justify-between items-center transition-all border ${isDarkMode ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-emerald-50/50 border-emerald-200'} `}>

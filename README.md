@@ -1,12 +1,28 @@
-# Travel Together (智能旅遊規劃) V0.25.1
+# Travel Together (智能旅遊規劃) V1.0.0-RC1
 
-[![TravelTogether](https://img.shields.io/badge/Version-V0.25.1--Dashboard--Refactor-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.0.0--RC1--Modern--UI-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-10.x-orange.svg)](https://firebase.google.com/)
 
-## 🚀 V0.25.1: Dashboard Refactor & AI Resilience (2025-12-19)
-本版本包含重大架構優化與 AI 防災機制：
+## 🚀 V0.27.0-PreRelease: Security & Admin Suite (2025-12-20)
+本版本係 2025 年終安全性與架構總結前瞻版 (Pre-Release)，整合了完整的用戶管理、自動封鎖與後台升級：
+
+### 🛡️ 全方位安全與管理 (Security & Admin)
+- **Autoban System**: 智能偵測濫華行為 (e.g. 1分鐘建立 >5 行程)，自動封鎖違規帳號。
+- **Admin Panel 2.0**: 全新分頁設計 (Users/Admins/Feedback)，支援一鍵封鎖、搜尋用戶及動態管理權限。
+- **User Persistence**: 用戶資料自動同步至 Firestore，確保數據完整性。
+
+### ✨ 視覺與質感升級 (UI/UX)
+- **🦴 Skeleton Loaders**: 全站引入骨架屏，取代生硬嘅 Spinner，動態加載脈。
+- **🏜️ Empty States**: 設計 5 款精緻空狀態頁面，配備 CTA 引導，數據為空時亦唔會「一片死寂」。
+- **🎓 Onboarding 導覽**: 針對新用戶設計嘅 Step-by-step 教學，3 秒上手核心 AI 功能。
+- **🌓 Dark Mode 2.0**: 深度適配 Zinc 鋅灰色系，解決加載時嘅視覺閃爍問題。
+
+### 🏗️ 架構性能與穩定性
+- **組件化拆分**: 完成 Dashboard 7 大 Widget 結構解耦。
+- **數據流優化**: 實施 `useDashboardData` 加載策略，支援人工延遲（Demo Mode）以展示加載效果。
+- **Bug Fix**: 修復了時區偏移、路徑引用錯誤及深色模式背景同步問題。
 
 ### 🏗️ Dashboard 結構重組
 - **組件化拆分**: 拆分 7 大 Widget (天氣/新聞/酒店/機票等) 與 Layout 組件，代碼更易維護。
@@ -87,10 +103,11 @@ graph TD
 
 | 版本 | 主要亮點 | 狀態 |
 | :--- | :--- | :--- |
-| **V0.23.5** | **Osaka Grand Update**: AI 助手由實體 Vision 驅動, 教學資料全補完 (距離/步數), 港式粵語校對 | ✅ 已發布 |
-| **V0.23.1** | **UI Parity**: 行程/地圖 UI 同步 AI 式樣, 分享權限強化 (可編輯), 真實教學資料 | ✅ 已發布 |
-| **V0.23.0** | **Guest Preview**: 訪客預覽模式, AI 行程真實化, 導入中心實裝 | ✅ 已發布 |
-| **V0.22.3** | **AI 大升級**: Gemini API, 智能交通建議, iCal 匯出, WA/TG 分享 | ✅ 已發布 |
+| **V0.27.0-Pre** | **Milestone**: Autoban, Admin Suite, Dashboard Refactor | 🚀 Pre |
+| **V1.0.0-RC1** | **Modern UI**: SkeletonLoaders, EmptyStates, Onboarding | ✅ 已發布 |
+| **V0.25.1** | **Architecture**: Dashboard Widgets, userDashboardData, Fixes | ✅ 已發布 |
+| **V0.24.0** | **Osaka Express**: 智能交通格式, 穿著建議 v2, 側邊欄翻新 | ✅ 已發布 |
+| **V0.22.3** | **AI 大升級**: Gemini API, 智能交通建議, iCal 匯出 | ✅ 已發布 |
 
 ---
 
@@ -104,4 +121,4 @@ graph TD
 ---
 
 **Author**: [Jamie Kwok](https://github.com/JackoV416)  
-**Last Updated**: 2025-12-19 18:05 HKT
+**Last Updated**: 2025-12-20 00:35 HKT

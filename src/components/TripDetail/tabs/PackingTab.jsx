@@ -4,6 +4,8 @@ import {
     Shirt, Bath, Smartphone, Clipboard, Pill, Box, AlertCircle
 } from 'lucide-react';
 import SearchFilterBar from '../../Shared/SearchFilterBar';
+import EmptyState from '../../Shared/EmptyState';
+import { Search } from 'lucide-react';
 
 const PackingTab = ({
     trip,
@@ -120,10 +122,18 @@ const PackingTab = ({
                             {isExpanded && (
                                 <div className="p-3 space-y-1.5 min-h-[60px]">
                                     {items.length === 0 && (
-                                        <div className="flex flex-col items-center justify-center py-6 opacity-30">
-                                            <AlertCircle className="w-6 h-6 mb-2" />
-                                            <p className="text-[10px] font-bold uppercase tracking-widest">Empty</p>
-                                        </div>
+                                        <EmptyState
+                                            icon={searchValue ? Search : AlertCircle}
+                                            mini={true}
+                                            title={searchValue ? "找不到項目" : "無內容"}
+                                            description={searchValue ? "嘗試換個關鍵字搜尋。" : "尚未加入任何行李項目。"}
+                                            isDarkMode={isDarkMode}
+                                            action={!searchValue ? {
+                                                label: "新增",
+                                                onClick: () => onAddItem('packing'),
+                                                icon: Plus
+                                            } : null}
+                                        />
                                     )}
                                     {items.map((item) => (
                                         <div

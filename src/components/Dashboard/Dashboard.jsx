@@ -22,6 +22,7 @@ import TripsGrid from './TripsGrid';
 
 // Hooks
 import useDashboardData from '../../hooks/useDashboardData';
+import { checkAbuse } from '../../services/security';
 
 // Widget Components
 import {
@@ -34,9 +35,9 @@ import {
     CurrencyConverter
 } from './widgets';
 
-const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSettings, setGlobalBg, globalSettings, exchangeRates, weatherData }) => {
+const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSettings, setGlobalBg, globalSettings, exchangeRates, weatherData, isLoadingWeather, isBanned }) => {
     const {
-        trips, newsData, loadingNews,
+        trips, loadingTrips, newsData, loadingNews,
         hotels, loadingHotels, flights, loadingFlights,
         transports, loadingTransports, connectivity, loadingConnectivity,
         refreshTrigger, setRefreshTrigger, sendNotification
@@ -89,6 +90,12 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
     };
 
     const handleCreate = async () => {
+        if (isBanned) return sendNotification("帳戶已鎖定", "您目前無法建立新行程。", "error");
+
+        // Abuse Check
+        const isAbuse = await checkAbuse(user, 'create_trip');
+        if (isAbuse) return sendNotification("帳戶已鎖定", "檢測到異常活動，您的帳戶已被系統自動鎖定。", "error");
+
         if (!form.name || form.countries.length === 0) return alert("請至少選擇一個國家");
         const primaryCountry = form.countries[0];
         const primaryCity = form.cities[0] || COUNTRIES_DATA[primaryCountry]?.cities?.[0] || '';
@@ -313,6 +320,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
 
             <TripsGrid
                 trips={trips}
+                loadingTrips={loadingTrips}
                 isDarkMode={isDarkMode}
                 currentLang={currentLang}
                 onSelectTrip={onSelectTrip}
@@ -340,6 +348,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                     <WeatherWidget
                         isDarkMode={isDarkMode}
                         weatherData={weatherData}
+                        isLoadingWeather={isLoadingWeather}
                         currentLang={currentLang}
                     />
 

@@ -8,7 +8,10 @@ import {
     COUNTRIES_DATA,
     TIMEZONES,
     OUTFIT_IMAGES,
-    CURRENCIES
+    CURRENCIES,
+    CITY_IMAGES,
+    LANDMARK_IMAGES,
+    TYPE_DEFAULT_IMAGES
 } from '../constants/appData';
 import { convertCurrency } from '../services/exchangeRate';
 
@@ -143,4 +146,47 @@ export const formatDuration = (durationStr) => {
     if (m === 0) return `${h} 小時`;
     return `${h} 小時 ${m} 分`;
 };
+
+
+export const getSmartItemImage = (item, tripOrCity) => {
+    // 1. User/Uploaded Image (Priority 1)
+    if (item.image) return item.image;
+    if (item.details?.image) return item.details.image;
+
+    const itemName = (item.name || "").toLowerCase();
+    const city = (typeof tripOrCity === 'string' ? tripOrCity : tripOrCity?.city) || "";
+    // const country = (typeof tripOrCity === 'string' ? '' : tripOrCity?.country) || "";
+
+    // 2. Journal File Match (Priority 2) - Search fuzzy match in trip.files (Journal)
+    // "User means images in Journal"
+    const tripFiles = typeof tripOrCity === 'object' ? (tripOrCity.files || []) : [];
+    const matchedFile = tripFiles.find(f =>
+        f.type?.startsWith('image/') && f.name?.toLowerCase().includes(itemName)
+    );
+    if (matchedFile) return matchedFile.url;
+
+    // 3. Exact Landmark Name Match (Smart Match)
+    for (const [key, url] of Object.entries(LANDMARK_IMAGES)) {
+        if (itemName.includes(key.toLowerCase())) return url;
+    }
+
+    // 4. City-specific default fallback if no better image
+    if (CITY_IMAGES[city] && (item.type === 'spot' || item.type === 'hotel')) {
+        return CITY_IMAGES[city];
+    }
+
+    // 5. Type Default
+    return TYPE_DEFAULT_IMAGES[item.type] || TYPE_DEFAULT_IMAGES.spot;
+};
+
+export const formatFileSize = (bytes) => {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const dm = 1;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+};
+
+export const isImageFile = (type) => type?.startsWith('image/');
 

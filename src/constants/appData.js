@@ -4,13 +4,62 @@ import {
 
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
-export const APP_VERSION = 'V0.25.1';
-export const APP_VERSION_TAG = 'Dashboard Refactor & AI Resilience';
-export const APP_LAST_UPDATE = '2025-12-19';
+export const ADMIN_EMAILS = ["jamiekwok416@gmail.com", "test@test.com"]; // User can add their email here
+export const APP_VERSION = 'V0.27.0-PreRelease';
+export const APP_VERSION_TAG = 'Pre-Revamp Milestone';
+export const APP_LAST_UPDATE = '2025-12-20';
 
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V0.27.0-PreRelease",
+        tag: "Milestone Consolidation",
+        date: "2025-12-20",
+        desc: {
+            "zh-TW": "2025 年終里程碑：安全性、後台管理與架構重構總結",
+            "en": "2025 Year-End Milestone: Security, Admin & Architecture"
+        },
+        details: {
+            "zh-TW": [
+                "🚀 架構重構 (Architecture): Dashboard 模組化拆分，提升效能與維護性 (V0.25.1)",
+                "🛡️ 安全升級 (Security): 實裝 Autoban 智能封鎖系統與 Rate Limiting (V0.26.1)",
+                "👮‍♂️ 管理後台 (Admin Panel): 全新分頁設計 (Users/Admins/Feedback)，支援一鍵封鎖與動態權限管理 (V0.26.0)",
+                "💬 回饋系統 (Feedback): 支援圖文/影片回報，即時管理員通知 (V0.25.2)",
+                "💾 資料持久化 (Persistence): 用戶資料自動同步 Firestore，防止資料遺失"
+            ],
+            "en": [
+                "🚀 Architecture: Modular Dashboard refactor for performance (V0.25.1)",
+                "🛡️ Security: Autoban system w/ Rate Limiting & Abuse detection (V0.26.1)",
+                "👮‍♂️ Admin Console: New Tabs (Users/Admins), One-click Ban & Dynamic Permissions (V0.26.0)",
+                "💬 Feedback System: Rich media support & Real-time admin alerts (V0.25.2)",
+                "💾 Persistence: Auto-sync user data to Firestore"
+            ]
+        }
+    },
+    {
+        ver: "V0.25.2",
+        tag: "Feedback & Stability",
+        date: "2025-12-20",
+        desc: {
+            "zh-TW": "意見回饋系統 & 足跡修復",
+            "en": "Feedback System & Footprints Fix"
+        },
+        details: {
+            "zh-TW": [
+                "🐛 Bug Fix: 修復足跡 (Journal) 頁面日期解析錯誤導致的崩潰",
+                "✨ 新功能：新增意見回饋與 Bug 匯報系統 (Feedback System)",
+                "🗺️ 假期檢查：驗證並優化日本及本地假期顯示邏輯",
+                "📝 UI 優化：調整 TripDetail 頁籤排序"
+            ],
+            "en": [
+                "🐛 Bug Fix: Resolved crash in Journal tab due to invalid date parsing",
+                "✨ New Feature: Added comprehensive Feedback & Bug Reporting System",
+                "🗺️ Holiday Check: Verified Japan/Local holiday logic",
+                "📝 UI Polish: Reordered TripDetail tabs"
+            ]
+        }
+    },
     {
         ver: "V0.25.1",
         tag: "Optimization & Resilience",
@@ -507,7 +556,7 @@ export const CITY_TRANSLATIONS = {
 
 export const HOLIDAYS_BY_REGION = {
     "HK": { "01-01": "元旦", "01-29": "農曆新年", "01-30": "農曆新年", "01-31": "農曆新年", "04-04": "清明節", "04-18": "耶穌受難節", "04-19": "耶穌受難節翌日", "04-21": "復活節", "05-01": "勞動節", "05-05": "佛誕", "05-31": "端午節", "07-01": "回歸紀念日", "10-01": "國慶日", "10-07": "中秋節翌日(預測)", "10-29": "重陽節", "12-25": "聖誕節", "12-26": "拆禮物日" },
-    "TW": { "01-01": "元旦", "01-28": "除夕", "01-29": "春節", "01-30": "春節", "01-31": "春節", "02-28": "和平紀念日", "04-04": "兒童節", "04-05": "清明節", "05-31": "端午節", "10-06": "中秋節", "10-10": "國慶日" },
+    "TW": { "01-01": "元旦", "01-28": "除夕", "01-29": "春節", "01-30": "春節", "01-31": "春節", "02-28": "和平紀念日", "04-04": "兒童節", "04-05": "清明節", "05-31": "端午節", "10-06": "中秋節", "10-10": "國慶日", "12-25": "行憲紀念日" },
     "JP": { "01-01": "元日", "01-13": "成人之日", "02-11": "建國記念日", "02-23": "天皇誕生日", "02-24": "振替休日", "03-20": "春分", "04-29": "昭和之日", "05-03": "憲法記念日", "05-04": "綠之日", "05-05": "兒童之日", "05-06": "振替休日", "07-21": "海之日", "08-11": "山之日", "09-15": "敬老之日", "09-23": "秋分", "10-13": "體育之日", "11-03": "文化之日", "11-23": "勤勞感謝日" },
     "Global": { "01-01": "New Year", "12-25": "Christmas" }
 };
@@ -733,4 +782,54 @@ export const TAB_LABELS = {
     notes: { "zh-TW": "筆記", "en": "Notes" },
     currency: { "zh-TW": "匯率", "en": "Currency" },
     settings: { "zh-TW": "設定", "en": "Settings" }
+};
+
+// --- Smart Visual Assets ---
+
+export const TYPE_DEFAULT_IMAGES = {
+    spot: 'https://images.unsplash.com/photo-1480796927426-f609979314bd?w=400&h=300&fit=crop',
+    food: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop',
+    hotel: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
+    transport: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=400&h=300&fit=crop',
+    flight: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=300&fit=crop',
+    shopping: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400&h=300&fit=crop'
+};
+
+export const CITY_IMAGES = {
+    "Tokyo": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1200&h=600&fit=crop",
+    "Osaka": "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=1200&h=600&fit=crop",
+    "Kyoto": "https://images.unsplash.com/photo-1493780474015-ba834fd0ce2f?w=1200&h=600&fit=crop",
+    "Seoul": "https://images.unsplash.com/photo-1517154421773-0529f29ea451?w=1200&h=600&fit=crop",
+    "Taipei": "https://images.unsplash.com/photo-1470004914212-05527e49370b?w=1200&h=600&fit=crop",
+    "Bangkok": "https://images.unsplash.com/photo-1528181304800-259b08848526?w=1200&h=600&fit=crop",
+    "London": "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1200&h=600&fit=crop",
+    "Paris": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1200&h=600&fit=crop",
+    "New York": "https://images.unsplash.com/photo-1485738422979-f5c462d49f74?w=1200&h=600&fit=crop",
+    "Sydney": "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=1200&h=600&fit=crop",
+    "Singapore": "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=1200&h=600&fit=crop"
+};
+
+export const LANDMARK_IMAGES = {
+    "晴空塔": "https://images.unsplash.com/photo-1524317820067-175a6c9d0944?w=400&h=300&fit=crop",
+    "Skytree": "https://images.unsplash.com/photo-1524317820067-175a6c9d0944?w=400&h=300&fit=crop",
+    "東京鐵塔": "https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=400&h=300&fit=crop",
+    "Tokyo Tower": "https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=400&h=300&fit=crop",
+    "淺草寺": "https://images.unsplash.com/photo-1570459027562-4a916cc6113f?w=400&h=300&fit=crop",
+    "Senso-ji": "https://images.unsplash.com/photo-1570459027562-4a916cc6113f?w=400&h=300&fit=crop",
+    "雷門": "https://images.unsplash.com/photo-1570459027562-4a916cc6113f?w=400&h=300&fit=crop",
+    "富士山": "https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?w=400&h=300&fit=crop",
+    "Mt. Fuji": "https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?w=400&h=300&fit=crop",
+    "迪士尼": "https://images.unsplash.com/photo-1505308144658-03c69861061a?w=400&h=300&fit=crop",
+    "Disney": "https://images.unsplash.com/photo-1505308144658-03c69861061a?w=400&h=300&fit=crop",
+    "環球影城": "https://images.unsplash.com/photo-1620986794611-665c2759e691?w=400&h=300&fit=crop",
+    "USJ": "https://images.unsplash.com/photo-1620986794611-665c2759e691?w=400&h=300&fit=crop",
+    "Universal Studios": "https://images.unsplash.com/photo-1620986794611-665c2759e691?w=400&h=300&fit=crop",
+    "清水寺": "https://images.unsplash.com/photo-1493780474015-ba834fd0ce2f?w=400&h=300&fit=crop",
+    "Kiyomizu-dera": "https://images.unsplash.com/photo-1493780474015-ba834fd0ce2f?w=400&h=300&fit=crop",
+    "伏見稻荷": "https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=400&h=300&fit=crop",
+    "Fushimi Inari": "https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=400&h=300&fit=crop",
+    "101": "https://images.unsplash.com/photo-1470004914212-05527e49370b?w=400&h=300&fit=crop",
+    "Taipei 101": "https://images.unsplash.com/photo-1470004914212-05527e49370b?w=400&h=300&fit=crop",
+    "九份": "https://images.unsplash.com/photo-1465220183746-d872b8ee34be?w=400&h=300&fit=crop",
+    "Jiufen": "https://images.unsplash.com/photo-1465220183746-d872b8ee34be?w=400&h=300&fit=crop"
 };

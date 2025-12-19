@@ -2,10 +2,13 @@ import React from 'react';
 import { Plus, Globe, Upload } from 'lucide-react';
 import { glassCard, getWeatherForecast } from '../../utils/tripUtils';
 import TripCard from './TripCard';
+import SkeletonLoader from '../Shared/SkeletonLoader';
+import EmptyState from '../Shared/EmptyState';
 
 /**
  * TripsGrid - Rendering the list of trips or an empty state
  * @param {Array} trips - List of trips
+ * @param {boolean} loadingTrips - Loading state for trips
  * @param {boolean} isDarkMode - Dark mode
  * @param {string} currentLang - Language code
  * @param {Function} onSelectTrip - Callback when trip selected
@@ -17,6 +20,7 @@ import TripCard from './TripCard';
  */
 const TripsGrid = ({
     trips,
+    loadingTrips,
     isDarkMode,
     currentLang,
     onSelectTrip,
@@ -52,12 +56,22 @@ const TripsGrid = ({
                 </div>
             </div>
 
-            {trips.length === 0 ? (
-                <div className="p-12 text-center bg-white/5 rounded-2xl border border-white/10">
-                    <Globe className="w-16 h-16 mx-auto mb-4 text-indigo-400 opacity-40" />
-                    <p className="opacity-50 mb-4 text-lg">尚無行程，立即開始規劃您的下一趟旅程！</p>
-                    <button onClick={() => setIsCreateModalOpen(true)} className="text-indigo-400 underline font-bold text-lg">立即建立</button>
+            {loadingTrips ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <SkeletonLoader type="card" count={3} isDarkMode={isDarkMode} />
                 </div>
+            ) : trips.length === 0 ? (
+                <EmptyState
+                    icon={Globe}
+                    title="尚無行程"
+                    description="立即開始規劃您的下一趟旅程！您可以手動建立或從截圖匯入。"
+                    isDarkMode={isDarkMode}
+                    action={{
+                        label: "立即建立行程",
+                        onClick: () => setIsCreateModalOpen(true),
+                        icon: Plus
+                    }}
+                />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {trips.map(t => (

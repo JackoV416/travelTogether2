@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { doc, updateDoc, arrayUnion, deleteDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import {
-    Calendar, Map as MapIcon, Edit3, CalendarDays, ShoppingBag, Wallet, DollarSign, FileText, Shield, Siren, FileCheck, NotebookPen, BrainCircuit, List, Users, UserPlus, Trash2, Plus, ChevronDown, Sparkles, PackageCheck, Share2, Globe, Clock, AlertTriangle, Upload, FileIcon, ArrowLeft, MoreVertical, X, Loader2, Menu
+    Calendar, Map as MapIcon, Edit3, CalendarDays, ShoppingBag, Wallet, DollarSign, FileText, Shield, Siren, FileCheck, NotebookPen, BrainCircuit, List, Users, UserPlus, Trash2, Plus, ChevronDown, Sparkles, PackageCheck, Share2, Globe, Clock, AlertTriangle, Upload, FileIcon, ArrowLeft, MoreVertical, X, Loader2, Menu, Footprints as FootprintsIcon, Image as ImageIcon
 } from 'lucide-react';
 import MobileBottomNav from '../Shared/MobileBottomNav';
 import ActiveUsersList from './ActiveUsersList';
 import {
     ItineraryTab, InsuranceTab, VisaTab, EmergencyTab,
-    BudgetTab, CurrencyTab, FilesTab, NotesTab, ShoppingTab, PackingTab
+    BudgetTab, CurrencyTab, FilesTab, JournalTab, ShoppingTab, PackingTab, GalleryTab
 } from './tabs';
 import TripSettingsModal from '../Modals/TripSettingsModal';
 import MemberSettingsModal from '../Modals/MemberSettingsModal';
@@ -28,10 +28,10 @@ import { generatePackingList, generateWeatherSummaryWithGemini } from '../../ser
 import { optimizeSchedule } from '../../services/ai';
 import { getWeatherInfo } from '../../services/weather';
 import { exportToBeautifulPDF } from '../../services/pdfExport';
-import { COUNTRIES_DATA, DEFAULT_BG_IMAGE, CURRENCIES, INSURANCE_SUGGESTIONS, INSURANCE_RESOURCES } from '../../constants/appData';
+import { COUNTRIES_DATA, DEFAULT_BG_IMAGE, CURRENCIES, INSURANCE_SUGGESTIONS, INSURANCE_RESOURCES, CITY_IMAGES } from '../../constants/appData';
 import { buttonPrimary } from '../../constants/styles';
 
-const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, isPreview, globalSettings, exchangeRates, convAmount, setConvAmount, convTo, setConvTo, onOpenSmartImport, weatherData }) => {
+const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, isPreview, globalSettings, exchangeRates, convAmount, setConvAmount, convTo, setConvTo, onOpenSmartImport, weatherData, requestedTab, onTabHandled, requestedItemId, onItemHandled, isBanned }) => {
     // ============================================
     // UI STATE HOOKS
     // ============================================
@@ -77,14 +77,47 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     }, [trip.visa, user.uid, isSimulation]);
 
     useEffect(() => {
-        setGlobalBg(COUNTRIES_DATA[trip.country]?.image || DEFAULT_BG_IMAGE);
+        // Carousel effect for multi-city trips
+        if (trip.cities && trip.cities.length > 1) {
+            const interval = setInterval(() => {
+                setSelectDate(prev => {
+                    // This creates a re-render loop if we misuse setSelectDate, wait, I need a separate state for carousel index
+                    // Let's use a local state for the carousel index
+                    return prev;
+                });
+                setCarouselIndex(prev => (prev + 1) % trip.cities.length);
+            }, 5000);
+            return () => clearInterval(interval);
+        }
+    }, [trip.cities]);
+
+    // Local Carousel State
+    const [carouselIndex, setCarouselIndex] = useState(0);
+    const currentCity = (trip.cities && trip.cities.length > 0) ? trip.cities[carouselIndex] : trip.city;
+    // Fallback: if trip.cities is empty/undefined, use trip.city
+    // If trip.cities has length 1, index 0 is used.
+
+    // Determine the background image source
+    // Priority: 1. City Image (from CITY_IMAGES) -> 2. Country Image (from COUNTRIES_DATA) -> 3. Default
+    const currentHeaderImage = CITY_IMAGES[currentCity] || COUNTRIES_DATA[trip.country]?.image || DEFAULT_BG_IMAGE;
+
+    useEffect(() => {
+        setGlobalBg(currentHeaderImage);
         return () => setGlobalBg(null);
-    }, [trip.country, setGlobalBg]);
+    }, [currentHeaderImage, setGlobalBg]);
 
     useEffect(() => {
         setTempNote(trip.notes || "");
         setMyInsurance(trip.insurance?.private?.[isSimulation ? 'sim' : user.uid] || { provider: '', policyNo: '', phone: '', notes: '' });
     }, [trip.notes, trip.insurance, user.uid, isSimulation]);
+
+    // Handle Notification Deep Link Tab Switch
+    useEffect(() => {
+        if (requestedTab) {
+            setActiveTab(requestedTab);
+            onTabHandled?.();
+        }
+    }, [requestedTab, onTabHandled]);
 
     // ============================================
     // DERIVED VALUES
@@ -564,9 +597,22 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                 {/* Header Background layer - Consolidated Background with fixed overflow */}
                 <div className="absolute inset-0 overflow-hidden rounded-2xl">
                     <div
-                        className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110"
-                        style={{ backgroundImage: `url(${COUNTRIES_DATA[trip.country]?.image || DEFAULT_BG_IMAGE})` }}
+                        className="absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out group-hover:scale-110"
+                        style={{ backgroundImage: `url(${currentHeaderImage})` }}
                     />
+
+                    {/* Carousel Indicators */}
+                    {trip.cities && trip.cities.length > 1 && (
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 pt-10">
+                            {trip.cities.map((c, i) => (
+                                <div
+                                    key={c}
+                                    className={`h-1.5 rounded-full transition-all duration-500 shadow-sm ${i === carouselIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/60'}`}
+                                    title={c}
+                                />
+                            ))}
+                        </div>
+                    )}
                     <div className={`absolute inset-0 bg-gradient-to-t ${isDarkMode ? 'from-gray-900/90 via-gray-900/40 to-black/20' : 'from-indigo-900/60 via-indigo-900/20 to-black/10'}`} />
                 </div>
 
@@ -578,7 +624,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                         <div>
                             <div className="text-[10px] text-indigo-300 uppercase font-black tracking-widest mb-2">TRIP OVERVIEW</div>
                             <div className="flex items-center gap-2 mb-4">
-                                <span className="bg-indigo-500/80 text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur-md uppercase tracking-wider font-bold shadow-lg shadow-indigo-500/20">{displayCountry} {displayCity}</span>
+                                <span className="bg-indigo-500/80 text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur-md uppercase tracking-wider font-bold shadow-lg shadow-indigo-500/20">{displayCountry} {getLocalizedCityName(currentCity, currentLang)}</span>
                                 {trip.isPublic && <span className="bg-emerald-500/80 text-white text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-emerald-500/20"><Globe className="w-3 h-3" /> 公開</span>}
                                 {timeDiff !== 0 && <span className={`text-[10px] px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-md ${timeDiff > 0 ? 'bg-orange-500/20 text-orange-200' : 'bg-blue-500/20 text-blue-200'}`}>{timeDiff > 0 ? `+${timeDiff}h` : `${timeDiff}h`}</span>}
                             </div>
@@ -752,7 +798,26 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
 
             {/* Tabs (Desktop / Mobile Hidden) */}
             <div className={`hidden md:flex gap-2 overflow-x-auto pb-2 mb-4 no-scrollbar`}>
-                {[{ id: 'itinerary', label: '行程', icon: CalendarDays }, { id: 'packing', label: '行李', icon: ShoppingBag }, { id: 'shopping', label: '購物', icon: ShoppingBag }, { id: 'budget', label: '預算', icon: Wallet }, { id: 'currency', label: '匯率', icon: DollarSign }, { id: 'files', label: '回憶', icon: FileIcon }, { id: 'insurance', label: '保險', icon: Shield }, { id: 'emergency', label: '緊急', icon: Siren }, { id: 'visa', label: '簽證', icon: FileCheck }, { id: 'notes', label: '筆記', icon: NotebookPen }].map(t => (<button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex items-center px-4 py-2 rounded-full font-bold transition-all duration-300 whitespace-nowrap transform hover:scale-105 ${activeTab === t.id ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl scale-105' : (isDarkMode ? 'bg-gray-800/60 text-gray-300 hover:bg-gray-700' : 'bg-gray-100/80 text-gray-600 hover:bg-gray-100')}`}><t.icon className="w-4 h-4 mr-2" />{t.label}</button>))}
+                {[
+                    { id: 'itinerary', label: '行程', icon: CalendarDays },
+                    { id: 'packing', label: '行李', icon: ShoppingBag },
+                    { id: 'shopping', label: '購物', icon: ShoppingBag },
+                    { id: 'budget', label: '預算', icon: Wallet },
+                    { id: 'gallery', label: '相簿', icon: ImageIcon },
+                    { id: 'currency', label: '匯率', icon: DollarSign },
+                    { id: 'journal', label: '足跡', icon: FootprintsIcon },
+                    { id: 'insurance', label: '保險', icon: Shield },
+                    { id: 'emergency', label: '緊急', icon: Siren },
+                    { id: 'visa', label: '簽證', icon: FileCheck }
+                ].map(t => (
+                    <button
+                        key={t.id}
+                        onClick={() => setActiveTab(t.id)}
+                        className={`flex items-center px-4 py-2 rounded-full font-bold transition-all duration-300 whitespace-nowrap transform hover:scale-105 ${activeTab === t.id ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl scale-105' : (isDarkMode ? 'bg-gray-800/60 text-gray-300 hover:bg-gray-700' : 'bg-gray-100/80 text-gray-600 hover:bg-gray-100')}`}
+                    >
+                        <t.icon className="w-4 h-4 mr-2" />{t.label}
+                    </button>
+                ))}
             </div>
 
             {/* Itinerary Tab */}
@@ -784,6 +849,8 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                             setIsAddModal(true);
                         }}
                         onDragStart={onDragStart}
+                        requestedItemId={requestedItemId} // Deep Link Item ID
+                        onItemHandled={onItemHandled}
                         onDrop={onDrop}
                         openSectionModal={openSectionModal}
                         onOptimize={handleOptimizeSchedule}
@@ -792,6 +859,11 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                         onOpenSmartExport={() => setIsSmartExportOpen(true)}
                         onClearDaily={handleClearDailyItinerary}
                         onAddTransportSuggestion={handleAddTransportSuggestion}
+                        onUpdateLocation={async (date, locData) => {
+                            if (!canEdit) return;
+                            if (isSimulation) return alert("模擬模式");
+                            await updateDoc(doc(db, "trips", trip.id), { [`locations.${date}`]: locData });
+                        }}
                     />
                 )
             }
@@ -880,23 +952,23 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
             }
 
             {
-                activeTab === 'files' && (
-                    <FilesTab trip={trip} user={user} isOwner={isOwner} language={globalSettings?.lang} isDarkMode={isDarkMode} />
+                activeTab === 'journal' && (
+                    <JournalTab
+                        trip={trip}
+                        user={user}
+                        isOwner={isOwner}
+                        isDarkMode={isDarkMode}
+                        glassCard={glassCard}
+                        currentLang={currentLang}
+                    />
                 )
             }
 
             {
-                activeTab === 'notes' && (
-                    <NotesTab
+                activeTab === 'gallery' && (
+                    <GalleryTab
                         trip={trip}
                         isDarkMode={isDarkMode}
-                        isSimulation={isSimulation}
-                        noteEdit={noteEdit}
-                        setNoteEdit={setNoteEdit}
-                        tempNote={tempNote}
-                        setTempNote={setTempNote}
-                        onSaveNotes={(notes) => updateDoc(doc(db, "trips", trip.id), { notes })}
-                        glassCard={glassCard}
                     />
                 )
             }
@@ -952,7 +1024,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                             <span className="text-xs font-bold uppercase tracking-wider">更多功能</span>
                             <button onClick={() => setIsMobileMoreOpen(false)}><X className="w-5 h-5" /></button>
                         </div>
-                        {[{ id: 'shopping', label: '購物', icon: ShoppingBag }, { id: 'currency', label: '匯率', icon: DollarSign }, { id: 'files', label: '回憶', icon: FileIcon }, { id: 'insurance', label: '保險', icon: Shield }, { id: 'emergency', label: '緊急', icon: Siren }, { id: 'visa', label: '簽證', icon: FileCheck }, { id: 'notes', label: '筆記', icon: NotebookPen }].map(t => (
+                        {[{ id: 'shopping', label: '購物', icon: ShoppingBag }, { id: 'gallery', label: '相簿', icon: ImageIcon }, { id: 'currency', label: '匯率', icon: DollarSign }, { id: 'journal', label: '足跡', icon: FootprintsIcon }, { id: 'insurance', label: '保險', icon: Shield }, { id: 'emergency', label: '緊急', icon: Siren }, { id: 'visa', label: '簽證', icon: FileCheck }].map(t => (
                             <button
                                 key={t.id}
                                 onClick={() => { setActiveTab(t.id); setIsMobileMoreOpen(false); }}

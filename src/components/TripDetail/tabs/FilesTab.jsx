@@ -1,50 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { ref, deleteObject } from "firebase/storage";
-import { doc, updateDoc } from 'firebase/firestore';
-import { db, storage } from '../../../firebase';
-import { FileText, Trash2, Download, Image as ImageIcon, FileCheck, Share2, MoreVertical, Search, HardDrive } from 'lucide-react';
+import React, { useState } from 'react';
+import { FileText, Trash2, Download, HardDrive, FileCheck, Share2 } from 'lucide-react';
 import SearchFilterBar from '../../Shared/SearchFilterBar';
+import { useTripFiles } from '../../../hooks/useTripFiles';
+import { formatFileSize, isImageFile } from '../../../utils/tripUtils';
 
 const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, glassCard }) => {
-    const [files, setFiles] = useState(trip.files || []);
     const [searchValue, setSearchValue] = useState("");
-
-    // Sync files from trip data
-    useEffect(() => {
-        setFiles(trip.files || []);
-    }, [trip.files]);
-
-    const handleDeleteFile = async (file) => {
-        if (!confirm(language === 'zh-TW' ? "確定刪除此檔案？" : "Delete this file?")) return;
-        try {
-            // Delete from Storage
-            const fileRef = ref(storage, file.path);
-            await deleteObject(fileRef).catch(err => console.warn("Storage delete failed (maybe already gone)", err));
-
-            // Remove from Firestore
-            const newFileList = files.filter(f => f.id !== file.id);
-            await updateDoc(doc(db, "trips", trip.id), { files: newFileList });
-
-        } catch (error) {
-            console.error("Delete failed", error);
-            alert("Delete failed");
-        }
-    };
-
-    const formatSize = (bytes) => {
-        if (!bytes || bytes === 0) return '0 B';
-        const k = 1024;
-        const dm = 1;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-    };
-
-    const isImage = (type) => type?.startsWith('image/');
+    const { deleteFile, loading } = useTripFiles(trip, language);
+    const files = trip.files || [];
 
     const filteredFiles = files.filter(f =>
         !searchValue || f.name.toLowerCase().includes(searchValue.toLowerCase())
     );
+
+    const totalSize = files.reduce((acc, f) => acc + (f.size || 0), 0);
 
     return (
         <div className="animate-fade-in space-y-6 pb-10">
@@ -68,7 +37,7 @@ const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, glassCa
                 </div>
                 <div className="text-right">
                     <div className="text-[10px] font-black opacity-40 uppercase tracking-widest">Total Size</div>
-                    <div className="text-sm font-black text-indigo-500">{formatSize(files.reduce((acc, f) => acc + (f.size || 0), 0))}</div>
+                    <div className="text-sm font-black text-indigo-500">{formatFileSize(totalSize)}</div>
                 </div>
             </div>
 
@@ -88,8 +57,8 @@ const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, glassCa
                     <div key={file.id} className={`${glassCard(isDarkMode)} group relative overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl`}>
                         {/* Preview Area */}
                         <div className="h-32 bg-gray-200 dark:bg-black/40 flex items-center justify-center overflow-hidden relative">
-                            {isImage(file.type) ? (
-                                <img src={file.url} alt={file.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            {isImageFile(file.type) ? (
+                                <img src={file.url} alt={file.name} loading="lazy" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                             ) : (
                                 <FileText className="w-12 h-12 opacity-20 text-indigo-500" />
                             )}
@@ -108,16 +77,19 @@ const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, glassCa
                             <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0 flex-1">
                                     <h4 className="font-bold text-xs truncate" title={file.name}>{file.name}</h4>
-                                    <p className="text-[9px] opacity-50 font-medium mt-0.5 uppercase">{formatSize(file.size)} • {file.uploadedBy}</p>
+                                    <p className="text-[9px] opacity-50 font-medium mt-0.5 uppercase">{formatFileSize(file.size)} • {file.uploadedBy}</p>
                                 </div>
-                                <div className="text-[8px] font-black text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded uppercase">{new Date(file.uploadedAt).toLocaleDateString()}</div>
+                                <div className="text-[8px] font-black text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded uppercase">
+                                    {new Date(file.uploadedAt?.seconds ? file.uploadedAt.seconds * 1000 : (file.uploadedAt || Date.now())).toLocaleDateString()}
+                                </div>
                             </div>
                         </div>
 
                         {/* Delete Action (only for owner) */}
                         {isOwner && (
                             <button
-                                onClick={(e) => { e.stopPropagation(); handleDeleteFile(file); }}
+                                onClick={(e) => { e.stopPropagation(); deleteFile(file); }}
+                                disabled={loading}
                                 className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-500/80 backdrop-blur-md text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-red-600 shadow-lg"
                                 title="Delete"
                             >

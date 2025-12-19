@@ -18,16 +18,12 @@ export const fetchNews = async (location, lang = 'zh-TW') => {
         if (cached) {
             const { timestamp, data } = JSON.parse(cached);
             if (Date.now() - timestamp < CACHE_TTL) {
-                console.log('News served from cache');
                 return data;
             }
         }
 
         // Construct RSS URL
-        // Google News RSS (Better for localized/Chinese content)
-        // Query: Location + Travel/Tourism
         const query = lang === 'zh-TW' ? `${location} 旅遊` : `${location} travel`;
-        console.log(`Fetching News for: ${location} (Query: ${query})`);
 
         // Use Google News RSS for HK/TW region
         const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=zh-TW&gl=HK&ceid=HK:zh-Hant`;
@@ -35,8 +31,6 @@ export const fetchNews = async (location, lang = 'zh-TW') => {
         // Fetch from rss2json
         const response = await fetch(`${RSS2JSON_ENDPOINT}?rss_url=${encodeURIComponent(rssUrl)}`);
         const data = await response.json();
-
-        console.log('RSS2JSON Response:', data);
 
         if (data.status === 'ok') {
             const newsItems = data.items.map(item => ({

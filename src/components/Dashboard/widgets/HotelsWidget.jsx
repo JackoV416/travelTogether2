@@ -1,6 +1,7 @@
 import React from 'react';
 import { Hotel, Star, ArrowUpRight } from 'lucide-react';
 import { glassCard } from '../../../utils/tripUtils';
+import SkeletonLoader from '../../Shared/SkeletonLoader';
 
 /**
  * HotelsWidget - 顯示酒店推薦
@@ -17,20 +18,14 @@ const HotelsWidget = ({ isDarkMode, hotels, loadingHotels }) => {
                         <Hotel className="w-5 h-5" /> 酒店推薦
                     </h4>
                     <span className="text-[9px] opacity-40 bg-white/10 px-2 py-0.5 rounded font-mono uppercase tracking-widest">
-                        {loadingHotels ? 'Loading...' : 'Live'}
+                        {loadingHotels ? 'Fetching...' : 'Live'}
                     </span>
                 </div>
                 <div className="space-y-3">
                     {loadingHotels ? (
-                        [...Array(3)].map((_, i) => (
-                            <div key={i} className="p-3 bg-white/5 rounded-xl border border-white/5 flex gap-3 animate-pulse">
-                                <div className="w-14 h-14 bg-white/10 rounded-lg"></div>
-                                <div className="flex-1 space-y-2 py-1">
-                                    <div className="h-3 bg-white/10 rounded w-3/4"></div>
-                                    <div className="h-2 bg-white/10 rounded w-1/2"></div>
-                                </div>
-                            </div>
-                        ))
+                        <div className="space-y-3">
+                            <SkeletonLoader type="list-item" count={3} isDarkMode={isDarkMode} />
+                        </div>
                     ) : (
                         hotels.map((h, i) => (
                             <a key={i} href={h.url} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-all flex items-center gap-3 group">

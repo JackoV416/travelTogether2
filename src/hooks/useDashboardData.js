@@ -13,6 +13,7 @@ import { useNotifications } from './useNotifications';
  */
 const useDashboardData = (user, globalSettings, exchangeRates) => {
     const [trips, setTrips] = useState([]);
+    const [loadingTrips, setLoadingTrips] = useState(true);
     const [newsData, setNewsData] = useState([]);
     const [loadingNews, setLoadingNews] = useState(false);
 
@@ -39,6 +40,10 @@ const useDashboardData = (user, globalSettings, exchangeRates) => {
                 .map(d => ({ id: d.id, ...d.data() }))
                 .filter(t => t.members?.some(m => m.id === user.uid));
             setTrips(userTrips);
+            setLoadingTrips(false);
+        }, (err) => {
+            console.error("Firestore error:", err);
+            setLoadingTrips(false);
         });
         return () => unsub();
     }, [user]);
@@ -49,11 +54,13 @@ const useDashboardData = (user, globalSettings, exchangeRates) => {
 
         const loadNews = async () => {
             setLoadingNews(true);
-            const targetTrip = trips[0]; // Simple logic for now: use first trip's location
+            const targetTrip = trips[0];
             const location = targetTrip?.city || targetTrip?.countries?.[0] || 'Hong Kong';
             const data = await fetchNews(location, globalSettings?.lang || 'zh-TW');
-            setNewsData(data);
-            setLoadingNews(false);
+            setTimeout(() => {
+                setNewsData(data);
+                setLoadingNews(false);
+            }, 1500);
         };
 
         const loadTravelInfo = async () => {
@@ -62,29 +69,30 @@ const useDashboardData = (user, globalSettings, exchangeRates) => {
 
             setLoadingHotels(true); setLoadingFlights(true); setLoadingTransports(true); setLoadingConnectivity(true);
 
-            // Hotels
+            // Fetch all data
             try {
-                const hData = await travelInfoService.getHotels('all', userCurrency, rates);
-                setHotels(hData.slice(0, 3));
-            } catch (e) { console.error("Hotels fetch error:", e); } finally { setLoadingHotels(false); }
+                const [hData, fData, tData, cData] = await Promise.all([
+                    travelInfoService.getHotels('all', userCurrency, rates),
+                    travelInfoService.getFlights(userCurrency, rates),
+                    travelInfoService.getTransports(userCurrency, rates),
+                    travelInfoService.getConnectivity(userCurrency, rates)
+                ]);
 
-            // Flights
-            try {
-                const fData = await travelInfoService.getFlights(userCurrency, rates);
-                setFlights(fData.slice(0, 4));
-            } catch (e) { console.error("Flights fetch error:", e); } finally { setLoadingFlights(false); }
-
-            // Transports
-            try {
-                const tData = await travelInfoService.getTransports(userCurrency, rates);
-                setTransports(tData);
-            } catch (e) { console.error("Transports fetch error:", e); } finally { setLoadingTransports(false); }
-
-            // Connectivity
-            try {
-                const cData = await travelInfoService.getConnectivity(userCurrency, rates);
-                setConnectivity(cData);
-            } catch (e) { console.error("Connectivity fetch error:", e); } finally { setLoadingConnectivity(false); }
+                // Delay the dismissal of loading states
+                setTimeout(() => {
+                    setHotels(hData.slice(0, 3));
+                    setFlights(fData.slice(0, 4));
+                    setTransports(tData);
+                    setConnectivity(cData);
+                    setLoadingHotels(false);
+                    setLoadingFlights(false);
+                    setLoadingTransports(false);
+                    setLoadingConnectivity(false);
+                }, 1500);
+            } catch (e) {
+                console.error("Travel Info Error:", e);
+                setLoadingHotels(false); setLoadingFlights(false); setLoadingTransports(false); setLoadingConnectivity(false);
+            }
         };
 
         loadNews();
@@ -128,6 +136,7 @@ const useDashboardData = (user, globalSettings, exchangeRates) => {
 
     return {
         trips,
+        loadingTrips,
         newsData,
         loadingNews,
         hotels,

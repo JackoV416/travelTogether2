@@ -90,18 +90,30 @@ export const INSURANCE_RESOURCES = [
 ];
 
 export const AUTHOR_NAME = "Jamie Kwok";
-export const APP_VERSION = "V0.21.3";
+export const APP_VERSION = "V1.0.0-RC1";
 export const VERSION_HISTORY = [
     {
-        ver: "V0.21.1",
-        date: "2025-12-19",
+        ver: "V1.0.0-RC1",
+        date: "2025-12-20",
         desc: {
-            "zh-TW": "匯入功能統一 & Bug 修復",
-            "en": "Import Consolidation & Bug Fixes"
+            "zh-TW": "Dashboard 現代化首發版",
+            "en": "Modernized Dashboard Release Candidate"
         },
         details: {
-            "zh-TW": "• SmartImportModal 統一入口：整合 5 種匯入方式 (截圖/單據/回憶/JSON/CSV)\n• 酒店數據擴充：新增大阪 4 間酒店\n• 移除 Mock 數據：匯入功能不再顯示假資料\n• 購物類別優化：6 類精準分類\n• 交通選項加入自駕租車",
-            "en": "• SmartImportModal: Unified 5 import types (Image/Receipt/Memory/JSON/CSV)\n• Osaka Hotels: Added 4 hotels\n• Removed Mock Data\n• Shopping Categories: 6 refined categories\n• Transport: Added self-driving option"
+            "zh-TW": "• 骨架屏 (Skeleton Loaders)：全站數據加載不再閃爍，升級為流暢脈沖動畫\n• 空狀態 (Empty States)：精心設計的缺省頁面與 CTA 引導，操作更直觀\n• 新手教學 (Onboarding)：全新引導系統，3 秒上手 AI 功能\n• 性能與同步：重構 Dashboard 數據流，修正 Dark Mode 視覺同步 Bug",
+            "en": "• Skeleton Loaders: Seamless data loading with pulse animations across the app\n• Empty States: Beautiful placeholders with guided CTA actions\n• Onboarding: Step-by-step guide to get started with AI features in seconds\n• Performance: Refactored data flow and fixed Dark Mode sync issues"
+        }
+    },
+    {
+        ver: "V0.21.3",
+        date: "2025-12-19",
+        desc: {
+            "zh-TW": "Dashboard 組件化重構",
+            "en": "Dashboard Component Refactoring"
+        },
+        details: {
+            "zh-TW": "• 架構大洗牌：Dashboard 拆分為 7 個獨立 Widgets\n• 邏輯隔離：引入 useDashboardData Hook 統一管理數據狀態\n• 時區修正：修復 V0.25 遺留的時區偏差問題",
+            "en": "• Architecture Revamp: Split Dashboard into 7 independent widgets\n• Logic Isolation: New useDashboardData Hook for state management\n• Timezone Fix: Resolved legacy issues from V0.25"
         }
     },
     {

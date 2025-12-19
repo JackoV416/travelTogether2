@@ -18,7 +18,7 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
     useEffect(() => {
         if (isOpen) {
             if (editData) {
-                setName(editData.name || editData.desc || ''); setCost(editData.cost || ''); setType(editData.type || editData.category || 'spot'); setCurrency(editData.currency || 'HKD');
+                setCost(editData.cost || ''); setType(editData.type || editData.category || 'spot'); setCurrency(editData.currency || 'HKD');
                 setPayer(editData.payer || members[0]?.name);
                 setSplitType(editData.splitType || 'group');
                 setDetails(editData.details || { isRefund: false, refund: '', tax: '', taxCurrency: 'HKD', layover: false, time: '', location: '' });

@@ -66,6 +66,15 @@ export default defineConfig({
       }
     })
   ],
+  server: {
+    port: 5174,
+    strictPort: true,
+    hmr: {
+      protocol: 'ws',
+      host: 'localhost',
+      port: 5174
+    }
+  },
   build: {
     chunkSizeWarningLimit: 1000,
     rollupOptions: {

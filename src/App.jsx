@@ -15,17 +15,22 @@ import TripExportImportModal from './components/Modals/TripExportImportModal';
 import SmartImportModal from './components/Modals/SmartImportModal';
 import NotificationSystem from './components/Shared/NotificationSystem';
 import OfflineBanner from './components/Shared/OfflineBanner';
+import SyncStatus from './components/Shared/SyncStatus';
 import ReloadPrompt from './components/Shared/ReloadPrompt';
 import { useNotifications } from './hooks/useNotifications';
+import { checkAbuse } from './services/security';
 import AIGeminiModal from './components/Modals/AIGeminiModal';
 import ErrorBoundary from './components/Shared/ErrorBoundary';
+import OnboardingModal from './components/Modals/OnboardingModal';
+import FeedbackModal from './components/Modals/FeedbackModal';
 
 // --- V0.16.2 Refactored Imports ---
 import {
-    APP_VERSION, APP_AUTHOR, APP_LAST_UPDATE,
+    APP_VERSION, APP_AUTHOR, APP_LAST_UPDATE, ADMIN_EMAILS,
     DEFAULT_BG_IMAGE, CITY_COORDS, COUNTRIES_DATA, INFO_DB,
     SIMULATION_DATA, CURRENCIES, VERSION_HISTORY, TIMEZONES, LANGUAGE_OPTIONS
 } from './constants/appData';
+import AdminFeedbackModal from './components/Modals/AdminFeedbackModal';
 import {
     glassCard, getHolidayMap, getLocalizedCountryName,
     getLocalizedCityName, getSafeCountryInfo, formatDate,
@@ -36,10 +41,6 @@ import {
 
 import Dashboard from './components/Dashboard/Dashboard';
 import CreateTripModal from './components/Modals/CreateTripModal';
-import {
-    ItineraryTab, InsuranceTab, VisaTab, EmergencyTab,
-    BudgetTab, CurrencyTab, FilesTab, NotesTab, ShoppingTab
-} from './components/TripDetail/tabs';
 
 
 
@@ -83,11 +84,15 @@ const Footer = ({ isDarkMode, onOpenVersion }) => {
                 <span className="hidden sm:inline">Design with ❤️</span>
             </div>
             <div className="font-mono flex items-center gap-2"><Clock className="w-3 h-3" /> 當地時間: {time.toLocaleTimeString()} ({Intl.DateTimeFormat().resolvedOptions().timeZone})</div>
+            <div className="mt-2 text-xs">
+                <SyncStatus isDarkMode={isDarkMode} />
+            </div>
         </footer>
     );
 };
 
-const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onTutorialStart, onViewChange, onOpenUserSettings, onOpenVersion, notifications = [], onRemoveNotification, onMarkNotificationsRead }) => {
+// --- Header ---
+const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onTutorialStart, onViewChange, onOpenUserSettings, onOpenVersion, notifications = [], onRemoveNotification, onMarkNotificationsRead, onNotificationClick, onOpenFeedback, onOpenAdminFeedback, isAdmin, adminPendingCount = 0 }) => { // Added Admin props
     const [hoverMenu, setHoverMenu] = useState(false);
     const [showNotif, setShowNotif] = useState(false);
     const [photoError, setPhotoError] = useState(false);
@@ -99,30 +104,21 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
         if (!showNotif && onMarkNotificationsRead) onMarkNotificationsRead();
     };
 
-    const [notifTab, setNotifTab] = useState('all'); // all, alert, system
+    const handleClearAll = () => {
+        if (confirm("確定清除所有通知？")) {
+            if (onRemoveNotification) {
+                notifications.forEach(n => onRemoveNotification(n.id));
+            }
+        }
+    };
 
+    const [notifTab, setNotifTab] = useState('all');
     const filteredNotifs = notifications.filter(n => {
         if (notifTab === 'all') return true;
         if (notifTab === 'alert') return n.type === 'warning' || n.type === 'error';
         if (notifTab === 'system') return n.type === 'success' || n.type === 'info';
         return true;
     });
-
-    const handleClearAll = () => {
-        if (confirm("確定清除所有通知？")) {
-            // Need a prop for clearAll, but currently only onRemoveNotification (single).
-            // We can iterate or if onRemoveNotification accepts 'all' or we need a new prop?
-            // The user didn't providing onClearAll prop in App.jsx Header usage?
-            // Let's check App.jsx usage of Header.
-            // If strictly following props, I might need to add onClearAll to Header props and App.
-            // For now, I will use a loop or assume onRemoveNotification handles it if I pass special ID?
-            // Safer: Add onClearAll prop.
-            if (onRemoveNotification) {
-                // Iterate reverse to avoid index shifting issues if array
-                notifications.forEach(n => onRemoveNotification(n.id));
-            }
-        }
-    };
 
     return (
         <header className={`sticky top-0 z-50 p-4 transition-all duration-300 ${isDarkMode ? 'bg-gray-900/95 border-b border-gray-800' : 'bg-gray-50/95 border-b border-gray-200'} shadow-sm`}>
@@ -163,15 +159,23 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                                 {filteredNotifs.length === 0 ? (
                                     <div className="text-xs opacity-60 text-center py-6">目前沒有相關通知。</div>
                                 ) : filteredNotifs.map(n => (
-                                    <div key={n.id} className="p-3 rounded-lg border border-gray-500/20 text-xs flex flex-col gap-1 bg-white/5">
+                                    <div
+                                        key={n.id}
+                                        onClick={() => n.context && onNotificationClick?.(n)}
+                                        className={`p-3 rounded-lg border border-gray-500/20 text-xs flex flex-col gap-1 bg-white/5 transition-colors ${n.context ? 'cursor-pointer hover:bg-white/10' : ''}`}
+                                    >
                                         <div className="flex justify-between items-center gap-2">
                                             <span className={`font-semibold ${n.type === 'warning' || n.type === 'error' ? 'text-orange-400' : ''}`}>{n.title || '系統通知'}</span>
-                                            <button onClick={() => onRemoveNotification && onRemoveNotification(n.id)} className="text-red-400 hover:text-red-600"><X className="w-3 h-3" /></button>
+                                            <button onClick={(e) => { e.stopPropagation(); onRemoveNotification && onRemoveNotification(n.id); }} className="text-red-400 hover:text-red-600"><X className="w-3 h-3" /></button>
                                         </div>
                                         <p className="opacity-80 leading-relaxed">{n.message}</p>
                                         <div className="flex justify-between text-[10px] opacity-60 mt-1">
                                             <span>{n.time}</span>
-                                            {n.url && <a href={n.url} target="_blank" className="text-indigo-400 flex items-center gap-1">查看<ArrowUpRight className="w-3 h-3" /></a>}
+                                            {n.url ? (
+                                                <a href={n.url} target="_blank" onClick={(e) => e.stopPropagation()} className="text-indigo-400 flex items-center gap-1">查看專頁<ArrowUpRight className="w-3 h-3" /></a>
+                                            ) : n.context && (
+                                                <span className="text-indigo-400 flex items-center gap-1">立即跳轉<ChevronRight className="w-3 h-3" /></span>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -191,6 +195,7 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                                     </div>
                                 )
                             ) : <UserCircle className="w-8 h-8" />}
+                            {isAdmin && adminPendingCount > 0 && <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 border-2 border-white rounded-full"></span>}
                         </button>
                         <div className={`absolute top-10 right-0 w-64 pt-4 transition-all duration-300 origin-top-right ${hoverMenu ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible'}`}>
                             <div className={`rounded-xl shadow-2xl border overflow-hidden backdrop-blur-xl ${isDarkMode ? 'bg-gray-900/95 border-white/10 text-white' : 'bg-white/95 border-gray-200 text-gray-800'}`}>
@@ -202,6 +207,17 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                                     <button onClick={() => { setHoverMenu(false); onViewChange('dashboard'); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><Home className="w-4 h-4" /> 我的行程</button>
                                     <button onClick={() => { setHoverMenu(false); onTutorialStart(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} md:hidden`}><MonitorPlay className="w-4 h-4" /> 教學模式</button>
                                     <button onClick={() => { setHoverMenu(false); onOpenUserSettings(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><Edit3 className="w-4 h-4" /> 個人設定</button>
+                                    <button onClick={() => { setHoverMenu(false); onOpenFeedback(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><MessageCircle className="w-4 h-4" /> 意見回饋</button>
+                                    {isAdmin && (
+                                        <button onClick={() => { setHoverMenu(false); onOpenAdminFeedback(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                                            <div className="relative">
+                                                <Shield className="w-4 h-4 text-indigo-500" />
+                                                {adminPendingCount > 0 && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>}
+                                            </div>
+                                            管理員後台
+                                            {adminPendingCount > 0 && <span className="ml-auto text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full">{adminPendingCount}</span>}
+                                        </button>
+                                    )}
                                     <button onClick={() => { setHoverMenu(false); onOpenVersion(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><History className="w-4 h-4" /> 版本資訊</button>
                                     <div className="h-px bg-gray-500/10 my-1"></div>
                                     <button onClick={toggleDarkMode} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
@@ -214,8 +230,8 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                         </div>
                     </div>
                 </div>
-            </div>
-        </header>
+            </div >
+        </header >
     );
 };
 
@@ -373,7 +389,7 @@ const VersionModal = ({ isOpen, onClose, isDarkMode, globalSettings }) => {
 // --- Files & Attachments Tab ---
 
 // --- Trip Detail Wrapper (handles ALL data loading, TripDetailContent only renders when trip is ready) ---
-const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, globalSettings, exchangeRates, onOpenSmartImport, weatherData, onUpdateSimulationTrip }) => {
+const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, globalSettings, exchangeRates, onOpenSmartImport, weatherData, onUpdateSimulationTrip, requestedTab, onTabHandled, requestedItemId, onItemHandled, isBanned }) => {
     // ALL hooks in wrapper - consistent on every render
     const [realTrip, setRealTrip] = useState(null);
     const [isLoading, setIsLoading] = useState(!isSimulation);
@@ -415,12 +431,11 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
     const trip = isSimulation ? tripData : realTrip;
 
     // State for Currency Tab
-    const [convAmount, setConvAmount] = useState(1000); // Default amount for Trip Detail Tab
-    const [convTo, setConvTo] = useState('JPY'); // Default target
-    // Try to auto-detect currency from country when realTrip loads
+    const [convAmount, setConvAmount] = useState(1000);
+    const [convTo, setConvTo] = useState('JPY');
+
     useEffect(() => {
         if (trip?.country) {
-            // Simple mapping for demo. In production, COUNTRIES_DATA should have currency code.
             const country = trip.country;
             if (country.includes('Japan') || country.includes('日本')) setConvTo('JPY');
             else if (country.includes('Taiwan') || country.includes('台灣')) setConvTo('TWD');
@@ -431,7 +446,6 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
         }
     }, [trip?.country]);
 
-    // Loading state
     if (isLoading) {
         return (
             <div className="p-10 text-center min-h-[400px] flex flex-col items-center justify-center">
@@ -441,7 +455,6 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
         );
     }
 
-    // Error state
     if (error) {
         return (
             <div className="p-10 text-center min-h-[400px] flex flex-col items-center justify-center">
@@ -451,7 +464,6 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
         );
     }
 
-    // No trip data
     if (!trip) {
         return (
             <div className="p-10 text-center min-h-[400px] flex flex-col items-center justify-center">
@@ -461,8 +473,6 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
         );
     }
 
-    // ONLY render TripDetailContent when trip is definitely available
-    // This ensures TripDetailContent's hooks are ALWAYS called with valid trip data
     return (
         <Suspense fallback={<div className="h-[50vh] flex items-center justify-center"><Loader2 className="animate-spin w-12 h-12 text-indigo-500" /></div>}>
             <TripDetailContent
@@ -475,13 +485,17 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
                 isSimulation={isSimulation}
                 globalSettings={globalSettings}
                 exchangeRates={exchangeRates}
-                // Currency Props
                 convAmount={convAmount}
                 setConvAmount={setConvAmount}
                 convTo={convTo}
                 setConvTo={setConvTo}
                 onOpenSmartImport={onOpenSmartImport}
                 weatherData={weatherData}
+                requestedTab={requestedTab}
+                onTabHandled={onTabHandled}
+                requestedItemId={requestedItemId}
+                onItemHandled={onItemHandled}
+                isBanned={isBanned}
             />
         </Suspense>
     );
@@ -577,6 +591,63 @@ const App = () => {
     const [selectedImportTrip, setSelectedImportTrip] = useState(null); // For targeting import
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [selectedExportTrip, setSelectedExportTrip] = useState(null); // For targeting export
+    const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+
+    // Check for onboarding on login
+    useEffect(() => {
+        if (user && !localStorage.getItem('hasSeenOnboarding')) {
+            // Delay slightly for better transition
+            const timer = setTimeout(() => setIsOnboardingOpen(true), 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [user]);
+
+    const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+    const [isAdminFeedbackModalOpen, setIsAdminFeedbackModalOpen] = useState(false);
+    const [openFeedbackCount, setOpenFeedbackCount] = useState(0);
+
+    const [dynamicAdminEmails, setDynamicAdminEmails] = useState([]);
+    const [isBanned, setIsBanned] = useState(false);
+
+    // Dynamic Admin List from Firestore
+    useEffect(() => {
+        const unsub = onSnapshot(doc(db, "settings", "admin_config"), (doc) => {
+            if (doc.exists() && doc.data().admin_emails) {
+                setDynamicAdminEmails(doc.data().admin_emails);
+            }
+        });
+        return () => unsub();
+    }, []);
+
+    const isAdmin = user && (ADMIN_EMAILS.includes(user.email) || dynamicAdminEmails.includes(user.email));
+
+    // Admin: Listen for open feedbacks
+    useEffect(() => {
+        if (!isAdmin) return;
+        const q = query(collection(db, "feedback"), where("status", "==", "open"));
+
+        let isFirstLoad = true;
+        const unsub = onSnapshot(q, (snapshot) => {
+            setOpenFeedbackCount(snapshot.size);
+
+            if (!isFirstLoad) {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added") {
+                        const data = change.doc.data();
+                        // Real-time notification
+                        sendNotification(
+                            "收到新意見回饋",
+                            `${data.userName || '用戶'}提交了${data.type === 'bug' ? '錯誤回報' : '建議'}`,
+                            "info",
+                            () => setIsAdminFeedbackModalOpen(true) // Click to open admin panel
+                        );
+                    }
+                });
+            }
+            isFirstLoad = false;
+        });
+        return () => unsub();
+    }, [isAdmin]);
 
     // Create Trip Form State
     const [newCityInput, setNewCityInput] = useState("");
@@ -602,6 +673,7 @@ const App = () => {
     // 新增：匯率與天氣狀態
     const [exchangeRates, setExchangeRates] = useState(null);
     const [weatherData, setWeatherData] = useState({}); // {[CityName]: weatherObj }
+    const [isLoadingWeather, setIsLoadingWeather] = useState(false);
 
     // --- External Data Fetching (Weather & Rates) ---
     useEffect(() => {
@@ -613,6 +685,7 @@ const App = () => {
             setExchangeRates(rates);
 
             // 2. Fetch Weather (Targeted & Staggered)
+            setIsLoadingWeather(true);
             const newWeatherData = {};
 
             // Get cities from active selection or fallback to defaults
@@ -675,86 +748,164 @@ const App = () => {
                     }
                 }
             }
-            setWeatherData(newWeatherData);
+            setTimeout(() => {
+                setWeatherData(newWeatherData);
+                setIsLoadingWeather(false);
+            }, 1500);
         }
 
         fetchData();
     }, [user]);
 
-    // --- Smart Alerts (Trip-Based Only) ---
+    // --- Smart Notification Engine (Context-Aware) ---
     useEffect(() => {
         if (!user || !globalSettings.notifications) return;
 
-        // Only show trip-related notifications when viewing a trip
-        if (selectedTrip && view === 'detail') {
-            const today = new Date().toISOString().split('T')[0];
-            const tripStart = selectedTrip.startDate;
+        const checkContextualNotifications = async () => {
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
 
-            // Check if trip is upcoming (within 7 days)
-            if (tripStart) {
-                const startDate = new Date(tripStart);
-                const daysUntil = Math.ceil((startDate - new Date()) / (1000 * 60 * 60 * 24));
+            // 1. Weather Logic: Only notify when user is at trip destination
+            if (selectedTrip && view === 'detail') {
+                const isOngoing = todayStr >= selectedTrip.startDate && todayStr <= selectedTrip.endDate;
+                if (isOngoing && selectedTrip.city && weatherData[selectedTrip.city]) {
+                    const cityWeather = weatherData[selectedTrip.city];
+                    const hasRain = cityWeather.desc && (cityWeather.desc.includes('雨') || cityWeather.desc.includes('Rain'));
 
-                if (daysUntil > 0 && daysUntil <= 7) {
-                    const key = `trip_reminder_${selectedTrip.id}_${tripStart}`;
-                    if (!sessionStorage.getItem(key)) {
-                        sendNotification(
-                            `📅 ${selectedTrip.name}`,
-                            `距離出發只剩 ${daysUntil} 天！記得準備行李 🧳`,
-                            "info"
-                        );
-                        sessionStorage.setItem(key, 'true');
+                    if (hasRain) {
+                        const key = `weather_contextual_${selectedTrip.id}_${todayStr}`;
+                        if (!sessionStorage.getItem(key)) {
+                            sendNotification(
+                                `🌧️ 當地天氣預警: ${selectedTrip.city}`,
+                                `你目前身處 ${selectedTrip.city}，預計今日有${cityWeather.desc}，記得帶傘或調整室內行程！`,
+                                "warning",
+                                { tripId: selectedTrip.id, view: 'detail', tab: 'itinerary' }
+                            );
+                            sessionStorage.setItem(key, 'true');
+                        }
                     }
                 }
             }
 
-            // Check weather for trip destination
-            if (selectedTrip.city && weatherData[selectedTrip.city]) {
-                const cityWeather = weatherData[selectedTrip.city];
-                if (cityWeather.desc && (cityWeather.desc.includes('雨') || cityWeather.desc.includes('Rain'))) {
-                    const key = `weather_trip_${selectedTrip.id}`;
-                    if (!sessionStorage.getItem(key)) {
-                        sendNotification(
-                            `🌧️ ${selectedTrip.city} 天氣提醒`,
-                            `目的地預計有${cityWeather.desc}，建議帶傘！`,
-                            "warning"
-                        );
-                        sessionStorage.setItem(key, 'true');
-                    }
-                }
-            }
 
-            // Show user-defined reminders that are due today or overdue
-            if (selectedTrip.reminders && Array.isArray(selectedTrip.reminders)) {
-                selectedTrip.reminders.forEach(reminder => {
-                    if (!reminder.done && reminder.date) {
-                        const reminderDate = new Date(reminder.date);
-                        const todayDate = new Date();
-                        todayDate.setHours(0, 0, 0, 0);
+            // 2. Flight / Transport Reminders
+            if (selectedTrip && view === 'detail') {
+                const todayItems = selectedTrip.itinerary?.[todayStr] || [];
+                todayItems.forEach(item => {
+                    if (item.type === 'flight' || item.type === 'transport') {
+                        const itemTime = item.details?.time || item.time;
+                        if (itemTime) {
+                            const [h, m] = itemTime.split(':').map(Number);
+                            const itemDate = new Date();
+                            itemDate.setHours(h, m, 0);
 
-                        // Show if due today or overdue
-                        if (reminderDate <= todayDate) {
-                            const key = `user_reminder_${selectedTrip.id}_${reminder.id}`;
-                            if (!sessionStorage.getItem(key)) {
-                                const isOverdue = reminderDate < todayDate;
-                                sendNotification(
-                                    isOverdue ? `⚠️ 逾期提醒` : `📌 今日提醒`,
-                                    reminder.title,
-                                    isOverdue ? "warning" : "info"
-                                );
-                                sessionStorage.setItem(key, 'true');
+                            const diffMs = itemDate - now;
+                            const diffMins = Math.floor(diffMs / 60000);
+
+                            // Notify 3 hours before flight, 30 mins before transport
+                            const threshold = item.type === 'flight' ? 180 : 30;
+                            if (diffMins > 0 && diffMins <= threshold) {
+                                const key = `trip_item_reminder_${item.id}`;
+                                if (!sessionStorage.getItem(key)) {
+                                    sendNotification(
+                                        `🕒 ${item.type === 'flight' ? '航班' : '交通'}提醒`,
+                                        `${item.name} 將於 ${itemTime} 開始，請預留時間出發。`,
+                                        "info",
+                                        { tripId: selectedTrip.id, view: 'detail', tab: 'itinerary' }
+                                    );
+                                    sessionStorage.setItem(key, 'true');
+                                }
                             }
                         }
                     }
                 });
             }
-        }
+
+            // 3. User-defined Reminders
+            if (selectedTrip?.reminders) {
+                selectedTrip.reminders.forEach(reminder => {
+                    if (!reminder.done && reminder.date === todayStr) {
+                        const key = `reminder_trigger_${reminder.id}`;
+                        if (!sessionStorage.getItem(key)) {
+                            sendNotification(
+                                `📌 行程提醒`,
+                                reminder.title,
+                                "info",
+                                { tripId: selectedTrip.id, view: 'detail', tab: 'itinerary' }
+                            );
+                            sessionStorage.setItem(key, 'true');
+                        }
+                    }
+                });
+            }
+        };
+
+        const interval = setInterval(checkContextualNotifications, 300000); // Check every 5 mins
+        checkContextualNotifications(); // Initial check
+        return () => clearInterval(interval);
 
     }, [user, selectedTrip, view, weatherData, globalSettings.notifications, sendNotification]);
 
-    useEffect(() => { onAuthStateChanged(auth, setUser); }, []);
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            setUser(currentUser);
+            if (currentUser) {
+                // 1. Persistence & Update
+                const userRef = doc(db, "users", currentUser.uid);
+                await setDoc(userRef, {
+                    email: currentUser.email,
+                    displayName: currentUser.displayName,
+                    photoURL: currentUser.photoURL,
+                    lastLogin: serverTimestamp(),
+                    uid: currentUser.uid
+                }, { merge: true });
+
+                // 2. Check Ban Status
+                const snap = await getDoc(userRef);
+                if (snap.exists() && snap.data().isBanned) {
+                    setIsBanned(true);
+                    sendNotification("帳戶警示", "您的帳戶已被鎖定，部分功能受限。", "error");
+                } else {
+                    setIsBanned(false);
+                }
+            } else {
+                setIsBanned(false);
+            }
+        });
+        return () => unsubscribe();
+    }, [sendNotification]);
 
 
+
+    const handleNotificationNavigate = (notif) => {
+        if (!notif.context) return;
+        const handleNotificationNavigate = (notif) => {
+            if (!notif.context) return;
+            const { tripId, view: targetView, tab: targetTab, itemId: targetItemId } = notif.context;
+
+            // 1. Switch View
+            if (targetView) setView(targetView);
+
+            // 2. Load Trip if needed - For now, skip this as we don't have allTrips in App scope
+            // The notification should have enough context from the current view
+            // 3. Tab switching logic is handled via props/state communication
+            // We might need to store the target tab globally or pass it to TripDetail
+            if (targetTab) {
+                setRequestedTab(targetTab);
+            }
+
+            if (targetItemId) {
+                setRequestedItemId(targetItemId);
+            }
+
+            // 4. Mark as read
+            removeNotification(notif.id);
+        };
+
+    };
+
+    const [requestedTab, setRequestedTab] = useState(null);
+    const [requestedItemId, setRequestedItemId] = useState(null);
 
     if (isLoading) {
         return (
@@ -769,13 +920,13 @@ const App = () => {
 
     return (
         <div className={`min-h-screen transition-colors duration-500 font-sans selection:bg-indigo-500/30 ${isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-slate-50 text-gray-900'}`}>
-            <NotificationSystem notifications={notifications} setNotifications={setNotifications} isDarkMode={isDarkMode} />
+            <NotificationSystem notifications={notifications} setNotifications={setNotifications} isDarkMode={isDarkMode} onNotificationClick={handleNotificationNavigate} />
             <OfflineBanner isDarkMode={isDarkMode} />
             <ReloadPrompt />
             {/* Background Image (Global) */}
             <div className="fixed inset-0 z-0 opacity-20 pointer-events-none transition-all duration-1000" style={{ backgroundImage: `url(${globalBg})`, backgroundSize: 'cover' }}></div>
             <div className="relative z-10 flex-grow">
-                {view !== 'tutorial' && <Header title="✈️ Travel Together" user={user} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} onLogout={() => signOut(auth)} onBack={view !== 'dashboard' ? () => setView('dashboard') : null} onTutorialStart={() => setView('tutorial')} onViewChange={setView} onOpenUserSettings={() => setIsSettingsOpen(true)} onOpenVersion={() => setIsVersionOpen(true)} notifications={notifications} onRemoveNotification={removeNotification} onMarkNotificationsRead={markNotificationsRead} />}
+                {view !== 'tutorial' && <Header title="✈️ Travel Together" user={user} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} onLogout={() => signOut(auth)} onBack={view !== 'dashboard' ? () => setView('dashboard') : null} onTutorialStart={() => setView('tutorial')} onViewChange={setView} onOpenUserSettings={() => setIsSettingsOpen(true)} onOpenFeedback={() => setIsFeedbackModalOpen(true)} onOpenAdminFeedback={() => setIsAdminFeedbackModalOpen(true)} isAdmin={isAdmin} adminPendingCount={openFeedbackCount} onOpenVersion={() => setIsVersionOpen(true)} notifications={notifications} onRemoveNotification={removeNotification} onMarkNotificationsRead={markNotificationsRead} onNotificationClick={handleNotificationNavigate} />}
                 {view === 'dashboard' && (
                     <ErrorBoundary fallbackMessage="儀表板載入失敗，請重新整理">
                         <Dashboard
@@ -786,8 +937,10 @@ const App = () => {
                             globalSettings={globalSettings}
                             exchangeRates={exchangeRates}
                             weatherData={weatherData}
+                            isLoadingWeather={isLoadingWeather}
                             onViewChange={setView}
                             onOpenSettings={() => setIsSettingsOpen(true)}
+                            isBanned={isBanned}
                         />
                     </ErrorBoundary>
                 )}
@@ -804,16 +957,21 @@ const App = () => {
                             onBack={() => { setView('dashboard'); window.history.replaceState({}, '', '/'); }}
                             exchangeRates={exchangeRates}
                             weatherData={weatherData}
-                            onOpenSmartImport={() => {
-                                // Smart Import needs trip context.
-                                // It seems onOpenSmartImport is passed to TripDetailContent via TripDetail.
-                                // We need to check if we need to pass a handler here or if TripDetail handles it internally?
-                                // Looking at TripDetail props above, it accepts onOpenSmartImport.
-                                // Let's pass the handler to open the modal state in App
+                            onOpenSmartImport={async () => {
+                                if (isBanned) return sendNotification("帳戶已鎖定", "您目前無法使用上傳功能。", "error");
+
+                                const isAbuse = await checkAbuse(user, 'upload_file');
+                                if (isAbuse) return sendNotification("帳戶已鎖定", "檢測到異常上傳活動。", "error");
+
                                 setSelectedImportTrip(isPreviewMode ? previewTrip : selectedTrip);
                                 setIsSmartImportModalOpen(true);
                             }}
-                            onUpdateSimulationTrip={null} // Not used for real/preview trips here? Or maybe we should?
+                            onUpdateSimulationTrip={null}
+                            requestedTab={requestedTab}
+                            onTabHandled={() => setRequestedTab(null)}
+                            requestedItemId={requestedItemId}
+                            onItemHandled={() => setRequestedItemId(null)}
+                            isBanned={isBanned}
                         />
                     </ErrorBoundary>
                 )}
@@ -823,6 +981,8 @@ const App = () => {
             {view !== 'tutorial' && <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} />}
             <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} globalSettings={globalSettings} setGlobalSettings={setGlobalSettings} isDarkMode={isDarkMode} />
             <VersionModal isOpen={isVersionOpen} onClose={() => setIsVersionOpen(false)} isDarkMode={isDarkMode} globalSettings={globalSettings} />
+            <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} isDarkMode={isDarkMode} user={user} isBanned={isBanned} />
+            <AdminFeedbackModal isOpen={isAdminFeedbackModalOpen} onClose={() => setIsAdminFeedbackModalOpen(false)} isDarkMode={isDarkMode} />
             <SmartImportModal
                 isOpen={isSmartImportModalOpen}
                 onClose={() => setIsSmartImportModalOpen(false)}
@@ -846,6 +1006,7 @@ const App = () => {
                     // Do NOT close modal here - SmartImportModal will show result and close itself
                 }}
             />
+            <OnboardingModal isOpen={isOnboardingOpen} onClose={() => setIsOnboardingOpen(false)} isDarkMode={isDarkMode} />
         </div>
     );
 };
