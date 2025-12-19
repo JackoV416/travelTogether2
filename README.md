@@ -1,11 +1,23 @@
-# ✈️# TravelTogether V0.24.0 "Osaka Express"
+# Travel Together (智能旅遊規劃) V0.24.1
 
-[![TravelTogether](https://img.shields.io/badge/Version-V0.24.0--Osaka--Express-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V0.24.1--Osaka--Express--Hotfix-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-10.x-orange.svg)](https://firebase.google.com/)
 
-## 🚀 最新更新: V0.24.0 "Osaka Express"
+## 🚀 V0.24.1: Osaka Express Hotfix (2025-02-28)
+本版本為 V0.24.0 的緊急修復更新，主要解決以下問題：
+- **修復閃退**: 修正 `Loader2` 導致的天氣摘要崩潰問題。
+- **API 保護**: 新增 Gemini API 限額 (429) 自動處理機制，系統更穩定。
+- **體驗優化**: 優化錯誤提示 UI。
+
+> **V0.24.0 主要功能回顧**:
+> - **Smart Transport**: 長途車程精準格式化 (`X小時X分`)。
+> - **Weather 2.0**: 早午晚分段天氣及洋蔥式穿搭建議。
+> - **Premium UI**: Packing, Shopping, Budget, Files 四大分頁視覺全面升頻。
+> - **Colors**: 全域統一行程顏色代碼。
+
+## 🚀 最新更新: V0.24.0 "Osaka Express" (主要功能回顧)
 
 ### 🛠️ 重點修復與升級
 - **[新功能] 智能交通格式**:

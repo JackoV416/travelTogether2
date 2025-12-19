@@ -4,18 +4,42 @@ import {
 
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
-export const APP_VERSION = 'V0.24.0';
-export const APP_VERSION_TAG = 'Osaka Express';
+export const APP_VERSION = 'V0.24.1';
+export const APP_VERSION_TAG = 'Osaka Express (Hotfix)';
 export const APP_LAST_UPDATE = '2025-02-28';
 
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
     {
+        ver: "V0.24.1",
+        tag: "Osaka Express Hotfix",
+        date: "2025-02-28",
+        desc: {
+            "zh-TW": "修復 AI 摘要閃退及 API 限額問題",
+            "en": "Fix AI Summary crash & API Quota handling"
+        },
+        details: {
+            "zh-TW": "• 🐛 修復 `Loader2` 導致的白畫面閃退問題。\n• 🛡️ 新增 Gemini API 限額 (429) 保護，避免系統崩潰。\n• ⚡ 優化錯誤處理流程。",
+            "en": "• 🐛 Fixed `Loader2` ReferenceError crash.\n• 🛡️ Added graceful handling for Gemini API 429 Quota errors.\n• ⚡ Optimized error fallback UI."
+        },
+        changes: [
+            "Fix: Loader2 ReferenceError in TripDetailContent",
+            "Fix: Graceful handling of Gemini 429/503 errors"
+        ]
+    },
+    {
         ver: "V0.24.0",
         tag: "Osaka Express",
         date: "2025-02-28",
-        desc: { "zh-TW": "Smart Layout & Transport Fix", "en": "Smart Layout & Transport Fix" },
+        desc: {
+            "zh-TW": "Osaka Express - 智能交通與極致 UI 體驗",
+            "en": "Osaka Express - Smart Transport & Premium UI"
+        },
+        details: {
+            "zh-TW": "• 🚅 智能交通格式：長途車程 (>60分) 自動轉為「X小時X分」，一目了然。\n• 🌤️ 天氣 2.0：分時段 (早/午/晚) 天氣預報及洋蔥式穿搭建議，出門更安心。\n• 🎨 頂級 UI：Packing/Shopping/Budget/Files 四大分頁視覺全面升頻，加入動態進度條及 Glassmorphism 效果。\n• 🤖 AI 靈感升級：根據目的地 (如東京/大阪) 生成在地化景點及美食建議。",
+            "en": "• 🚅 Smart Transport: Auto-formats durations >60m to 'Xh Ym' for better readability.\n• 🌤️ Weather 2.0: Tiered morning/afternoon/night forecasts with specific clothing advice.\n• 🎨 Premium UI: Complete visual overhaul of Packing, Shopping, Budget, and Files tabs with glassmorphism.\n• 🤖 Contextual AI: 'AI Inspiration' now generates destination-specific suggestions (e.g., Tokyo/Osaka spots)."
+        },
         changes: [
             "Transport: Duration format 'X小時X分' for >60min",
             "Weather: Smart summary with morning/afternoon/night tiers",
@@ -28,7 +52,14 @@ export const VERSION_HISTORY = [
         ver: "V0.23.5",
         tag: "Osaka Grand Update",
         date: "2025-02-27",
-        desc: { "zh-TW": "Refined Itinerary & Auth UI", "en": "Refined Itinerary & Auth UI" },
+        desc: {
+            "zh-TW": "Osaka Grand Update - 介面與保安升級",
+            "en": "Osaka Grand Update - UI & Security Overhaul"
+        },
+        details: {
+            "zh-TW": "• 💎 介面重塑：行程卡片全面 Glassmorphism 化，提升視覺層次感。\n• 🔐 保安升級：全新高級登入介面，底層 Auth 邏輯優化。\n• ⚙️ 系統準備：為 Osaka Express 的智能功能鋪路。",
+            "en": "• 💎 UI Redesign: Full glassmorphism adoption for itinerary cards.\n• 🔐 Security: Revamped login UI and underlying auth logic.\n• ⚙️ System Prep: Groundwork for Osaka Express smart features."
+        },
         changes: [
             "UI: Redesigned Itinerary cards with glassmorphism",
             "Auth: Premium login/register interface",

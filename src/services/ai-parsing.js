@@ -891,6 +891,22 @@ ${JSON.stringify(rawWeatherData, null, 2)}
         throw new Error("Invalid response format");
     } catch (error) {
         console.error("[Gemini AI] Weather summary error:", error);
+
+        // Graceful fallback for Quota/Service errors
+        if (error.message.includes('429') || error.message.includes('503')) {
+            console.warn("[Gemini AI] Quota exceeded or service busy. Returning fallback.");
+            return {
+                city: city,
+                tempRange: { max: "--", min: "--", unit: "°C" },
+                periods: {
+                    morning: { desc: "系統繁忙", temp: "--", outfit: "AI 暫時休息中，請稍後再試" },
+                    afternoon: { desc: "系統繁忙", temp: "--", outfit: "AI 暫時休息中，請稍後再試" },
+                    night: { desc: "系統繁忙", temp: "--", outfit: "AI 暫時休息中，請稍後再試" }
+                },
+                summary: "由於使用人數眾多，AI 天氣預報暫時無法使用 (Quota Exceeded)。請過一陣再試。",
+                overallOutfit: "暫無建議"
+            };
+        }
         throw error;
     }
 }
