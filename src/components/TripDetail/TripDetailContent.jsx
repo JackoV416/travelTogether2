@@ -22,13 +22,15 @@ import {
     glassCard, getHolidayMap, getLocalizedCountryName, getLocalizedCityName, getSafeCountryInfo, formatDate,
     getDaysArray, getTripSummary, calculateDebts, getTimeDiff, getWeatherForecast, buildDailyReminder,
     inputClasses
-} from '../../utils/tripHelpers';
-import { optimizeSchedule, generatePackingList } from '../../services/ai';
+} from '../../utils/tripUtils';
+import { generatePackingList, generateWeatherSummaryWithGemini } from '../../services/ai-parsing';
+import { optimizeSchedule } from '../../services/ai';
 import { getWeatherInfo } from '../../services/weather';
+import { exportToBeautifulPDF } from '../../services/pdfExport';
 import { COUNTRIES_DATA, DEFAULT_BG_IMAGE, CURRENCIES, INSURANCE_SUGGESTIONS, INSURANCE_RESOURCES } from '../../constants/appData';
 import { buttonPrimary } from '../../constants/styles';
 
-const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, globalSettings, exchangeRates, convAmount, setConvAmount, convTo, setConvTo, onOpenSmartImport, weatherData }) => {
+const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, isPreview, globalSettings, exchangeRates, convAmount, setConvAmount, convTo, setConvTo, onOpenSmartImport, weatherData }) => {
     // ============================================
     // UI STATE HOOKS
     // ============================================
@@ -54,6 +56,8 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     const [receiptPreview, setReceiptPreview] = useState({ shopping: null, budget: null });
     const [confirmConfig, setConfirmConfig] = useState(null); // { title: '', message: '', onConfirm: fn, type: 'info'|'warning' }
     const [visaForm, setVisaForm] = useState({ status: '', number: '', expiry: '', needsPrint: false });
+    const [smartWeather, setSmartWeather] = useState(null);
+    const [isGeneratingWeather, setIsGeneratingWeather] = useState(false);
 
     // ============================================
     // SYNC EFFECTS
@@ -84,9 +88,9 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     // DERIVED VALUES
     // ============================================
 
-    const myRole = trip.members?.find(m => m.id === user.uid)?.role || 'viewer';
-    const isOwner = myRole === 'owner' || isSimulation;
-    const canEdit = myRole === 'owner' || myRole === 'editor' || isSimulation;
+    const myRole = isPreview ? (trip.sharePermission === 'edit' && user.uid ? 'editor' : 'viewer') : (trip.members?.find(m => m.id === user.uid)?.role || 'viewer');
+    const isOwner = !isPreview && (myRole === 'owner' || isSimulation);
+    const canEdit = (myRole === 'owner' || myRole === 'editor' || isSimulation);
 
     const days = getDaysArray(trip.startDate, trip.endDate);
     const currentDisplayDate = selectDate || days[0];
@@ -197,15 +201,26 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                         if (newItems.length !== items.length) {
                             await updateDoc(docRef, { [`itinerary.${currentDisplayDate}`]: newItems });
                             setIsAddModal(false);
-                            setEditingItem(null);
                         }
                     }
                 } catch (err) {
-                    console.error("Delete item error:", err);
-                    alert("刪除失敗：" + err.message);
+                    console.error("Delete itinerary item error:", err);
                 }
             }
         });
+    };
+
+    const handleGenerateWeatherSummary = async () => {
+        if (!realWeather) return;
+        setIsGeneratingWeather(true);
+        try {
+            const result = await generateWeatherSummaryWithGemini(trip.city, realWeather);
+            setSmartWeather(result);
+        } catch (err) {
+            console.error("Weather summary generation error:", err);
+        } finally {
+            setIsGeneratingWeather(false);
+        }
     };
 
     const handleClearDailyItinerary = () => {
@@ -240,11 +255,9 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
         if (isSimulation) return alert("模擬模式");
         await updateDoc(doc(db, "trips", trip.id), { [`visa.${user.uid}`]: visaForm });
         alert("簽證資訊已更新");
-        alert("簽證資訊已更新");
     };
 
     const handleGeneratePackingList = async () => {
-        if (isSimulation) return alert("模擬模式");
         setAIMode('packing');
         setIsAIModal(true);
     };
@@ -334,10 +347,9 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                 cost: item.cost || 0,
                 currency: item.currency || globalSettings.currency,
                 details: {
+                    ...item.details,
                     time: item.time || "09:00",
-                    location: item.details?.location || `${trip.city} must-see`,
-                    insight: item.details?.insight || null,
-                    reason: item.details?.reason || null
+                    location: item.details?.location || `${trip.city}景點`,
                 },
                 createdBy: { name: "AI Guide" }
             }));
@@ -380,6 +392,39 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                 createdBy: { name: user.displayName, id: user.uid }
             }));
             updates.packingList = arrayUnion(...newPackItems);
+        }
+
+        // 4. Handle Transport
+        if (data.transport && data.transport.length > 0) {
+            const newTransportItems = data.transport.map((t, idx) => ({
+                id: `ai-tr-${Date.now()}-${idx}`,
+                name: t.name,
+                type: 'transport',
+                cost: parseFloat(t.price?.replace(/[^0-9.]/g, '') || 0),
+                currency: t.price?.match(/[A-Z]{3}/)?.[0] || globalSettings.currency,
+                details: {
+                    time: "09:00",
+                    location: t.name,
+                    notes: t.desc
+                },
+                createdBy: { name: "AI Guide" }
+            }));
+
+            // Add to current day's itinerary
+            const currentDayItems = trip.itinerary?.[currentDisplayDate] || [];
+            updates[`itinerary.${currentDisplayDate}`] = [...currentDayItems, ...newTransportItems];
+
+            // Also add to budget
+            const newBudgetItems = newTransportItems.map(item => ({
+                id: `b-${item.id}`,
+                name: item.name,
+                cost: item.cost,
+                currency: item.currency,
+                category: 'transport',
+                payer: user.displayName,
+                splitType: 'group'
+            }));
+            updates.budget = arrayUnion(...newBudgetItems);
         }
 
         if (Object.keys(updates).length > 0) {
@@ -459,27 +504,47 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
         }
     };
 
-    const handleExportPdf = () => {
-        const summaryHtml = `
-            <html>
-                <head><title>${trip.name} Summary</title></head>
-                <body style="font-family: sans-serif; padding:24px;">
-                    <h1>${trip.name}</h1>
-                    <p>${formatDate(trip.startDate)} - ${formatDate(trip.endDate)} | ${displayCountry} ${displayCity}</p>
-                    <h2>Itinerary (${days.length} days)</h2>
-                    <pre>${JSON.stringify(trip.itinerary, null, 2)}</pre>
-                    <h2>Budget</h2>
-                    <pre>${JSON.stringify(trip.budget, null, 2)}</pre>
-                    <h2>Shopping</h2>
-                    <pre>${JSON.stringify(trip.shoppingList, null, 2)}</pre>
-                </body>
-            </html>`;
-        const win = window.open('', '_blank');
-        if (!win) return alert("請允許瀏覽器開啟新視窗以匯出 PDF");
-        win.document.write(summaryHtml);
-        win.document.close();
-        win.focus();
-        win.print();
+    const handleAddTransportSuggestion = async (date, suggestion, indexAfter) => {
+        if (!canEdit) return;
+        if (isSimulation) return alert("模擬模式僅供預覽");
+
+        try {
+            const docRef = doc(db, "trips", trip.id);
+            const items = trip.itinerary?.[date] || [];
+
+            const newItem = {
+                id: `it-trans-${Date.now()}`,
+                name: suggestion.name,
+                type: 'transport',
+                time: suggestion.time || "",
+                cost: 0,
+                currency: 'JPY',
+                details: {
+                    location: suggestion.name,
+                    desc: suggestion.steps?.join(' → ') || suggestion.duration,
+                    insight: `AI 建議路線：${suggestion.duration}`,
+                    transportType: suggestion.mode
+                },
+                smartTag: "🚀 AI 建議"
+            };
+
+            const newItems = [...items];
+            newItems.splice(indexAfter + 1, 0, newItem);
+
+            await updateDoc(docRef, { [`itinerary.${date}`]: newItems });
+        } catch (err) {
+            console.error("Add transport suggestion error:", err);
+            alert("加入失敗：" + err.message);
+        }
+    };
+
+    const handleExportPdf = async () => {
+        try {
+            await exportToBeautifulPDF(trip);
+        } catch (err) {
+            console.error("PDF Export failed:", err);
+            alert("匯出 PDF 失敗，請重試");
+        }
     };
 
     const handleReceiptUpload = (section, file) => {
@@ -578,14 +643,45 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
 
                             <div className="space-y-4">
                                 {/* Outfit */}
-                                <div className="flex items-start gap-3 p-3 bg-black/20 rounded-xl border border-white/5 hover:bg-black/30 transition-colors">
-                                    <div className="p-2 bg-indigo-500/20 rounded-lg shrink-0">
-                                        {dailyWeather.outfitIcon ? <img src={dailyWeather.outfitIcon} className="w-6 h-6 object-contain" alt="outfit" /> : <Sparkles className="w-6 h-6 text-indigo-400" />}
+                                <div className="p-3 bg-black/20 rounded-xl border border-white/5 hover:bg-black/30 transition-all group/weather">
+                                    <div className="flex items-start gap-3 mb-3">
+                                        <div className="p-2 bg-indigo-500/20 rounded-lg shrink-0">
+                                            {dailyWeather.outfitIcon ? <img src={dailyWeather.outfitIcon} className="w-6 h-6 object-contain" alt="outfit" /> : <Sparkles className="w-6 h-6 text-indigo-400" />}
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center justify-between">
+                                                <div className="text-[10px] font-bold text-indigo-300 mb-0.5 uppercase tracking-tighter">OUTFIT ADVICE</div>
+                                                <button
+                                                    onClick={handleGenerateWeatherSummary}
+                                                    disabled={isGeneratingWeather}
+                                                    className="text-[9px] bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-200 px-2 py-0.5 rounded transition-all flex items-center gap-1"
+                                                >
+                                                    {isGeneratingWeather ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <BrainCircuit className="w-2.5 h-2.5" />}
+                                                    智慧摘要
+                                                </button>
+                                            </div>
+                                            <div className="text-[11px] leading-relaxed opacity-90">{dailyWeather.clothes || "暫無穿搭建議"}</div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div className="text-[10px] font-bold text-indigo-300 mb-0.5 uppercase tracking-tighter">OUTFIT ADVICE</div>
-                                        <div className="text-[11px] leading-relaxed opacity-90">{dailyWeather.clothes || "暫無穿搭建議"}</div>
-                                    </div>
+
+                                    {smartWeather && (
+                                        <div className="mt-3 pt-3 border-t border-white/5 animate-fade-in space-y-2">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-[10px] bg-indigo-500 text-white px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">Osaka Express 摘要</span>
+                                                <span className="text-[10px] opacity-60">今日溫差: {smartWeather.tempRange?.min}°C - {smartWeather.tempRange?.max}°C</span>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {['morning', 'afternoon', 'night'].map(p => (
+                                                    <div key={p} className="bg-white/5 p-1.5 rounded-lg">
+                                                        <div className="text-[8px] opacity-40 uppercase font-black">{p === 'morning' ? '早晨' : p === 'afternoon' ? '下晝' : '夜晚'}</div>
+                                                        <div className="text-[10px] font-bold text-indigo-300">{smartWeather.periods[p].temp}</div>
+                                                        <div className="text-[9px] opacity-80 leading-tight truncate" title={smartWeather.periods[p].outfit}>{smartWeather.periods[p].outfit}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <p className="text-[10px] italic opacity-60 leading-relaxed text-indigo-200/80">「{smartWeather.summary}」</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -690,9 +786,10 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                         openSectionModal={openSectionModal}
                         onOptimize={handleOptimizeSchedule}
                         onOpenAIModal={handleOpenAIModal}
-                        // onOpenSmartImport={onOpenSmartImport} // Disabled for V0.22.1
-                        // onOpenSmartExport={() => setIsSmartExportOpen(true)} // Disabled for V0.22.1
+                        onOpenSmartImport={onOpenSmartImport}
+                        onOpenSmartExport={() => setIsSmartExportOpen(true)}
                         onClearDaily={handleClearDailyItinerary}
+                        onAddTransportSuggestion={handleAddTransportSuggestion}
                     />
                 )
             }
@@ -758,8 +855,8 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                         onExportPdf={handleExportPdf}
                         handleReceiptUpload={handleReceiptUpload}
                         glassCard={glassCard}
-                    // onOpenSmartImport={onOpenSmartImport} // Disabled V0.22.1
-                    // onOpenSmartExport={() => setIsSmartExportOpen(true)} // Disabled V0.22.1
+                        onOpenSmartImport={onOpenSmartImport}
+                        onOpenSmartExport={() => setIsSmartExportOpen(true)}
                     />
                 )
             }
@@ -810,7 +907,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                         onAddItem={() => { setAddType('packing'); setIsAddModal(true); }}
                         onToggleItem={handlePackingToggle}
                         onDeleteItem={handlePackingDelete}
-                        // onGenerateList={handleGeneratePackingList} // Disabled V0.22.1 (AI)
+                        onGenerateList={handleGeneratePackingList}
                         onClearList={handleClearPackingList}
                         glassCard={glassCard}
                     />
@@ -823,27 +920,24 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                         trip={trip}
                         isDarkMode={isDarkMode}
                         onOpenSectionModal={openSectionModal}
-                        // onOpenAIModal={(mode) => { setAIMode(mode); setIsAIModal(true); }} // Disabled V0.22.1
+                        onOpenAIModal={(mode) => { setAIMode(mode); setIsAIModal(true); }}
                         onAddItem={(type) => { setAddType(type); setIsAddModal(true); }}
                         handleReceiptUpload={handleReceiptUpload}
                         receiptPreview={receiptPreview}
                         glassCard={glassCard}
-                    // onOpenSmartImport={onOpenSmartImport} // Disabled V0.22.1
-                    // onOpenSmartExport={() => setIsSmartExportOpen(true)} // Disabled V0.22.1
+                        onOpenSmartImport={onOpenSmartImport}
+                        onOpenSmartExport={() => setIsSmartExportOpen(true)}
                     />
                 )
             }
 
-            <AddActivityModal isOpen={isAddModal} onClose={() => setIsAddModal(false)} onSave={handleSaveItem} onDelete={handleDeleteItineraryItem} isDarkMode={isDarkMode} date={selectDate} defaultType={addType} editData={editingItem} members={trip.members || [{ id: user.uid, name: user.displayName }]} />
+            <AddActivityModal isOpen={isAddModal} onClose={() => setIsAddModal(false)} onSave={handleSaveItem} onDelete={handleDeleteItineraryItem} isDarkMode={isDarkMode} date={selectDate} defaultType={addType} editData={editingItem} members={trip.members || [{ id: user.uid, name: user.displayName }]} trip={trip} />
             <TripSettingsModal isOpen={isTripSettingsOpen} onClose={() => setIsTripSettingsOpen(false)} trip={trip} onUpdate={(d) => !isSimulation && updateDoc(doc(db, "trips", trip.id), d)} isDarkMode={isDarkMode} />
             <MemberSettingsModal isOpen={isMemberModalOpen} onClose={() => setIsMemberModalOpen(false)} members={trip.members || []} onUpdateRole={handleUpdateRole} isDarkMode={isDarkMode} />
             <InviteModal isOpen={isInviteModal} onClose={() => setIsInviteModal(false)} tripId={trip.id} onInvite={handleInvite} isDarkMode={isDarkMode} />
 
-            {/* AI Modal Disabled V0.22.1
             <AIGeminiModal isOpen={isAIModal} onClose={() => setIsAIModal(false)} onApply={handleAIApply} isDarkMode={isDarkMode} contextCity={trip.city} existingItems={itineraryItems} mode={aiMode} userPreferences={globalSettings.preferences} trip={trip} weatherData={weatherData} />
-            */}
 
-            {/* Export/Import Modals Disabled V0.22.1
             <TripExportImportModal
                 isOpen={Boolean(sectionModalConfig)}
                 onClose={closeSectionModal}
@@ -866,7 +960,6 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                     />
                 )
             }
-            */}
             {
                 confirmConfig && (
                     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in bg-black/40">

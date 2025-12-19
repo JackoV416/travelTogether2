@@ -1,7 +1,7 @@
 {
-  "name": "travel-together-v2",
+  "name": "travel-together-2",
   "private": true,
-  "version": "0.22.2",
+  "version": "0.24.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

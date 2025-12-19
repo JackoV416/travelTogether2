@@ -1,5 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { RefreshCw, List, FileUp, Loader2 } from 'lucide-react';
+import {
+    RefreshCw, List, FileUp, Loader2, DollarSign, PieChart,
+    TrendingUp, ArrowDownCircle, ArrowUpCircle, Coffee,
+    Bus, ShoppingBag, Hotel, Plane, Ticket, HelpCircle
+} from 'lucide-react';
 import SearchFilterBar from '../../Shared/SearchFilterBar';
 
 const BudgetTab = ({
@@ -13,25 +17,8 @@ const BudgetTab = ({
     onOpenSmartImport,
     onOpenSmartExport
 }) => {
-    const [dragActive, setDragActive] = useState(false);
-    const [uploading, setUploading] = useState(false);
-    const fileInputRef = useRef(null);
     const [searchValue, setSearchValue] = useState("");
     const [activeFilters, setActiveFilters] = useState({ category: 'all' });
-
-    const handleDrop = (e) => {
-        e.preventDefault();
-        setDragActive(false);
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            handleReceiptUpload('budget', e.dataTransfer.files[0]);
-        }
-    };
-
-    const handleFileSelect = (e) => {
-        if (e.target.files && e.target.files[0]) {
-            handleReceiptUpload('budget', e.target.files[0]);
-        }
-    };
 
     const filters = [{
         key: 'category',
@@ -46,6 +33,18 @@ const BudgetTab = ({
         ]
     }];
 
+    const getCategoryIcon = (cat) => {
+        switch (cat) {
+            case 'food': return <Coffee className="w-4 h-4 text-orange-400" />;
+            case 'transport': return <Bus className="w-4 h-4 text-blue-400" />;
+            case 'shopping': return <ShoppingBag className="w-4 h-4 text-purple-400" />;
+            case 'hotel': return <Hotel className="w-4 h-4 text-emerald-400" />;
+            case 'flight': return <Plane className="w-4 h-4 text-indigo-400" />;
+            case 'spot': return <Ticket className="w-4 h-4 text-pink-400" />;
+            default: return <HelpCircle className="w-4 h-4 text-gray-400" />;
+        }
+    };
+
     const filteredBudget = (trip.budget || []).filter(item => {
         const matchesSearch = !searchValue ||
             (item.name || item.desc || "").toLowerCase().includes(searchValue.toLowerCase()) ||
@@ -54,66 +53,105 @@ const BudgetTab = ({
         const matchesFilter = activeFilters.category === 'all' || item.category === activeFilters.category;
         return matchesSearch && matchesFilter;
     });
+
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6 animate-fade-in pb-10">
             <SearchFilterBar
                 searchValue={searchValue}
                 onSearchChange={setSearchValue}
-                placeholder="搜尋支出、付款人..."
+                placeholder="搜尋支出項目、付款人..."
                 filters={filters}
                 activeFilters={activeFilters}
                 onFilterChange={(key, val) => setActiveFilters(prev => ({ ...prev, [key]: val }))}
                 onClearFilters={() => { setSearchValue(""); setActiveFilters({ category: 'all' }); }}
                 isDarkMode={isDarkMode}
             />
-            <div className="flex justify-end gap-2">
-                {/* Unified Import/Export is now in Header */}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className={glassCard(isDarkMode) + " p-6 text-center"}>
-                    <div className="text-sm opacity-60 uppercase mb-1">總支出</div>
-                    <div className="text-3xl font-bold font-mono text-indigo-500">${Math.round(debtInfo.totalSpent).toLocaleString()}</div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Main Stats Card */}
+                <div className={`${glassCard(isDarkMode)} p-8 md:col-span-1 flex flex-col items-center justify-center relative overflow-hidden group`}>
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform">
+                        <TrendingUp className="w-24 h-24" />
+                    </div>
+                    <div className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-2">Total Accumulated Spend</div>
+                    <div className="text-4xl font-black font-mono tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
+                        ${Math.round(debtInfo.totalSpent).toLocaleString()}
+                    </div>
+                    <div className="mt-4 flex items-center gap-2 text-[10px] bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded-full font-bold">
+                        <PieChart className="w-3 h-3" /> 各半拆數模式已啟用
+                    </div>
                 </div>
-                <div className={glassCard(isDarkMode) + " p-6"}>
-                    <h3 className="font-bold mb-2 flex gap-2"><RefreshCw className="w-4 h-4" /> 債務結算</h3>
-                    <div className="space-y-2 text-sm">
+
+                {/* Balance List */}
+                <div className={`${glassCard(isDarkMode)} p-6 md:col-span-2`}>
+                    <h3 className="text-sm font-black uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <RefreshCw className="w-4 h-4 text-indigo-500" /> 債務與結算
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {Object.entries(debtInfo.balances).map(([name, bal]) => (
-                            <div key={name} className="flex justify-between border-b pb-1">
-                                <span>{name}</span>
-                                <span className={bal > 0 ? 'text-green-500' : 'text-red-500'}>
-                                    {bal > 0 ? `應收 $${Math.round(bal)}` : `應付 $${Math.round(Math.abs(bal))}`}
-                                </span>
+                            <div key={name} className={`p-4 rounded-xl border flex justify-between items-center ${isDarkMode ? 'bg-white/[0.03] border-white/5' : 'bg-gray-50/50 border-gray-200'} `}>
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ${bal >= 0 ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
+                                        {name[0].toUpperCase()}
+                                    </div>
+                                    <span className="font-bold text-sm">{name}</span>
+                                </div>
+                                <div className="text-right">
+                                    <div className={`text-sm font-black font-mono ${bal >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                        {bal >= 0 ? `+ $${Math.round(bal)}` : `- $${Math.round(Math.abs(bal))}`}
+                                    </div>
+                                    <div className="text-[9px] opacity-40 uppercase font-black">{bal >= 0 ? 'To Receive' : 'To Pay'}</div>
+                                </div>
                             </div>
                         ))}
                     </div>
                 </div>
             </div>
-            <div className={glassCard(isDarkMode) + " p-6"}>
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-bold flex gap-2"><List className="w-4 h-4" /> 支出明細</h3>
+
+            {/* List Table Area */}
+            <div className={`${glassCard(isDarkMode)} overflow-hidden`}>
+                <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                    <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                        <List className="w-4 h-4 text-indigo-500" /> 支出明細摘要
+                    </h3>
+                    <span className="text-[10px] opacity-50 font-bold uppercase">{filteredBudget.length} Records</span>
                 </div>
 
-                <div className="max-h-60 overflow-y-auto space-y-2 custom-scrollbar">
+                <div className="divide-y divide-white/5 max-h-[400px] overflow-y-auto custom-scrollbar">
                     {filteredBudget.map((b, i) => (
-                        <div key={i} className={`flex justify-between items-center p-3 rounded-lg text-sm border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-100'}`}>
-                            <div className="flex items-center gap-3">
-                                {b.details?.receiptUrl && (
-                                    <a href={b.details.receiptUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-lg overflow-hidden border border-white/20 flex-shrink-0 hover:scale-110 transition-transform">
+                        <div key={i} className="group p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all hover:bg-indigo-500/[0.02]">
+                            <div className="flex items-center gap-4 flex-1 w-full">
+                                {b.details?.receiptUrl ? (
+                                    <a href={b.details.receiptUrl} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/10 flex-shrink-0 hover:scale-105 transition-transform shadow-lg">
                                         <img src={b.details.receiptUrl} alt="Receipt" className="w-full h-full object-cover" />
                                     </a>
+                                ) : (
+                                    <div className={`w-12 h-12 rounded-xl border flex items-center justify-center flex-shrink-0 ${isDarkMode ? 'bg-gray-800 border-white/5' : 'bg-gray-100 border-gray-200'}`}>
+                                        {getCategoryIcon(b.category)}
+                                    </div>
                                 )}
-                                <div>
-                                    <div className="font-bold">{b.name || b.desc}</div>
-                                    <div className="text-xs opacity-60">{b.payer} • {b.category || '未分類'}</div>
+                                <div className="min-w-0 flex-1">
+                                    <div className="font-bold text-sm tracking-tight truncate">{b.name || b.desc}</div>
+                                    <div className="flex flex-wrap gap-2 mt-1">
+                                        <span className="text-[10px] font-bold text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded uppercase tracking-tighter">{b.payer}</span>
+                                        <span className="text-[10px] font-bold opacity-40 uppercase tracking-tighter">{b.category || 'misc'}</span>
+                                    </div>
                                 </div>
                             </div>
-                            <span className="font-mono opacity-80">{b.currency} {b.cost}</span>
+                            <div className="text-right w-full sm:w-auto mt-2 sm:mt-0 px-1">
+                                <span className={`text-base font-black font-mono ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{b.currency} {b.cost}</span>
+                                <div className="text-[9px] opacity-40 uppercase font-black mt-1">Settled {b.currency !== 'HKD' ? '• Foreign' : ''}</div>
+                            </div>
                         </div>
                     ))}
-                    {filteredBudget.length === 0 && <p className="text-center text-sm opacity-50 py-4">沒有符合的支出記錄</p>}
+                    {filteredBudget.length === 0 && (
+                        <div className="flex flex-col items-center justify-center py-20 opacity-30">
+                            <DollarSign className="w-12 h-12 mb-2 opacity-50" />
+                            <p className="text-xs font-black uppercase tracking-widest">No matching transactions</p>
+                        </div>
+                    )}
                 </div>
             </div>
-
         </div>
     );
 };

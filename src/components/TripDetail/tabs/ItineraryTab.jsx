@@ -3,9 +3,11 @@ import SearchFilterBar from '../../Shared/SearchFilterBar';
 import {
     Map as MapIcon, MapPinned, List, Navigation, PlaneTakeoff, Hotel, Utensils,
     Bus, ShoppingBag, Clock, CalendarDays, GripVertical, MapPin, BusFront, Car, Route, TrainFront, Wand2,
-    Plus, Sparkles, BrainCircuit, Edit3, Info, Quote, CheckSquare, Trash2, ExternalLink
+    Plus, Sparkles, BrainCircuit, Edit3, Info, Quote, CheckSquare, Trash2, ExternalLink, FileText, Loader2
 } from 'lucide-react';
 import { CURRENCIES } from '../../../constants/appData';
+import { suggestTransportBetweenSpots } from '../../../services/ai-parsing';
+import { formatDuration } from '../../../utils/tripUtils';
 
 // --- Local Helpers ---
 
@@ -67,6 +69,7 @@ const ItineraryTab = ({
     onOpenAIModal,
     onOpenSmartImport,
     onOpenSmartExport,
+    onAddTransportSuggestion,
     user,
     glassCard,
     onClearDaily
@@ -77,6 +80,38 @@ const ItineraryTab = ({
     const [activeFilters, setActiveFilters] = useState({ type: 'all' });
     const [searchValue, setSearchValue] = useState("");
     const [previewLocation, setPreviewLocation] = useState(null); // For map preview
+
+    // AI Transport Suggestions State
+    const [transportSuggestions, setTransportSuggestions] = useState({}); // { "itemId-nextItemId": suggestion }
+    const [loadingTransport, setLoadingTransport] = useState(null); // Currently loading suggestion key
+
+    // Fetch AI transport suggestion between two spots
+    const fetchTransportSuggestion = async (fromItem, toItem) => {
+        const key = `${fromItem.id}-${toItem.id}`;
+        if (transportSuggestions[key] || loadingTransport === key) return;
+
+        const fromLocation = fromItem.details?.location || fromItem.name;
+        const toLocation = toItem.details?.location || toItem.name;
+
+        if (!fromLocation || !toLocation) return;
+
+        setLoadingTransport(key);
+        try {
+            const suggestion = await suggestTransportBetweenSpots({
+                fromLocation,
+                toLocation,
+                city: trip?.city || 'Unknown',
+                time: toItem.time || toItem.startTime,
+                preference: 'public'
+            });
+            setTransportSuggestions(prev => ({ ...prev, [key]: suggestion }));
+        } catch (error) {
+            console.error('[AI Transport] Failed:', error);
+            setTransportSuggestions(prev => ({ ...prev, [key]: { error: true } }));
+        } finally {
+            setLoadingTransport(null);
+        }
+    };
 
     const filters = [{
         key: 'type',
@@ -111,12 +146,12 @@ const ItineraryTab = ({
 
     // Types mapping
     const typeStyles = {
-        flight: { bg: 'bg-blue-500/15', border: 'border-blue-500/30', icon: 'text-blue-500' },
-        hotel: { bg: 'bg-amber-500/15', border: 'border-amber-500/30', icon: 'text-amber-500' },
-        food: { bg: 'bg-rose-500/15', border: 'border-rose-500/30', icon: 'text-rose-500' },
+        flight: { bg: 'bg-sky-500/15', border: 'border-sky-500/30', icon: 'text-sky-500' },
+        hotel: { bg: 'bg-indigo-500/15', border: 'border-indigo-500/30', icon: 'text-indigo-500' },
         spot: { bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', icon: 'text-emerald-500' },
-        transport: { bg: 'bg-purple-500/15', border: 'border-purple-500/30', icon: 'text-purple-500' },
-        shopping: { bg: 'bg-pink-500/15', border: 'border-pink-500/30', icon: 'text-pink-500' }
+        food: { bg: 'bg-orange-500/15', border: 'border-orange-500/30', icon: 'text-orange-500' },
+        shopping: { bg: 'bg-pink-500/15', border: 'border-pink-500/30', icon: 'text-pink-500' },
+        transport: { bg: 'bg-blue-500/15', border: 'border-blue-500/30', icon: 'text-blue-500' }
     };
 
     const glassCardClass = (dark) => `backdrop-blur-sm border shadow-xl rounded-2xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${dark ? 'bg-gray-900/95 border-gray-700 text-gray-100 hover:border-gray-600' : 'bg-slate-50/95 border-gray-200 text-gray-900 hover:border-gray-300'}`;
@@ -217,7 +252,19 @@ const ItineraryTab = ({
                                                     </div>
                                                 </button>
 
-                                                {/* AI Features Disabled for V0.22.1
+                                                <button
+                                                    onClick={() => onOpenSmartImport()}
+                                                    className={`group flex items-center gap-4 px-6 py-4 rounded-2xl transition-all active:scale-95 ${isDarkMode ? 'bg-indigo-500/20 hover:bg-indigo-500/30' : 'bg-indigo-50 hover:bg-indigo-100'} border border-indigo-500/20 shadow-lg`}
+                                                >
+                                                    <div className="p-2.5 bg-indigo-500/20 rounded-xl group-hover:bg-indigo-500/30 transition-colors">
+                                                        <FileText className="w-5 h-5 text-indigo-400" />
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <div className="font-bold text-sm text-indigo-400">智能匯入 (V0.22.3)</div>
+                                                        <div className="text-[10px] opacity-60 text-indigo-400/70">圖片/截圖/單據識別</div>
+                                                    </div>
+                                                </button>
+
                                                 <button
                                                     onClick={() => onOpenAIModal('full')}
                                                     className={`group flex items-center gap-4 px-6 py-4 rounded-2xl transition-all active:scale-95 ${isDarkMode ? 'bg-purple-500/20 hover:bg-purple-500/30' : 'bg-purple-50 hover:bg-purple-100'} border border-purple-500/20 shadow-lg`}
@@ -243,7 +290,6 @@ const ItineraryTab = ({
                                                         <div className="text-[10px] opacity-80">優化當前動線與路線</div>
                                                     </div>
                                                 </button>
-                                                */}
 
                                                 <div className="mt-2 text-center">
                                                 </div>
@@ -267,95 +313,156 @@ const ItineraryTab = ({
                                     onDragOver={(e) => e.preventDefault()}
                                     onDrop={(e) => onDrop && onDrop(e, i)}
                                     onClick={() => { if (canEdit) onEditItem(item); }}
-                                    className={`group relative pl-12 pr-4 py-6 border-b border-transparent transition-all duration-300 cursor-pointer ${isEditMode ? 'hover:bg-indigo-500/5' : ''}`}
+                                    className={`flex gap-4 items-start p-4 mb-4 rounded-xl border transition-all cursor-pointer group shadow-sm ${isDarkMode ? 'border-gray-500/10 hover:bg-white/5' : 'border-gray-200 hover:bg-gray-50'}`}
                                 >
-                                    {/* Timeline Dot */}
-                                    <div className={`absolute left-[13px] top-8 w-[10px] h-[10px] rounded-full border-2 z-10 transition-all duration-500 group-hover:scale-150 ${style.icon.replace('text-', 'bg-').replace('text-', 'border-')} ${isDarkMode ? 'border-gray-900' : 'border-white'}`}></div>
-
-                                    {/* 序號標籤 (Only in Edit Mode) */}
+                                    {/* Edit Mode Grip */}
                                     {isEditMode && (
-                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 p-1 opacity-30 group-hover:opacity-70 cursor-grab active:cursor-grabbing transition-opacity">
+                                        <div className="mt-1 opacity-30 group-hover:opacity-70 cursor-grab active:cursor-grabbing">
                                             <GripVertical className="w-5 h-5" />
                                         </div>
                                     )}
 
-                                    <div className={`absolute left-9 top-6 px-1.5 py-0.5 text-[9px] font-mono opacity-40`}>
-                                        {String(i + 1).padStart(2, '0')}
+                                    {/* Time Block */}
+                                    <div className="font-mono text-sm font-bold text-indigo-400 pt-1 w-12 flex-shrink-0">
+                                        {item.details?.time || item.time || "--:--"}
                                     </div>
 
-                                    <div className="flex items-center gap-4">
-                                        {/* 類型圖標 */}
-                                        <div className={`p-3 rounded-2xl shadow-sm transition-all duration-500 group-hover:shadow-md ${item.type === 'flight' ? 'bg-indigo-600 text-white' : `${style.bg} ${style.icon}`}`}>
-                                            {item.type === 'flight' ? <PlaneTakeoff className="w-6 h-6 animate-pulse" /> :
-                                                item.type === 'hotel' ? <Hotel className="w-5 h-5" /> :
-                                                    item.type === 'food' ? <Utensils className="w-5 h-5" /> :
-                                                        item.type === 'transport' ? (TRANSPORT_ICONS[item.details?.transportType]?.icon ? React.createElement(TRANSPORT_ICONS[item.details.transportType].icon, { className: 'w-5 h-5' }) : <Bus className="w-5 h-5" />) :
-                                                            item.type === 'shopping' ? <ShoppingBag className="w-5 h-5" /> :
-                                                                <MapIcon className="w-5 h-5" />}
-                                        </div>
+                                    {/* Icon & Content Wrapper */}
+                                    <div className="flex-grow min-w-0">
+                                        <div className="flex items-start gap-3">
+                                            {/* Style-based Icon */}
+                                            <div className={`p-2.5 rounded-xl flex-shrink-0 ${style.bg} ${style.icon}`}>
+                                                {item.type === 'flight' ? <PlaneTakeoff className="w-5 h-5" /> :
+                                                    item.type === 'hotel' ? <Hotel className="w-4 h-4" /> :
+                                                        item.type === 'food' ? <Utensils className="w-4 h-4" /> :
+                                                            item.type === 'transport' ? (TRANSPORT_ICONS[item.details?.transportType]?.icon ? React.createElement(TRANSPORT_ICONS[item.details.transportType].icon, { className: 'w-4 h-4' }) : <Bus className="w-4 h-4" />) :
+                                                                item.type === 'shopping' ? <ShoppingBag className="w-4 h-4" /> :
+                                                                    <MapPin className="w-4 h-4" />}
+                                            </div>
 
-                                        {/* 內容 */}
-                                        <div className="flex-grow min-w-0">
-                                            <div className="font-bold text-base truncate">{item.name}</div>
-                                            <div className="text-xs opacity-60 flex items-center gap-3 mt-1 flex-wrap">
-                                                {item.details?.time && <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{item.details.time}</span>}
-                                                {item.details?.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{item.details.location}</span>}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-bold text-base flex items-center gap-2 flex-wrap">
+                                                    {item.name}
+                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${item.type === 'food' ? 'bg-orange-500/10 text-orange-400' :
+                                                        item.type === 'transport' ? 'bg-indigo-500/10 text-indigo-400' :
+                                                            item.type === 'hotel' ? 'bg-amber-500/10 text-amber-400' :
+                                                                'bg-blue-500/10 text-blue-400'
+                                                        }`}>{
+                                                            item.type === 'food' ? '美食' :
+                                                                item.type === 'transport' ? '交通' :
+                                                                    item.type === 'hotel' ? '住宿' :
+                                                                        '景點'
+                                                        }</span>
+                                                    {item.smartTag && <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 font-bold">{item.smartTag}</span>}
+                                                </div>
+
+                                                <div className="text-xs opacity-60 flex items-center gap-2 mt-1">
+                                                    {item.details?.location && <span className="flex items-center gap-1 group-hover:text-indigo-400 transition-colors"><MapPin className="w-3 h-3" />{item.details.location}</span>}
+                                                    {item.type === 'transport' && (item.details?.distance || item.details?.duration) && (
+                                                        <span className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-500/10 rounded text-[10px] text-indigo-400 font-mono">
+                                                            <Route className="w-2.5 h-2.5" />
+                                                            {item.details.distance}{item.details.duration && ` · ${formatDuration(item.details.duration)}`}
+                                                            {item.details.steps && ` · ${item.details.steps} 步`}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* AI Insights and Transport Suggestions as expanded details */}
+                                                {(item.details?.insight || item.details?.reason) && (
+                                                    <div className={`mt-3 p-3 rounded-xl border flex items-start gap-3 animate-fade-in ${isDarkMode ? 'bg-indigo-500/5 border-indigo-500/20' : 'bg-indigo-50/50 border-indigo-100'}`}>
+                                                        <div className={`p-1.5 rounded-lg ${isDarkMode ? 'bg-indigo-500/20' : 'bg-white shadow-sm'}`}>
+                                                            {item.type === 'shopping' ? <Quote className="w-3 h-3 text-purple-400" /> : <Info className="w-3 h-3 text-indigo-400" />}
+                                                        </div>
+                                                        <div className="text-[11px] leading-relaxed opacity-80 italic">
+                                                            「{item.details.insight || item.details.reason}」
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* AI Smart Transport Button */}
+                                                {i < filteredItems.length - 1 && item.type !== 'transport' && filteredItems[i + 1]?.type !== 'transport' && (
+                                                    (() => {
+                                                        const nextItem = filteredItems[i + 1];
+                                                        const suggestionKey = `${item.id}-${nextItem.id}`;
+                                                        const aiSuggestion = transportSuggestions[suggestionKey];
+                                                        const isLoading = loadingTransport === suggestionKey;
+
+                                                        return (
+                                                            <div className={`mt-3 p-2 rounded-xl border transition-all ${isDarkMode ? 'bg-indigo-500/5 border-indigo-500/10' : 'bg-indigo-50/30 border-indigo-100'}`}>
+                                                                {!aiSuggestion ? (
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            fetchTransportSuggestion(item, nextItem);
+                                                                        }}
+                                                                        disabled={isLoading}
+                                                                        className="flex items-center gap-2 text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors"
+                                                                    >
+                                                                        {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                                                                        <span>🚀 AI 建議交通 → {nextItem.name}</span>
+                                                                    </button>
+                                                                ) : aiSuggestion.error ? (
+                                                                    <div className="text-[9px] opacity-40 italic">暫無 AI 交通建議</div>
+                                                                ) : (
+                                                                    <div className="space-y-1.5">
+                                                                        <div className="flex items-center justify-between gap-2 text-[10px]">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="text-indigo-400 font-bold">🎯 AI 推薦:</span>
+                                                                                <span className="font-bold flex items-center gap-1">
+                                                                                    {aiSuggestion.recommended?.mode === 'taxi' ? '🚕' : aiSuggestion.recommended?.mode === 'bus' ? '🚌' : '🚇'}
+                                                                                    {aiSuggestion.recommended?.name}
+                                                                                </span>
+                                                                                <span className="opacity-60">• {formatDuration(aiSuggestion.recommended?.duration)}</span>
+                                                                            </div>
+                                                                            {canEdit && (
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        onAddTransportSuggestion(currentDisplayDate, aiSuggestion.recommended, i);
+                                                                                    }}
+                                                                                    className="px-2 py-0.5 bg-indigo-500 text-white rounded-md text-[9px] font-bold hover:bg-indigo-600 transition-colors flex items-center gap-1"
+                                                                                >
+                                                                                    <Plus className="w-3 h-3" /> 加入行程
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="text-[9px] opacity-50 pl-4 border-l border-indigo-500/20">
+                                                                            {aiSuggestion.recommended?.steps?.slice(0, 2).join(' → ')}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })()
+                                                )}
                                             </div>
                                         </div>
+                                    </div>
 
-                                        {/* 費用 */}
+                                    {/* Cost/Action Block */}
+                                    <div className="flex flex-col items-end gap-2 shrink-0">
                                         {item.cost > 0 && (
                                             <div className="text-right">
-                                                <div className="font-mono font-bold text-sm">{item.currency} {item.cost.toLocaleString()}</div>
+                                                <div className="font-mono font-black text-sm text-indigo-500">{item.currency} {item.cost.toLocaleString()}</div>
                                                 {item.currency !== 'HKD' && CURRENCIES[item.currency] && (
                                                     <div className="text-[9px] opacity-40 font-mono">
                                                         ≈ HKD {Math.round(item.cost / CURRENCIES[item.currency].rate).toLocaleString()}
                                                     </div>
                                                 )}
-                                                <div className="text-[10px] opacity-50">{item.payer || '未指定'} • {item.splitType === 'group' ? '多人' : '個人'}</div>
                                             </div>
                                         )}
-
-                                        {/* 導航按鈕 */}
                                         {item.details?.location && (
                                             <a
                                                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.details.location)}`}
                                                 target="_blank"
                                                 rel="noreferrer"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="p-2 text-indigo-500 hover:bg-indigo-500/20 rounded-xl transition-colors"
+                                                className={`p-2 rounded-xl transition-all ${isDarkMode ? 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}
                                             >
-                                                <Navigation className="w-5 h-5" />
+                                                <Navigation className="w-4 h-4" />
                                             </a>
                                         )}
                                     </div>
-
-                                    {/* AI 洞察 / 歷史 / 理由 */}
-                                    {(item.details?.insight || item.details?.reason) && (
-                                        <div className={`mt-3 p-3 rounded-xl border flex items-start gap-3 animate-fade-in ${isDarkMode ? 'bg-indigo-500/5 border-indigo-500/20' : 'bg-indigo-50/50 border-indigo-100'}`}>
-                                            <div className={`p-1.5 rounded-lg ${isDarkMode ? 'bg-indigo-500/20' : 'bg-white shadow-sm'}`}>
-                                                {item.type === 'shopping' ? <Quote className="w-3.5 h-3.5 text-purple-400" /> : <Info className="w-3.5 h-3.5 text-indigo-400" />}
-                                            </div>
-                                            <div>
-                                                <div className="text-[10px] font-bold opacity-60 mb-0.5">{item.type === 'shopping' ? 'AI 必買理由' : 'AI 景點小教室'}</div>
-                                                <div className="text-[11px] leading-relaxed opacity-80 italic">
-                                                    「{item.details.insight || item.details.reason}」
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-
-                                    {/* 交通建議 */}
-                                    {advice && (
-                                        <div className="mt-3 pt-3 border-t border-dashed border-white/20 text-[11px] opacity-70 flex items-center gap-2 flex-wrap">
-                                            {TransportIcon && <TransportIcon className={`w-4 h-4 ${transportMeta.color}`} />}
-                                            <span>交通建議：{advice.label} • {advice.cost}</span>
-                                            {advice.mode === 'walk' && advice.meta && (
-                                                <span className="opacity-70">（約 {advice.meta.steps.toLocaleString()} 步 / {advice.meta.distance} km）</span>
-                                            )}
-                                        </div>
-                                    )}
                                 </div>
                             );
                         })}
@@ -435,26 +542,36 @@ const ItineraryTab = ({
                                     <div
                                         key={`${item.id}-${idx}`}
                                         onClick={() => setPreviewLocation(item.details?.location || trip.city)}
-                                        className={`p-3 rounded-xl border flex flex-col gap-1 transition-all cursor-pointer ${isPreviewing ? 'ring-2 ring-indigo-500 shadow-lg scale-[1.02]' : 'hover:shadow-md hover:-translate-y-0.5'} ${typeStyle} ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-white'}`}
+                                        className={`p-3 rounded-xl border flex flex-col gap-2 transition-all cursor-pointer ${isPreviewing ? 'ring-2 ring-indigo-500 shadow-lg scale-[1.02]' : 'hover:shadow-md hover:-translate-y-0.5'} ${isDarkMode ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-gray-50 border-gray-200 hover:bg-white'}`}
                                     >
                                         <div className="flex items-center justify-between">
-                                            <div className="text-[10px] opacity-50 flex items-center gap-1">
-                                                <span className="w-4 h-4 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[8px] font-bold">{idx + 1}</span>
-                                                {formatDate(item.date)}
+                                            <div className="text-[10px] flex items-center gap-2">
+                                                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${item.type === 'flight' ? 'bg-blue-500 text-white' : item.type === 'food' ? 'bg-orange-500 text-white' : 'bg-indigo-500 text-white'}`}>
+                                                    {idx + 1}
+                                                </span>
+                                                <span className="font-mono font-bold text-indigo-400">{item.details?.time || item.time || "--:--"}</span>
                                             </div>
-                                            <a
-                                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.details?.location || trip.city)}`}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                onClick={(e) => e.stopPropagation()}
-                                                className="p-1 hover:bg-black/10 rounded transition-colors"
-                                                title="在 Google Maps 開啟"
-                                            >
-                                                <ExternalLink className="w-3 h-3 text-indigo-400" />
-                                            </a>
+                                            <div className="flex items-center gap-1">
+                                                <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${item.type === 'food' ? 'bg-orange-500/10 text-orange-400' : 'bg-indigo-500/10 text-indigo-400'}`}>
+                                                    {item.type === 'food' ? '美食' : item.type === 'transport' ? '交通' : '景點'}
+                                                </span>
+                                                <a
+                                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.details?.location || trip.city)}`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="p-1 hover:bg-black/10 rounded transition-colors"
+                                                    title="在 Google Maps 開啟"
+                                                >
+                                                    <ExternalLink className="w-3 h-3 text-indigo-400" />
+                                                </a>
+                                            </div>
                                         </div>
-                                        <div className="font-bold text-sm">{item.name}</div>
-                                        <div className="text-[10px] opacity-60 truncate">{item.details?.location}</div>
+                                        <div className="font-bold text-sm leading-tight">{item.name}</div>
+                                        <div className="text-[10px] opacity-60 truncate flex items-center gap-1">
+                                            <MapPin className="w-3 h-3 flex-shrink-0" />
+                                            {item.details?.location}
+                                        </div>
                                     </div>
                                 );
                             })}

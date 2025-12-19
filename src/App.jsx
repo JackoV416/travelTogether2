@@ -500,8 +500,48 @@ const App = () => {
         sound: true,
         currency: 'HKD',
         region: 'HK', // Default to Hong Kong
+        language: 'zh-TW', // Default to Traditional Chinese
         preferences: [] // Default preferences
     });
+    const [previewTrip, setPreviewTrip] = useState(null);
+    const [isPreviewMode, setIsPreviewMode] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // --- URL Routing for Sharing ---
+    useEffect(() => {
+        const path = window.location.pathname;
+        if (path.startsWith('/share/')) {
+            const tripId = path.split('/')[2];
+            if (tripId) {
+                setIsLoading(true);
+                getDoc(doc(db, "trips", tripId)).then(snap => {
+                    if (snap.exists()) {
+                        const tripData = snap.data();
+                        if (tripData.isPublic) {
+                            setPreviewTrip({ id: tripId, ...tripData });
+                            setIsPreviewMode(true);
+                            setView('detail');
+                            if (tripData.sharePermission === 'edit' && !user.uid) {
+                                // Optional: You might want to show a toast or message that they need to login to edit
+                                console.log("Can edit if logged in");
+                            }
+                        } else {
+                            alert("此行程目前不公開，請登入後查看");
+                            window.history.replaceState({}, '', '/');
+                        }
+                    } else {
+                        alert("找不到此行程");
+                        window.history.replaceState({}, '', '/');
+                    }
+                    setIsLoading(false);
+                }).catch(err => {
+                    console.error("Error loading shared trip:", err);
+                    setIsLoading(false);
+                    window.history.replaceState({}, '', '/');
+                });
+            }
+        }
+    }, []);
 
     // Load User Settings from Firebase
     useEffect(() => {
@@ -639,68 +679,95 @@ const App = () => {
         fetchData();
     }, [user]);
 
-    // --- Smart Alerts (Weather / Currency) ---
+    // --- Smart Alerts (Trip-Based Only) ---
     useEffect(() => {
         if (!user || !globalSettings.notifications) return;
 
-        // 1. Welcome Notification (Once per session)
-        const hasWelcomed = sessionStorage.getItem('hasWelcomed');
-        if (!hasWelcomed) {
-            setTimeout(() => {
-                sendNotification(
-                    globalSettings.language === 'zh-TW' ? "歡迎回來!" : "Welcome Back!",
-                    globalSettings.language === 'zh-TW' ? "又是規劃旅程的好日子 ✈️" : "Great day to plan a trip! ✈️",
-                    "success"
-                );
-                sessionStorage.setItem('hasWelcomed', 'true');
-            }, 1000);
-        }
+        // Only show trip-related notifications when viewing a trip
+        if (selectedTrip && view === 'detail') {
+            const today = new Date().toISOString().split('T')[0];
+            const tripStart = selectedTrip.startDate;
 
-        // 2. Weather Alerts
-        if (Object.keys(weatherData).length > 0) {
-            Object.entries(weatherData).forEach(([city, data]) => {
-                if (data.desc.includes('雨') || data.desc.includes('Rain') || data.desc.includes('Snow')) {
-                    const key = `weather_alert_${city}`;
+            // Check if trip is upcoming (within 7 days)
+            if (tripStart) {
+                const startDate = new Date(tripStart);
+                const daysUntil = Math.ceil((startDate - new Date()) / (1000 * 60 * 60 * 24));
+
+                if (daysUntil > 0 && daysUntil <= 7) {
+                    const key = `trip_reminder_${selectedTrip.id}_${tripStart}`;
                     if (!sessionStorage.getItem(key)) {
                         sendNotification(
-                            `${city} ${globalSettings.language === 'zh-TW' ? "天氣警報" : "Weather Alert"}`,
-                            `${globalSettings.language === 'zh-TW' ? `預測會有${data.desc}，記得帶遮！` : `Forecast suggests ${data.desc}, bring an umbrella!`}`,
+                            `📅 ${selectedTrip.name}`,
+                            `距離出發只剩 ${daysUntil} 天！記得準備行李 🧳`,
+                            "info"
+                        );
+                        sessionStorage.setItem(key, 'true');
+                    }
+                }
+            }
+
+            // Check weather for trip destination
+            if (selectedTrip.city && weatherData[selectedTrip.city]) {
+                const cityWeather = weatherData[selectedTrip.city];
+                if (cityWeather.desc && (cityWeather.desc.includes('雨') || cityWeather.desc.includes('Rain'))) {
+                    const key = `weather_trip_${selectedTrip.id}`;
+                    if (!sessionStorage.getItem(key)) {
+                        sendNotification(
+                            `🌧️ ${selectedTrip.city} 天氣提醒`,
+                            `目的地預計有${cityWeather.desc}，建議帶傘！`,
                             "warning"
                         );
                         sessionStorage.setItem(key, 'true');
                     }
                 }
-            });
-        }
+            }
 
-        // 3. Currency Alerts
-        if (exchangeRates) {
-            const jpyRate = exchangeRates['JPY'];
-            if (jpyRate && jpyRate < 0.052) {
-                const key = 'currency_alert_JPY';
-                if (!sessionStorage.getItem(key)) {
-                    sendNotification(
-                        globalSettings.language === 'zh-TW' ? "日元匯率下跌！" : "JPY Rate Drop!",
-                        globalSettings.language === 'zh-TW' ? `現價 ${jpyRate.toFixed(4)}，係時候唱錢啦！ 💴` : `Current rate ${jpyRate.toFixed(4)}, time to buy! 💴`,
-                        "success"
-                    );
-                    sessionStorage.setItem(key, 'true');
-                }
+            // Show user-defined reminders that are due today or overdue
+            if (selectedTrip.reminders && Array.isArray(selectedTrip.reminders)) {
+                selectedTrip.reminders.forEach(reminder => {
+                    if (!reminder.done && reminder.date) {
+                        const reminderDate = new Date(reminder.date);
+                        const todayDate = new Date();
+                        todayDate.setHours(0, 0, 0, 0);
+
+                        // Show if due today or overdue
+                        if (reminderDate <= todayDate) {
+                            const key = `user_reminder_${selectedTrip.id}_${reminder.id}`;
+                            if (!sessionStorage.getItem(key)) {
+                                const isOverdue = reminderDate < todayDate;
+                                sendNotification(
+                                    isOverdue ? `⚠️ 逾期提醒` : `📌 今日提醒`,
+                                    reminder.title,
+                                    isOverdue ? "warning" : "info"
+                                );
+                                sessionStorage.setItem(key, 'true');
+                            }
+                        }
+                    }
+                });
             }
         }
 
-    }, [user, weatherData, exchangeRates, globalSettings.notifications, sendNotification, globalSettings.language]);
+    }, [user, selectedTrip, view, weatherData, globalSettings.notifications, sendNotification]);
 
     useEffect(() => { onAuthStateChanged(auth, setUser); }, []);
 
 
 
-    if (!user) return <LandingPage onLogin={() => signInWithPopup(auth, googleProvider)} />;
+    if (isLoading) {
+        return (
+            <div className={`min-h-screen flex flex-col items-center justify-center gap-4 ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-slate-50 text-gray-900'}`}>
+                <Loader2 className="w-12 h-12 animate-spin text-indigo-500" />
+                <p className="text-sm font-bold opacity-70">正在載入行程資料...</p>
+            </div>
+        );
+    }
 
+    if (!user && !isPreviewMode) return <LandingPage onLogin={() => signInWithPopup(auth, googleProvider)} />;
 
     return (
         <div className={`min-h-screen transition-colors duration-500 font-sans selection:bg-indigo-500/30 ${isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-slate-50 text-gray-900'}`}>
-            <NotificationSystem notifications={notifications} setNotifications={setNotifications} />
+            <NotificationSystem notifications={notifications} setNotifications={setNotifications} isDarkMode={isDarkMode} />
             <OfflineBanner isDarkMode={isDarkMode} />
             {/* Background Image (Global) */}
             <div className="fixed inset-0 z-0 opacity-20 pointer-events-none transition-all duration-1000" style={{ backgroundImage: `url(${globalBg})`, backgroundSize: 'cover' }}></div>
@@ -709,7 +776,7 @@ const App = () => {
                 {view === 'dashboard' && (
                     <Dashboard
                         user={user}
-                        onSelectTrip={(t) => { setSelectedTrip(t); setView('detail'); }}
+                        onSelectTrip={(t) => { setSelectedTrip(t); setView('detail'); setIsPreviewMode(false); }}
                         isDarkMode={isDarkMode}
                         setGlobalBg={setGlobalBg}
                         globalSettings={globalSettings}
@@ -719,18 +786,32 @@ const App = () => {
                         onOpenSettings={() => setIsSettingsOpen(true)}
                     />
                 )}
-                {view === 'detail' && <TripDetail tripData={selectedTrip} user={user} isDarkMode={isDarkMode} setGlobalBg={setGlobalBg} isSimulation={false} globalSettings={globalSettings} onBack={() => setView('dashboard')} exchangeRates={exchangeRates} weatherData={weatherData} onOpenSmartImport={() => setIsSmartImportModalOpen(true)} />}
-                {view === 'tutorial' && <div className="h-screen flex flex-col"><div className="p-4 border-b flex gap-4"><button onClick={() => setView('dashboard')}><ChevronLeft /></button> 模擬模式 (東京範例)</div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} globalSettings={globalSettings} exchangeRates={exchangeRates} weatherData={weatherData} onOpenSmartImport={() => setIsSmartImportModalOpen(true)} /></div></div>}
+                {view === 'detail' && (
+                    <TripDetail
+                        tripData={isPreviewMode ? previewTrip : selectedTrip}
+                        user={user}
+                        isDarkMode={isDarkMode}
+                        setGlobalBg={setGlobalBg}
+                        isSimulation={false}
+                        isPreview={isPreviewMode}
+                        globalSettings={globalSettings}
+                        onBack={() => { setView('dashboard'); window.history.replaceState({}, '', '/'); }}
+                        exchangeRates={exchangeRates}
+                        weatherData={weatherData}
+                        onOpenSmartImport={() => setIsSmartImportModalOpen(true)}
+                    />
+                )}
+                {view === 'tutorial' && <div className="h-screen flex flex-col"><div className="p-4 border-b flex gap-4"><button onClick={() => { setView('dashboard'); setIsPreviewMode(false); }}><ChevronLeft /></button> 模擬模式 (東京範例)</div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} isPreview={false} globalSettings={globalSettings} exchangeRates={exchangeRates} weatherData={weatherData} onOpenSmartImport={() => setIsSmartImportModalOpen(true)} /></div></div>}
             </div>
             {view !== 'tutorial' && <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} />}
             <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} globalSettings={globalSettings} setGlobalSettings={setGlobalSettings} isDarkMode={isDarkMode} />
             <VersionModal isOpen={isVersionOpen} onClose={() => setIsVersionOpen(false)} isDarkMode={isDarkMode} globalSettings={globalSettings} />
-            {/* Smart Import Disabled for V0.22.1
             <SmartImportModal
                 isOpen={isSmartImportModalOpen}
                 onClose={() => setIsSmartImportModalOpen(false)}
                 isDarkMode={isDarkMode}
                 trips={[selectedTrip].filter(Boolean)}
+                trip={selectedTrip}
                 onImport={async ({ type, files, data }) => {
                     // Just show notification - modal will handle its own closing after showing result
                     const typeLabels = {
@@ -747,7 +828,7 @@ const App = () => {
                     );
                     // Do NOT close modal here - SmartImportModal will show result and close itself
                 }}
-            /> */}
+            />
         </div>
     );
 };
@@ -761,7 +842,10 @@ const LandingPage = ({ onLogin }) => (
                 <div className="absolute bottom-10 left-10 text-white">
                     <h1 className="text-6xl font-bold mb-4">Travel Together</h1>
                     <p className="text-2xl opacity-90 mb-8">下一站，與你同行。</p>
-                    <button onClick={onLogin} className="bg-white text-black px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition flex items-center gap-2"><LogIn className="w-5 h-5" /> Google 登入</button>
+                    <button onClick={onLogin} className="bg-white text-black px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition flex flex-col items-center gap-1">
+                        <div className="flex items-center gap-2"><LogIn className="w-5 h-5" /> Google 登入</div>
+                        <span className="text-[10px] opacity-50 font-normal">支援 Google 帳戶註冊並安裝為 PWA 使用</span>
+                    </button>
                 </div>
             </div>
             <div className="grid grid-rows-3 gap-6">

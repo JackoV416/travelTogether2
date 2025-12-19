@@ -2,12 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { BrainCircuit, X, Loader2, List, BusFront, Wallet, TrainFront, Car, Route, ShoppingBag, Sparkles, CheckSquare, Square, Plus, PackageCheck, Check, ArrowRightLeft } from 'lucide-react';
 import {
     generateShoppingSuggestions,
-    generatePackingList,
     generateFullItinerary,
     HOTEL_DB
 } from '../../services/ai';
+import {
+    generateItineraryWithGemini,
+    suggestTransportBetweenSpots,
+    getLocationDetails,
+    askTravelAI,
+    generateShoppingWithGemini,
+    generatePackingList
+} from '../../services/ai-parsing';
 import { CURRENCIES } from '../../constants/appData';
-import { inputClasses } from '../../utils/tripUtils'; // Fixed import path
+import {
+    getTimeDiff, getLocalCityTime, getWeatherForecast,
+    buildDailyReminder, getUserInitial, inputClasses,
+    formatDuration
+} from '../../utils/tripUtils'; // Fixed import path
 
 const SHOPPING_CATEGORIES = [
     { id: 'food', label: '🍱 美食伴手禮', types: ['food', 'snack', 'alcohol'] },
@@ -49,6 +60,7 @@ const AIGeminiModal = ({
     const [itineraryStep, setItineraryStep] = useState('preferences'); // Changed from selection to preferences (survey)
     const [packingStep, setPackingStep] = useState('selection'); // result only
     const [inputText, setInputText] = useState('');
+    const [progress, setProgress] = useState(0);
     const [selectedCats, setSelectedCats] = useState(['food', 'cosmetic']);
     const [selectedPrefs, setSelectedPrefs] = useState(['culture', 'foodie']);
     const [intensities, setIntensities] = useState({
@@ -62,9 +74,11 @@ const AIGeminiModal = ({
         hotelStatus: 'none',
         budget: 'mid',
         selectedHotel: null,
-        transportMode: 'public'
+        transportMode: 'public',
+        visitedPlaces: ''
     });
 
+    const [selectedTransports, setSelectedTransports] = useState({}); // { itemId: optionIndex }
     const [selections, setSelections] = useState({ itinerary: [], shopping: [], transport: [], packing: [] });
     const [analyzingFile, setAnalyzingFile] = useState(false);
     const [fileResults, setFileResults] = useState(null);
@@ -74,27 +88,100 @@ const AIGeminiModal = ({
         else if (isOpen && mode === 'full') setActiveTab('itinerary');
     }, [isOpen, mode]);
 
-    // Mock "Unlimited API" Logic
-    const generateEnhancedAI = async (city, text = null) => {
-        // Parallel fetch for efficiency
-        const [_, shoppingData, packingData] = await Promise.all([
-            new Promise(r => setTimeout(r, 1500)), // Simulate API/Thinking time
-            generateShoppingSuggestions(city),
-            generatePackingList(trip || { city, itinerary: {} }, weatherData?.[city] || { temp: "24°C", desc: "Sunny" })
-        ]);
+    // Simulated Progress Effect
+    useEffect(() => {
+        let timer;
+        if (loading) {
+            setProgress(0);
+            timer = setInterval(() => {
+                setProgress(prev => {
+                    if (prev < 30) return prev + 2;
+                    if (prev < 60) return prev + 1;
+                    if (prev < 85) return prev + 0.5;
+                    if (prev < 95) return prev + 0.1;
+                    return prev;
+                });
+            }, 100);
+        } else {
+            setProgress(100);
+            setTimeout(() => setProgress(0), 500);
+        }
+        return () => clearInterval(timer);
+    }, [loading]);
 
+    // Toggle between real Gemini API and mock data
+    const [useRealAI, setUseRealAI] = useState(true);
+
+    // Enhanced AI Logic - Uses Real Gemini API when available
+    const generateEnhancedAI = async (city, text = null) => {
         // Calculate trip days dynamically
         const start = trip?.startDate ? new Date(trip.startDate) : new Date();
         const end = trip?.endDate ? new Date(trip.endDate) : new Date();
         const diffTime = Math.abs(end - start);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-        const totalDays = Math.max(1, Math.min(diffDays, 14)); // Cap at 14 days for sanity
+        const totalDays = Math.max(1, Math.min(diffDays, 14));
+
+        const currency = trip?.currency || 'JPY';
+        const rate = CURRENCIES[currency]?.rate || 1;
+
+        // Try real Gemini API first
+        if (useRealAI) {
+            try {
+                console.log("[AI] 🚀 Using REAL Gemini API for all features...");
+
+                const [geminiResult, shoppingData, packingData] = await Promise.all([
+                    generateItineraryWithGemini({
+                        city,
+                        days: totalDays,
+                        preferences: selectedPrefs,
+                        visitedPlaces: logistics.visitedPlaces.split(/[,，\n]/).filter(p => p.trim()),
+                        existingItinerary: trip?.itinerary || {},
+                        budget: logistics.budget,
+                        travelStyle: 'balanced'
+                    }),
+                    generateShoppingWithGemini(city, []).catch(() => generateShoppingSuggestions(city)),
+                    generatePackingWithGemini(trip || { city, itinerary: {} }, weatherData?.[city] || { temp: "24°C", desc: "Sunny" }).catch(() => generatePackingList(trip || { city, itinerary: {} }, weatherData?.[city] || { temp: "24°C", desc: "Sunny" }))
+                ]);
+
+                // Transform Gemini result to expected format
+                const flatItinerary = [];
+                if (geminiResult.itinerary) {
+                    geminiResult.itinerary.forEach((day, dayIdx) => {
+                        (day.items || []).forEach((item, itemIdx) => {
+                            flatItinerary.push({
+                                ...item,
+                                id: item.id || `ai-it-${dayIdx + 1}-${itemIdx}`,
+                                day: day.day || dayIdx + 1
+                            });
+                        });
+                    });
+                }
+
+                return {
+                    itinerary: flatItinerary.length > 0 ? flatItinerary : await generateFullItinerary(city, totalDays, selectedPrefs),
+                    transport: geminiResult.transport || [
+                        { id: 'ai-tr-1', type: "metro", name: "地鐵一日券", price: `${currency} ${Math.floor(600 * rate)}`, desc: "最划算", recommended: true }
+                    ],
+                    budget: geminiResult.budget || { total: 15000 * rate, breakdown: [] },
+                    shopping: (shoppingData || []).map((item, idx) => ({ ...item, id: `ai-shp-${idx}` })),
+                    packing: (packingData || []).map((item, idx) => ({ ...item, id: `ai-pkg-${idx}` })),
+                    tips: geminiResult.tips || [],
+                    source: 'gemini-api'
+                };
+            } catch (error) {
+                console.warn("[AI] Gemini API failed, falling back to mock data:", error.message);
+            }
+        }
+
+        // Fallback to mock data
+        console.log("[AI] Using mock data...");
+        const [_, shoppingData, packingData] = await Promise.all([
+            new Promise(r => setTimeout(r, 1500)),
+            generateShoppingSuggestions(city),
+            generatePackingList(trip || { city, itinerary: {} }, weatherData?.[city] || { temp: "24°C", desc: "Sunny" })
+        ]);
 
         const itinerary = await generateFullItinerary(city, totalDays, selectedPrefs);
-
-        // Placeholder for currency and rate if not defined elsewhere
-        const currency = trip?.currency || 'NTD';
-        const rate = CURRENCIES[currency]?.rate || 1;
 
         return {
             itinerary,
@@ -114,7 +201,8 @@ const AIGeminiModal = ({
                 ]
             },
             shopping: (shoppingData || []).map((item, idx) => ({ ...item, id: `ai-shp-${idx}` })),
-            packing: (packingData || []).map((item, idx) => ({ ...item, id: `ai-pkg-${idx}` }))
+            packing: (packingData || []).map((item, idx) => ({ ...item, id: `ai-pkg-${idx}` })),
+            source: 'mock-data'
         };
     };
 
@@ -138,8 +226,8 @@ const AIGeminiModal = ({
                 setShoppingStep('selection');
                 setActiveTab('shopping');
             } else if (mode === 'packing') {
-                setItineraryStep('selection'); // Allow input for packing too
-                setActiveTab('packing');
+                // Auto-trigger packing analysis for better UX
+                handlePackingAnalyze();
             } else {
                 setItineraryStep('selection');
                 setActiveTab('itinerary');
@@ -147,27 +235,25 @@ const AIGeminiModal = ({
         }
     }, [isOpen, mode]);
 
-    const handleItineraryAnalyze = (isQuick = false) => {
+    const handleItineraryAnalyze = async (isQuick = false) => {
         setLoading(true);
-        const days = trip?.days || 3;
-
-        generateFullItinerary(contextCity || "Tokyo", days, isQuick ? [] : selectedPrefs, logistics)
-            .then(res => {
-                setResult(res);
-                if (res.itinerary) {
-                    setSelections(prev => ({
-                        ...prev,
-                        itinerary: res.itinerary.map(i => i.id)
-                    }));
-                }
-                setItineraryStep('result');
-                setActiveTab('itinerary');
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error("AI Generation Status Exception:", err);
-                setLoading(false);
-            });
+        try {
+            const res = await generateEnhancedAI(contextCity || "Tokyo", inputText);
+            setResult(res);
+            if (res.itinerary) {
+                setSelections(prev => ({
+                    ...prev,
+                    itinerary: res.itinerary.map(i => i.id)
+                }));
+            }
+            setItineraryStep('result');
+            setActiveTab('itinerary');
+        } catch (err) {
+            console.error("AI Generation Exception:", err);
+            // Internal Alert/Error UI could be added here
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleFileUpload = async (e) => {
@@ -176,27 +262,26 @@ const AIGeminiModal = ({
 
         setAnalyzingFile(true);
         try {
-            const { parseTripImage } = await import('../../services/ai');
-            const results = await parseTripImage(file);
+            const { parseImageDirectly } = await import('../../services/ai-parsing');
+            const results = await parseImageDirectly(file, { city: contextCity });
             setFileResults(results);
 
-            // Auto-fill flight info if found
+            // Auto-fill logic from candidates
             const flight = results.find(r => r.type === 'flight');
             if (flight) {
                 setLogistics(prev => ({
                     ...prev,
-                    flightInfo: `${flight.name} (${flight.details.location})`
+                    flightInfo: `${flight.name} [${flight.time || ''}] ${flight.details?.location || ''}`.trim()
                 }));
             }
 
-            // Auto-fill hotel if found
             const hotel = results.find(r => r.type === 'hotel');
             if (hotel) {
                 setLogistics(prev => ({ ...prev, hotelStatus: 'booked' }));
             }
 
         } catch (err) {
-            console.error("File Analysis Error:", err);
+            console.error("SmartImport Error:", err);
         } finally {
             setAnalyzingFile(false);
         }
@@ -208,37 +293,38 @@ const AIGeminiModal = ({
         );
     };
 
-    const handleShoppingAnalyze = () => {
+    const handleShoppingAnalyze = async () => {
         setLoading(true);
-        const mappedCats = selectedCats.flatMap(catId => {
-            const found = SHOPPING_CATEGORIES.find(c => c.id === catId);
-            return found ? found.types : [];
-        });
-
-        generateShoppingSuggestions(contextCity || "Tokyo", mappedCats)
-            .then(res => {
-                const structured = res.map((item, idx) => ({ ...item, id: `ai-shp-${idx}` }));
-                setResult(prev => ({ ...(prev || {}), shopping: structured }));
-                setSelections(prev => ({ ...prev, shopping: structured.map(i => i.id) }));
+        try {
+            const res = await generateEnhancedAI(contextCity || "Tokyo", "shopping_focus");
+            if (res.shopping) {
+                setResult(prev => ({ ...(prev || {}), ...res }));
+                setSelections(prev => ({ ...prev, shopping: res.shopping.map(i => i.id) }));
                 setActiveTab('shopping');
                 setShoppingStep('result');
-                setLoading(false);
-            })
-            .catch(() => setLoading(false));
+            }
+        } catch (err) {
+            console.error("Shopping AI Error:", err);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handlePackingAnalyze = () => {
+    const handlePackingAnalyze = async () => {
         setLoading(true);
-        generatePackingList(trip || { itinerary: {} }, weatherData)
-            .then(res => {
-                const structured = res.map((item, idx) => ({ ...item, id: `ai-pkg-${idx}` }));
-                setResult(prev => ({ ...(prev || {}), packing: structured }));
-                setSelections(prev => ({ ...prev, packing: structured.map(i => i.id) }));
+        try {
+            const res = await generateEnhancedAI(contextCity || "Tokyo", "packing_focus");
+            if (res.packing) {
+                setResult(prev => ({ ...(prev || {}), ...res }));
+                setSelections(prev => ({ ...prev, packing: res.packing.map(i => i.id) }));
                 setActiveTab('packing');
                 setPackingStep('result');
-                setLoading(false);
-            })
-            .catch(() => setLoading(false));
+            }
+        } catch (err) {
+            console.error("Packing AI Error:", err);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const toggleCat = (id) => {
@@ -271,7 +357,21 @@ const AIGeminiModal = ({
         } else {
             // Full mode: Return an object with all selections
             const allSelected = {
-                itinerary: (result.itinerary || []).filter(i => selections.itinerary.includes(i.id)),
+                itinerary: (result.itinerary || []).filter(i => selections.itinerary.includes(i.id)).map(item => {
+                    // Apply selected transport if any
+                    if (item.type === 'transport' && item.details?.options && selectedTransports[item.id] !== undefined) {
+                        const opt = item.details.options[selectedTransports[item.id]];
+                        return {
+                            ...item,
+                            name: opt.name,
+                            cost: opt.cost,
+                            currency: opt.currency,
+                            details: { ...item.details, desc: opt.desc }
+                        };
+                    }
+                    return item;
+                }),
+                transport: (result.transport || []).filter(i => (selections.transport || []).includes(i.id)),
                 shopping: (result.shopping || []).filter(i => (selections.shopping || []).includes(i.id)),
                 packing: (result.packing || []).filter(i => (selections.packing || []).includes(i.id))
             };
@@ -285,12 +385,15 @@ const AIGeminiModal = ({
 
     if (!isOpen) return null;
 
+
     return (
-        <div className="fixed inset-0 bg-black/60 z-[90] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-            <div className={`w-full max-w-2xl rounded-2xl shadow-2xl border flex flex-col max-h-[85vh] overflow-hidden transform scale-100 transition-all ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-900'}`}>
+        <div className={`fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 transition-all duration-500 ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+
+            <div className={`relative w-full max-w-2xl h-[85vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col transition-all duration-500 transform ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'} ${isDarkMode ? 'bg-[#0f111a] text-white border border-gray-800' : 'bg-white text-gray-900'}`}>
 
                 {/* Header */}
-                <div className="p-6 border-b border-gray-500/10 flex justify-between items-center bg-gradient-to-r from-indigo-600/10 to-purple-600/10">
+                <div className="p-5 border-b border-gray-500/10 flex items-center justify-between bg-gradient-to-r from-indigo-600/10 to-purple-600/10 backdrop-blur-md z-10">
                     <div>
                         <h3 className="font-bold flex items-center gap-2 text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">
                             {mode === 'shopping' ? <ShoppingBag className="w-6 h-6 text-purple-500" /> : mode === 'packing' ? <PackageCheck className="w-6 h-6 text-indigo-500" /> : <BrainCircuit className="w-6 h-6 text-indigo-500" />}
@@ -304,13 +407,11 @@ const AIGeminiModal = ({
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-6 relative">
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                            <Loader2 className="w-12 h-12 animate-spin text-indigo-500" />
-                            <div className="text-center">
-                                <p className="font-bold">AI 正在思考中...</p>
-                                <p className="text-xs opacity-50">正在分析數百萬筆旅遊數據</p>
-                            </div>
-                        </div>
+                        <AIProgressOverlay
+                            text="AI 正在思考中..."
+                            subtext="正在分析數百萬筆旅遊數據並查找最新資訊"
+                            progress={progress}
+                        />
                     ) : ((mode === 'itinerary' || mode === 'full' || mode === 'packing') && (itineraryStep === 'selection' && activeTab === 'itinerary')) ? (
                         <div className="space-y-6 animate-fade-in">
                             <div className="text-center space-y-2">
@@ -321,15 +422,15 @@ const AIGeminiModal = ({
                             {/* Visual Option Cards */}
                             <div className="grid grid-cols-2 gap-4">
                                 <button
-                                    onClick={() => setItineraryStep('logistics')}
+                                    onClick={() => setItineraryStep('preferences')}
                                     className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-center gap-3 transition-all hover:shadow-lg hover:-translate-y-1 active:scale-95 ${isDarkMode ? 'border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20' : 'border-indigo-200 bg-indigo-50 hover:bg-indigo-100'}`}
                                 >
-                                    <div className={`p-3 rounded-2xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-white shadow-sm'}`}>
-                                        <Sparkles className="w-8 h-8 text-indigo-500" />
+                                    <div className={`p-2.5 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-white shadow-sm'}`}>
+                                        <Sparkles className="w-6 h-6 text-indigo-500" />
                                     </div>
                                     <div className="text-center">
                                         <div className="font-bold">客製化行程</div>
-                                        <div className="text-[10px] opacity-60 mt-1">自選偏好，精準規劃</div>
+                                        <div className="text-[10px] opacity-60 mt-1">深度自選，AI 精準規劃</div>
                                     </div>
                                 </button>
 
@@ -340,8 +441,8 @@ const AIGeminiModal = ({
                                     }}
                                     className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-center gap-3 transition-all hover:shadow-lg hover:-translate-y-1 active:scale-95 ${isDarkMode ? 'border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20' : 'border-purple-200 bg-purple-50 hover:bg-purple-100'}`}
                                 >
-                                    <div className={`p-3 rounded-2xl ${isDarkMode ? 'bg-purple-500/20' : 'bg-white shadow-sm'}`}>
-                                        <ShoppingBag className="w-8 h-8 text-purple-500" />
+                                    <div className={`p-2.5 rounded-xl ${isDarkMode ? 'bg-purple-500/20' : 'bg-white shadow-sm'}`}>
+                                        <ShoppingBag className="w-6 h-6 text-purple-500" />
                                     </div>
                                     <div className="text-center">
                                         <div className="font-bold">購物清單</div>
@@ -353,6 +454,7 @@ const AIGeminiModal = ({
                                     onClick={() => {
                                         // Trigger packing generation
                                         setLoading(true);
+                                        setProgress(10);
                                         const cityKey = contextCity || trip?.city || "Tokyo";
                                         // Pass the city-specific weather or a fallback
                                         const cityWeather = weatherData?.[cityKey] || weatherData?.Tokyo || { temp: "24°C", desc: "Sunny" };
@@ -375,8 +477,8 @@ const AIGeminiModal = ({
                                     }}
                                     className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-center gap-3 transition-all hover:shadow-lg hover:-translate-y-1 active:scale-95 ${isDarkMode ? 'border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20' : 'border-emerald-200 bg-emerald-50 hover:bg-emerald-100'}`}
                                 >
-                                    <div className={`p-3 rounded-2xl ${isDarkMode ? 'bg-emerald-500/20' : 'bg-white shadow-sm'}`}>
-                                        <PackageCheck className="w-8 h-8 text-emerald-500" />
+                                    <div className={`p-2.5 rounded-xl ${isDarkMode ? 'bg-emerald-500/20' : 'bg-white shadow-sm'}`}>
+                                        <PackageCheck className="w-6 h-6 text-emerald-500" />
                                     </div>
                                     <div className="text-center">
                                         <div className="font-bold">智能行李</div>
@@ -391,25 +493,22 @@ const AIGeminiModal = ({
                                     }}
                                     className={`p-5 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-all hover:shadow-lg hover:-translate-y-1 active:scale-95 ${isDarkMode ? 'border-gray-600 hover:border-gray-500 hover:bg-white/5' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'}`}
                                 >
-                                    <div className={`p-3 rounded-2xl ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                                        <BrainCircuit className="w-8 h-8 text-gray-500" />
+                                    <div className={`p-2.5 rounded-xl ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                                        <BrainCircuit className="w-6 h-6 text-gray-500" />
                                     </div>
                                     <div className="text-center">
-                                        <div className="font-bold opacity-80">深度分析</div>
-                                        <div className="text-[10px] opacity-50 mt-1">貼上資料客製規劃</div>
+                                        <div className="font-bold opacity-80 text-sm">SmartImport</div>
+                                        <div className="text-[10px] opacity-50 mt-1">匯入資料客製規劃</div>
                                     </div>
                                 </button>
                             </div>
 
                             <div className="pt-2 flex justify-center">
                                 <button
-                                    onClick={() => {
-                                        onClose();
-                                        if (onAddItem) onAddItem();
-                                    }}
+                                    onClick={onClose}
                                     className="text-sm font-bold opacity-50 hover:opacity-100 flex items-center gap-2 transition-opacity"
                                 >
-                                    <Plus className="w-4 h-4" /> 我想手動新增行程項目
+                                    <Plus className="w-4 h-4" /> 我想手動新增行程
                                 </button>
                                 <button
                                     onClick={() => setItineraryStep('preferences')}
@@ -478,10 +577,10 @@ const AIGeminiModal = ({
 
                             <div className="flex gap-3 pt-2">
                                 <button
-                                    onClick={() => setItineraryStep('selection')}
+                                    onClick={() => setItineraryStep('logistics')}
                                     className="flex-1 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 group"
                                 >
-                                    設定完成，開始規劃 <ArrowRightLeft className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                    下一步：物流與去過的景點 <ArrowRightLeft className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                 </button>
                             </div>
                         </div>
@@ -498,9 +597,20 @@ const AIGeminiModal = ({
                                     <textarea
                                         value={logistics.flightInfo}
                                         onChange={(e) => setLogistics(prev => ({ ...prev, flightInfo: e.target.value }))}
-                                        placeholder="貼上機票號碼或時間，或由下方上傳憑證..."
-                                        className={`w-full h-24 p-4 rounded-xl border resize-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'}`}
+                                        placeholder="貼上機票或酒店資訊，或利用下方「智能匯入」..."
+                                        className={`w-full h-20 p-3 rounded-xl border resize-none text-sm transition-all ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
                                     />
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold opacity-50 ml-1">📍 曾經去過嘅地方 (AI 會避開呢度)</label>
+                                        <input
+                                            type="text"
+                                            value={logistics.visitedPlaces}
+                                            onChange={(e) => setLogistics(prev => ({ ...prev, visitedPlaces: e.target.value }))}
+                                            placeholder="例如：清水寺, 環球影城..."
+                                            className={`w-full p-3 rounded-xl border text-sm transition-all ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
+                                        />
+                                    </div>
 
                                     <div className="relative">
                                         <input
@@ -512,17 +622,30 @@ const AIGeminiModal = ({
                                         />
                                         <label
                                             htmlFor="ai-file-upload"
-                                            className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed cursor-pointer transition-all ${analyzingFile ? 'opacity-50 cursor-not-allowed' : 'hover:border-indigo-500 hover:bg-indigo-500/5'} ${isDarkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-300 bg-gray-50'}`}
+                                            className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 border-dashed cursor-pointer transition-all ${analyzingFile ? 'opacity-50 cursor-not-allowed bg-indigo-500/5' : 'hover:border-indigo-500 hover:bg-indigo-500/5'} ${isDarkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-300 bg-gray-50'}`}
                                         >
                                             {analyzingFile ? (
-                                                <>
-                                                    <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
-                                                    <span className="text-sm font-medium">深度解析中...</span>
-                                                </>
+                                                <div className="w-full py-2">
+                                                    <div className="flex items-center justify-center gap-2 mb-3">
+                                                        <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
+                                                        <span className="font-bold text-xs text-indigo-500">智能匯入 (SmartImport) 解析中 ({Math.floor(progress)}%)...</span>
+                                                    </div>
+                                                    <div className="w-full h-1 bg-gray-500/10 rounded-full overflow-hidden">
+                                                        <div
+                                                            className="h-full bg-indigo-500 transition-all duration-300"
+                                                            style={{ width: `${progress}%` }}
+                                                        ></div>
+                                                    </div>
+                                                </div>
                                             ) : (
                                                 <>
-                                                    <Plus className="w-4 h-4 text-indigo-500" />
-                                                    <span className="text-sm font-medium">上傳機票/酒店收據 (Image/PDF)</span>
+                                                    <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-600">
+                                                        <Plus className="w-5 h-5" />
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <span className="block font-bold text-xs text-indigo-500">智能匯入 (SmartImport)</span>
+                                                        <span className="block text-[9px] opacity-40 uppercase tracking-widest">掉張圖或者 PDF 俾我，自動幫你填位</span>
+                                                    </div>
                                                 </>
                                             )}
                                         </label>
@@ -667,7 +790,7 @@ const AIGeminiModal = ({
                     ) : itineraryStep === 'text-input' ? (
                         <div className="space-y-6 animate-fade-in">
                             <div className="text-center space-y-2">
-                                <h4 className="text-lg font-bold">貼上您的行程資料</h4>
+                                <h4 className="text-lg font-bold">SmartImport 文字資料</h4>
                                 <p className="text-sm opacity-60">AI 會根據您提供的內容生成客製化建議</p>
                             </div>
 
@@ -685,7 +808,7 @@ const AIGeminiModal = ({
                                         onClick={() => setItineraryStep('selection')}
                                         className={`flex-1 py-3 rounded-xl border font-bold transition-all ${isDarkMode ? 'border-gray-600 hover:bg-gray-800' : 'border-gray-300 hover:bg-gray-50'}`}
                                     >
-                                        返回
+                                        返轉頭
                                     </button>
                                     <button
                                         onClick={() => handleItineraryAnalyze(false)}
@@ -700,8 +823,8 @@ const AIGeminiModal = ({
                     ) : (activeTab === 'shopping' && shoppingStep === 'selection') ? (
                         <div className="space-y-6 animate-fade-in">
                             <div className="text-center space-y-2">
-                                <h4 className="text-lg font-bold">您想尋找什麼類型的商品？</h4>
-                                <p className="text-sm opacity-60">選擇感興趣的類別，讓 AI 為您精準推薦</p>
+                                <h4 className="text-lg font-bold">你想搵邊類商品？</h4>
+                                <p className="text-sm opacity-60">揀返你有興趣嘅類別，等 AI 幫你精準推薦</p>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {SHOPPING_CATEGORIES.map(cat => (
@@ -792,20 +915,38 @@ const AIGeminiModal = ({
                                                                     <ArrowRightLeft className="w-3 h-3" /> 可選交通方式：
                                                                 </div>
                                                                 <div className="flex flex-col gap-2">
-                                                                    {item.details.options.map((opt, idx) => (
-                                                                        <div
-                                                                            key={idx}
-                                                                            className={`p-2 rounded-lg border text-[10px] flex justify-between items-center transition-all ${idx === 0 ? 'border-indigo-500/30 bg-indigo-500/5 ring-1 ring-indigo-500/20' : 'border-gray-500/10 opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
-                                                                        >
-                                                                            <div className="flex items-center gap-2">
-                                                                                <span className="font-bold">{opt.name}</span>
-                                                                                <span className="opacity-60">{opt.desc}</span>
+                                                                    {item.details.options.map((opt, idx) => {
+                                                                        const isSelected = selectedTransports[item.id] === undefined ? idx === 0 : selectedTransports[item.id] === idx;
+                                                                        return (
+                                                                            <div
+                                                                                key={idx}
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setSelectedTransports(prev => ({ ...prev, [item.id]: idx }));
+                                                                                }}
+                                                                                className={`p-2 rounded-lg border text-[10px] flex justify-between items-center transition-all ${isSelected ? 'border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500/20' : 'border-gray-500/10 opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
+                                                                            >
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${isSelected ? 'border-indigo-500' : 'border-gray-400'}`}>
+                                                                                        {isSelected && <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>}
+                                                                                    </div>
+                                                                                    <span className="font-bold">{opt.name}</span>
+                                                                                    <span className="opacity-60">{opt.desc}</span>
+                                                                                    {(opt.distance || opt.duration) && (
+                                                                                        <span className="text-[9px] bg-gray-500/10 px-1.5 py-0.5 rounded text-indigo-400 font-mono">
+                                                                                            {opt.distance && `${opt.distance}`}
+                                                                                            {opt.distance && opt.duration && ' · '}
+                                                                                            {opt.duration && `${formatDuration(opt.duration)}`}
+                                                                                            {opt.steps && ` · ${opt.steps} 步`}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="font-mono font-bold text-indigo-400">{opt.currency} {opt.cost}</div>
                                                                             </div>
-                                                                            <div className="font-mono font-bold text-indigo-400">{opt.currency} {opt.cost}</div>
-                                                                        </div>
-                                                                    ))}
+                                                                        );
+                                                                    })}
                                                                 </div>
-                                                                <div className="text-[9px] opacity-40 italic mt-1">＊AI 已根據您的偏好優先排好首選方式</div>
+                                                                <div className="text-[9px] opacity-40 italic mt-1">＊AI 已根據您的偏好優先排好首選方式，點擊可更換</div>
                                                             </div>
                                                         )}
                                                     </div>
@@ -823,19 +964,36 @@ const AIGeminiModal = ({
                             {activeTab === 'transport' && (
                                 <div className="grid grid-cols-1 gap-3 animate-fade-in">
                                     <div className="text-xs opacity-50 p-2 text-center bg-yellow-500/10 text-yellow-500 rounded-lg">注意：交通建議僅供參考，不直接加入行程表</div>
-                                    {result.transport.map((t) => (
-                                        <div key={t.id} className={`p-4 rounded-xl border flex items-center gap-4 ${t.recommended ? 'border-indigo-500/50 bg-indigo-500/5' : 'border-gray-500/10'}`}>
+                                    {(result?.transport || []).map((t) => (
+                                        <div
+                                            key={t.id}
+                                            onClick={() => toggleSelection('transport', t.id)}
+                                            className={`p-4 rounded-xl border flex items-center gap-4 cursor-pointer transition-all ${selections.transport?.includes(t.id) ? 'border-indigo-500 bg-indigo-500/5' : 'border-gray-500/10 hover:bg-gray-500/5'} ${t.recommended ? 'shadow-sm' : ''}`}
+                                        >
+                                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors flex-shrink-0 ${selections.transport?.includes(t.id) ? 'bg-indigo-500 border-transparent' : 'border-gray-300'}`}>
+                                                {selections.transport?.includes(t.id) && <CheckSquare className="w-3 h-3 text-white" />}
+                                            </div>
                                             <div className={`w-10 h-10 rounded-full flex items-center justify-center ${t.type === 'metro' ? 'bg-blue-500/10 text-blue-500' : t.type === 'bus' ? 'bg-green-500/10 text-green-500' : t.type === 'taxi' ? 'bg-yellow-500/10 text-yellow-500' : 'bg-gray-500/10 text-gray-500'}`}>
                                                 {t.type === 'metro' ? <TrainFront className="w-5 h-5" /> : t.type === 'bus' ? <BusFront className="w-5 h-5" /> : t.type === 'taxi' ? <Car className="w-5 h-5" /> : <Route className="w-5 h-5" />}
                                             </div>
                                             <div className="flex-1">
                                                 <div className="font-bold flex items-center gap-2">
                                                     {t.name}
-                                                    {t.recommended && <span className="text-[10px] bg-indigo-500 text-white px-2 rounded-full">推薦</span>}
+                                                    {t.recommended && <span className="text-[10px] bg-indigo-500 text-white px-2 rounded-full font-black uppercase tracking-tighter">AI 推薦</span>}
+                                                    {(t.distance || t.duration) && (
+                                                        <span className="text-[9px] text-indigo-400 font-mono opacity-80">
+                                                            {t.distance && `${t.distance}`}
+                                                            {t.distance && t.duration && ' · '}
+                                                            {t.duration && `${formatDuration(t.duration)}`}
+                                                        </span>
+                                                    )}
                                                 </div>
-                                                <p className="text-xs opacity-70">{t.desc}</p>
+                                                <p className="text-xs opacity-70">
+                                                    {t.desc}
+                                                    {t.steps && <span className="ml-2 text-indigo-400/60">(約 {t.steps} 步)</span>}
+                                                </p>
                                             </div>
-                                            <div className="font-mono font-bold text-sm">{t.price}</div>
+                                            <div className="font-mono font-bold text-sm text-indigo-500">{t.price}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -845,17 +1003,21 @@ const AIGeminiModal = ({
                             {activeTab === 'budget' && (
                                 <div className="animate-fade-in space-y-6">
                                     <div className="text-center p-6 bg-gradient-to-br from-indigo-900/30 to-purple-900/30 rounded-2xl border border-indigo-500/20">
-                                        <p className="opacity-70 text-sm mb-1">預估單日總花費</p>
-                                        <div className="text-4xl font-bold font-mono text-indigo-400">{result.itinerary[0].currency} {result.budget.total}</div>
+                                        <p className="opacity-70 text-sm mb-1">總花費預估 ({trip?.currency || 'JPY'})</p>
+                                        <div className="text-4xl font-bold font-mono text-indigo-400">
+                                            {result.itinerary && result.itinerary[0]?.currency || 'JPY'} {Number(result.budget?.total || 0).toLocaleString()}
+                                        </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
-                                        {result.budget.breakdown.map((b, i) => (
+                                        {(result.budget?.breakdown || []).map((b, i) => (
                                             <div key={i} className="p-4 rounded-xl border border-gray-500/10 bg-gray-500/5">
                                                 <div className="flex justify-between items-end mb-2">
-                                                    <span className="opacity-70 text-sm">{b.label}</span>
-                                                    <span className="font-bold text-lg">{b.percent}%</span>
+                                                    <span className="opacity-70 text-xs">{b.label}</span>
+                                                    <span className="font-bold text-sm text-indigo-400">{b.percent}%</span>
                                                 </div>
-                                                <div className="text-right mt-2 text-xs opacity-50 font-mono">${b.amt}</div>
+                                                <div className="text-right mt-1 text-sm font-bold font-mono">
+                                                    {result.itinerary && result.itinerary[0]?.currency || 'JPY'} {Number(b.amt || 0).toLocaleString()}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -990,5 +1152,29 @@ const AIGeminiModal = ({
         </div>
     );
 };
+
+// Unified Progress Overlay Component (Outside to prevent flicker)
+const AIProgressOverlay = ({ text, subtext, progress }) => (
+    <div className="flex flex-col items-center justify-center py-12 space-y-4 animate-fade-in w-full max-w-xs mx-auto">
+        <div className="relative">
+            <div className="w-14 h-14 rounded-full border-4 border-indigo-500/10 flex items-center justify-center">
+                <Loader2 className="w-7 h-7 animate-spin text-indigo-500" />
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-[10px] font-black text-indigo-600 font-mono tracking-tighter">{Math.floor(progress)}%</span>
+            </div>
+        </div>
+        <div className="text-center w-full space-y-1">
+            <p className="font-bold text-sm text-indigo-900 dark:text-indigo-100">{text}</p>
+            <p className="text-[10px] opacity-40 px-2 leading-tight">{subtext}</p>
+            <div className="mt-4 w-full h-1.5 bg-gray-500/10 rounded-full overflow-hidden shadow-inner">
+                <div
+                    className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 bg-[length:200%_auto] animate-gradient transition-all duration-300 rounded-full"
+                    style={{ width: `${progress}%` }}
+                ></div>
+            </div>
+        </div>
+    </div>
+);
 
 export default AIGeminiModal;

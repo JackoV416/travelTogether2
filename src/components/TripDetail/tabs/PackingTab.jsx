@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { CheckSquare, Plus, Trash2, Sparkles, ChevronDown, ChevronRight, PackageCheck } from 'lucide-react';
+import {
+    CheckSquare, Plus, Trash2, Sparkles, ChevronDown, ChevronRight, PackageCheck,
+    Shirt, Bath, Smartphone, Clipboard, Pill, Box, AlertCircle
+} from 'lucide-react';
 import SearchFilterBar from '../../Shared/SearchFilterBar';
 
 const PackingTab = ({
@@ -12,16 +15,15 @@ const PackingTab = ({
     onClearList,
     glassCard
 }) => {
-    // packingList structure: [{ id, name, category, checked, aiSuggested }]
     const packingList = trip.packingList || [];
 
     const categories = [
-        { id: 'clothes', label: '衣物鞋履' },
-        { id: 'toiletries', label: '個人護理' },
-        { id: 'electronics', label: '電子產品' },
-        { id: 'documents', label: '證件/文件' },
-        { id: 'medicine', label: '藥品/急救' },
-        { id: 'misc', label: '其他雜項' }
+        { id: 'clothes', label: '衣物鞋履', icon: <Shirt className="w-4 h-4 text-orange-400" /> },
+        { id: 'toiletries', label: '個人護理', icon: <Bath className="w-4 h-4 text-blue-400" /> },
+        { id: 'electronics', label: '電子產品', icon: <Smartphone className="w-4 h-4 text-purple-400" /> },
+        { id: 'documents', label: '證件/文件', icon: <Clipboard className="w-4 h-4 text-emerald-400" /> },
+        { id: 'medicine', label: '藥品/急救', icon: <Pill className="w-4 h-4 text-red-500" /> },
+        { id: 'misc', label: '其他雜項', icon: <Box className="w-4 h-4 text-gray-400" /> }
     ];
 
     const [expandedCats, setExpandedCats] = useState(categories.map(c => c.id));
@@ -38,7 +40,7 @@ const PackingTab = ({
     };
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6 animate-fade-in pb-10">
             <SearchFilterBar
                 searchValue={searchValue}
                 onSearchChange={setSearchValue}
@@ -46,36 +48,45 @@ const PackingTab = ({
                 isDarkMode={isDarkMode}
             />
             {/* Header / Progress */}
-            <div className={`${glassCard(isDarkMode)} p-6 flex flex-col md:flex-row justify-between items-center gap-4`}>
-                <div className="flex-1 w-full">
-                    <h3 className="text-lg font-bold flex items-center gap-2 mb-2">
-                        <PackageCheck className="w-5 h-5 text-indigo-500" /> 行李準備進度
-                    </h3>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 overflow-hidden">
-                        <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2.5 rounded-full transition-all duration-500" style={{ width: `${getProgress()}%` }}></div>
+            <div className={`${glassCard(isDarkMode)} p-6 border-l-4 border-l-indigo-500`}>
+                <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div className="flex-1 w-full">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-lg font-black flex items-center gap-2">
+                                <PackageCheck className="w-6 h-6 text-indigo-500" /> 行李準備進度
+                            </h3>
+                            <span className="text-sm font-black text-indigo-500 bg-indigo-500/10 px-3 py-1 rounded-full">{getProgress()}%</span>
+                        </div>
+                        <div className="relative w-full h-3 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden shadow-inner">
+                            <div
+                                className="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-1000 ease-out rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]"
+                                style={{ width: `${getProgress()}%` }}
+                            >
+                                <div className="absolute inset-0 w-full h-full animate-shimmer scale-[2] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                            </div>
+                        </div>
                     </div>
-                    <div className="text-right text-xs opacity-60 mt-1">{getProgress()}% 完成</div>
-                </div>
-                <div className="flex gap-2 shrink-0">
-                    <button
-                        onClick={onGenerateList}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl shadow-lg hover:shadow-indigo-500/30 transition-all transform hover:scale-105 active:scale-95 text-sm font-bold"
-                    >
-                        <Sparkles className="w-4 h-4" /> AI 生成
-                    </button>
-                    <button
-                        onClick={onClearList}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all text-sm font-bold border border-red-500/20 text-red-400 hover:bg-red-500/10`}
-                        title="清空所有項目"
-                    >
-                        <Trash2 className="w-4 h-4" /> 清空
-                    </button>
-                    <button
-                        onClick={() => onAddItem()}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all text-sm font-bold ${isDarkMode ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-100 hover:bg-gray-200'}`}
-                    >
-                        <Plus className="w-4 h-4" /> 新增
-                    </button>
+                    <div className="flex flex-wrap gap-2 shrink-0">
+                        <button
+                            onClick={onGenerateList}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl shadow-xl hover:shadow-indigo-500/40 transition-all transform hover:-translate-y-1 active:scale-95 text-xs font-black uppercase tracking-wider"
+                        >
+                            <Sparkles className="w-3.5 h-3.5" /> AI 推理清單
+                        </button>
+                        <button
+                            onClick={() => onAddItem('packing')}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all text-xs font-black uppercase tracking-wider ${isDarkMode ? 'bg-white/5 hover:bg-white/10 border border-white/10' : 'bg-gray-100 hover:bg-gray-200 border border-gray-200'}`}
+                        >
+                            <Plus className="w-3.5 h-3.5" /> 手動新增
+                        </button>
+                        <button
+                            onClick={onClearList}
+                            className="p-2.5 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-all"
+                            title="清空所有項目"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -84,41 +95,62 @@ const PackingTab = ({
                 {categories.map(cat => {
                     const items = packingList.filter(i => i.category === cat.id && (i.name || "").toLowerCase().includes(searchValue.toLowerCase()));
                     const isExpanded = expandedCats.includes(cat.id);
+                    const completedInCat = items.filter(i => i.checked).length;
 
                     return (
-                        <div key={cat.id} className={`${glassCard(isDarkMode)} overflow-hidden`}>
+                        <div key={cat.id} className={`${glassCard(isDarkMode)} overflow-hidden group/cat transition-all duration-300 ${items.length > 0 && completedInCat === items.length ? 'opacity-80' : ''}`}>
                             <div
                                 onClick={() => toggleCat(cat.id)}
-                                className={`p-4 flex justify-between items-center cursor-pointer transition-colors ${isDarkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'}`}
+                                className={`p-4 flex justify-between items-center cursor-pointer transition-colors ${isDarkMode ? 'bg-white/[0.02] hover:bg-white/5' : 'bg-gray-50/50 hover:bg-gray-50'}`}
                             >
-                                <h4 className="font-bold flex items-center gap-2">
-                                    {isExpanded ? <ChevronDown className="w-4 h-4 opacity-50" /> : <ChevronRight className="w-4 h-4 opacity-50" />}
-                                    {cat.label}
-                                    <span className="text-xs opacity-50 font-normal bg-gray-500/10 px-2 py-0.5 rounded-full">{items.length}</span>
-                                </h4>
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white shadow-sm'}`}>
+                                        {cat.icon}
+                                    </div>
+                                    <h4 className="font-black text-sm tracking-tight flex items-center gap-2">
+                                        {cat.label}
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-all ${completedInCat === items.length && items.length > 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'}`}>
+                                            {completedInCat}/{items.length}
+                                        </span>
+                                    </h4>
+                                </div>
+                                {isExpanded ? <ChevronDown className="w-4 h-4 opacity-30" /> : <ChevronRight className="w-4 h-4 opacity-30" />}
                             </div>
 
                             {isExpanded && (
-                                <div className="p-2 space-y-1">
-                                    {items.length === 0 && <p className="text-xs opacity-40 text-center py-4">暫無項目</p>}
+                                <div className="p-3 space-y-1.5 min-h-[60px]">
+                                    {items.length === 0 && (
+                                        <div className="flex flex-col items-center justify-center py-6 opacity-30">
+                                            <AlertCircle className="w-6 h-6 mb-2" />
+                                            <p className="text-[10px] font-bold uppercase tracking-widest">Empty</p>
+                                        </div>
+                                    )}
                                     {items.map((item) => (
                                         <div
                                             key={item.id}
-                                            className={`group flex items-center justify-between p-2 rounded-lg transition-all ${item.checked ? 'opacity-50' : ''} ${isDarkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'}`}
+                                            className={`group/item flex items-center justify-between p-3 rounded-xl transition-all border border-transparent ${item.checked ? 'bg-indigo-500/5' : isDarkMode ? 'hover:bg-white/5 hover:border-white/5' : 'hover:bg-gray-50 hover:border-gray-100'}`}
                                         >
                                             <div className="flex items-center gap-3 flex-1">
                                                 <button
                                                     onClick={() => onToggleItem(item.id)}
-                                                    className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${item.checked ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-gray-400 hover:border-indigo-500'}`}
+                                                    className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all transform active:scale-90 ${item.checked ? 'bg-indigo-500 border-indigo-500 text-white shadow-lg shadow-indigo-500/40' : 'border-gray-500/30 hover:border-indigo-500'}`}
                                                 >
-                                                    {item.checked && <CheckSquare className="w-3.5 h-3.5" />}
+                                                    {item.checked && <PackageCheck className="w-3.5 h-3.5" />}
                                                 </button>
-                                                <span className={`${item.checked ? 'line-through decoration-2 decoration-indigo-500/50' : ''} transition-all`}>{item.name}</span>
-                                                {item.aiSuggested && <Sparkles className="w-3 h-3 text-purple-400 opacity-70" title="AI 建議" />}
+                                                <div className="flex flex-col">
+                                                    <span className={`text-sm font-medium ${item.checked ? 'line-through opacity-40 text-gray-400' : ''}`}>
+                                                        {item.name}
+                                                    </span>
+                                                    {item.aiSuggested && (
+                                                        <span className="text-[8px] text-purple-400 font-black uppercase tracking-tighter flex items-center gap-0.5">
+                                                            <Sparkles className="w-2 h-2" /> AI Suggested
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                             <button
                                                 onClick={() => onDeleteItem(item.id)}
-                                                className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/10 text-red-400 rounded-lg transition-all"
+                                                className="opacity-0 group-hover/item:opacity-100 p-2 hover:bg-red-500/10 text-red-500 rounded-lg transition-all transform hover:rotate-12"
                                                 title="刪除"
                                             >
                                                 <Trash2 className="w-4 h-4" />

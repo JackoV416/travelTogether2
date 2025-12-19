@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { List, CheckSquare, FileUp, Upload, Loader2, Trash2, Sparkles, Plus } from 'lucide-react';
+import { List, CheckSquare, FileUp, Upload, Loader2, Trash2, Sparkles, Plus, ShoppingBag, Receipt, Tag } from 'lucide-react';
 import SearchFilterBar from '../../Shared/SearchFilterBar';
 
 const ShoppingTab = ({
@@ -23,108 +23,151 @@ const ShoppingTab = ({
         !searchValue || item.name.toLowerCase().includes(searchValue.toLowerCase())
     );
 
-    // Bought items are in trip.budget with category='shopping'
     const filteredBought = (trip.budget || []).filter(item =>
         item.category === 'shopping' &&
         (!searchValue || (item.name || item.desc || "").toLowerCase().includes(searchValue.toLowerCase()))
     );
 
-
-
-    const handleDrop = (e) => {
-        e.preventDefault();
-        setDragActive(false);
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            handleReceiptUpload('shopping', e.dataTransfer.files[0]);
-        }
-    };
-
-    const handleFileSelect = (e) => {
-        if (e.target.files && e.target.files[0]) {
-            handleReceiptUpload('shopping', e.target.files[0]);
-        }
-    };
-
     return (
-        <div className="space-y-4">
+        <div className="space-y-6 animate-fade-in pb-10">
             <SearchFilterBar
                 searchValue={searchValue}
                 onSearchChange={setSearchValue}
-                placeholder="搜尋商品..."
+                placeholder="搜尋商品名稱或描述..."
                 isDarkMode={isDarkMode}
             />
-            <div className="flex justify-end gap-2">
-                {/* Unified Import/Export is now in Header */}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className={glassCard(isDarkMode) + " p-6"}>
-                    <div className="flex justify-between mb-4">
-                        <h3 className="font-bold flex gap-2"><List className="w-5 h-5" /> 預計購買</h3>
-                        <div className="flex gap-2">
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Expected to Buy Section */}
+                <div className={`${glassCard(isDarkMode)} border-t-4 border-t-purple-500 overflow-hidden`}>
+                    <div className="p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 className="text-lg font-black flex items-center gap-2">
+                                    <ShoppingBag className="w-5 h-5 text-purple-500" />
+                                    預計購買 <span className="text-xs font-bold opacity-40">({filteredShopping.filter(i => !i.bought).length})</span>
+                                </h3>
+                                <p className="text-[10px] opacity-50 font-bold uppercase tracking-widest mt-0.5">Shopping Wishlist</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => onOpenAIModal('shopping')}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 rounded-lg transition-all text-[10px] font-black uppercase tracking-wider"
+                                >
+                                    <Sparkles className="w-3 h-3" /> AI 靈感
+                                </button>
+                                <button
+                                    onClick={() => onAddItem('shopping_plan')}
+                                    className="p-1.5 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-500/20"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3 min-h-[100px]">
+                            {filteredShopping.filter(i => !i.bought).length === 0 && (
+                                <div className="flex flex-col items-center justify-center py-10 opacity-20 italic text-sm">
+                                    <Tag className="w-8 h-8 mb-2 opacity-50" />
+                                    <span>暫無清單</span>
+                                </div>
+                            )}
+                            {filteredShopping.filter(i => !i.bought).map((item, i) => (
+                                <div key={i} className={`group p-4 rounded-xl flex justify-between items-center transition-all border ${isDarkMode ? 'bg-white/[0.03] border-white/5 hover:bg-white/[0.06] hover:border-white/10' : 'bg-gray-50 border-gray-100 hover:bg-white hover:shadow-md'} `}>
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-12 h-12 rounded-xl border flex items-center justify-center overflow-hidden shrink-0 ${isDarkMode ? 'bg-gray-800 border-white/10' : 'bg-white border-gray-200'}`}>
+                                            {item.image ? (
+                                                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <ShoppingBag className="w-5 h-5 opacity-20" />
+                                            )}
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="font-bold text-sm tracking-tight">{item.name}</span>
+                                            {item.desc && <span className="text-[10px] opacity-50 line-clamp-1">{item.desc}</span>}
+                                        </div>
+                                    </div>
+                                    <div className="text-right flex flex-col items-end">
+                                        <span className="text-xs font-black text-purple-400">{item.estPrice}</span>
+                                        {item.details?.receiptUrl && (
+                                            <span className="text-[9px] text-emerald-400 font-bold flex items-center gap-1 mt-1">
+                                                <Receipt className="w-3 h-3" /> 已有關連
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Already Bought Section */}
+                <div className={`${glassCard(isDarkMode)} border-t-4 border-t-emerald-500 overflow-hidden`}>
+                    <div className="p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 className="text-lg font-black flex items-center gap-2">
+                                    <CheckSquare className="w-5 h-5 text-emerald-500" />
+                                    已購入 <span className="text-xs font-bold opacity-40">({filteredBought.length})</span>
+                                </h3>
+                                <p className="text-[10px] opacity-50 font-bold uppercase tracking-widest mt-0.5">Purchase Records</p>
+                            </div>
                             <button
-                                onClick={() => onOpenAIModal('shopping')}
-                                className={`text-xs px-2 py-1 rounded flex items-center gap-1 transition-colors ${isDarkMode ? 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/30' : 'bg-purple-100 text-purple-600 hover:bg-purple-200'}`}
+                                onClick={() => onAddItem('shopping')}
+                                className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 text-[10px] font-black uppercase tracking-wider"
                             >
-                                <Sparkles className="w-3 h-3" />
-                                AI 助手
+                                <Plus className="w-3.5 h-3.5" /> 記帳
                             </button>
-                            <button onClick={() => onAddItem('shopping_plan')} className="text-xs bg-indigo-500 text-white px-2 py-1 rounded hover:bg-indigo-600 transition-colors">+ 新增</button>
+                        </div>
+
+                        <div className="space-y-3 min-h-[100px]">
+                            {filteredBought.length === 0 && (
+                                <div className="flex flex-col items-center justify-center py-10 opacity-20 italic text-sm">
+                                    <Receipt className="w-8 h-8 mb-2 opacity-50" />
+                                    <span>未有購入記錄</span>
+                                </div>
+                            )}
+                            {filteredBought.map((item, i) => (
+                                <div key={i} className={`p-4 rounded-xl flex justify-between items-center transition-all border ${isDarkMode ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-emerald-50/50 border-emerald-200'} `}>
+                                    <div className="flex items-center gap-4">
+                                        {item.details?.receiptUrl ? (
+                                            <a href={item.details.receiptUrl} target="_blank" rel="noopener noreferrer" className="block w-12 h-12 rounded-xl overflow-hidden border-2 border-emerald-500/30 hover:scale-105 transition-transform shadow-lg">
+                                                <img src={item.details.receiptUrl} alt="receipt" className="w-full h-full object-cover" />
+                                            </a>
+                                        ) : (
+                                            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 border border-emerald-500/20">
+                                                <Receipt className="w-5 h-5" />
+                                            </div>
+                                        )}
+                                        <div className="flex flex-col">
+                                            <span className="font-bold text-sm tracking-tight">{item.name || item.desc}</span>
+                                            <span className="text-[10px] opacity-50 font-medium">支付人: {item.payer === 'Me' ? '我自己' : item.payer}</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="font-mono text-sm font-black text-emerald-500">{item.currency} {item.cost}</span>
+                                        <div className="text-[9px] opacity-40 font-bold uppercase mt-1">Paid & Saved</div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
-
-
-                    {filteredShopping.filter(i => !i.bought).length === 0 && (
-                        <p className="text-sm opacity-50 text-center py-4">暫無符合的預計購買項目</p>
-                    )}
-                    {filteredShopping.filter(i => !i.bought).map((item, i) => (
-                        <div key={i} className={`p-3 rounded-lg mb-2 flex justify-between ${isDarkMode ? 'bg-white/5 border border-white/10' : 'bg-gray-50 border border-gray-200'} `}>
-                            <div className="flex items-center gap-2">
-                                {item.image && <img src={item.image} alt={item.name} className="w-8 h-8 rounded object-cover border border-white/10" />}
-                                <span>{item.name}</span>
-                            </div>
-                            <span className="opacity-50 text-xs flex flex-col items-end">
-                                <span>預估: {item.estPrice}</span>
-                                {item.details?.receiptUrl && <span className="text-[9px] text-green-400 flex items-center gap-1"><CheckSquare className="w-3 h-3" /> 有單據</span>}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-                <div className={glassCard(isDarkMode) + " p-6"}>
-                    <div className="flex justify-between mb-4">
-                        <h3 className="font-bold flex gap-2"><CheckSquare className="w-5 h-5" /> 已購入</h3>
-                        <button onClick={() => onAddItem('shopping')} className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors">+ 記帳</button>
-                    </div>
-                    {filteredBought.length === 0 && (
-                        <p className="text-sm opacity-50 text-center py-4">暫無符合的已購入項目</p>
-                    )}
-                    {filteredBought.map((item, i) => (
-                        <div key={i} className={`p-3 rounded-lg mb-2 flex justify-between items-center ${isDarkMode ? 'bg-green-500/10 border border-green-500/20' : 'bg-green-50 border border-green-200'} `}>
-                            <div className="flex items-center gap-2">
-                                {item.details?.receiptUrl && (
-                                    <a href={item.details.receiptUrl} target="_blank" rel="noopener noreferrer" className="block w-8 h-8 rounded overflow-hidden border border-white/20 hover:scale-105 transition-transform">
-                                        <img src={item.details.receiptUrl} alt="receipt" className="w-full h-full object-cover" />
-                                    </a>
-                                )}
-                                <span>{item.name || item.desc}</span>
-                            </div>
-                            <div className="text-right">
-                                <span className="font-mono text-green-500 block">{item.currency} {item.cost}</span>
-                                <span className="text-[10px] opacity-50">
-                                    {item.payer === 'Me' ? '我支付' : item.payer}
-                                </span>
-                            </div>
-                        </div>
-                    ))}
                 </div>
             </div>
 
-            {/* Receipt Preview */}
+            {/* Receipt Preview Area - Only shown when uploading/previewing */}
             {receiptPreview?.shopping && (
-                <div className={glassCard(isDarkMode) + " p-4"}>
-                    <div className="flex justify-between items-center mb-3">
-                        <h4 className="font-bold text-sm opacity-70">已上傳單據</h4>
+                <div className={`${glassCard(isDarkMode)} p-6 border-2 border-dashed border-indigo-500/30 animate-pulse-subtle`}>
+                    <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-indigo-500 animate-ping" />
+                            <h4 className="font-black text-xs uppercase tracking-widest text-indigo-400">正在處理單據...</h4>
+                        </div>
                     </div>
-                    <img src={receiptPreview.shopping} alt="receipt" className="max-h-64 rounded-xl border border-white/10 object-contain mx-auto" />
+                    <div className="relative group max-w-sm mx-auto overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
+                        <img src={receiptPreview.shopping} alt="receipt preview" className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-110" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    </div>
                 </div>
             )}
         </div>

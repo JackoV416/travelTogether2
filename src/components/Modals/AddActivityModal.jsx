@@ -4,7 +4,7 @@ import { inputClasses, formatDate, getWeekday } from '../../utils/tripUtils';
 import { buttonPrimary } from '../../constants/styles';
 import { CURRENCIES } from '../../constants/appData';
 
-const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date, defaultType = 'spot', editData = null, members = [] }) => {
+const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date, defaultType = 'spot', editData = null, members = [], trip = {} }) => {
     const [name, setName] = useState('');
     const [cost, setCost] = useState('');
     const [type, setType] = useState('spot');
@@ -57,6 +57,45 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
     ];
 
     const isPacking = type === 'packing' || defaultType === 'packing';
+
+    const handleAIInspiration = () => {
+        const city = trip.city || '當地';
+        const country = trip.country || '';
+
+        const spots = {
+            '東京': ['淺草寺 雷門', 'SHIBUYA SKY', '東京迪士尼海洋'],
+            '大阪': ['日本環球影城 USJ', '登別溫泉', '道頓堀 散食'],
+            '京都': ['金閣寺', '伏見稻荷大社', '嵐山 渡月橋'],
+            '首爾': ['景福宮 韓服體驗', 'N首爾塔', '明洞 購物'],
+            '台北': ['台北 101', '故宮博物院', '九份 慢活'],
+            '當地': [`${city} 熱門景點`, `${city} 必去地標`, `探索 ${city}`]
+        };
+
+        const foods = {
+            '東京': ['一蘭拉麵 澀谷分店', '敘敘苑 燒肉', '築地外市場 壽司'],
+            '大阪': ['蟹道樂 本店', '味乃家 大阪燒', '黑門市場'],
+            '京都': ['三嶋亭 壽喜燒', '中村藤吉 宇治抹茶', '菊乃井 懷石'],
+            '台北': ['鼎泰豐 信義店', '饒河夜市 胡椒餅', '馬辣 火鍋'],
+            '當地': [`${city} 評選餐廳`, `${city} 地道美食`, `人氣早餐店`]
+        };
+
+        const flightPrefix = country === '日本' ? 'CX' : country === '台灣' ? 'BR' : 'TR';
+        const hotelName = city ? `${city} ${isDarkMode ? 'Grand' : 'Park'} Hotel` : '豪華酒店 / 民宿';
+
+        if (type === 'food') {
+            const list = foods[city] || foods['當地'];
+            setName(list[Math.floor(Math.random() * list.length)]);
+        } else if (type === 'spot') {
+            const list = spots[city] || spots['當地'];
+            setName(list[Math.floor(Math.random() * list.length)]);
+        } else if (type === 'flight') {
+            setName(`${flightPrefix}${Math.floor(Math.random() * 800 + 100)}`);
+        } else if (type === 'hotel') {
+            setName(hotelName);
+        } else {
+            setName(`${city} 精選行程`);
+        }
+    };
 
     const getPlaceholder = (itemType, itemCategory, packing) => {
         if (packing) {
@@ -139,9 +178,7 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
                             <label className="block text-xs font-bold opacity-70 uppercase tracking-wider">名稱</label>
                             {!isPacking && (
                                 <button
-                                    onClick={() => {
-                                        setName(type === 'food' ? '一蘭拉麵 新宿中央東口店' : type === 'spot' ? '代代木公園 散策' : '當地特色行程');
-                                    }}
+                                    onClick={handleAIInspiration}
                                     className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all ${isDarkMode ? 'border-purple-500/50 text-purple-400 hover:bg-purple-500/10' : 'border-purple-200 text-purple-600 hover:bg-purple-50'}`}
                                 >
                                     <Sparkles className="w-2.5 h-2.5" /> AI 靈感

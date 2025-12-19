@@ -4,12 +4,73 @@ import {
 
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
-export const APP_VERSION = "V0.22.2"; // Security Hotfix: API Key Protection
-export const APP_LAST_UPDATE = "2025-12-19";
+export const APP_VERSION = 'V0.24.0';
+export const APP_VERSION_TAG = 'Osaka Express';
+export const APP_LAST_UPDATE = '2025-02-28';
 
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V0.24.0",
+        tag: "Osaka Express",
+        date: "2025-02-28",
+        desc: { "zh-TW": "Smart Layout & Transport Fix", "en": "Smart Layout & Transport Fix" },
+        changes: [
+            "Transport: Duration format 'X小時X分' for >60min",
+            "Weather: Smart summary with morning/afternoon/night tiers",
+            "UI: Premium polish for Packing, Shopping, Budget, Files tabs",
+            "AI: Smarter destination-aware activity title generation",
+            "Consistency: Unified itinerary type color palettes"
+        ]
+    },
+    {
+        ver: "V0.23.5",
+        tag: "Osaka Grand Update",
+        date: "2025-02-27",
+        desc: { "zh-TW": "Refined Itinerary & Auth UI", "en": "Refined Itinerary & Auth UI" },
+        changes: [
+            "UI: Redesigned Itinerary cards with glassmorphism",
+            "Auth: Premium login/register interface",
+            "System: Pre-bump prep for Osaka Express features"
+        ]
+    },
+    {
+        ver: "V0.23.1",
+        date: "2025-12-19",
+        desc: {
+            "zh-TW": "UI 同步化 & 權限強化 & 真實教學資料",
+            "en": "UI Parity & Permission Boost & Reality Tutorial"
+        },
+        details: {
+            "zh-TW": "• UI 同步化：行程清單與地圖側欄全面對齊 AI 助手之卡片風格、圖標及間距\n• 權限強化：公開分享連結支援「可編輯」權限控管，登入後即可協助修改行程\n• 真實教學資料：重整東京模擬行程，加入精確地點資料、交通路線與專業旅遊 Tips\n• 基礎修復：修正 SIMULATION_DATA 結構錯誤及權限判定邏輯",
+            "en": "• UI Parity: Synced itinerary list and map sidebar with AI Assistant card styles and icons\n• Permission Boost: Share links now support 'Can Edit' permissions for logged-in users\n• Realistic Tutorial: Overhauled Tokyo simulation data with precise locations and pro tips\n• Core Fix: Resolved structural issues in SIMULATION_DATA and permission logic"
+        }
+    },
+    {
+        ver: "V0.23.0",
+        date: "2025-12-19",
+        desc: {
+            "zh-TW": "訪客預覽模式 & AI 行程真實化",
+            "en": "Guest Preview & AI Reality Update"
+        },
+        details: {
+            "zh-TW": "• 訪客預覽功能：行程分享 link 支援免登入查看公眾行程\n• 權限控管：訪客僅能查看，無法進行編輯、刪除或邀請成員\n• AI 寫實化：移除 Oasis 佔位內容，針對東京/台北加入真實景點推薦\n• 導入中心實裝：JSON/CSV/Memory 回憶庫正式連結資料庫與雲端儲存\n• 進階匯出：PDF 匯出功能改用精美排版服務 (Premium PDF)\n• 修復：修復分享連結在特定情況下崩潰的 Bug",
+            "en": "• Guest Preview: Share links now allow non-logged-in viewing of public trips\n• Access Control: View-only mode for guests (no edit/delete/invite access)\n• AI Reality: Replaced generic 'oasis' content with real Tokyo/Taipei spots\n• Smart Import Finalized: Fully connected JSON/CSV/Memory to Firebase\n• Premium PDF: Upgraded PDF export with professional layout service\n• Bug Fix: Resolved share link crash and loading state state issues"
+        }
+    },
+    {
+        ver: "V0.22.3",
+        date: "2025-12-19",
+        desc: {
+            "zh-TW": "AI 智能化大升級 + 匯出功能實裝",
+            "en": "AI Intelligence Upgrade + Export Features"
+        },
+        details: {
+            "zh-TW": "• AI 助手升級：改為真正 Gemini API，生成專屬行程規劃\n• 智能交通建議：景點之間自動 AI 推薦交通方式、價錢及路線\n• Vision-First OCR：圖片直接識別機票/酒店/收據資訊\n• Smart Import 完善：航班/住宿/景點所有欄位完整支援\n• iCal 匯出功能：一鍵匯出行程到 Google/Apple 日曆\n• 分享到 WhatsApp/Telegram：快速分享行程給朋友",
+            "en": "• AI Assistant Upgrade: Real Gemini API for smart itinerary generation\n• Smart Transport: AI-powered suggestions with routes and prices\n• Vision-First OCR: Direct image parsing for tickets/hotels/receipts\n• Smart Import Enhancement: Full support for all flight/hotel/spot fields\n• iCal Export: One-click export to Google/Apple Calendar\n• Share to WhatsApp/Telegram: Quick sharing to messaging apps"
+        }
+    },
     {
         ver: "V0.22.2",
         date: "2025-12-19",
@@ -20,18 +81,6 @@ export const VERSION_HISTORY = [
         details: {
             "zh-TW": "• 移除 Hardcoded Google Maps API Key，改為環境變數讀取\n• 提升專案安全性",
             "en": "• Removed hardcoded Google Maps API Key, switched to environment variable\n• Enhanced project security"
-        }
-    },
-    {
-        ver: "V0.22.1",
-        date: "2025-12-19",
-        desc: {
-            "zh-TW": "功能凍結 & 穩定性修復",
-            "en": "Feature Freeze & Stability Fixes"
-        },
-        details: {
-            "zh-TW": "• 暫時封鎖 AI/匯入/匯出功能 (待 V0.22.2 重啟)\n• 修復 SmartImportModal 圖標缺失問題\n• 修復 getDoc 引用錯誤\n• 優化 OCR 中文過濾邏輯",
-            "en": "• Temporarily disabled AI/Import/Export (Planned for V0.22.2)\n• Fixed missing icons in SmartImportModal\n• Fixed getDoc reference error\n• Refined Chinese OCR filtering"
         }
     },
     {
@@ -210,10 +259,10 @@ export const EMERGENCY_DETAILS_DB = {
             address: "東京都港區白金台5-20-2",
             phone: "+81-3-3280-7811",
             emergencyHotline: "+81-90-4746-6065",
-            hours: "週一至週五 09:00-12:00, 14:00-18:00"
+            hours: "週一至週五 09:00-11:30, 13:00-17:00"
         },
         hospitals: [
-            { name: "聖路加國際醫院 (中/英語)", address: "東京都中央區明石町9-1", phone: "+81-3-3541-5151" },
+            { name: "聖路加國際醫院 (中/英語對應)", address: "東京都中央區明石町9-1", phone: "+81-3-3541-5151" },
             { name: "東京慈惠會醫科大學附屬醫院", address: "東京都港區西新橋3-25-8", phone: "+81-3-3433-1111" }
         ],
         tips: ["報警說「Kotsu-jiko」(交通事故) 或「Dorobo」(小偷)", "醫院不收刷卡，帶現金", "下載「Safety Tips」App"]
@@ -490,90 +539,106 @@ export const INSURANCE_SUGGESTIONS = {
 
 export const SIMULATION_DATA = {
     id: "sim-tokyo-2025",
-    name: "🇯🇵 東京冬日爆食之旅 2025",
+    name: "🇯🇵 東京冬日全攻略 2025 (Alex & Buddy)",
     city: "Tokyo",
     country: "Japan (日本)",
     startDate: "2025-12-24",
     endDate: "2025-12-29",
+    sharePermission: "edit",
     members: [
-        { id: "sim-user-1", name: "Alex", role: "owner" },
-        { id: "sim-user-2", name: "Travel Buddy", role: "editor" }
+        { id: "sim-user-1", name: "Alex", role: "owner", avatar: "https://i.pravatar.cc/150?u=alex" },
+        { id: "sim-user-2", name: "Travel Buddy", role: "editor", avatar: "https://i.pravatar.cc/150?u=buddy" }
     ],
     itinerary: {
         "2025-12-24": [
-            { id: "it-1", time: "09:00", name: "前往成田機場 (JL736)", type: "flight", cost: 4200, currency: "HKD", details: { location: "HKG -> NRT", desc: "國泰航空豪華版" }, smartTag: "✈️ 已確認" },
-            { id: "it-2", time: "15:00", name: "新宿格拉斯麗酒店 Check-in", type: "hotel", cost: 0, currency: "JPY", details: { location: "新宿", desc: "哥吉拉主題房" }, smartTag: "🏨 必住" },
-            { id: "it-1-1", time: "16:30", name: "歌舞伎町一番街散策", type: "spot", cost: 0, currency: "JPY", details: { location: "新宿", desc: "霓虹燈下的繁華街區" } },
-            { id: "it-3", time: "18:30", name: "六本木之丘聖誕燈飾", type: "spot", cost: 2000, currency: "JPY", details: { location: "Roppongi Hills", desc: "絕美聖誕燈火" } },
-            { id: "it-4", time: "20:30", name: "AFURI 阿夫利拉麵", type: "food", cost: 1200, currency: "JPY", details: { location: "六本木店", desc: "柚子鹽味拉麵首選" }, smartTag: "🍜 必吃" }
+            { id: "it-1", time: "09:15", name: "國泰航空 CX520 (HKG -> NRT)", type: "flight", cost: 4500, currency: "HKD", details: { location: "香港國際機場 T1", desc: "預計 14:30 抵達成田", insight: "聖誕旺季記得提早 3 小時到達機場辦理登機。" }, smartTag: "✈️ T1 - Gate 62" },
+            { id: "it-1-0", time: "15:30", name: "成田機場 N'EX 前往新宿", type: "transport", cost: 3250, currency: "JPY", details: { location: "成田第2候機樓站", desc: "使用 JR Pass 或 單程票", insight: "直達新宿約 80 分鐘，最平買來回套票比較划算。", transportType: "metro", distance: "78km", duration: "80min" } },
+            { id: "it-2", time: "17:30", name: "新宿格拉斯麗酒店 Check-in", type: "hotel", cost: 0, currency: "JPY", details: { location: "東京都新宿区歌舞伎町1-19-1", desc: "哥吉拉大頭地標飯店", insight: "房內可以看到歌舞伎町夜景，飯店 8 樓平台可以近距離拍哥吉拉。" }, smartTag: "🏨 步行 5 分" },
+            { id: "tr-2-3", time: "19:00", name: "地鐵前往六本木", type: "transport", cost: 210, currency: "JPY", details: { location: "新宿站 -> 六本木站", desc: "都營大江戶線", distance: "7.5km", duration: "15min" } },
+            { id: "it-3", time: "19:30", name: "六本木ヒルズ Keyakizaka Illumination", type: "spot", cost: 0, currency: "JPY", details: { location: "港区六本木6丁目", desc: "聖誕限定藍白燈海", reason: "東京最有誠意的聖誕燈飾，以東京鐵塔為背景是絕佳拍照位。" } },
+            { id: "it-4", time: "21:30", name: "回新宿飯店休息", type: "transport", cost: 210, currency: "JPY", details: { location: "新宿格拉斯麗酒店", desc: "大江戶線直達新宿西口", insight: "早點休息為明天築地早市做準備。", distance: "7.5km", duration: "18min" }, smartTag: "🚇 地鐵回程" }
         ],
         "2025-12-25": [
-            { id: "it-5", time: "10:00", name: "築地場外市場", type: "food", cost: 5000, currency: "JPY", details: { location: "Tsukiji", desc: "海鮮丼大餐" } },
-            { id: "it-5-1", time: "12:00", name: "銀座東急廣場 購物", type: "shopping", cost: 10000, currency: "JPY", details: { location: "Ginza", desc: "設計師品牌與咖啡店" } },
-            { id: "it-6", time: "14:00", name: "淺草寺 / 雷門", type: "spot", cost: 0, currency: "JPY", details: { location: "Asakusa", desc: "求一支好籤" } },
-            { id: "it-6-1", time: "15:30", name: "隅田川遊船", type: "transport", cost: 1600, currency: "JPY", details: { location: "Asakusa Pier", desc: "水上展望東京晴空塔" } },
-            { id: "it-7", time: "16:30", name: "秋葉原電器街", type: "shopping", cost: 30000, currency: "JPY", details: { location: "Akihabara", desc: "尋找復古遊戲機" }, smartTag: "🎮 玩家天堂" }
+            { id: "it-5", time: "07:30", name: "前往築地市場", type: "transport", cost: 210, currency: "JPY", details: { location: "大江戶線 新宿西口 -> 築地市場", desc: "地鐵約 20 分鐘", transportType: "metro", distance: "8.2km", duration: "20min" } },
+            { id: "it-5-1", time: "08:15", name: "築地場外市場 (早鳥吃貨篇)", type: "food", cost: 6500, currency: "JPY", details: { location: "中央区築地4-16-2", desc: "海鮮丼、玉子燒、烤牛排", insight: "推薦「山之內」海鮮丼，或者排隊「壽司大」。" } },
+            { id: "tr-5-銀座", time: "11:00", name: "地鐵前往銀座", type: "transport", cost: 180, currency: "JPY", details: { location: "築地 -> 銀座", desc: "日比谷線", distance: "1.2km", duration: "4min" } },
+            { id: "it-6", time: "12:00", name: "銀座 Ginza Six 漫步", type: "shopping", cost: 25000, currency: "JPY", details: { location: "中央区銀座6-10-1", desc: "頂級百貨、屋頂花園", insight: "一定要去 TSUTAYA BOOKS 區，頂層花園可免費俯瞰銀座。" } },
+            { id: "tr-銀座-淺草", time: "14:30", name: "地鐵前往淺草", type: "transport", cost: 210, currency: "JPY", details: { location: "銀座 -> 淺草", desc: "銀座線", distance: "6.5km", duration: "16min" } },
+            { id: "it-7", time: "15:00", name: "淺草寺 / 仲見世通", type: "spot", cost: 0, currency: "JPY", details: { location: "台東区浅草2-3-1", desc: "雷門、求籤、觀光客必訪", insight: "抽到凶籤的話記得綁在架子上。" }, smartTag: "🏮 江戶風情" },
+            { id: "tr-淺草-晴空塔", time: "17:30", name: "東武鐵道前往晴空塔", type: "transport", cost: 150, currency: "JPY", details: { location: "淺草站 -> 晴空塔站", desc: "東武晴空塔線", distance: "1.8km", duration: "5min" } },
+            { id: "it-8", time: "18:00", name: "晴空塔 Skytree 夜景", type: "spot", cost: 3100, currency: "JPY", details: { location: "墨田区押上1-1-2", desc: "世界第一高電波塔", reason: "聖誕節會有特別點燈色，建議提前官網訂票。" } },
+            { id: "it-9", time: "21:00", name: "回新宿飯店休息", type: "transport", cost: 350, currency: "JPY", details: { location: "新宿格拉斯麗酒店", desc: "都營淺草線 -> JR 山手線", insight: "體力消耗大，回程可以買個超商甜點犒賞自己。", distance: "14km", duration: "35min" } }
         ],
         "2025-12-26": [
-            { id: "it-8", time: "09:00", name: "富士山河口湖一日遊", type: "transport", cost: 8400, currency: "JPY", details: { location: "河口湖", desc: "富士迴遊特急來回" }, smartTag: "🗻 必看" },
-            { id: "it-8-1", time: "12:00", name: "不動茶屋 (鳳凰店)", type: "food", cost: 1800, currency: "JPY", details: { location: "河口湖", desc: "當地特色味噌麵" } },
-            { id: "it-9", time: "18:00", name: "忍野八海", type: "spot", cost: 0, currency: "JPY", details: { location: "Oshino Hakkai", desc: "清澈見底的池水" } },
-            { id: "it-9-1", time: "21:00", name: "新宿居酒屋小路", type: "food", cost: 3500, currency: "JPY", details: { location: "Omoide Yokocho", desc: "體驗在地深夜食堂" } }
+            { id: "it-10", time: "08:00", name: "富士迴遊特急 (新宿 -> 河口湖)", type: "transport", cost: 4130, currency: "JPY", details: { location: "新宿站 9-10 月台", desc: "直達無需換乘", insight: "記得訂 A, B 側座位看富士山。", transportType: "metro", distance: "110km", duration: "115min" }, smartTag: "🗻 2小時直達" },
+            { id: "it-11", time: "11:30", name: "河口湖 ほうとう不動 (河口湖站前店)", type: "food", cost: 1210, currency: "JPY", details: { location: "南都留郡富士河口湖町船津", desc: "傳統味噌粗麵", insight: "份量很大，兩個人可以分食一份。" } },
+            { id: "tr-11-12", time: "13:00", name: "河口湖周遊巴士", type: "transport", cost: 200, currency: "JPY", details: { location: "河口湖站 -> 大石公園", desc: "紅線巴士", distance: "5.5km", duration: "15min" } },
+            { id: "it-12", time: "13:30", name: "大石公園 - 富士山絕景", type: "spot", cost: 0, currency: "JPY", details: { location: "河口湖北岸", desc: "湖水與山完美對稱", reason: "冬天空氣清澈最容易看清楚逆富士。" } },
+            { id: "it-12-1", time: "16:30", name: "搭乘特急返回新宿", type: "transport", cost: 4130, currency: "JPY", details: { location: "河口湖站", desc: "預計 18:30 到達", insight: "可以在車上小睡一下。", distance: "110km", duration: "115min" } },
+            { id: "tr-12-13", time: "19:00", name: "步行前往伊勢丹", type: "transport", cost: 0, currency: "JPY", details: { location: "新宿站 -> 伊勢丹", desc: "步行約 5 分鐘", distance: "0.4km", duration: "5min", steps: 520 } },
+            { id: "it-13", time: "19:30", name: "新宿 伊勢丹 購買熟食", type: "food", cost: 3500, currency: "JPY", details: { location: "新宿 3 丁目", desc: "B1 的超強熟食區", insight: "晚上 8 點後常有半價優惠，買回飯店吃也是一種享受。" } }
         ],
         "2025-12-27": [
-            { id: "it-10", time: "10:00", name: "TeamLab Borderless 麻布台之丘", type: "spot", cost: 4200, currency: "JPY", details: { location: "Azabudai Hills", desc: "沉浸式光影藝術" }, smartTag: "📸 必打卡" },
-            { id: "it-10-1", time: "12:30", name: "藍瓶咖啡 麻布台之丘店", type: "food", cost: 800, currency: "JPY", details: { location: "Azabudai Hills", desc: "享受寧靜午後" } },
-            { id: "it-11", time: "13:30", name: "原宿竹下通漫步", type: "shopping", cost: 5000, currency: "JPY", details: { location: "Harajuku", desc: "體驗日本流行文化" } },
-            { id: "it-11-1", time: "16:00", name: "明治神宮參拜", type: "spot", cost: 0, currency: "JPY", details: { location: "Harajuku", desc: "繁華市中心的一抹寧靜" } },
-            { id: "it-12", time: "19:00", name: "澀谷 Shibuya Sky", type: "spot", cost: 2500, currency: "JPY", details: { location: "Shibuya", desc: "俯瞰東京最美夜景" }, smartTag: "🌆 浪漫推薦" }
+            { id: "tr-26-27", time: "10:00", name: "地鐵前往麻布台", type: "transport", cost: 210, currency: "JPY", details: { location: "新宿站 -> 神谷町站", desc: "日比古線", distance: "6.2km", duration: "18min" } },
+            { id: "it-14", time: "10:30", name: "TeamLab Borderless 麻布台之丘", type: "spot", cost: 4200, currency: "JPY", details: { location: "麻布台ヒルズ ガーデンプラザB B1", desc: "最新光影體驗", insight: "穿著白色衣服拍照效果最美。", transportType: "metro" }, smartTag: "📸 2024 新開" },
+            { id: "tr-14-15", time: "13:15", name: "步行前往藍瓶咖啡", type: "transport", cost: 0, currency: "JPY", details: { location: "麻布台ヒルズ內", desc: "穿過中央廣場", distance: "0.4km", duration: "5min", steps: 520 } },
+            { id: "it-15", time: "13:30", name: "藍瓶咖啡 麻布台之丘", type: "food", cost: 1500, currency: "JPY", details: { location: "麻布台ヒルズ", desc: "極簡精品咖啡", insight: "這裡的拿鐵配上麻布台限定的司康是首選。" } },
+            { id: "tr-15-16", time: "15:00", name: "地鐵前往原宿", type: "transport", cost: 180, currency: "JPY", details: { location: "神谷町 -> 明治神宮前", desc: "千代田線", distance: "4.8km", duration: "12min" } },
+            { id: "it-16", time: "15:30", name: "原宿竹下通 & 表參道", type: "shopping", cost: 15000, currency: "JPY", details: { location: "渋谷区神宮前", desc: "精品與潮牌集中地", reason: "從可愛風的竹下通走到高奢的表參道。" } },
+            { id: "tr-16-17", time: "18:30", name: "步行前往澀谷", type: "transport", cost: 0, currency: "JPY", details: { location: "表參道 -> 澀谷天空", desc: "穿過神宮前交差點", distance: "1.2km", duration: "15min", steps: 1560 } },
+            { id: "it-17", time: "19:00", name: "SHIBUYA SKY 展望台", type: "spot", cost: 2500, currency: "JPY", details: { location: "渋谷スクランブルスクエア", desc: "東京最強地標", insight: "一定要預訂「日落前 1 小時」的場次。" }, smartTag: "🌆 提前1個月搶票" }
         ],
         "2025-12-28": [
-            { id: "it-13", time: "09:00", name: "前往東京迪士尼樂園", type: "transport", cost: 800, currency: "JPY", details: { location: "JR 舞濱站", desc: "全日狂歡開始" } },
-            { id: "it-13-1", time: "10:00", name: "東京迪士尼樂園", type: "spot", cost: 10900, currency: "JPY", details: { location: "Maihama", desc: "夢想與魔法的王國" }, smartTag: "🏰 全日行程" },
-            { id: "it-14", time: "20:00", name: "伊勢丹百貨 B1 熟食採買", type: "food", cost: 3000, currency: "JPY", details: { location: "Shinjuku", desc: "回飯店享用豪華晚餐" } }
+            { id: "it-18", time: "08:00", name: "地鐵 前往迪士尼", type: "transport", cost: 450, currency: "JPY", details: { location: "新宿 -> 舞濱", desc: "JR 京葉線", distance: "28km", duration: "45min" } },
+            { id: "it-18-1", time: "09:00", name: "東京迪士尼海洋 (Fantasy Springs)", type: "spot", cost: 10900, currency: "JPY", details: { location: "千葉県浦安市舞浜1-13", desc: "最新園區：夢幻泉鄉", insight: "一入園先抽 Standby Pass 或買 DPA。" }, smartTag: "🚢 全日行程" },
+            { id: "tr-disney-return", time: "21:00", name: "搭地鐵回新宿", type: "transport", cost: 450, currency: "JPY", details: { location: "舞濱 -> 新宿", desc: "今日體力耗盡", distance: "28km", duration: "50min" } }
         ],
         "2025-12-29": [
-            { id: "it-15", time: "10:00", name: "最後採買：唐吉訶德 新宿店", type: "shopping", cost: 15000, currency: "JPY", details: { location: "Shinjuku", desc: "藥妝、零食最後衝刺" } },
-            { id: "it-15-1", time: "12:30", name: "松屋 牛丼 (快速午餐)", type: "food", cost: 650, currency: "JPY", details: { location: "新宿站前", desc: "收拾心情準備回程" } },
-            { id: "it-16", time: "14:00", name: "成田快線 N'EX 前往機場", type: "transport", cost: 3200, currency: "JPY", details: { location: "Shinjuku Station", desc: "舒適快速直達機場" } },
-            { id: "it-17", time: "18:20", name: "搭機返程 (JL735)", type: "flight", cost: 0, currency: "HKD", details: { location: "NRT -> HKG", desc: "帶著滿滿的回憶回家" }, smartTag: "✈️ 已確認" }
+            { id: "tr-hotel-donki", time: "09:30", name: "步行前往唐吉訶德", type: "transport", cost: 0, currency: "JPY", details: { location: "飯店 -> 新宿東口", desc: "穿過靖國通", distance: "0.6km", duration: "8min", steps: 780 } },
+            { id: "it-21", time: "10:00", name: "唐吉訶德 新宿東口本店", type: "shopping", cost: 12000, currency: "JPY", details: { location: "新宿区歌舞伎町1-16-5", desc: "藥妝、零食總採購", insight: "使用折扣券可以滿萬減千。" }, smartTag: "🐧 24H 營業" },
+            { id: "tr-donki-lunch", time: "12:15", name: "步行前往燒肉店", type: "transport", cost: 0, currency: "JPY", details: { location: "唐吉訶德 -> 小田急", desc: "穿越新宿車站", distance: "0.5km", duration: "7min", steps: 650 } },
+            { id: "it-22", time: "12:30", name: "敘敘苑 燒肉 (午間特餐)", type: "food", cost: 3800, currency: "JPY", details: { location: "新宿小田急商場 12F", desc: "高品質奢華燒肉", insight: "午餐特餐性價比極高。" } },
+            { id: "it-23", time: "15:00", name: "前往成田機場 (N'EX)", type: "transport", cost: 3250, currency: "JPY", details: { location: "新宿站", desc: "最後一段鐵道時光", insight: "在車站買幾份鐵路便當上車。", distance: "78km", duration: "80min" } },
+            { id: "it-24", time: "18:30", name: "國泰航空 CX505 (NRT -> HKG)", type: "flight", cost: 0, currency: "HKD", details: { location: "成田第2候機樓", desc: "預計 22:45 返抵香港" } }
         ]
     },
     packingList: [
-        { id: "pkg-1", name: "護照與簽證", category: "documents", checked: true },
-        { id: "pkg-2", name: "日幣現金 (10萬JPY)", category: "documents", checked: true },
-        { id: "pkg-3", name: "保暖厚大衣", category: "clothes", checked: false, aiSuggested: true },
-        { id: "pkg-4", name: "手機充電器 / 行動電源", category: "electronics", checked: true },
-        { id: "pkg-5", name: "休閒步行鞋", category: "clothes", checked: true },
-        { id: "pkg-6", name: "Heattech 發熱衣", category: "clothes", checked: false, aiSuggested: true },
-        { id: "pkg-7", name: "維他命 / 常用藥物", category: "medicine", checked: false }
+        { id: "pkg-1", name: "護照、身份證、列印機票", category: "documents", checked: true },
+        { id: "pkg-2", name: "Visit Japan Web 入境 QR Code (截圖)", category: "documents", checked: true },
+        { id: "pkg-3", name: "羽絨大衣 (東京12月均溫 5°C)", category: "clothes", checked: false, aiSuggested: true },
+        { id: "pkg-4", name: "Heattech 超極暖系列 *3", category: "clothes", checked: false, aiSuggested: true },
+        { id: "pkg-5", name: "萬用轉接頭 & 延長線", category: "electronics", checked: true },
+        { id: "pkg-6", name: "行動電源 (迪士尼整天必備)", category: "electronics", checked: true },
+        { id: "pkg-8", name: "常用的感冒藥、止痛藥", category: "medicine", checked: true }
     ],
     shoppingList: [
-        { id: "shp-1", name: "Tokyo Banana 伴手禮", estPrice: "JPY 1500", desc: "限定口味", bought: false, aiSuggested: true },
-        { id: "shp-2", name: "Uniqlo 本地版發熱衣", estPrice: "JPY 990", desc: "比香港便宜超多", bought: false },
-        { id: "shp-3", name: "EVE 止痛藥", estPrice: "JPY 800", desc: "囤貨必備", bought: false, aiSuggested: true }
+        { id: "shp-1", name: "New York Perfect Cheese", estPrice: "JPY 2400", desc: "新宿/東京站限定", bought: false, aiSuggested: true },
+        { id: "shp-2", name: "PORTER 肩背包", estPrice: "JPY 28000", desc: "表參道旗艦店款式最全", bought: false },
+        { id: "shp-3", name: "毛穴撫子 大米面膜", estPrice: "JPY 715", desc: "Donki 必買", bought: false, aiSuggested: true }
     ],
     budget: [
-        { id: "b-1", name: "機票總計", cost: 8400, currency: "HKD", category: "flight", payer: "Alex", splitType: "group" },
-        { id: "b-2", name: "第一晚燒肉", cost: 12000, currency: "JPY", category: "food", payer: "Alex", splitType: "group" }
+        { id: "b-1", name: "機票 (CX 來回含餐)", cost: 9000, currency: "HKD", category: "flight", payer: "Alex", splitType: "group" },
+        { id: "b-2", name: "第一晚住宿 (Graceery 歌舞伎町)", cost: 450, currency: "HKD", category: "hotel", payer: "Buddy", splitType: "individual" }
     ],
-    notes: "### 旅遊備忘錄\n- 聖誕節期間很多餐廳需要提前預約。\n- 記得帶足夠衣服，晚上只有 5 度左右。\n- Visit Japan Web 要預先填好 QR Code。",
+    notes: "### 💡 東京行前必看\n- **交通：** iPhone 錢包直接加 Suica 最方便，不用排隊買卡。\n- **餐廳：** 敘敘苑 建議出發前一個月上網訂位。\n- **退稅：** 買東西記得帶護照正本。",
     insurance: {
-        "sim-user-1": { provider: "AIG 旅安保", policyNo: "AIG-2025-001", phone: "+852 1234 5678", notes: "涵蓋滑雪活動" }
+        "sim-user-1": { provider: "富邦旅平險", policyNo: "FB-2025-778899", phone: "+886 2 2771 6699", notes: "已確認涵蓋海外突發疾病" },
+        "sim-user-2": { provider: "AIG 國外旅遊保險", policyNo: "AIG-HK-992211", phone: "+852 3666 7017" }
     },
     visa: {
-        "sim-user-1": { status: "printed", number: "HKG-PASS-123", expiry: "2029-12-24", needsPrint: false }
+        "sim-user-1": { status: "printed", number: "HKG-JP-VISA-001", expiry: "2030-01-01", needsPrint: false },
+        "sim-user-2": { status: "not_needed", number: " 免簽 (BNO)", expiry: "-", needsPrint: false }
     },
     emergency: {
         police: "110",
         fire: "119",
         ambulance: "119",
         consulate: {
-            name: "駐日經濟文化代表處（東京）",
-            address: "東京都港區白金台5-20-2",
+            name: "台北駐日經濟文化代表處",
+            address: "東京都港区白金台5-20-2",
             phone: "+81-3-3280-7811",
             emergencyHotline: "+81-90-4746-6065",
-            hours: "週一至週五 09:00-12:00, 14:00-18:00"
+            hours: "週一至週五 09:00-11:30, 13:00-17:00"
         },
         hospitals: [
             { name: "聖路加國際醫院 (中/英語對應)", address: "東京都中央區明石町9-1", phone: "+81-3-3541-5151" },
@@ -581,10 +646,16 @@ export const SIMULATION_DATA = {
         ],
         tips: [
             "日本報警要說「Kotsu-jiko」(交通事故) 或「Dorobo」(小偷)",
-            "醫院不收刷卡，要帶現金",
+            "部分小醫院不收刷卡，建議帶足額現金",
             "語言不通可用 Google 翻譯或下載「Safety Tips」App"
         ]
-    }
+    },
+    reminders: [
+        { id: "rem-1", title: "預訂成田機場接送", date: "2025-12-22", done: false, priority: "high" },
+        { id: "rem-2", title: "兌換日幣", date: "2025-12-23", done: true, priority: "medium" },
+        { id: "rem-3", title: "下載離線地圖", date: "2025-12-23", done: false, priority: "low" },
+        { id: "rem-4", title: "確認酒店預約", date: "2025-12-24", done: false, priority: "high" }
+    ]
 };
 
 

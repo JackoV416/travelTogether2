@@ -126,3 +126,21 @@ export const getUserInitial = (nameOrEmail = "") => (nameOrEmail[0] || "T").toUp
 
 export const inputClasses = (isDarkMode) => `w-full px-4 py-3.5 rounded-xl border transition-all outline-none font-medium tracking-wide ${isDarkMode ? 'bg-gray-800/90 border-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-white placeholder-gray-500' : 'bg-white border-gray-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 text-gray-900 placeholder-gray-400 shadow-sm'}`;
 
+export const formatDuration = (durationStr) => {
+    if (!durationStr) return "";
+    // If it's already localized, or not a simple minute string, return as is
+    if (durationStr.includes('小時') || durationStr.includes('時')) return durationStr;
+
+    const minsMatch = durationStr.match(/(\d+)\s*(?:min|m|分鐘|分)?/i);
+    if (!minsMatch) return durationStr;
+
+    const totalMins = parseInt(minsMatch[1]);
+    if (totalMins < 60) return durationStr;
+
+    const h = Math.floor(totalMins / 60);
+    const m = totalMins % 60;
+
+    if (m === 0) return `${h} 小時`;
+    return `${h} 小時 ${m} 分`;
+};
+

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Share2, FileJson, FileText, FileImage, Calendar, Link as LinkIcon, Copy, Check, Download, Globe, Lock, Loader2, ChevronDown } from 'lucide-react';
+import { X, Share2, FileJson, FileText, FileImage, Calendar, Link as LinkIcon, Copy, Check, Download, Globe, Lock, Loader2, ChevronDown, MessageCircle } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { exportToICS, generateShareableText } from '../../services/pdfExport';
 
 // Premium UI Classes
 const glassCard = (isDarkMode) => isDarkMode ? "bg-gray-900/60 backdrop-blur-md border border-white/10 text-white shadow-xl" : "bg-white/80 backdrop-blur-md border border-white/20 text-gray-900 shadow-xl";
@@ -32,6 +33,8 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
     const selectedTrip = trips.length > 0 ? trips.find(t => t.id === selectedTripId) || trips[0] : trip;
     const [isPublic, setIsPublic] = useState(selectedTrip?.isPublic || false);
 
+    const [sharePermission, setSharePermission] = useState(selectedTrip?.sharePermission || 'view');
+
     // Update selected trip when props change
     useEffect(() => {
         if (trip?.id) setSelectedTripId(trip.id);
@@ -40,6 +43,7 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
 
     useEffect(() => {
         setIsPublic(selectedTrip?.isPublic || false);
+        setSharePermission(selectedTrip?.sharePermission || 'view');
     }, [selectedTrip]);
 
     if (!isOpen || (!trip && trips.length === 0)) return null;
@@ -54,6 +58,15 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
             await updateDoc(doc(db, "trips", selectedTrip.id), { isPublic: newVal });
         } catch (e) {
             console.error("Failed to update public status", e);
+        }
+    };
+
+    const handleUpdatePermission = async (perm) => {
+        setSharePermission(perm);
+        try {
+            await updateDoc(doc(db, "trips", selectedTrip.id), { sharePermission: perm });
+        } catch (e) {
+            console.error("Failed to update share permission", e);
         }
     };
 
@@ -126,7 +139,7 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
                     break;
                 }
                 case 'ical': {
-                    alert("iCal 匯出功能開發中，敬請期待！");
+                    exportToICS(selectedTrip);
                     break;
                 }
             }
@@ -169,6 +182,7 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
                     </button>
                 </div>
 
+                {/* Tabs */}
                 {/* Tabs */}
                 <div className="flex border-b border-white/10">
                     <button
@@ -221,6 +235,51 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
                             </div>
                         </div>
 
+                        {/* Export Preview Area */}
+                        <div className={`rounded-xl border border-dashed flex flex-col max-h-[220px] transition-all overflow-hidden ${isDarkMode ? 'bg-white/5 border-white/20' : 'bg-gray-50 border-gray-300'}`}>
+                            <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between bg-white/5">
+                                <span className="text-[10px] font-black opacity-40 uppercase tracking-widest">匯出預覽 (Preview)</span>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-bold">{exportType?.label || '未選擇'}</span>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                                {exportType?.id === 'pdf' ? (
+                                    <div className="space-y-3">
+                                        <div className="h-4 w-3/4 bg-indigo-500/20 rounded animate-pulse" />
+                                        <div className="h-4 w-1/2 bg-purple-500/20 rounded animate-pulse" />
+                                        <div className="space-y-1 pt-2">
+                                            {[1, 2, 3].map(i => (
+                                                <div key={i} className="flex gap-2">
+                                                    <div className="h-3 w-8 bg-white/10 rounded" />
+                                                    <div className="h-3 flex-1 bg-white/5 rounded" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="text-[10px] text-center italic opacity-40 py-2">模擬 PDF 佈局預覽...</div>
+                                    </div>
+                                ) : (
+                                    <pre className="text-[10px] font-mono opacity-70 whitespace-pre-wrap leading-relaxed">
+                                        {(() => {
+                                            const data = getScopeData();
+                                            if (exportType?.id === 'json') return JSON.stringify(data, null, 2);
+                                            if (exportType?.id === 'text') {
+                                                let text = `📍 ${selectedTrip.name || '我的行程'}\n\n`;
+                                                if (data.itinerary) {
+                                                    Object.entries(data.itinerary).forEach(([date, items]) => {
+                                                        text += `📅 ${date}\n`;
+                                                        items.slice(0, 3).forEach((item, i) => text += `  ${i + 1}. ${item.name}\n`);
+                                                        if (items.length > 3) text += `  ...等 ${items.length} 項\n`;
+                                                    });
+                                                }
+                                                if (data.shopping) text += `\n🛒 購物清單 (${data.shopping.length} 項)\n`;
+                                                return text;
+                                            }
+                                            return "請選擇匯出格式以顯示預覽";
+                                        })()}
+                                    </pre>
+                                )}
+                            </div>
+                        </div>
+
                         {/* Export Button */}
                         <button
                             onClick={handleExport}
@@ -228,14 +287,14 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
                             className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${exportType ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700' : 'bg-gray-500/30 text-gray-400 cursor-not-allowed'}`}
                         >
                             {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                            {isExporting ? '匯出中...' : '開始匯出'}
+                            {isExporting ? '匯出中...' : `立即匯出 ${exportType?.label || ''}`}
                         </button>
                     </div>
                 )}
 
                 {/* Share Tab */}
                 {activeTab === 'share' && (
-                    <div className="p-6 space-y-4">
+                    <div className="p-6 space-y-6">
                         {/* Public Toggle */}
                         <div className={`p-4 rounded-xl ${isDarkMode ? 'bg-white/5' : 'bg-gray-50'}`}>
                             <div className="flex items-center justify-between">
@@ -243,7 +302,7 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
                                     {isPublic ? <Globe className="w-5 h-5 text-green-400" /> : <Lock className="w-5 h-5 text-gray-400" />}
                                     <div>
                                         <div className="font-bold text-sm">{isPublic ? '公開行程' : '私人行程'}</div>
-                                        <div className="text-xs opacity-50">{isPublic ? '任何人可透過連結查看' : '只有你和成員可以查看'}</div>
+                                        <div className="text-[10px] opacity-50">{isPublic ? '任何人可透過連結查看' : '只有你和成員可以查看'}</div>
                                     </div>
                                 </div>
                                 <button
@@ -254,6 +313,29 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
                                 </button>
                             </div>
                         </div>
+
+                        {/* Permission Selection */}
+                        {isPublic && (
+                            <div className="space-y-3">
+                                <label className="text-xs font-bold opacity-60 uppercase ml-1">權限設定</label>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => handleUpdatePermission('view')}
+                                        className={`flex-1 p-3 rounded-xl border text-left transition-all ${sharePermission === 'view' ? 'border-purple-500 bg-purple-500/10' : 'border-white/10 opacity-60'}`}
+                                    >
+                                        <div className="font-bold text-xs">僅限檢視</div>
+                                        <div className="text-[9px] opacity-60">遊客只能查看行程</div>
+                                    </button>
+                                    <button
+                                        onClick={() => handleUpdatePermission('edit')}
+                                        className={`flex-1 p-3 rounded-xl border text-left transition-all ${sharePermission === 'edit' ? 'border-purple-500 bg-purple-500/10' : 'border-white/10 opacity-60'}`}
+                                    >
+                                        <div className="font-bold text-xs">可以編輯</div>
+                                        <div className="text-[9px] opacity-60 text-purple-400">只限已登入用戶</div>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Share Link */}
                         {isPublic && (
@@ -275,6 +357,63 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
                                 </div>
                             </div>
                         )}
+
+                        {/* Share Social Preview Area */}
+                        <div className="space-y-3">
+                            <label className="text-xs font-bold opacity-60 uppercase ml-1">社交預覽 (Social Preview)</label>
+                            <div className={`p-4 rounded-xl border border-dashed flex flex-col transition-all overflow-hidden ${isDarkMode ? 'bg-white/5 border-white/20' : 'bg-gray-50 border-gray-300'}`}>
+                                <pre className="text-[10px] font-mono opacity-70 whitespace-pre-wrap leading-relaxed max-h-[100px] overflow-y-auto custom-scrollbar">
+                                    {`✈️ ${selectedTrip?.name || '我的行程'}\n📍 ${selectedTrip?.city}, ${selectedTrip?.country}\n📅 ${selectedTrip?.startDate} - ${selectedTrip?.endDate}\n\n由 Travel Together 生成`}
+                                </pre>
+                            </div>
+                        </div>
+
+                        {/* Share to Social Apps */}
+                        <div className="space-y-3 pt-4 border-t border-white/10">
+                            <label className="text-xs font-bold opacity-60 uppercase">分享到社交平台</label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {/* WhatsApp */}
+                                <button
+                                    onClick={() => {
+                                        const text = `${selectedTrip?.name || '我的行程'}\n${selectedTrip?.city}, ${selectedTrip?.country}\n${selectedTrip?.startDate} - ${selectedTrip?.endDate}\n\n由 Travel Together 生成`;
+                                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                                    }}
+                                    className="flex flex-col items-center gap-1 p-3 rounded-xl bg-green-500 text-white font-bold text-xs hover:bg-green-600 transition-all"
+                                >
+                                    <MessageCircle className="w-5 h-5" />
+                                    WhatsApp
+                                </button>
+
+                                {/* Facebook */}
+                                <button
+                                    onClick={() => {
+                                        if (isPublic && shareUrl) {
+                                            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank');
+                                        } else {
+                                            alert('請先開啟公開連結後才能分享到 Facebook');
+                                        }
+                                    }}
+                                    className="flex flex-col items-center gap-1 p-3 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 transition-all"
+                                >
+                                    <Globe className="w-5 h-5" />
+                                    Facebook
+                                </button>
+
+                                {/* Copy for Instagram */}
+                                <button
+                                    onClick={() => {
+                                        const text = `✈️ ${selectedTrip?.name || '我的行程'}\n📍 ${selectedTrip?.city}\n📅 ${selectedTrip?.startDate} - ${selectedTrip?.endDate}`;
+                                        navigator.clipboard.writeText(text);
+                                        alert('已複製行程資訊！可以貼到 Instagram Story 或貼文');
+                                    }}
+                                    className="flex flex-col items-center gap-1 p-3 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 text-white font-bold text-xs hover:opacity-90 transition-all"
+                                >
+                                    <Copy className="w-5 h-5" />
+                                    Instagram
+                                </button>
+                            </div>
+                            <p className="text-[10px] opacity-50 text-center">Instagram 需先複製文字，再貼到 App 內</p>
+                        </div>
                     </div>
                 )}
             </div>

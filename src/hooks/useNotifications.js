@@ -15,16 +15,24 @@ export const useNotifications = (user) => {
         }
     }, []);
 
-    // Simulated Real-time Listener (replace with actual Firestore listener when ready)
-    // For now, we'll implement a functional local notification system that can be easily connected to Firestore
+    // Format time for display
+    const formatTime = (timestamp) => {
+        const date = new Date(timestamp);
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        return `${hours}:${minutes}`;
+    };
+
+    // Send notification (in-app + browser)
     const sendNotification = useCallback((title, body, type = 'info') => {
         // 1. In-App Notification (Toast)
         const newNotif = {
             id: uuidv4(),
             title,
-            body,
+            message: body, // Use 'message' for consistency with Header display
             type, // info, success, warning, error
             timestamp: Date.now(),
+            time: formatTime(Date.now()),
             read: false
         };
 
@@ -46,6 +54,16 @@ export const useNotifications = (user) => {
 
     }, [permission]);
 
+    // Mark all notifications as read
+    const markNotificationsRead = useCallback(() => {
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    }, []);
+
+    // Remove a single notification by ID
+    const removeNotification = useCallback((id) => {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+    }, []);
+
     // TODO: Connect to Firestore 'users/{uid}/notifications'
     // useEffect(() => {
     //     if (!user?.uid) return;
@@ -60,6 +78,8 @@ export const useNotifications = (user) => {
     return {
         notifications,
         sendNotification,
-        setNotifications // Exposed for dismissal
+        setNotifications, // Exposed for dismissal
+        markNotificationsRead,
+        removeNotification
     };
 };
