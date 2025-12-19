@@ -24,7 +24,7 @@ import ErrorBoundary from './components/Shared/ErrorBoundary';
 import {
     APP_VERSION, APP_AUTHOR, APP_LAST_UPDATE,
     DEFAULT_BG_IMAGE, CITY_COORDS, COUNTRIES_DATA, INFO_DB,
-    SIMULATION_DATA, CURRENCIES, VERSION_HISTORY
+    SIMULATION_DATA, CURRENCIES, VERSION_HISTORY, TIMEZONES, LANGUAGE_OPTIONS
 } from './constants/appData';
 import {
     glassCard, getHolidayMap, getLocalizedCountryName,

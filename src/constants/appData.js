@@ -4,35 +4,35 @@ import {
 
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
-export const APP_VERSION = 'V0.26.0-RC';
-export const APP_VERSION_TAG = 'AI Resilience (Release Candidate)';
+export const APP_VERSION = 'V0.25.1';
+export const APP_VERSION_TAG = 'Dashboard Refactor & AI Resilience';
 export const APP_LAST_UPDATE = '2025-12-19';
 
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
     {
-        ver: "V0.26.0-RC",
-        tag: "AI Resilience (RC)",
+        ver: "V0.25.1",
+        tag: "Optimization & Resilience",
         date: "2025-12-19",
         desc: {
-            "zh-TW": "AI 高可用架構 - 多 Key 輪換 + 每日限額",
-            "en": "AI Resilience - Multi-Key Rotation + Daily User Limits"
+            "zh-TW": "Dashboard 結構深度優化 + AI 高可用架構",
+            "en": "Dashboard Modularization & AI Resilience"
         },
         details: {
             "zh-TW": [
-                "🔑 支援 5 個 API Key 自動輪換",
-                "🔄 3 個 Model 自動切換 (gemini-2.5-flash → 2.5-flash-lite → 1.5-flash)",
-                "⏱️ 智能重試 + 指數退避 Backoff",
-                "🛡️ 每用戶每日 20 次 AI 限額",
-                "📊 Console 警告剩餘次數"
+                "🏗️ Dashboard 重構：大幅拆分為組件化架構，減少主程序負荷",
+                "🔑 AI 多 Key 輪播：支援 5 個 API Key 自動切換，避免 Quota 限制",
+                "🛡️ 每日限額：每用戶每日 20 次 AI 限額保護",
+                "🐛 Bug Fix: 修復 V0.25 時區設置錯誤及組件引用 BUG",
+                "🚀 性能提升：移除 redundant state，數據加載更流暢"
             ],
             "en": [
-                "🔑 5 API Keys auto-rotation support",
-                "🔄 3 Model fallback chain",
-                "⏱️ Smart retry with exponential backoff",
-                "🛡️ Per-user daily limit (20 calls)",
-                "📊 Console warning for remaining quota"
+                "🏗️ Dashboard Refactor: Deep modularization for better performance",
+                "🔑 AI Multi-Key Rotation: 5 API Keys auto-scaling",
+                "🛡️ Daily Limits: 20 AI calls per user limit",
+                "🐛 Bug Fix: Resolved V0.25 Timezone error and import analysis bugs",
+                "🚀 Performance: State optimization and faster data fetching"
             ]
         }
     },
@@ -144,18 +144,6 @@ export const VERSION_HISTORY = [
         details: {
             "zh-TW": "• AI 助手升級：改為真正 Gemini API，生成專屬行程規劃\n• 智能交通建議：景點之間自動 AI 推薦交通方式、價錢及路線\n• Vision-First OCR：圖片直接識別機票/酒店/收據資訊\n• Smart Import 完善：航班/住宿/景點所有欄位完整支援\n• iCal 匯出功能：一鍵匯出行程到 Google/Apple 日曆\n• 分享到 WhatsApp/Telegram：快速分享行程給朋友",
             "en": "• AI Assistant Upgrade: Real Gemini API for smart itinerary generation\n• Smart Transport: AI-powered suggestions with routes and prices\n• Vision-First OCR: Direct image parsing for tickets/hotels/receipts\n• Smart Import Enhancement: Full support for all flight/hotel/spot fields\n• iCal Export: One-click export to Google/Apple Calendar\n• Share to WhatsApp/Telegram: Quick sharing to messaging apps"
-        }
-    },
-    {
-        ver: "V0.22.2",
-        date: "2025-12-19",
-        desc: {
-            "zh-TW": "緊急保安更新",
-            "en": "Critical Security Hotfix"
-        },
-        details: {
-            "zh-TW": "• 移除 Hardcoded Google Maps API Key，改為環境變數讀取\n• 提升專案安全性",
-            "en": "• Removed hardcoded Google Maps API Key, switched to environment variable\n• Enhanced project security"
         }
     },
     {

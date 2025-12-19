@@ -1,22 +1,22 @@
-# Travel Together (智能旅遊規劃) V0.26.0-RC
+# Travel Together (智能旅遊規劃) V0.25.1
 
-[![TravelTogether](https://img.shields.io/badge/Version-V0.26.0--RC--AI--Resilience-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V0.25.1--Dashboard--Refactor-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-10.x-orange.svg)](https://firebase.google.com/)
 
-## 🚀 V0.26.0-RC: AI Resilience (Release Candidate) (2025-12-19)
-本版本為 Release Candidate，包含重大 AI 架構更新：
+## 🚀 V0.25.1: Dashboard Refactor & AI Resilience (2025-12-19)
+本版本包含重大架構優化與 AI 防災機制：
 
-### AI 高可用特性
-- **🔑 多 Key 輪換**: 支援 5 個 Gemini API Key 自動切換
-- **🔄 多 Model 切換**: 3 個 Model 自動 Fallback (gemini-2.5-flash → 2.5-flash-lite → 1.5-flash)
-- **⏱️ 智能重試**: 指數退避 Backoff (3s, 6s) 自動重試
-- **🛡️ 每日限額**: 每用戶每日 20 次 AI 使用限制
-- **📊 Console 警告**: 剩餘 ≤5 次時顯示警告
+### 🏗️ Dashboard 結構重組
+- **組件化拆分**: 拆分 7 大 Widget (天氣/新聞/酒店/機票等) 與 Layout 組件，代碼更易維護。
+- **Custom Hook**: 引入 `useDashboardData` 統一數據管理與 Firestore 同步。
+- **性能優化**: 減少 Dashboard 內存佔用，加快首次渲染速度。
 
-> **V0.25.x 功能回顧**:
-> - PWA 離線支援、Mobile Bottom Nav、Error Boundaries、API 429 優雅降級
+### 🤖 AI 高可用與穩定性
+- **🔑 多 Key 輪換**: 支援 5 個 Gemini API Key 自動切換。
+- **🛡️ 每日限額**: 每用戶每日 20 次 AI 使用限制，確保服務穩定。
+- **🐛 Bug Fix**: 修復 V0.25 中「時區設置錯誤」及拆分後的「引用路徑錯誤」。
 
 ## 🚀 最新更新: V0.24.0 "Osaka Express" (主要功能回顧)
 
