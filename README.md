@@ -5,8 +5,8 @@
 [![Vite](https://img.shields.io/badge/Vite-5.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-10.x-orange.svg)](https://firebase.google.com/)
 
-## 🚀 V0.27.0-PreRelease: Security & Admin Suite (2025-12-20)
-本版本係 2025 年終安全性與架構總結前瞻版 (Pre-Release)，整合了完整的用戶管理、自動封鎖與後台升級：
+## 🚀 V0.27.0: Admin & Security Suite (2025-12-20)
+本版本係 2025 年終安全性與架構總結 (Milestone Release)，整合了完整的用戶管理、自動封鎖與後台升級：
 
 ### 🛡️ 全方位安全與管理 (Security & Admin)
 - **Autoban System**: 智能偵測濫華行為 (e.g. 1分鐘建立 >5 行程)，自動封鎖違規帳號。

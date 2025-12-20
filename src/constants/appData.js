@@ -4,9 +4,9 @@ import {
 
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
-export const ADMIN_EMAILS = ["jamiekwok416@gmail.com", "test@test.com"]; // User can add their email here
-export const APP_VERSION = 'V0.27.0-PreRelease';
-export const APP_VERSION_TAG = 'Pre-Revamp Milestone';
+export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
+export const APP_VERSION = 'V0.27.0';
+export const APP_VERSION_TAG = 'Admin & Security Suite';
 export const APP_LAST_UPDATE = '2025-12-20';
 
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";

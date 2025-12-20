@@ -4,10 +4,8 @@ import { doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from '../../firebase';
 import { parseImageDirectly, filterJunkItems } from '../../services/ai-parsing';
-import { getDaysArray } from '../../utils/tripUtils';
+import { getDaysArray, glassCard } from '../../utils/tripUtils';
 
-// Premium UI Classes
-const glassCard = (isDarkMode) => isDarkMode ? "bg-gray-900/60 backdrop-blur-md border border-white/10 text-white shadow-xl" : "bg-white/80 backdrop-blur-md border border-white/20 text-gray-900 shadow-xl";
 
 const IMPORT_TYPES = [
     { id: 'screenshot', label: '行程截圖', icon: Image, desc: '上傳行程圖片，AI 自動識別', color: 'indigo' },

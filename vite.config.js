@@ -92,6 +92,6 @@ export default defineConfig({
   },
   define: {
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
-    __APP_VERSION__: JSON.stringify('V0.20.0')
+    __APP_VERSION__: JSON.stringify('V0.27.0-PreRelease')
   }
 })

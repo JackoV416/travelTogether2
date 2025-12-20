@@ -2,7 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
-/* SearchFilterBar Dark Mode Override */
+@layer base {
+  :root {
+    /* Glassmorphism 2.0 Tokens */
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    
+    /* Font */
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  .dark {
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-bg: rgba(17, 24, 39, 0.7); /* Zinc 900 @ 70% */
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900 transition-colors duration-300;
+  }
+  .dark body {
+    @apply bg-[#09090b] text-white; /* Zinc 950 */
+  }
+}
+
+/* SearchFilterBar Dark Mode Override (Legacy) */
 .dark input[type="text"].search-dark-input,
 input[type="text"].search-dark-override {
   background-color: #111827 !important;
@@ -13,37 +38,15 @@ input[type="text"].search-dark-override::placeholder {
   color: #9ca3af !important;
 }
 
-@layer base {
-  /* Custom Animations */
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
+@layer utilities {
+  /* Premium Glass Utilities */
+  .glass-card {
+    @apply backdrop-blur-md border border-[var(--glass-border)] bg-[var(--glass-bg)] shadow-[var(--glass-shadow)];
   }
 
-  @keyframes scaleIn {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  @keyframes slideInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  .glass-effect {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   /* Custom Scrollbar Styling */
@@ -53,102 +56,54 @@ input[type="text"].search-dark-override::placeholder {
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 10px;
+  }
+  .dark .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #cbd5e1; /* Slate 300 */
     border-radius: 10px;
     transition: background 0.3s ease;
   }
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #4b5563; /* Gray 600 */
+  }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+    background: #94a3b8; /* Slate 400 */
+  }
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #6b7280; /* Gray 500 */
   }
 
-  /* Smooth Animations for Utility Classes */
-  .animate-fade-in {
-    animation: fadeIn 0.4s ease-out;
-  }
-
-  /* Hide scrollbar for no-scrollbar class */
+  /* Hide scrollbar */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
-
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
 
-  /* ===== V0.19 Micro-Interactions ===== */
-  
-  /* Button Press Effect */
+  /* Micro-Interactions */
   .btn-press {
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    @apply transition-transform duration-100 active:scale-95;
   }
-  .btn-press:active {
-    transform: scale(0.95);
-  }
-  .btn-press:hover {
-    transform: scale(1.02);
+  
+  .btn-hover-glow {
+    @apply transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/20 hover:-translate-y-0.5;
   }
 
-  /* Success Checkmark Animation */
-  @keyframes successPop {
-    0% { transform: scale(0); opacity: 0; }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); opacity: 1; }
-  }
-  .animate-success {
-    animation: successPop 0.4s ease-out forwards;
-  }
-
-  /* Pulse/Shimmer Loading Effect */
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-  .animate-shimmer {
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-
-  /* Skeleton Loading */
-  @keyframes skeletonPulse {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 1; }
-  }
+  /* Skeleton Gradient Animation (Extended from Config) */
   .skeleton {
-    background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+    @apply animate-shimmer;
+    background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%); /* Gray 200 -> 100 -> 200 */
     background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 8px;
   }
   .dark .skeleton {
-    background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
-    background-size: 200% 100%;
-  }
-
-  /* Bounce In Animation */
-  @keyframes bounceIn {
-    0% { transform: scale(0.3); opacity: 0; }
-    50% { transform: scale(1.05); }
-    70% { transform: scale(0.9); }
-    100% { transform: scale(1); opacity: 1; }
-  }
-  .animate-bounce-in {
-    animation: bounceIn 0.5s ease-out;
-  }
-
-  /* Slide In Right */
-  @keyframes slideInRight {
-    from { transform: translateX(20px); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
-  .animate-slide-in-right {
-    animation: slideInRight 0.3s ease-out;
+    background: linear-gradient(90deg, #1f2937 25%, #374151 50%, #1f2937 75%); /* Gray 800 -> 700 -> 800 */
   }
 }

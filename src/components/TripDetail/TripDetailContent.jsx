@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { doc, updateDoc, arrayUnion, deleteDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import {
-    Calendar, Map as MapIcon, Edit3, CalendarDays, ShoppingBag, Wallet, DollarSign, FileText, Shield, Siren, FileCheck, NotebookPen, BrainCircuit, List, Users, UserPlus, Trash2, Plus, ChevronDown, Sparkles, PackageCheck, Share2, Globe, Clock, AlertTriangle, Upload, FileIcon, ArrowLeft, MoreVertical, X, Loader2, Menu, Footprints as FootprintsIcon, Image as ImageIcon
+    Calendar, Map as MapIcon, Edit3, CalendarDays, ShoppingBag, Wallet, DollarSign, FileText, Shield, Siren, FileCheck, NotebookPen, BrainCircuit, List, Users, UserPlus, Trash2, Plus, ChevronDown, Sparkles, PackageCheck, Share2, Globe, Clock, AlertTriangle, Upload, FileIcon, ArrowLeft, MoreVertical, X, Loader2, Menu, Footprints as FootprintsIcon, Image as ImageIcon, MapPin
 } from 'lucide-react';
 import MobileBottomNav from '../Shared/MobileBottomNav';
 import ActiveUsersList from './ActiveUsersList';
@@ -12,6 +12,7 @@ import {
 } from './tabs';
 import TripSettingsModal from '../Modals/TripSettingsModal';
 import MemberSettingsModal from '../Modals/MemberSettingsModal';
+import UserProfileModal from '../Modals/UserProfileModal'; // New Import
 import InviteModal from '../Modals/InviteModal';
 import CreateTripModal from '../Modals/CreateTripModal';
 import ExportTripModal from '../Modals/ExportTripModal';
@@ -19,6 +20,7 @@ import AddActivityModal from '../Modals/AddActivityModal';
 import AIGeminiModal from '../Modals/AIGeminiModal';
 import TripExportImportModal from '../Modals/TripExportImportModal';
 import SmartExportModal from '../Modals/SmartExportModal';
+
 import {
     glassCard, getHolidayMap, getLocalizedCountryName, getLocalizedCityName, getSafeCountryInfo, formatDate,
     getDaysArray, getTripSummary, calculateDebts, getTimeDiff, getWeatherForecast, buildDailyReminder,
@@ -31,11 +33,12 @@ import { exportToBeautifulPDF } from '../../services/pdfExport';
 import { COUNTRIES_DATA, DEFAULT_BG_IMAGE, CURRENCIES, INSURANCE_SUGGESTIONS, INSURANCE_RESOURCES, CITY_IMAGES } from '../../constants/appData';
 import { buttonPrimary } from '../../constants/styles';
 
-const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, isPreview, globalSettings, exchangeRates, convAmount, setConvAmount, convTo, setConvTo, onOpenSmartImport, weatherData, requestedTab, onTabHandled, requestedItemId, onItemHandled, isBanned }) => {
+const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, isPreview, globalSettings, exchangeRates, convAmount, setConvAmount, convTo, setConvTo, onOpenSmartImport, weatherData, requestedTab, onTabHandled, requestedItemId, onItemHandled, isBanned, isAdmin }) => {
     // ============================================
     // UI STATE HOOKS
     // ============================================
     const [activeTab, setActiveTab] = useState('itinerary');
+    const [viewingMember, setViewingMember] = useState(null); // New State
     const [isAddModal, setIsAddModal] = useState(false);
     const [isInviteModal, setIsInviteModal] = useState(false);
     const [isTripSettingsOpen, setIsTripSettingsOpen] = useState(false);
@@ -65,6 +68,74 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     // SYNC EFFECTS
     // ============================================
 
+    // 🚀 Critical State Logic (Hoisted for dependencies)
+    const days = getDaysArray(trip.startDate, trip.endDate);
+    const currentDisplayDate = selectDate || days[0];
+
+    // 🚀 Restored Permission Logic (Enhanced for Email Invites)
+    const myMemberEntry = trip.members?.find(m => m.id === user.uid || m.id === user.email);
+    const myRole = isPreview ? (trip.sharePermission === 'edit' && user.uid ? 'editor' : 'viewer') : (myMemberEntry?.role || 'viewer');
+    const isOwner = !isPreview && (myRole === 'owner' || isSimulation);
+    const canEdit = (myRole === 'owner' || myRole === 'editor' || isSimulation);
+
+    // 🚀 Auto-Claim Invite Logic
+    useEffect(() => {
+        if (!user.uid || !user.email || isSimulation || isPreview) return;
+
+        // Check if I'm invited by Email but haven't claimed key (still pending/email id)
+        const pendingInvite = trip.members?.find(m => m.id === user.email && m.status === 'pending');
+
+        if (pendingInvite) {
+            // Auto-claim the spot: Update ID to UID, remove pending status
+            const claimInvite = async () => {
+                const newMembers = trip.members.map(m =>
+                    m.id === user.email ? { ...m, id: user.uid, status: 'active', claimedAt: Date.now() } : m
+                );
+                await updateDoc(doc(db, "trips", trip.id), { members: newMembers });
+            };
+            claimInvite();
+        }
+    }, [trip.members, user.uid, user.email, trip.id, isSimulation, isPreview]);
+
+    // 🚀 Auto-Sync User Profile (Avatar & Name)
+    useEffect(() => {
+        if (!user.uid || isSimulation || isPreview) return;
+
+        const myEntry = trip.members?.find(m => m.id === user.uid);
+        if (myEntry) {
+            // Check if profile needs update (Avatar, Name, or Email changed)
+            if (myEntry.photoURL !== user.photoURL || (user.displayName && myEntry.name !== user.displayName) || myEntry.email !== user.email) {
+                const syncProfile = async () => {
+                    // 1. Update Trip Member List
+                    const newMembers = trip.members.map(m =>
+                        m.id === user.uid ? { ...m, photoURL: user.photoURL, name: user.displayName || m.name, email: user.email } : m
+                    );
+                    await updateDoc(doc(db, "trips", trip.id), { members: newMembers });
+
+                    // 2. Ensure Global User Record Exists (Fix for Admin Panel "Unknown User")
+                    await import('firebase/firestore').then(m => {
+                        m.setDoc(m.doc(db, "users", user.uid), {
+                            email: user.email,
+                            displayName: user.displayName,
+                            photoURL: user.photoURL,
+                            lastLogin: m.serverTimestamp(),
+                            uid: user.uid
+                        }, { merge: true });
+                    });
+                };
+                // Debounce slightly to avoid rapid updates on load
+                const timer = setTimeout(syncProfile, 2000);
+                return () => clearTimeout(timer);
+            } else {
+                // Even if trip member list is fine, ensure global user record exists periodically (lazy check)
+                // This covers the case where the user exists in trip but doc is missing in 'users'
+                // We'll do this once per session/mount effectively via a separate check or just assume typical usage covers it.
+                // Actually, let's just force a check if we suspect they might be missing. 
+                // For now, attaching to the discrepancy check is good, but let's add a "Force Sync" via this side-effect if the user doc is missing.
+            }
+        }
+    }, [trip.members, user.uid, user.photoURL, user.displayName, trip.id, isSimulation, isPreview]);
+
     useEffect(() => {
         const visaStore = trip.visa || {};
         const myVisa = isSimulation ? visaStore.sim : (visaStore[user.uid] || visaStore.default);
@@ -92,14 +163,18 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     }, [trip.cities]);
 
     // Local Carousel State
+    // Local Carousel State
     const [carouselIndex, setCarouselIndex] = useState(0);
-    const currentCity = (trip.cities && trip.cities.length > 0) ? trip.cities[carouselIndex] : trip.city;
-    // Fallback: if trip.cities is empty/undefined, use trip.city
-    // If trip.cities has length 1, index 0 is used.
+
+    // 🚀 Dynamic Daily City Logic (Top Priority)
+    // 1. Daily Override (Auto-Detected or Manual)
+    // 2. Carousel (if multi-city)
+    // 3. Trip Main City
+    const dailyLocation = trip.locations?.[currentDisplayDate];
+    const headerCity = dailyLocation?.city || ((trip.cities && trip.cities.length > 0) ? trip.cities[carouselIndex] : trip.city);
 
     // Determine the background image source
-    // Priority: 1. City Image (from CITY_IMAGES) -> 2. Country Image (from COUNTRIES_DATA) -> 3. Default
-    const currentHeaderImage = CITY_IMAGES[currentCity] || COUNTRIES_DATA[trip.country]?.image || DEFAULT_BG_IMAGE;
+    const currentHeaderImage = CITY_IMAGES[headerCity] || COUNTRIES_DATA[trip.country]?.image || DEFAULT_BG_IMAGE;
 
     useEffect(() => {
         setGlobalBg(currentHeaderImage);
@@ -122,14 +197,11 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     // ============================================
     // DERIVED VALUES
     // ============================================
-
-    const myRole = isPreview ? (trip.sharePermission === 'edit' && user.uid ? 'editor' : 'viewer') : (trip.members?.find(m => m.id === user.uid)?.role || 'viewer');
-    const isOwner = !isPreview && (myRole === 'owner' || isSimulation);
-    const canEdit = (myRole === 'owner' || myRole === 'editor' || isSimulation);
-
-    const days = getDaysArray(trip.startDate, trip.endDate);
-    const currentDisplayDate = selectDate || days[0];
-    const realWeather = weatherData?.[trip.city];
+    // Weather uses the same headerCity logic (Daily -> Carousel/Main)
+    // Actually for Weather it should strictly follow the Daily plan, not carousel if no daily set.
+    // If no daily set, use trip.city (Header uses carousel for aesthetics, Weather should be accurate)
+    const weatherCity = dailyLocation?.city || trip.city;
+    const realWeather = weatherData?.[weatherCity];
     const mockWeather = getWeatherForecast(trip.country, realWeather?.temp);
 
     const dailyWeather = React.useMemo(() => {
@@ -150,7 +222,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     const countryInfo = getSafeCountryInfo(trip.country);
     const currentLang = globalSettings?.lang || 'zh-TW';
     const displayCountry = getLocalizedCountryName(trip.country, currentLang);
-    const displayCity = getLocalizedCityName(trip.city || (trip.cities?.[0]) || '', currentLang);
+    const displayCity = getLocalizedCityName(headerCity || '', currentLang);
     const itineraryItems = trip.itinerary?.[currentDisplayDate] || [];
     const dailyReminder = buildDailyReminder(currentDisplayDate, itineraryItems);
 
@@ -177,20 +249,51 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     const handleSaveItem = async (data) => {
         if (!canEdit) return alert("權限不足");
         if (isSimulation) return alert("模擬模式");
-        const newItem = { id: data.id || Date.now().toString(), ...data, createdBy: { name: user.displayName, id: user.uid } };
+
+        let newItem = {
+            id: data.id || Date.now().toString(),
+            ...data,
+            createdBy: { name: user.displayName || 'Unknown', id: user.uid }
+        };
+
+        // Sanitize: Remove undefined values (Firestore crashes on undefined)
+        newItem = JSON.parse(JSON.stringify(newItem));
+
         if (data.type === 'shopping_plan') await updateDoc(doc(db, "trips", trip.id), { shoppingList: arrayUnion({ ...newItem, bought: false }) });
         else if (data.type === 'shopping') await updateDoc(doc(db, "trips", trip.id), { budget: arrayUnion({ ...newItem, category: 'shopping' }) });
         else if (data.type === 'packing') await updateDoc(doc(db, "trips", trip.id), { packingList: arrayUnion({ ...newItem, category: data.category || 'misc', checked: false }) });
         else {
             await updateDoc(doc(db, "trips", trip.id), { [`itinerary.${currentDisplayDate}`]: arrayUnion(newItem) });
             if (data.cost > 0) await updateDoc(doc(db, "trips", trip.id), { budget: arrayUnion({ ...newItem, category: data.type }) });
+
+            // 🚀 Auto City Detection: If transport/flight with arrival city, auto-set next day's location
+            if ((data.type === 'transport' || data.type === 'flight') && (data.arrival || data.details?.arrival)) {
+                const arrivalCity = data.arrival || data.details?.arrival;
+                const days = getDaysArray(trip.startDate, trip.endDate);
+                const currentIdx = days.indexOf(currentDisplayDate);
+                if (currentIdx >= 0 && currentIdx < days.length - 1) {
+                    const nextDate = days[currentIdx + 1];
+                    // Only auto-set if next day doesn't have a custom location already
+                    if (!trip.locations?.[nextDate]) {
+                        await updateDoc(doc(db, "trips", trip.id), { [`locations.${nextDate}`]: { city: arrivalCity, country: trip.country } });
+                    }
+                }
+            }
         }
         setIsAddModal(false);
     };
 
     const handleInvite = async (email, role) => {
         if (isSimulation) return alert("模擬模式");
-        await updateDoc(doc(db, "trips", trip.id), { members: arrayUnion({ id: email, name: email.split('@')[0], role }) });
+        await updateDoc(doc(db, "trips", trip.id), {
+            members: arrayUnion({
+                id: email,
+                name: email.split('@')[0],
+                role,
+                status: 'pending',
+                invitedAt: Date.now()
+            })
+        });
     };
 
     const handleOpenAIModal = (mode = 'full') => {
@@ -624,7 +727,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                         <div>
                             <div className="text-[10px] text-indigo-300 uppercase font-black tracking-widest mb-2">TRIP OVERVIEW</div>
                             <div className="flex items-center gap-2 mb-4">
-                                <span className="bg-indigo-500/80 text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur-md uppercase tracking-wider font-bold shadow-lg shadow-indigo-500/20">{displayCountry} {getLocalizedCityName(currentCity, currentLang)}</span>
+                                <span className="bg-indigo-500/80 text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur-md uppercase tracking-wider font-bold shadow-lg shadow-indigo-500/20">{displayCountry} {displayCity}</span>
                                 {trip.isPublic && <span className="bg-emerald-500/80 text-white text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-emerald-500/20"><Globe className="w-3 h-3" /> 公開</span>}
                                 {timeDiff !== 0 && <span className={`text-[10px] px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-md ${timeDiff > 0 ? 'bg-orange-500/20 text-orange-200' : 'bg-blue-500/20 text-blue-200'}`}>{timeDiff > 0 ? `+${timeDiff}h` : `${timeDiff}h`}</span>}
                             </div>
@@ -652,7 +755,39 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
 
                             <div className="flex flex-wrap items-center gap-3 text-[11px] md:text-sm opacity-80 font-medium mb-8">
                                 <span className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg border border-white/5"><Calendar className="w-3.5 h-3.5 text-indigo-400" /> {formatDate(trip.startDate)} - {formatDate(trip.endDate)}</span>
+                                <span className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg border border-white/5"><Calendar className="w-3.5 h-3.5 text-indigo-400" /> {formatDate(trip.startDate)} - {formatDate(trip.endDate)}</span>
                                 <span className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg border border-white/5"><Clock className="w-3.5 h-3.5 text-purple-400" /> {getDaysArray(trip.startDate, trip.endDate).length} 天行程</span>
+                                {/* 🚀 Dynamic Header Location */}
+                                <span className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg border border-white/5 font-bold text-white"><MapPin className="w-3.5 h-3.5 text-emerald-400" /> {displayCity}</span>
+
+                                {/* 🚀 Member Avatars (Persistent) */}
+                                <div className="flex items-center gap-1 pl-2 border-l border-white/10 ml-2">
+                                    <div className="flex -space-x-2">
+                                        {trip.members?.slice(0, 5).map(m => (
+                                            <div key={m.id} onClick={() => setViewingMember(m)} className="relative group cursor-pointer" title={`${m.name} (${m.role})`}>
+                                                {m.photoURL ? (
+                                                    <img src={m.photoURL} alt={m.name} className={`w-8 h-8 rounded-full object-cover border-2 border-black/20 ${m.id === user.uid ? 'ring-2 ring-indigo-500' : ''}`} />
+                                                ) : (
+                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-black/20 text-white ${m.id === user.uid ? 'bg-indigo-500' : 'bg-gray-600'}`}>
+                                                        {m.name?.[0]?.toUpperCase() || '?'}
+                                                    </div>
+                                                )}
+                                                {/* Pending Badge */}
+                                                {m.status === 'pending' && <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-yellow-500 rounded-full border-2 border-gray-900"></span>}
+                                                {m.role === 'owner' && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-indigo-500 rounded-full border-2 border-gray-900 flex items-center justify-center"><span className="text-[6px]">👑</span></span>}
+                                            </div>
+                                        ))}
+                                        {(trip.members?.length || 0) > 5 && (
+                                            <div className="w-8 h-8 rounded-full bg-gray-700/80 backdrop-blur border-2 border-black/20 flex items-center justify-center text-[10px] font-bold text-white">
+                                                +{trip.members.length - 5}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <button onClick={() => setIsMemberModalOpen(true)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors ml-1" title="管理成員">
+                                        <Plus className="w-4 h-4 text-white" />
+                                    </button>
+                                </div>
+
                                 <ActiveUsersList tripId={trip.id} user={user} activeTab={activeTab} language={globalSettings.language} />
                             </div>
                         </div>
@@ -1017,9 +1152,10 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
             {isMobileMoreOpen && (
                 <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm md:hidden animate-fade-in" onClick={() => setIsMobileMoreOpen(false)}>
                     <div
-                        className={`absolute bottom-24 left-4 right-4 rounded-2xl p-6 shadow-2xl grid grid-cols-4 gap-4 animate-slide-up-fade ${isDarkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}
+                        className={`${glassCard(isDarkMode)} p-6 mb-6 flex flex-col md:flex-row gap-6 items-center md:items-start relative overflow-hidden group`}
                         onClick={e => e.stopPropagation()}
                     >
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 opacity-50 group-hover:opacity-80 transition-opacity duration-1000"></div>
                         <div className="col-span-4 mb-2 flex justify-between items-center opacity-70">
                             <span className="text-xs font-bold uppercase tracking-wider">更多功能</span>
                             <button onClick={() => setIsMobileMoreOpen(false)}><X className="w-5 h-5" /></button>
@@ -1100,6 +1236,13 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                     </div>
                 )
             }
+            <UserProfileModal
+                isOpen={!!viewingMember}
+                onClose={() => setViewingMember(null)}
+                user={viewingMember}
+                isAdmin={isAdmin}
+                isDarkMode={isDarkMode}
+            />
         </div >
     );
 };

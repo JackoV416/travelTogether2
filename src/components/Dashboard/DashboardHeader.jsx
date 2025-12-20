@@ -35,7 +35,7 @@ const DashboardHeader = ({
                 <div className="flex flex-wrap gap-3">
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="px-5 py-3 rounded-xl bg-indigo-600 text-white font-bold flex items-center gap-2 transition-all hover:scale-105"
+                        className="px-5 py-3 rounded-xl bg-indigo-600 text-white font-bold flex items-center gap-2 btn-hover-glow"
                     >
                         <Plus className="w-4 h-4" /> 打開建立視窗
                     </button>
@@ -47,7 +47,7 @@ const DashboardHeader = ({
                     </button>
                     <button
                         onClick={() => setIsSmartImportModalOpen(true)}
-                        className="px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-sm flex items-center gap-2 hover:shadow-lg transition-all"
+                        className="px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-sm flex items-center gap-2 btn-hover-glow"
                     >
                         <Upload className="w-4 h-4" /> 智能匯入
                     </button>

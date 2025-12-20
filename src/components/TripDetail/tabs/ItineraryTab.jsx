@@ -5,9 +5,9 @@ import { Search } from 'lucide-react';
 import {
     Map as MapIcon, MapPinned, List, Navigation, PlaneTakeoff, Hotel, Utensils,
     Bus, ShoppingBag, Clock, CalendarDays, GripVertical, MapPin, BusFront, Car, Route, TrainFront, Wand2,
-    Plus, Sparkles, BrainCircuit, Edit3, Info, Quote, CheckSquare, Trash2, ExternalLink, FileText, Loader2
+    Plus, Sparkles, BrainCircuit, Edit3, Info, Quote, CheckSquare, Trash2, ExternalLink, FileText, Loader2, ArrowRight
 } from 'lucide-react';
-import { CURRENCIES } from '../../../constants/appData';
+import { CURRENCIES, COUNTRIES_DATA } from '../../../constants/appData';
 import { suggestTransportBetweenSpots } from '../../../services/ai-parsing';
 import { formatDuration, getSmartItemImage } from '../../../utils/tripUtils';
 
@@ -298,14 +298,52 @@ const ItineraryTab = ({
                 <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
                     <div className="flex items-center gap-3">
                         <div className="font-bold text-lg">{formatDate(currentDisplayDate)}</div>
-                        {/* Daily Location Badge */}
-                        <button
-                            onClick={handleOpenLocationModal}
-                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 hover:bg-gray-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
-                        >
-                            <MapPin className="w-3 h-3 text-indigo-500" />
-                            {trip.locations?.[currentDisplayDate]?.city || trip.locations?.[currentDisplayDate]?.country || (trip.city ? `${trip.city} (預設)` : "設定位置")}
-                        </button>
+                        {/* 🚀 Dynamic Daily Location: Morning/Afternoon Split */}
+                        {(() => {
+                            const transportItem = filteredItems.find(i => (i.type === 'transport' || i.type === 'flight') && i.arrival);
+
+                            // Scenario A: Auto-Detected Multi-City (Morning -> Afternoon)
+                            if (transportItem) {
+                                const startCity = transportItem.details?.location || trip.locations?.[currentDisplayDate]?.city || trip.city || 'Origin';
+                                const endCity = transportItem.arrival;
+                                const time = transportItem.time || '??:??';
+
+                                return (
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={handleOpenLocationModal}
+                                            className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold border transition-all group ${isDarkMode ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/20' : 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'}`}
+                                        >
+                                            <div className="flex items-center gap-1.5 opacity-80">
+                                                <MapPin className="w-3 h-3" />
+                                                <span>{startCity}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1 text-[10px] opacity-60 px-2 border-l border-r border-current/20">
+                                                <Clock className="w-2.5 h-2.5" />
+                                                <span>{time}</span>
+                                                <ArrowRight className="w-2.5 h-2.5" />
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-indigo-500 dark:text-indigo-400">
+                                                <MapPin className="w-3 h-3 fill-current" />
+                                                <span>{endCity}</span>
+                                            </div>
+                                        </button>
+                                        <span className="text-[10px] opacity-40 font-bold hidden md:inline-block">(早 / 晚)</span>
+                                    </div>
+                                );
+                            }
+
+                            // Scenario B: Single City (Standard)
+                            return (
+                                <button
+                                    onClick={handleOpenLocationModal}
+                                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 hover:bg-gray-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                                >
+                                    <MapPin className="w-3 h-3 text-indigo-500" />
+                                    {trip.locations?.[currentDisplayDate]?.city || trip.locations?.[currentDisplayDate]?.country || (trip.city ? `${trip.city} (預設)` : "設定位置")}
+                                </button>
+                            );
+                        })()}
                     </div>
 
                     <div className="flex gap-2 flex-wrap justify-end items-center">

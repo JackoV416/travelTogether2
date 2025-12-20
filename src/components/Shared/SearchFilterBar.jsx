@@ -20,25 +20,24 @@ const SearchFilterBar = ({
             {/* Search Input */}
             <div className="relative flex-1">
                 <Search
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 z-10 pointer-events-none"
-                    style={{ color: isDarkMode !== false ? '#6b7280' : '#9ca3af' }}
+                    className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 z-10 pointer-events-none transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                        }`}
                 />
                 <input
                     type="text"
                     value={searchValue}
                     onChange={(e) => onSearchChange(e.target.value)}
                     placeholder={placeholder}
-                    className="w-full pl-9 pr-4 py-2.5 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:outline-none transition-all text-sm font-medium border shadow-sm"
-                    style={{
-                        backgroundColor: isDarkMode !== false ? '#1f2937' : '#ffffff',
-                        borderColor: isDarkMode !== false ? '#4b5563' : '#e5e7eb',
-                        color: isDarkMode !== false ? '#ffffff' : '#111827'
-                    }}
+                    className={`w-full pl-9 pr-4 py-2.5 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:outline-none transition-all text-sm font-medium border shadow-sm ${isDarkMode
+                            ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500'
+                            : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400'
+                        }`}
                 />
                 {searchValue && (
                     <button
                         onClick={() => onSearchChange('')}
-                        className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full transition-colors ${isDarkMode !== false ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
+                        className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full transition-colors ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'
+                            }`}
                     >
                         <X className="w-3 h-3 text-gray-400" />
                     </button>

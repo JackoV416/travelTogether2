@@ -3,9 +3,8 @@ import { X, Share2, FileJson, FileText, FileImage, Calendar, Link as LinkIcon, C
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { exportToICS, generateShareableText } from '../../services/pdfExport';
+import { glassCard } from '../../utils/tripUtils';
 
-// Premium UI Classes
-const glassCard = (isDarkMode) => isDarkMode ? "bg-gray-900/60 backdrop-blur-md border border-white/10 text-white shadow-xl" : "bg-white/80 backdrop-blur-md border border-white/20 text-gray-900 shadow-xl";
 
 const EXPORT_TYPES = [
     { id: 'json', label: 'JSON', icon: FileJson, desc: '完整資料結構', color: 'blue' },

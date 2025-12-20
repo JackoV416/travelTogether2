@@ -18,18 +18,41 @@ const MemberSettingsModal = ({ isOpen, onClose, members, onUpdateRole, isDarkMod
                     {members.map(m => (
                         <div key={m.id} className={`flex justify-between items-center p-4 border rounded-xl transition-all ${isDarkMode ? 'border-gray-700 bg-gray-800/50 hover:bg-gray-800' : 'border-gray-200 bg-gray-50 hover:bg-gray-100'}`}>
                             <div className="flex items-center gap-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'}`}>
+                                <div className={`relative w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'}`}>
                                     {getUserInitial(m.name)}
+                                    {m.status === 'pending' && <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-yellow-500 rounded-full border-2 border-white dark:border-gray-800"></span>}
                                 </div>
-                                <span className="text-sm font-bold">{m.name}</span>
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-bold flex items-center gap-2">
+                                        {m.name}
+                                        {m.status === 'pending' && <span className="text-[9px] bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 px-1.5 py-0.5 rounded font-black uppercase tracking-wider">Pending</span>}
+                                    </span>
+                                    <span className="text-[10px] opacity-50">{m.id}</span>
+                                </div>
                             </div>
 
                             {m.role === 'owner' ? <span className="text-[10px] uppercase font-bold tracking-wider bg-indigo-500/10 text-indigo-500 px-3 py-1.5 rounded-lg border border-indigo-500/20">Owner</span> : (
-                                <select value={m.role} onChange={(e) => onUpdateRole(m.id, e.target.value)} className={`bg-transparent text-xs font-bold opacity-80 border-none outline-none focus:ring-0 cursor-pointer hover:opacity-100 py-1`}>
-                                    <option value="editor">Editor</option>
-                                    <option value="viewer">Viewer</option>
-                                    <option value="remove" className="text-red-500">Remove</option>
-                                </select>
+                                <div className="relative group/menu">
+                                    <button className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${isDarkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' : 'bg-white border-gray-200 hover:bg-gray-100'}`}>
+                                        {m.role === 'editor' && <span className="w-2 h-2 rounded-full bg-emerald-500"></span>}
+                                        {m.role === 'viewer' && <span className="w-2 h-2 rounded-full bg-gray-400"></span>}
+                                        <span className="uppercase">{m.role}</span>
+                                    </button>
+
+                                    {/* Hover Menu */}
+                                    <div className="absolute right-0 top-full mt-1 w-32 py-1 rounded-xl shadow-xl border backdrop-blur-xl z-50 opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all transform origin-top-right translate-y-2 group-hover/menu:translate-y-0 text-left overflow-hidden bg-white/90 dark:bg-gray-900/95 border-gray-200 dark:border-gray-700">
+                                        <button onClick={() => onUpdateRole(m.id, 'editor')} className={`w-full text-left px-4 py-2 text-xs font-bold hover:bg-indigo-500 hover:text-white transition-colors flex items-center gap-2 ${m.role === 'editor' ? 'text-indigo-500' : 'text-gray-600 dark:text-gray-300'}`}>
+                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> Editor
+                                        </button>
+                                        <button onClick={() => onUpdateRole(m.id, 'viewer')} className={`w-full text-left px-4 py-2 text-xs font-bold hover:bg-indigo-500 hover:text-white transition-colors flex items-center gap-2 ${m.role === 'viewer' ? 'text-indigo-500' : 'text-gray-600 dark:text-gray-300'}`}>
+                                            <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div> Viewer
+                                        </button>
+                                        <div className="h-px bg-gray-200 dark:bg-gray-700 my-1 mx-2"></div>
+                                        <button onClick={() => onUpdateRole(m.id, 'remove')} className="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-500 hover:text-white transition-colors flex items-center gap-2">
+                                            Remove
+                                        </button>
+                                    </div>
+                                </div>
                             )}
                         </div>
                     ))}

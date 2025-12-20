@@ -1,13 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { X, MessageCircle, Bug, Lightbulb, CheckCircle, Clock, Trash2, User, Monitor, ExternalLink, Image as ImageIcon, Video, Users, Shield, ShieldAlert, BadgeAlert, Lock, Search, Plus, UserX, Unlock } from 'lucide-react';
+import { X, MessageCircle, Bug, Lightbulb, CheckCircle, Clock, Trash2, User, Monitor, ExternalLink, Image as ImageIcon, Video, Users, Shield, ShieldAlert, BadgeAlert, Lock, Search, Plus, UserX, Unlock, Crown } from 'lucide-react';
 import { collection, query, orderBy, onSnapshot, deleteDoc, doc, updateDoc, getDocs, setDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { buttonPrimary } from '../../constants/styles';
 import { ADMIN_EMAILS } from '../../constants/appData';
 import { inputClasses } from '../../utils/tripUtils';
 
-const AdminFeedbackModal = ({ isOpen, onClose, isDarkMode }) => {
+const AdminFeedbackModal = ({ isOpen, onClose, isDarkMode, adminEmails = [], onUpdateAdminList }) => {
     const [activeTab, setActiveTab] = useState('feedback'); // feedback, users, admins
+
+    // Toggle Admin status directly from User list
+    const handleToggleAdmin = async (email, isCurrentAdmin) => {
+        if (!email) return;
+        if (confirm(`確定要${isCurrentAdmin ? '移除' : '設為'}管理員？`)) {
+            const newList = isCurrentAdmin
+                ? adminEmails.filter(e => e !== email)
+                : [...adminEmails, email];
+            onUpdateAdminList?.(newList);
+        }
+    };
+
+
     const [feedbacks, setFeedbacks] = useState([]);
     const [users, setUsers] = useState([]);
     const [dynamicAdmins, setDynamicAdmins] = useState([]);
@@ -223,54 +236,71 @@ const AdminFeedbackModal = ({ isOpen, onClose, isDarkMode }) => {
 
                             {/* User Grid */}
                             <div className="grid grid-cols-1 gap-3 pt-2">
-                                {filteredUsers.map(user => (
-                                    <div key={user.id} className={`p-4 rounded-xl border transition-all group ${isDarkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-750' : 'bg-white border-gray-200 hover:shadow-sm'} ${user.isBanned ? 'border-red-500/50 bg-red-500/5' : ''}`}>
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div className="flex items-center gap-4 min-w-0">
-                                                {/* Avatar */}
-                                                <div className="relative">
-                                                    {user.photoURL ? (
-                                                        <img src={user.photoURL} alt={user.displayName} className={`w-12 h-12 rounded-full object-cover border-2 ${user.isBanned ? 'border-red-500 grayscale' : 'border-indigo-500/20'}`} />
-                                                    ) : (
-                                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg border-2 ${user.isBanned ? 'bg-red-500 border-red-500' : 'bg-indigo-500 border-indigo-500/20'}`}>
-                                                            {user.displayName?.[0] || 'U'}
+                                {[...users].sort((a, b) => (b.lastLogin?.seconds || 0) - (a.lastLogin?.seconds || 0)).filter(u => u.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) || u.email?.toLowerCase().includes(searchTerm.toLowerCase()) || u.id.includes(searchTerm)).map(user => {
+                                    const displayEmail = user.email || (user.id && user.id.includes('@') ? user.id : null);
+                                    const displayName = user.displayName || (displayEmail ? displayEmail.split('@')[0] : `User ${user.id.slice(0, 6)}`);
+                                    const hasValidEmail = !!displayEmail;
+
+                                    return (
+                                        <div key={user.id} className="relative group p-4 rounded-xl border border-transparent hover:border-indigo-500/20 hover:bg-indigo-500/5 transition-all">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-4 min-w-0">
+                                                    {/* Avatar */}
+                                                    <div className="relative">
+                                                        {user.photoURL ? (
+                                                            <img src={user.photoURL} alt={displayName} className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-sm" />
+                                                        ) : (
+                                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold text-white shadow-sm ${user.isBanned ? 'bg-red-500' : 'bg-indigo-500'}`}>
+                                                                {displayName[0]?.toUpperCase()}
+                                                            </div>
+                                                        )}
+                                                        {user.isBanned && (
+                                                            <div className="absolute -bottom-1 -right-1 bg-red-600 text-white p-1 rounded-full border-2 border-white dark:border-gray-900">
+                                                                <Lock className="w-3 h-3" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Info */}
+                                                    <div className="min-w-0 space-y-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <h4 className="font-bold text-sm truncate">{displayName}</h4>
+                                                            {user.isBanned && <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-wider">BANNED</span>}
                                                         </div>
-                                                    )}
-                                                    {user.isBanned && (
-                                                        <div className="absolute -bottom-1 -right-1 bg-red-600 text-white p-1 rounded-full border-2 border-white dark:border-gray-900">
-                                                            <Lock className="w-3 h-3" />
+                                                        <div className="text-xs opacity-60 font-mono truncate select-all">{displayEmail || 'No Email'}</div>
+                                                        <div className="flex items-center gap-3 text-[10px] opacity-40">
+                                                            <span className="font-mono select-all" title={user.id}>ID: {user.id.slice(0, 8)}...</span>
+                                                            <span>•</span>
+                                                            <span>Last: {user.lastLogin?.seconds ? new Date(user.lastLogin.seconds * 1000).toLocaleDateString() : (user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'New User')}</span>
                                                         </div>
-                                                    )}
+                                                    </div>
                                                 </div>
 
-                                                {/* Info */}
-                                                <div className="min-w-0 space-y-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <h4 className="font-bold text-sm truncate">{user.displayName || 'No Name'}</h4>
-                                                        {user.isBanned && <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-wider">BANNED</span>}
-                                                    </div>
-                                                    <div className="text-xs opacity-60 font-mono truncate select-all">{user.email}</div>
-                                                    <div className="flex items-center gap-3 text-[10px] opacity-40">
-                                                        <span className="font-mono select-all" title="User ID">ID: {user.id.slice(0, 8)}...</span>
-                                                        <span>•</span>
-                                                        <span>Last: {user.lastLogin?.seconds ? new Date(user.lastLogin.seconds * 1000).toLocaleDateString() : 'N/A'}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                                {/* Actions */}
+                                                <div className="flex flex-col items-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {/* Admin Toggle */}
+                                                    <button
+                                                        onClick={() => hasValidEmail && handleToggleAdmin(displayEmail, adminEmails.includes(displayEmail))}
+                                                        disabled={!hasValidEmail || ADMIN_EMAILS.includes(displayEmail)}
+                                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${displayEmail && adminEmails.includes(displayEmail) ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-600' : 'bg-gray-100 text-gray-600 hover:bg-indigo-500 hover:text-white dark:bg-gray-700 dark:text-gray-300'} ${(!hasValidEmail || ADMIN_EMAILS.includes(displayEmail)) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        title={!hasValidEmail ? "No Valid Email" : (ADMIN_EMAILS.includes(displayEmail) ? "System Core Admin" : "Toggle Admin Rights")}
+                                                    >
+                                                        <Crown className="w-3 h-3" />
+                                                        {displayEmail && adminEmails.includes(displayEmail) ? "移除管理員" : "設為管理員"}
+                                                    </button>
 
-                                            {/* Actions */}
-                                            <div className="flex flex-col items-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={() => handleToggleBan(user.id, user.isBanned)}
-                                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${user.isBanned ? 'bg-green-500 text-white shadow-lg shadow-green-500/20 hover:bg-green-600' : 'bg-gray-100 text-gray-600 hover:bg-red-500 hover:text-white dark:bg-gray-700 dark:text-gray-300'}`}
-                                                >
-                                                    {user.isBanned ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
-                                                    {user.isBanned ? "解除封鎖" : "封鎖帳戶"}
-                                                </button>
+                                                    <button
+                                                        onClick={() => handleToggleBan(user.id, user.isBanned)}
+                                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${user.isBanned ? 'bg-green-500 text-white shadow-lg shadow-green-500/20 hover:bg-green-600' : 'bg-gray-100 text-gray-600 hover:bg-red-500 hover:text-white dark:bg-gray-700 dark:text-gray-300'}`}
+                                                    >
+                                                        {user.isBanned ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                                                        {user.isBanned ? "解除封鎖" : "封鎖帳戶"}
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     )}

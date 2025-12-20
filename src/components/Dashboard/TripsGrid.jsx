@@ -37,7 +37,7 @@ const TripsGrid = ({
                 <div className="flex gap-2">
                     <button
                         onClick={() => setIsSmartImportModalOpen(true)}
-                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm flex items-center gap-2 btn-hover-glow"
                     >
                         <Upload className="w-4 h-4" /> 匯入
                     </button>
@@ -49,7 +49,7 @@ const TripsGrid = ({
                     </button>
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm flex items-center gap-2 hover:bg-indigo-700 transition-colors"
+                        className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm flex items-center gap-2 btn-hover-glow"
                     >
                         <Plus className="w-4 h-4" /> 建立
                     </button>
@@ -74,19 +74,20 @@ const TripsGrid = ({
                 />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {trips.map(t => (
-                        <TripCard
-                            key={t.id}
-                            trip={t}
-                            isDarkMode={isDarkMode}
-                            currentLang={currentLang}
-                            onSelect={onSelectTrip}
-                            setGlobalBg={setGlobalBg}
-                            cardWeather={(() => {
-                                const wData = weatherData?.[t.city];
-                                return getWeatherForecast(t.country, wData?.temp, wData?.desc, wData?.icon);
-                            })()}
-                        />
+                    {trips.map((t, index) => (
+                        <div key={t.id} className="animate-fade-in" style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}>
+                            <TripCard
+                                trip={t}
+                                isDarkMode={isDarkMode}
+                                currentLang={currentLang}
+                                onSelect={onSelectTrip}
+                                setGlobalBg={setGlobalBg}
+                                cardWeather={(() => {
+                                    const wData = weatherData?.[t.city];
+                                    return getWeatherForecast(t.country, wData?.temp, wData?.desc, wData?.icon);
+                                })()}
+                            />
+                        </div>
                     ))}
                     <div
                         className={`${glassCard(isDarkMode)} h-60 flex flex-col items-center justify-center text-center opacity-60 hover:opacity-100 cursor-pointer border-dashed hover:border-indigo-500 transition-all`}

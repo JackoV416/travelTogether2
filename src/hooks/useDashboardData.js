@@ -38,7 +38,7 @@ const useDashboardData = (user, globalSettings, exchangeRates) => {
             // Filter trips where user is a member
             const userTrips = s.docs
                 .map(d => ({ id: d.id, ...d.data() }))
-                .filter(t => t.members?.some(m => m.id === user.uid));
+                .filter(t => t.members?.some(m => m.id === user.uid || m.id === user.email));
             setTrips(userTrips);
             setLoadingTrips(false);
         }, (err) => {

@@ -15,7 +15,8 @@ import {
 } from '../constants/appData';
 import { convertCurrency } from '../services/exchangeRate';
 
-export const glassCard = (isDarkMode) => `backdrop-blur-sm border shadow-xl rounded-2xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${isDarkMode ? 'bg-gray-900/95 border-gray-700 text-gray-100 hover:border-gray-600' : 'bg-slate-50/95 border-gray-200 text-gray-900 hover:border-gray-300'}`;
+// Glassmorphism 2.0 - Premium Effect (Uses CSS Variables in index.css)
+export const glassCard = (isDarkMode) => `glass-card rounded-2xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl ${isDarkMode ? 'hover:border-gray-600' : 'hover:border-gray-300'}`;
 
 export const getHolidayMap = (region) => HOLIDAYS_BY_REGION[region] || HOLIDAYS_BY_REGION.Global;
 

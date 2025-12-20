@@ -41,6 +41,7 @@ import {
 
 import Dashboard from './components/Dashboard/Dashboard';
 import CreateTripModal from './components/Modals/CreateTripModal';
+import DashboardSkeleton from './components/Loaders/DashboardSkeleton';
 
 
 
@@ -124,7 +125,7 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
         <header className={`sticky top-0 z-50 p-4 transition-all duration-300 ${isDarkMode ? 'bg-gray-900/95 border-b border-gray-800' : 'bg-gray-50/95 border-b border-gray-200'} shadow-sm`}>
             <div className="flex items-center justify-between max-w-7xl mx-auto">
                 <div className="flex items-center gap-3">
-                    {onBack && <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-500/10"><ChevronLeft /></button>}
+                    {onBack && <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-500/10" aria-label="返回"><ChevronLeft /></button>}
                     <h1 className="text-lg font-bold truncate cursor-pointer" onClick={() => onViewChange && onViewChange('dashboard')}>{title}</h1>
                 </div>
                 <div className="flex items-center gap-3">
@@ -132,7 +133,7 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
 
                     {/* Notification */}
                     <div className="relative">
-                        <button onClick={handleBellClick} className="p-2 rounded-full hover:bg-gray-500/10 relative">
+                        <button onClick={handleBellClick} className="p-2 rounded-full hover:bg-gray-500/10 relative" aria-label="通知中心">
                             <Bell className="w-5 h-5" />
                             {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>}
                         </button>
@@ -166,7 +167,7 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                                     >
                                         <div className="flex justify-between items-center gap-2">
                                             <span className={`font-semibold ${n.type === 'warning' || n.type === 'error' ? 'text-orange-400' : ''}`}>{n.title || '系統通知'}</span>
-                                            <button onClick={(e) => { e.stopPropagation(); onRemoveNotification && onRemoveNotification(n.id); }} className="text-red-400 hover:text-red-600"><X className="w-3 h-3" /></button>
+                                            <button onClick={(e) => { e.stopPropagation(); onRemoveNotification && onRemoveNotification(n.id); }} className="text-red-400 hover:text-red-600" aria-label="移除通知"><X className="w-3 h-3" /></button>
                                         </div>
                                         <p className="opacity-80 leading-relaxed">{n.message}</p>
                                         <div className="flex justify-between text-[10px] opacity-60 mt-1">
@@ -185,7 +186,7 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
 
                     {/* Hover Menu */}
                     <div className="relative" onMouseEnter={() => setHoverMenu(true)} onMouseLeave={() => setHoverMenu(false)}>
-                        <button className="p-1 rounded-full border-2 border-transparent hover:border-indigo-500 transition-all">
+                        <button className="p-1 rounded-full border-2 border-transparent hover:border-indigo-500 transition-all" aria-label="用戶選單">
                             {user ? (
                                 user.photoURL && !photoError ? (
                                     <img src={user.photoURL} className="w-8 h-8 rounded-full object-cover" alt="user" onError={() => setPhotoError(true)} />
@@ -389,7 +390,8 @@ const VersionModal = ({ isOpen, onClose, isDarkMode, globalSettings }) => {
 // --- Files & Attachments Tab ---
 
 // --- Trip Detail Wrapper (handles ALL data loading, TripDetailContent only renders when trip is ready) ---
-const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, globalSettings, exchangeRates, onOpenSmartImport, weatherData, onUpdateSimulationTrip, requestedTab, onTabHandled, requestedItemId, onItemHandled, isBanned }) => {
+const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, globalSettings, exchangeRates, onOpenSmartImport, weatherData, onUpdateSimulationTrip, requestedTab, onTabHandled, requestedItemId, onItemHandled, isBanned, isAdmin }) => {
+
     // ALL hooks in wrapper - consistent on every render
     const [realTrip, setRealTrip] = useState(null);
     const [isLoading, setIsLoading] = useState(!isSimulation);
@@ -496,6 +498,7 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
                 requestedItemId={requestedItemId}
                 onItemHandled={onItemHandled}
                 isBanned={isBanned}
+                isAdmin={isAdmin}
             />
         </Suspense>
     );
@@ -907,13 +910,9 @@ const App = () => {
     const [requestedTab, setRequestedTab] = useState(null);
     const [requestedItemId, setRequestedItemId] = useState(null);
 
+
     if (isLoading) {
-        return (
-            <div className={`min-h-screen flex flex-col items-center justify-center gap-4 ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-slate-50 text-gray-900'}`}>
-                <Loader2 className="w-12 h-12 animate-spin text-indigo-500" />
-                <p className="text-sm font-bold opacity-70">正在載入行程資料...</p>
-            </div>
-        );
+        return <DashboardSkeleton isDarkMode={isDarkMode} />;
     }
 
     if (!user && !isPreviewMode) return <LandingPage onLogin={() => signInWithPopup(auth, googleProvider)} />;
@@ -972,6 +971,7 @@ const App = () => {
                             requestedItemId={requestedItemId}
                             onItemHandled={() => setRequestedItemId(null)}
                             isBanned={isBanned}
+                            isAdmin={isAdmin}
                         />
                     </ErrorBoundary>
                 )}
@@ -982,7 +982,13 @@ const App = () => {
             <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} globalSettings={globalSettings} setGlobalSettings={setGlobalSettings} isDarkMode={isDarkMode} />
             <VersionModal isOpen={isVersionOpen} onClose={() => setIsVersionOpen(false)} isDarkMode={isDarkMode} globalSettings={globalSettings} />
             <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} isDarkMode={isDarkMode} user={user} isBanned={isBanned} />
-            <AdminFeedbackModal isOpen={isAdminFeedbackModalOpen} onClose={() => setIsAdminFeedbackModalOpen(false)} isDarkMode={isDarkMode} />
+            <AdminFeedbackModal
+                isOpen={isAdminFeedbackModalOpen}
+                onClose={() => setIsAdminFeedbackModalOpen(false)}
+                isDarkMode={isDarkMode}
+                adminEmails={dynamicAdminEmails}
+                onUpdateAdminList={(newList) => setDoc(doc(db, "settings", "admin_config"), { admin_emails: newList }, { merge: true })}
+            />
             <SmartImportModal
                 isOpen={isSmartImportModalOpen}
                 onClose={() => setIsSmartImportModalOpen(false)}

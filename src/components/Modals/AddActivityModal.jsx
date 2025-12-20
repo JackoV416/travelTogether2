@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Map as MapIcon, Utensils, ShoppingBag, Bus, PlaneTakeoff, Hotel, Shirt, Sparkles, Smartphone, FileText, Pill, Package, Trash2 } from 'lucide-react';
+import { X, Map as MapIcon, Utensils, ShoppingBag, Bus, PlaneTakeoff, Hotel, Shirt, Sparkles, Smartphone, FileText, Pill, Package, Trash2, ArrowRight } from 'lucide-react';
 import { inputClasses, formatDate, getWeekday } from '../../utils/tripUtils';
 import { buttonPrimary } from '../../constants/styles';
 import { CURRENCIES } from '../../constants/appData';
@@ -199,23 +199,52 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
                                 <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">時間</label>
                                 <input type="time" value={details.time || ''} onChange={e => setDetails({ ...details, time: e.target.value })} className={inputClasses(isDarkMode)} />
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">地點</label>
-                                <input value={details.location || ''} onChange={e => setDetails({ ...details, location: e.target.value })} placeholder="輸入地點" className={inputClasses(isDarkMode)} />
-                            </div>
-                        </div>
-                    )}
 
-                    {type === 'flight' && (
-                        <div className="p-5 border rounded-2xl bg-gray-500/5 border-gray-500/10 transition-all hover:bg-gray-500/10">
-                            <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">航班資訊</label>
-                            <div className="flex gap-4 items-center">
-                                <input value={details.number || ''} onChange={e => setDetails({ ...details, number: e.target.value })} placeholder="航班編號 (如: BR198)" className={inputClasses(isDarkMode)} />
-                                <label className="flex items-center gap-2 text-sm cursor-pointer select-none whitespace-nowrap bg-gray-500/10 px-4 py-3.5 rounded-xl border border-transparent hover:border-gray-500/20 transition-all">
-                                    <input type="checkbox" checked={details.layover} onChange={e => setDetails({ ...details, layover: e.target.checked })} className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500" />
-                                    需轉機
-                                </label>
-                            </div>
+                            {(type === 'transport' || type === 'flight') ? (
+                                <div className="col-span-2 p-4 rounded-xl border border-gray-500/10 bg-gray-500/5 mt-2 space-y-4">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="p-1 rounded bg-indigo-500/10 text-indigo-500"><Bus className="w-3 h-3" /></div>
+                                        <span className="text-[10px] uppercase font-bold tracking-wider opacity-70">路線詳情 (Route)</span>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative">
+                                        {/* Divider for desktop */}
+                                        <div className="hidden sm:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 p-1 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
+                                            <ArrowRight className="w-3 h-3 text-gray-400" />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> 出發地 (Origin)
+                                            </label>
+                                            <input value={details.location || ''} onChange={e => setDetails({ ...details, location: e.target.value })} placeholder="例如: Tokyo" className={inputClasses(isDarkMode)} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div> 目的地 (Arrival)
+                                            </label>
+                                            <input value={details.arrival || ''} onChange={e => setDetails({ ...details, arrival: e.target.value })} placeholder="例如: Osaka" className={inputClasses(isDarkMode)} />
+                                        </div>
+                                    </div>
+
+                                    {type === 'flight' && (
+                                        <div className="pt-4 mt-2 border-t border-gray-500/10">
+                                            <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">航班資訊</label>
+                                            <div className="flex gap-4 items-center">
+                                                <input value={details.number || ''} onChange={e => setDetails({ ...details, number: e.target.value })} placeholder="航班編號 (如: BR198)" className={inputClasses(isDarkMode)} />
+                                                <label className="flex items-center gap-2 text-sm cursor-pointer select-none whitespace-nowrap bg-gray-500/10 px-4 py-3.5 rounded-xl border border-transparent hover:border-gray-500/20 transition-all hover:bg-gray-500/20">
+                                                    <input type="checkbox" checked={details.layover} onChange={e => setDetails({ ...details, layover: e.target.checked })} className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500" />
+                                                    需轉機
+                                                </label>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div>
+                                    <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">地點</label>
+                                    <input value={details.location || ''} onChange={e => setDetails({ ...details, location: e.target.value })} placeholder="輸入地點" className={inputClasses(isDarkMode)} />
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -282,7 +311,11 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
                         </button>
                     )}
                     <button onClick={onClose} className="flex-1 py-3.5 rounded-xl border border-gray-500/30 font-bold opacity-70 hover:opacity-100 hover:bg-gray-500/5 transition-all">取消</button>
-                    <button onClick={() => { onSave({ id: editData?.id, name, cost: Number(cost), estPrice: Number(estPrice), currency, type, details, payer, splitType, category }); onClose(); }} className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl py-3.5 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+                    <button onClick={() => {
+                        if (!name.trim()) return alert("請輸入名稱");
+                        onSave({ id: editData?.id, name, cost: Number(cost), estPrice: Number(estPrice), currency, type, details, payer, splitType, category });
+                        onClose();
+                    }} className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl py-3.5 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
                         {editData ? '儲存變更' : '確認加入'}
                     </button>
                 </div>

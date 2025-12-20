@@ -281,116 +281,89 @@ export async function parseImageDirectly(file, context = {}) {
     if (!file) return [];
 
     try {
-        // Convert file to base64
+        // Convert file to base64 once
         const base64Data = await fileToBase64(file);
 
-        // Use Gemini 3 Flash Preview (user's current API model)
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
-
-        const prompt = `You are a Travel Document Parser AI. Analyze this image and extract travel information.
+        // Define the API call task
+        const apiTask = async (model) => {
+            const prompt = `You are an Advanced Travel Document Parser using Vision capabilities. Analyze this image and extract travel information with extreme precision.
 
 === YOUR TASK ===
-Extract ALL useful travel details from this image. This could be:
-- A hotel booking confirmation
-- A flight/train ticket
-- A restaurant reservation
-- An itinerary screenshot
+Extract ALL confirmed travel details. This could be:
+- Flight tickets / Boarding passes
+- Hotel booking confirmations
+- Restaurant reservations
+- Train/Bus tickets
+- Attraction entry tickets
 
-=== CONTEXT (if relevant) ===
+=== CONTEXT ===
 Destination: ${context.city || "Unknown"}
-Travel Date: ${context.date || "Unknown"}
+Travel Date: ${context.date || "Unknown"} (Use this year if year is missing)
 
-=== CRITICAL RULES ===
-1. Extract ONLY actual places, hotels, flights, restaurants
-2. IGNORE: UI elements, buttons, page numbers, random fragments
-3. Clean up messy text - remove extra spaces in Chinese characters
-4. EXTRACT ALL supplementary info visible (price, address, phone, confirmation number, etc.)
-5. For flights/transport: extract ALL available details (times, terminals, flight number, airline)
-6. Categorize correctly: hotel → accommodation, restaurant → itinerary
+=== CRITICAL PARSING RULES ===
+1. **Dates**: Format strictly as YYYY-MM-DD. If year is missing, infer from context or use current/next year logic.
+2. **Times**: Format strictly as HH:MM (24-hour).
+3. **Filtering**: IGNORE all UI buttons ("Back", "Share"), ads, map captions, and random page numbers.
+4. **Flights**: Capture Departure AND Arrival times, Terminals, and Flight Number (e.g., CX123).
+5. **Hotels**: Capture Check-in AND Check-out dates. Name should be the Hotel Name only (e.g., "APA Hotel Shinjuku" NOT "APA Hotel Shinjuku 1 Night").
 
-=== REQUIRED OUTPUT FORMAT ===
-Return ONLY valid JSON (no markdown):
+=== OUTPUT FORMAT (JSON ONLY) ===
+Return a valid JSON object. Do not include markdown fencing (\`\`\`json).
 {
   "itinerary": [
     {
-      "name": "Place Name (清晰名稱)",
-      "time": "HH:MM (departure/start time)",
-      "endTime": "HH:MM (arrival/end time, null for spots)",
-      "duration": "2h or 30min (estimated duration for spots/activities)",
-      "type": "spot|food|transport|flight",
-      "details": { 
-        "location": "區域/地址",
-        "desc": "Brief note or remarks",
-        
-        "flightNumber": "JX822 (if flight)",
-        "airline": "Starlux 星宇航空",
-        "departure": "TPE Terminal 1",
-        "arrival": "KIX Terminal 2",
-        "gate": "B12 (boarding gate if visible)",
-        "seat": "12A (seat number)",
-        "cabinClass": "Economy/Business/First",
-        "baggage": "20kg checked + 7kg cabin (baggage allowance)",
-        "passengerName": "CHAN TAI MAN (passport name)",
-        "pnr": "ABC123 (6-char booking code)",
-        "frequentFlyer": "BR12345678 (miles number)",
-        
-        "date": "YYYY-MM-DD",
-        "price": "HKD 2,000 or null",
-        "confirmationNumber": "Booking ref",
-        "phone": "+81-XXX",
-        
-        "openingHours": "09:00-18:00 (for spots)",
-        "admissionFee": "JPY 500 adult (entry fee)",
-        "reservationNumber": "R12345 (restaurant booking)",
-        
-        "notes": "Any other visible notes"
+      "name": "Clear Name (e.g. flight number or place name)",
+      "time": "HH:MM",
+      "endTime": "HH:MM (optional)",
+      "type": "flight|transport|food|spot",
+      "details": {
+        "location": "Address/Airport/Terminal",
+        "flightNumber": "CX100",
+        "seat": "12A",
+        "price": "Currency + Amount",
+        "desc": "Any useful notes (booking ref, etc.)"
       },
-      "confidence": 0.0-1.0
+      "confidence": 0.8  (0.0-1.0)
     }
   ],
   "accommodation": [
     {
-      "name": "Hotel Name Only (no room type)",
-      "checkIn": "YYYY-MM-DD or null",
-      "checkOut": "YYYY-MM-DD or null", 
-      "details": { 
-        "location": "區域",
-        "address": "Full address if visible",
-        "phone": "+81-XXX or null",
-        "price": "JPY 15,000/晚 or null",
-        "roomType": "雙人房 (if visible)",
-        "roomNumber": "1205 (room number if visible)",
-        "confirmationNumber": "Booking ref if visible",
-        "checkOutTime": "11:00 (checkout time)",
-        "guests": "2 adults, 1 child (guest count)",
-        "breakfast": "Included 7F restaurant / Not included",
-        "wifi": "Password: hotel1234",
-        "notes": "Any special notes like early check-in"
+      "name": "Hotel Name",
+      "checkIn": "YYYY-MM-DD",
+      "checkOut": "YYYY-MM-DD",
+      "details": {
+        "address": "Full Address",
+        "bookingRef": "XYZ123",
+        "roomType": "Double Room"
       },
-      "confidence": 0.0-1.0
+      "confidence": 0.8
     }
   ]
 }
 
-If image is unclear or no travel info found, return: { "itinerary": [], "accommodation": [] }`;
+If no travel info is visible, return { "itinerary": [], "accommodation": [] }.`;
 
-        // Send image + prompt to Gemini Vision
-        const result = await model.generateContent([
-            {
-                inlineData: {
-                    mimeType: file.type || "image/jpeg",
-                    data: base64Data,
+            // Send to Gemini
+            const result = await model.generateContent([
+                {
+                    inlineData: {
+                        mimeType: file.type || "image/jpeg",
+                        data: base64Data,
+                    },
                 },
-            },
-            { text: prompt }
-        ]);
+                { text: prompt }
+            ]);
 
-        const response = await result.response;
-        const text = response.text();
+            const response = await result.response;
+            const text = response.text();
 
-        // Parse JSON response
-        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(jsonStr);
+            // Clean and Parse
+            const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            return JSON.parse(jsonStr);
+        };
+
+        // Execute with Smart Retry
+        const parsed = await callWithSmartRetry(apiTask, 2, true);
 
         // Transform to unified format
         const items = [];
@@ -454,9 +427,7 @@ async function fileToBase64(file) {
 export async function parseItineraryWithAI(rawText, context = {}) {
     if (!rawText || rawText.length < 10) return [];
 
-    try {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
+    const apiTask = async (model) => {
         const prompt = `
 You are a STRICT Travel Itinerary Parser API.
 Your task is to extract ONLY meaningful travel items from messy OCR text.
@@ -524,7 +495,11 @@ DO NOT invent items. Only return what you can confidently extract.
 
         // Cleanup Markdown if present
         const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(jsonStr);
+        return JSON.parse(jsonStr);
+    };
+
+    try {
+        const parsed = await callWithSmartRetry(apiTask, 2, true);
 
         // Transform to unified format with category tags
         const items = [];
