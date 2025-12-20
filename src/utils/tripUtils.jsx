@@ -16,7 +16,7 @@ import {
 import { convertCurrency } from '../services/exchangeRate';
 
 // Glassmorphism 2.0 - Premium Effect (Uses CSS Variables in index.css)
-export const glassCard = (isDarkMode) => `glass-card rounded-2xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl ${isDarkMode ? 'hover:border-gray-600' : 'hover:border-gray-300'}`;
+export const glassCard = (isDarkMode) => `glass-card rounded-2xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10 hover:border-indigo-500/30 group`;
 
 export const getHolidayMap = (region) => HOLIDAYS_BY_REGION[region] || HOLIDAYS_BY_REGION.Global;
 

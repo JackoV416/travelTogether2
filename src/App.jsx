@@ -71,7 +71,7 @@ const Footer = ({ isDarkMode, onOpenVersion }) => {
     const [time, setTime] = useState(new Date());
     useEffect(() => { const t = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(t); }, []);
     return (
-        <footer className={`mt-12 py-6 border-t text-center text-xs md:text-sm flex flex-col items-center justify-center gap-1 ${isDarkMode ? 'bg-gray-900 border-gray-800 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
+        <footer className={`mt-12 py-6 border-t text-center text-xs md:text-sm flex flex-col items-center justify-center gap-1 ${isDarkMode ? 'bg-gray-900 border-gray-800 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-600'} pb-[env(safe-area-inset-bottom)]`}>
             <div className="flex flex-wrap gap-2 items-center justify-center font-bold">
                 <span>Travel Together {APP_VERSION}</span>
                 <span>•</span>
@@ -125,22 +125,22 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
         <header className={`sticky top-0 z-50 p-4 transition-all duration-300 ${isDarkMode ? 'bg-gray-900/95 border-b border-gray-800' : 'bg-gray-50/95 border-b border-gray-200'} shadow-sm`}>
             <div className="flex items-center justify-between max-w-7xl mx-auto">
                 <div className="flex items-center gap-3">
-                    {onBack && <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-500/10" aria-label="返回"><ChevronLeft /></button>}
+                    {onBack && <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-500/10 btn-press" aria-label="返回"><ChevronLeft /></button>}
                     <h1 className="text-lg font-bold truncate cursor-pointer" onClick={() => onViewChange && onViewChange('dashboard')}>{title}</h1>
                 </div>
                 <div className="flex items-center gap-3">
-                    {onTutorialStart && <button onClick={onTutorialStart} className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20"><MonitorPlay className="w-4 h-4" /> 教學</button>}
+                    {onTutorialStart && <button onClick={onTutorialStart} className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 btn-press"><MonitorPlay className="w-4 h-4" /> 教學</button>}
 
                     {/* Notification */}
                     <div className="relative">
-                        <button onClick={handleBellClick} className="p-2 rounded-full hover:bg-gray-500/10 relative" aria-label="通知中心">
+                        <button onClick={handleBellClick} className="p-2 rounded-full hover:bg-gray-500/10 relative btn-press" aria-label="通知中心">
                             <Bell className="w-5 h-5" />
                             {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>}
                         </button>
                         {showNotif && <div className={`absolute top-12 right-0 w-96 p-4 rounded-xl shadow-2xl border z-50 backdrop-blur-xl ${isDarkMode ? 'bg-gray-900/95 border-white/10' : 'bg-white/95 border-gray-200'}`}>
                             <div className="flex justify-between items-center border-b border-gray-500/10 pb-2 mb-2">
                                 <h4 className="font-bold text-sm">通知中心</h4>
-                                <button onClick={handleClearAll} className="text-xs text-red-400 hover:text-red-500 flex items-center gap-1"><Trash2 className="w-3 h-3" /> 清除全部</button>
+                                <button onClick={handleClearAll} className="text-xs text-red-400 hover:text-red-500 flex items-center gap-1 btn-press"><Trash2 className="w-3 h-3" /> 清除全部</button>
                             </div>
 
                             {/* Categories */}
@@ -186,7 +186,7 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
 
                     {/* Hover Menu */}
                     <div className="relative" onMouseEnter={() => setHoverMenu(true)} onMouseLeave={() => setHoverMenu(false)}>
-                        <button className="p-1 rounded-full border-2 border-transparent hover:border-indigo-500 transition-all" aria-label="用戶選單">
+                        <button onClick={() => setHoverMenu(!hoverMenu)} className="p-1 rounded-full border-2 border-transparent hover:border-indigo-500 transition-all btn-press" aria-label="用戶選單">
                             {user ? (
                                 user.photoURL && !photoError ? (
                                     <img src={user.photoURL} className="w-8 h-8 rounded-full object-cover" alt="user" onError={() => setPhotoError(true)} />
@@ -927,56 +927,60 @@ const App = () => {
             <div className="relative z-10 flex-grow">
                 {view !== 'tutorial' && <Header title="✈️ Travel Together" user={user} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} onLogout={() => signOut(auth)} onBack={view !== 'dashboard' ? () => setView('dashboard') : null} onTutorialStart={() => setView('tutorial')} onViewChange={setView} onOpenUserSettings={() => setIsSettingsOpen(true)} onOpenFeedback={() => setIsFeedbackModalOpen(true)} onOpenAdminFeedback={() => setIsAdminFeedbackModalOpen(true)} isAdmin={isAdmin} adminPendingCount={openFeedbackCount} onOpenVersion={() => setIsVersionOpen(true)} notifications={notifications} onRemoveNotification={removeNotification} onMarkNotificationsRead={markNotificationsRead} onNotificationClick={handleNotificationNavigate} />}
                 {view === 'dashboard' && (
-                    <ErrorBoundary fallbackMessage="儀表板載入失敗，請重新整理">
-                        <Dashboard
-                            user={user}
-                            onSelectTrip={(t) => { setSelectedTrip(t); setView('detail'); setIsPreviewMode(false); }}
-                            isDarkMode={isDarkMode}
-                            setGlobalBg={setGlobalBg}
-                            globalSettings={globalSettings}
-                            exchangeRates={exchangeRates}
-                            weatherData={weatherData}
-                            isLoadingWeather={isLoadingWeather}
-                            onViewChange={setView}
-                            onOpenSettings={() => setIsSettingsOpen(true)}
-                            isBanned={isBanned}
-                        />
-                    </ErrorBoundary>
+                    <div className="animate-fade-in">
+                        <ErrorBoundary fallbackMessage="儀表板載入失敗，請重新整理">
+                            <Dashboard
+                                user={user}
+                                onSelectTrip={(t) => { setSelectedTrip(t); setView('detail'); setIsPreviewMode(false); }}
+                                isDarkMode={isDarkMode}
+                                setGlobalBg={setGlobalBg}
+                                globalSettings={globalSettings}
+                                exchangeRates={exchangeRates}
+                                weatherData={weatherData}
+                                isLoadingWeather={isLoadingWeather}
+                                onViewChange={setView}
+                                onOpenSettings={() => setIsSettingsOpen(true)}
+                                isBanned={isBanned}
+                            />
+                        </ErrorBoundary>
+                    </div>
                 )}
                 {view === 'detail' && (
-                    <ErrorBoundary fallbackMessage="行程詳情載入失敗，請重新整理">
-                        <TripDetail
-                            tripData={isPreviewMode ? previewTrip : selectedTrip}
-                            user={user}
-                            isDarkMode={isDarkMode}
-                            setGlobalBg={setGlobalBg}
-                            isSimulation={false}
-                            isPreview={isPreviewMode}
-                            globalSettings={globalSettings}
-                            onBack={() => { setView('dashboard'); window.history.replaceState({}, '', '/'); }}
-                            exchangeRates={exchangeRates}
-                            weatherData={weatherData}
-                            onOpenSmartImport={async () => {
-                                if (isBanned) return sendNotification("帳戶已鎖定", "您目前無法使用上傳功能。", "error");
+                    <div className="animate-slide-up">
+                        <ErrorBoundary fallbackMessage="行程詳情載入失敗，請重新整理">
+                            <TripDetail
+                                tripData={isPreviewMode ? previewTrip : selectedTrip}
+                                user={user}
+                                isDarkMode={isDarkMode}
+                                setGlobalBg={setGlobalBg}
+                                isSimulation={false}
+                                isPreview={isPreviewMode}
+                                globalSettings={globalSettings}
+                                onBack={() => { setView('dashboard'); window.history.replaceState({}, '', '/'); }}
+                                exchangeRates={exchangeRates}
+                                weatherData={weatherData}
+                                onOpenSmartImport={async () => {
+                                    if (isBanned) return sendNotification("帳戶已鎖定", "您目前無法使用上傳功能。", "error");
 
-                                const isAbuse = await checkAbuse(user, 'upload_file');
-                                if (isAbuse) return sendNotification("帳戶已鎖定", "檢測到異常上傳活動。", "error");
+                                    const isAbuse = await checkAbuse(user, 'upload_file');
+                                    if (isAbuse) return sendNotification("帳戶已鎖定", "檢測到異常上傳活動。", "error");
 
-                                setSelectedImportTrip(isPreviewMode ? previewTrip : selectedTrip);
-                                setIsSmartImportModalOpen(true);
-                            }}
-                            onUpdateSimulationTrip={null}
-                            requestedTab={requestedTab}
-                            onTabHandled={() => setRequestedTab(null)}
-                            requestedItemId={requestedItemId}
-                            onItemHandled={() => setRequestedItemId(null)}
-                            isBanned={isBanned}
-                            isAdmin={isAdmin}
-                        />
-                    </ErrorBoundary>
+                                    setSelectedImportTrip(isPreviewMode ? previewTrip : selectedTrip);
+                                    setIsSmartImportModalOpen(true);
+                                }}
+                                onUpdateSimulationTrip={null}
+                                requestedTab={requestedTab}
+                                onTabHandled={() => setRequestedTab(null)}
+                                requestedItemId={requestedItemId}
+                                onItemHandled={() => setRequestedItemId(null)}
+                                isBanned={isBanned}
+                                isAdmin={isAdmin}
+                            />
+                        </ErrorBoundary>
+                    </div>
                 )}
 
-                {view === 'tutorial' && <div className="h-screen flex flex-col"><div className="p-4 border-b flex gap-4"><button onClick={() => { setView('dashboard'); setIsPreviewMode(false); }}><ChevronLeft /></button> 模擬模式 (東京範例)</div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} isPreview={false} globalSettings={globalSettings} exchangeRates={exchangeRates} weatherData={weatherData} onOpenSmartImport={() => setIsSmartImportModalOpen(true)} /></div></div>}
+                {view === 'tutorial' && <div className="h-screen flex flex-col animate-fade-in"><div className="p-4 border-b flex gap-4"><button onClick={() => { setView('dashboard'); setIsPreviewMode(false); }}><ChevronLeft /></button> 模擬模式 (東京範例)</div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} isPreview={false} globalSettings={globalSettings} exchangeRates={exchangeRates} weatherData={weatherData} onOpenSmartImport={() => setIsSmartImportModalOpen(true)} /></div></div>}
             </div>
             {view !== 'tutorial' && <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} />}
             <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} globalSettings={globalSettings} setGlobalSettings={setGlobalSettings} isDarkMode={isDarkMode} />

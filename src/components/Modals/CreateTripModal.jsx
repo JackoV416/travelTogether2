@@ -66,7 +66,7 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
 
     return (
         <div className="fixed inset-0 bg-black/60 z-[85] flex items-center justify-center p-4 backdrop-blur-md transition-all duration-300">
-            <div className={`w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 sm:p-8 ${isDarkMode ? 'bg-gray-900 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-200'} shadow-2xl border transition-all transform scale-100`}>
+            <div className={`w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 sm:p-8 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} shadow-2xl border-[1px] border-[var(--glass-border)] transition-all transform scale-100`}>
                 <div className="flex justify-between items-start mb-8">
                     <div>
                         <h3 className="text-2xl font-bold tracking-tight">建立新行程</h3>

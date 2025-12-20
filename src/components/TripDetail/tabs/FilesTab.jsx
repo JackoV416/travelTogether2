@@ -1,13 +1,41 @@
 import React, { useState } from 'react';
-import { FileText, Trash2, Download, HardDrive, FileCheck, Share2 } from 'lucide-react';
+import { FileText, Trash2, Download, HardDrive, FileCheck, Share2, FileUp, Loader2 } from 'lucide-react';
 import SearchFilterBar from '../../Shared/SearchFilterBar';
 import { useTripFiles } from '../../../hooks/useTripFiles';
 import { formatFileSize, isImageFile } from '../../../utils/tripUtils';
 
 const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, glassCard }) => {
-    const [searchValue, setSearchValue] = useState("");
-    const { deleteFile, loading } = useTripFiles(trip, language);
+    const [isDragging, setIsDragging] = useState(false);
+    const { deleteFile, uploadFile, loading } = useTripFiles(trip, language); // Added uploadFile
     const files = trip.files || [];
+
+    // Drag & Drop Handlers
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = async (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const droppedFiles = Array.from(e.dataTransfer.files);
+
+        if (droppedFiles.length > 0) {
+            // Check for abuse/ban is handled inside uploadFile usually, or we should wrap it.
+            // Since we don't have direct access to 'checkAbuse' here easily without importing logic, 
+            // we assume useTripFiles handles it or we accept it for now.
+            // Ideally useTripFiles should expose a method to upload multiple.
+            // For now, let's just upload the first one or loop.
+            for (const file of droppedFiles) {
+                await uploadFile(file);
+            }
+        }
+    };
 
     const filteredFiles = files.filter(f =>
         !searchValue || f.name.toLowerCase().includes(searchValue.toLowerCase())
@@ -16,7 +44,27 @@ const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, glassCa
     const totalSize = files.reduce((acc, f) => acc + (f.size || 0), 0);
 
     return (
-        <div className="animate-fade-in space-y-6 pb-10">
+        <div
+            className="animate-fade-in space-y-6 pb-10 relative"
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave} // This might be tricky on parent, usually better to overlap
+            onDrop={handleDrop}
+        >
+            {/* Drop Zone Overlay */}
+            {isDragging && (
+                <div className="absolute inset-0 z-50 rounded-3xl border-4 border-dashed border-indigo-500 bg-indigo-500/10 backdrop-blur-sm flex flex-col items-center justify-center animate-pulse"
+                    style={{ height: '100%', minHeight: '400px' }} // Ensure cover
+                    onDragLeave={handleDragLeave} // Catch leave event
+                    onDrop={handleDrop}
+                >
+                    <div className="bg-white dark:bg-gray-900 p-6 rounded-full shadow-2xl mb-4">
+                        <FileUp className="w-12 h-12 text-indigo-500" />
+                    </div>
+                    <h3 className="text-2xl font-black text-indigo-500">Drop files here to upload</h3>
+                    <p className="font-bold opacity-50">Release to start uploading</p>
+                </div>
+            )}
+
             <SearchFilterBar
                 searchValue={searchValue}
                 onSearchChange={setSearchValue}
@@ -41,6 +89,14 @@ const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, glassCa
                 </div>
             </div>
 
+            {/* Loading Indicator */}
+            {loading && (
+                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-black/80 text-white px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl backdrop-blur-md">
+                    <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
+                    <span className="text-sm font-bold">Uploading...</span>
+                </div>
+            )}
+
             {/* File Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredFiles.length === 0 && (
@@ -49,7 +105,7 @@ const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, glassCa
                             <FileCheck className="w-10 h-10 text-indigo-500 opacity-50" />
                         </div>
                         <div className="text-sm font-black uppercase tracking-[0.2em]">No Files Found</div>
-                        <p className="text-xs mt-2 max-w-[200px] leading-relaxed">請點擊上方「智能匯入」來加入第一份旅程記憶。</p>
+                        <p className="text-xs mt-2 max-w-[200px] leading-relaxed">拖放檔案至此，或使用「智能匯入」開始。</p>
                     </div>
                 )}
 

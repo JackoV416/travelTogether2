@@ -82,7 +82,10 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
           firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
-          icons: ['lucide-react']
+          icons: ['lucide-react'],
+          pdf: ['html2canvas', 'jspdf'],
+          ai: ['@google/generative-ai', 'tesseract.js'],
+          charts: ['recharts']
         },
         entryFileNames: `assets/[name]-[hash].js`,
         chunkFileNames: `assets/[name]-[hash].js`,
@@ -92,6 +95,6 @@ export default defineConfig({
   },
   define: {
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
-    __APP_VERSION__: JSON.stringify('V0.27.0-PreRelease')
+    __APP_VERSION__: JSON.stringify('V1.0.0')
   }
 })
