@@ -127,10 +127,20 @@ const VersionModal = ({ isOpen, onClose, isDarkMode, globalSettings }) => {
                     })}
                 </div>
 
-                {/* Footer */}
-                <div className={`p-4 border-t text-center text-[10px] opacity-40 font-mono flex justify-between items-center flex-shrink-0 ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-100 bg-gray-50'} rounded-b-2xl`}>
-                    <span>Developed by {APP_AUTHOR}</span>
-                    <span>{parseAppVersion(APP_VERSION).build || 'Build 2025'}</span>
+                {/* Footer with Dismiss Button */}
+                <div className={`p-4 border-t text-center flex-shrink-0 ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-100 bg-gray-50'} rounded-b-2xl`}>
+                    <div className="flex justify-between items-center gap-4">
+                        <span className="text-[10px] opacity-40 font-mono">Developed by {APP_AUTHOR}</span>
+                        <button
+                            onClick={() => {
+                                localStorage.setItem('app_last_seen_version', APP_VERSION);
+                                onClose();
+                            }}
+                            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}
+                        >
+                            唔再顯示 (Don't Show Again)
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

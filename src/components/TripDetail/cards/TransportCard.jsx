@@ -1,5 +1,4 @@
-import React from 'react';
-import { Plane, TrainFront, BusFront, Car, Ship, CheckCircle2, Clock, Footprints, MapPin, ArrowRight, Pencil, Ticket, Undo2 } from 'lucide-react';
+import { Plane, TrainFront, BusFront, Car, Ship, CheckCircle2, Clock, Footprints, MapPin, ArrowRight, Pencil, Ticket, Undo2, Stamp } from 'lucide-react';
 import { formatDuration, getSmartItemImage } from '../../../utils/tripUtils';
 
 // Mini-map for airport codes (Could be moved to appData)
@@ -56,6 +55,11 @@ const TransportCard = ({ item, isDarkMode, dayHotel, onEdit }) => {
             return { color: isDarkMode ? 'bg-yellow-600' : 'bg-yellow-500', icon: <Car className="w-6 h-6 mb-2 opacity-90" />, label: "Taxi" };
         }
 
+        // Immigration / Customs (V1.0.3)
+        if (type === 'immigration' || name.includes('入境') || name.includes('出境') || name.includes('海關') || name.includes('customs') || name.includes('immigration')) {
+            return { color: isDarkMode ? 'bg-rose-600' : 'bg-rose-500', icon: <Stamp className="w-6 h-6 mb-2 opacity-90" />, label: "Immigration" };
+        }
+
         // If generic Transport, try to detect anything else, otherwise default
         return { color, icon, label: (type && type !== 'transport' ? (type.charAt(0).toUpperCase() + type.slice(1)) : "Transport") };
     };
@@ -64,10 +68,10 @@ const TransportCard = ({ item, isDarkMode, dayHotel, onEdit }) => {
 
     // 2. Time Logic with Robust Parsing
     const getEndTime = () => {
-        // Priority 1: Explicit arrival time (especially for flights)
-        if (item.details?.arrivalTime) return item.details.arrivalTime;
+        // Priority 0: Explicit endTime field
+        if (item.endTime) return item.endTime;
+        if (item.details?.endTime) return item.details.endTime;
 
-        // Priority 2: Calculate from duration
         if (!item.time || !item.details?.duration) return null;
         const [h, m] = item.time.split(':').map(Number);
 
@@ -143,12 +147,25 @@ const TransportCard = ({ item, isDarkMode, dayHotel, onEdit }) => {
             fromCode = fromSplit.primary;
             fromName = fromSplit.secondary;
 
-            let rawTo = locParts[1]?.trim();
-            if (!rawTo || rawTo === "End") {
-                rawTo = item.arrival || (item.name.includes('前往') ? item.name.split('前往')[1] : "End");
+            let rawTo = item.details?.arrival; // Prioritize explicit arrival field (e.g. for Immigration/customs)
+
+            if (!rawTo && locParts[1]) {
+                rawTo = locParts[1].trim();
             }
-            if ((rawTo === "End" || rawTo === "Destination") && dayHotel) {
-                rawTo = dayHotel.name.replace('Check-in', '').trim();
+
+            if (!rawTo || rawTo === "End") {
+                // Only fallback to dayHotel if explicitly "End" or absolutely nothing found, 
+                // AND it's likely leading to hotel (last item). 
+                // But for Immigration, we usually have arrival="B1F...".
+                // If not present, defaulting to hotel is risky if it's not the last item.
+                if (item.name.includes('前往')) {
+                    rawTo = item.name.split('前往')[1];
+                } else if (dayHotel && (item.type === 'transport' || item.type === 'walk')) {
+                    // Only default to Hotel for Transport/Walk where destination is ambiguous
+                    rawTo = dayHotel.name.replace('Check-in', '').trim();
+                } else {
+                    rawTo = "Destination";
+                }
             }
 
             const toSplit = splitName(rawTo, rawTo === dayHotel?.name.replace('Check-in', '').trim());
@@ -175,11 +192,20 @@ const TransportCard = ({ item, isDarkMode, dayHotel, onEdit }) => {
     return (
         <div className={`relative w-full rounded-3xl overflow-hidden shadow-lg transition-transform hover:scale-[1.01] ${theme.color} text-white group`}>
 
-            {/* Background Image Overlay */}
+            {/* V1.0.3: Seamless Dual Image - Full height for glass effect on details */}
+            {/* Left Side Image (Departure) - 50% width, full height, fades to center */}
             {bgImage && (
-                <div className="absolute right-0 top-0 bottom-0 w-1/2 opacity-50 mix-blend-overlay pointer-events-none">
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent z-10" style={{ transform: 'scaleX(-1)' }} />
-                    <img src={bgImage} alt="Transport View" className="w-full h-full object-cover" />
+                <div className="absolute left-0 top-0 bottom-0 w-1/2 opacity-50 pointer-events-none overflow-hidden">
+                    <div className="absolute inset-0 z-10" style={{ background: 'linear-gradient(to right, transparent 0%, transparent 40%, rgba(0,0,0,0.9) 100%)' }} />
+                    <img src={bgImage} alt="Departure" className="w-full h-full object-cover" />
+                </div>
+            )}
+
+            {/* Right Side Image (Arrival) - 50% width, full height, fades to center */}
+            {bgImage && (
+                <div className="absolute right-0 top-0 bottom-0 w-1/2 opacity-50 pointer-events-none overflow-hidden">
+                    <div className="absolute inset-0 z-10" style={{ background: 'linear-gradient(to left, transparent 0%, transparent 40%, rgba(0,0,0,0.9) 100%)' }} />
+                    <img src={dayHotel?.details?.image || bgImage} alt="Arrival" className="w-full h-full object-cover" />
                 </div>
             )}
 

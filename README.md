@@ -1,39 +1,33 @@
-# Travel Together (智能旅遊規劃) V1.0.1
+# Travel Together (智能旅遊規劃) V1.0.4
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.0.2-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.0.4-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-10.x-orange.svg)](https://firebase.google.com/)
 
+## 🚀 V1.0.4: Optimistic UI & Data Integrity (2025-12-21)
+**V1.0.4: [Optimistic UI] 極速行程管理體驗！**
+引入 Optimistic UI 技術，實現「0 延遲」行程新增、編輯與刪除。即使網絡不穩，操作亦即時反饋並由後台自動同步。
+
+### ✨ V1.0.4 核心修復 (Fixes & Features)
+- **⚡ Optimistic UI**: Create/Edit/Delete 操作即時已更新 UI，無需等待 Firebase 回傳 (0ms latency)。
+- **🛡️ Data Integrity**: 修復 ID 衝突漏洞，加入 LocalStorage 雙重備份，確保刷新頁面後未同步數據不丟失。
+- **🗺️ Live Map Sync**: 地圖視圖與列表視圖實時同步，刪除項目後地圖 Pin 即時消失。
+- **🐛 Critical Fixes**: 修復 `undefined` 字段錯誤、編輯變新增問題、刪除卡死問題。
+
+## 🚀 V1.0.3: Immigration & PWA Matrix (2025-12-21)
+**V1.0.3: [Immigration System] 入境程序全面智能化！**
+專為國際航班打造的入境程序卡片，配合 Dashboard Widget 個人化系統，讓旅程管理更貼心。
+
+### ✨ V1.0.3 核心更新 (Updates)
+- **🛂 Immigration Card**: 專屬琥珀色入境卡片，一目了然。
+- **⚙️ Dashboard Personalization**: Widget 可自由拖拽排序、隱藏/顯示，設定自動保存。
+- **📱 PWA Upgrade**: 全新 Mobile Menu 設計，提升觸控體驗。
+- **📉 Currency Dual-Display**: 每日總結同時顯示當地貨幣與港幣估算。
+
 ## 🚀 V1.0.2: Zero-Loop Fix & Guest Mode (2025-12-21)
 **V1.0.2: [Zero-Loop Fix] 遊客模式終極修復！**
-徹底解決了遊客模式下的無限重載 (Redirect Loop) 與 WebSocket 錯誤。加入了全新的 **"Try Demo"** 入口，無需登入即可一鍵體驗完整教學模式。
-
-### ✨ V1.0.2 核心修復 (Fixes)
-- **🐛 Critical Fix**: 修復遊客模式無限 Loop 及 `null` 引用崩潰。
-- **⚡️ Performance**: 清除殘留伺服器進程，解決 WebSocket 連接錯誤。
-- **🛡️ Null Safety**: 全面強化 `ActiveUsersList` 與 Modals 的防錯機制。
-- **🖱️ UX Upgrade**: Landing Page 新增醒目「試用模擬模式」按鈕。
-
-## 🚀 V1.0.1: Matrix & Encyclopedia Sync (2025-12-21)
-**V1.0.1: [Matrix Protocol] 最終爆發同步！**
-這是一次內容與邏輯的深度同步，確保教學範例與數據結構達成 100% 匹配。我們引進了極致細節的「導航矩陣」與「全員角色任務」。
-
-### ✨ V1.0.1 核心更新 (Updates)
-- **🚀 Matrix Protocol**: 補足所有行程空檔 (如 Day 6 千日前)，達成 0 死角導航矩陣。
-- **📚 Encyclopedia Content**: 深入挖掘 Senso-ji, USJ, W Osaka 等地標的建築與歷史背景。
-- **👥 Per-Person Metadata**: 每一項行李、預算與購物任務均分配至具體成員。
-- **🐛 Loop Bug Fix**: 徹底修復非會員無法進入教學模式的程式邏輯問題。
-
-## 🚀 V1.0.0: The Intelligent Era (2025-12-20)
-**Travel Together V1.0 正式發布！**
-這是一次從 UI 到核心架構的全面進化。我們為現代多人旅遊帶來了極致流暢的體驗，集成了 **Google Gemini AI 視覺識別**、**PWA 離線模式** 與 **Design System 2.0** 玻璃擬態設計。
-
-### ✨ V1.0 核心亮點 (Highlights)
-- **🎨 Design System 2.0**: 全新 **Indigo Glass** 設計語言，採用各種深度的毛玻璃效果、微互動動畫 (Micro-interactions) 與 iOS 原生級的 Slide Up 轉場。
-- **📱 Mobile First & PWA**: 完美支援 iOS/Android PWA 安裝，配備全新底部導航欄與 Safe Area 適配，離線亦可查看行程。
-- **🤖 Vision-First AI**: 唔使打字！直接影相識別機票、酒店單據或收據，AI 自動填入行程表與預算分帳。
-- **🛡️ Enterprise Security**: 內置 Rate Limiting (防濫用)、Autoban System (智能封鎖) 與 Firestore 自動同步，確保資料絕對安全。
+徹底解決了遊客模式下的無限重載 (Redirect Loop) 與 WebSocket 錯誤。
 
 ---
 
@@ -84,11 +78,11 @@ graph TD
 
 | 版本 | 標籤 | 狀態 |
 | :--- | :--- | :--- |
-| **V1.0.2** | **Zero-Loop Fix** | 🚀 最新版 |
+| **V1.0.4** | **Optimistic UI Update** | 🚀 最新版 |
+| **V1.0.3** | **Immigration System** | ✅ 已發布 |
+| **V1.0.2** | **Zero-Loop Fix** | ✅ 已發布 |
 | **V1.0.1** | **Matrix Sync Update** | ✅ 已發布 |
 | **V1.0.0** | **Official Release** | ✅ 已發布 |
-| **V0.25.0** | **Mobile First**: PWA, Bottom Nav | ✅ 已發布 |
-| **V0.24.0** | **Osaka Express**: Smart Transport | ✅ 已發布 |
 
 ---
 

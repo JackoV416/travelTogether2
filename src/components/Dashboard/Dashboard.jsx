@@ -4,6 +4,7 @@ import {
     collection, doc, updateDoc,
     addDoc, serverTimestamp, arrayUnion
 } from 'firebase/firestore';
+import { Settings2 } from 'lucide-react';
 
 import { db } from '../../firebase';
 import {
@@ -35,6 +36,17 @@ import {
     CurrencyConverter
 } from './widgets';
 
+// Default Widget Configuration
+const DEFAULT_WIDGETS = [
+    { id: 'weather', name: '天氣預報', visible: true },
+    { id: 'news', name: '旅遊新聞', visible: true },
+    { id: 'hotels', name: '酒店推介', visible: true },
+    { id: 'flights', name: '機票優惠', visible: true },
+    { id: 'transport', name: '交通資訊', visible: true },
+    { id: 'connectivity', name: '網絡方案', visible: true },
+    { id: 'currency', name: '匯率計算', visible: true },
+];
+
 const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSettings, setGlobalBg, globalSettings, exchangeRates, weatherData, isLoadingWeather, isBanned }) => {
     const {
         trips, loadingTrips, newsData, loadingNews,
@@ -57,6 +69,12 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
     const [convAmount, setConvAmount] = useState(100);
     const [convFrom, setConvFrom] = useState(globalSettings?.currency || 'HKD');
     const [convTo, setConvTo] = useState('JPY');
+
+    // Widget Customization State (Read-only from localStorage, edit in Settings)
+    const [widgets, setWidgets] = useState(() => {
+        const saved = localStorage.getItem('dashboardWidgets');
+        return saved ? JSON.parse(saved) : DEFAULT_WIDGETS;
+    });
 
     useEffect(() => {
         if (globalSettings?.currency) setConvFrom(globalSettings.currency);
@@ -336,66 +354,38 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
 
             {/* Travel Information Hub */}
             <div className="pb-10">
-                <div className="flex items-center justify-between mb-6 border-l-4 border-indigo-500 pl-3">
+                <div className="flex items-center justify-between mb-6 border-l-4 border-indigo-500 pl-3 flex-wrap gap-2">
                     <h2 className="text-2xl font-bold">旅遊資訊中心</h2>
-                    <button
-                        onClick={() => setRefreshTrigger(prev => prev + 1)}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-xs font-bold transition-all active:scale-95"
-                    >
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> 實時連線中 (點擊刷新)
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setRefreshTrigger(prev => prev + 1)}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-xs font-bold transition-all active:scale-95"
+                        >
+                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> 實時連線中
+                        </button>
+                        <button
+                            onClick={() => onOpenSettings('info')}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 text-xs font-bold transition-all border border-white/10"
+                        >
+                            <Settings2 className="w-3.5 h-3.5" /> 自訂排序
+                        </button>
+                    </div>
                 </div>
+
+                {/* Dynamic Widget Rendering based on localStorage config */}
                 <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-
-                    <WeatherWidget
-                        isDarkMode={isDarkMode}
-                        weatherData={weatherData}
-                        isLoadingWeather={isLoadingWeather}
-                        currentLang={currentLang}
-                    />
-
-                    <NewsWidget
-                        isDarkMode={isDarkMode}
-                        newsData={newsData}
-                        loadingNews={loadingNews}
-                    />
-
-                    <HotelsWidget
-                        isDarkMode={isDarkMode}
-                        hotels={hotels}
-                        loadingHotels={loadingHotels}
-                    />
-
-                    <FlightsWidget
-                        isDarkMode={isDarkMode}
-                        flights={flights}
-                        loadingFlights={loadingFlights}
-                    />
-
-                    <TransportWidget
-                        isDarkMode={isDarkMode}
-                        transports={transports}
-                        loadingTransports={loadingTransports}
-                    />
-
-                    <ConnectivityWidget
-                        isDarkMode={isDarkMode}
-                        connectivity={connectivity}
-                        loadingConnectivity={loadingConnectivity}
-                    />
-
-                    <CurrencyConverter
-                        isDarkMode={isDarkMode}
-                        convAmount={convAmount}
-                        setConvAmount={setConvAmount}
-                        convFrom={convFrom}
-                        setConvFrom={setConvFrom}
-                        convTo={convTo}
-                        setConvTo={setConvTo}
-                        exchangeRates={exchangeRates}
-                        onOpenSettings={onOpenSettings}
-                    />
-
+                    {widgets.filter(w => w.visible).map((widget) => {
+                        const widgetComponents = {
+                            weather: <WeatherWidget isDarkMode={isDarkMode} weatherData={weatherData} isLoadingWeather={isLoadingWeather} currentLang={currentLang} />,
+                            news: <NewsWidget isDarkMode={isDarkMode} newsData={newsData} loadingNews={loadingNews} />,
+                            hotels: <HotelsWidget isDarkMode={isDarkMode} hotels={hotels} loadingHotels={loadingHotels} />,
+                            flights: <FlightsWidget isDarkMode={isDarkMode} flights={flights} loadingFlights={loadingFlights} />,
+                            transport: <TransportWidget isDarkMode={isDarkMode} transports={transports} loadingTransports={loadingTransports} />,
+                            connectivity: <ConnectivityWidget isDarkMode={isDarkMode} connectivity={connectivity} loadingConnectivity={loadingConnectivity} />,
+                            currency: <CurrencyConverter isDarkMode={isDarkMode} convAmount={convAmount} setConvAmount={setConvAmount} convFrom={convFrom} setConvFrom={setConvFrom} convTo={convTo} setConvTo={setConvTo} exchangeRates={exchangeRates} onOpenSettings={onOpenSettings} />,
+                        };
+                        return <div key={widget.id} className="break-inside-avoid mb-6">{widgetComponents[widget.id]}</div>;
+                    })}
                 </div>
             </div>
 

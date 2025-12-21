@@ -59,7 +59,7 @@ const ActiveUsersList = ({ tripId, user, activeTab, language = "zh-TW" }) => {
     if (activeUsers.length === 0) return null;
 
     return (
-        <div className="flex items-center -space-x-2 mr-4 animate-fade-in pointer-events-auto">
+        <div className="flex items-center -space-x-2 mr-4 animate-fade-in pointer-events-auto relative">
             {activeUsers.slice(0, 5).map((u, i) => {
                 const isMe = u.user.uid === user?.uid;
                 const timeDiff = Math.floor((Date.now() - u.lastActive) / 1000);
@@ -67,7 +67,7 @@ const ActiveUsersList = ({ tripId, user, activeTab, language = "zh-TW" }) => {
                 const tabName = TAB_LABELS[u.activeTab]?.[language] || u.activeTab || (language === 'zh-TW' ? '總覽' : 'Overview');
 
                 return (
-                    <div key={u.user.uid} className={`relative group cursor-help z-${10 - i}`}>
+                    <div key={u.user.uid} className="relative group cursor-help" style={{ zIndex: 10 - i }}>
                         {u.user.photo ? (
                             <img src={u.user.photo} alt={u.user.name}
                                 className={`w-8 h-8 rounded-full border-2 object-cover transition-transform hover:scale-110 ${isMe ? 'border-green-400 ring-2 ring-green-400/30' : 'border-white dark:border-gray-800'}`} />
@@ -76,7 +76,8 @@ const ActiveUsersList = ({ tripId, user, activeTab, language = "zh-TW" }) => {
                                 {getUserInitial(u.user.name)}
                             </div>
                         )}
-                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-900/90 backdrop-blur text-white text-[10px] px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl border border-white/10">
+                        {/* V1.0.3 Fix: Increased z-index and adjusted position to prevent overlap */}
+                        <div className="absolute top-full mt-2 left-0 bg-gray-900/95 backdrop-blur text-white text-[10px] px-3 py-2 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl border border-white/10" style={{ zIndex: 100 }}>
                             <div className="font-bold flex items-center gap-1">
                                 {u.user.name} {isMe && <span className="text-green-400">(Me)</span>}
                             </div>
@@ -91,7 +92,7 @@ const ActiveUsersList = ({ tripId, user, activeTab, language = "zh-TW" }) => {
                 );
             })}
             {activeUsers.length > 5 && (
-                <div className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-bold z-0">
+                <div className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-bold" style={{ zIndex: 0 }}>
                     +{activeUsers.length - 5}
                 </div>
             )}

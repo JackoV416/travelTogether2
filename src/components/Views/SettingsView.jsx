@@ -1,11 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, BrainCircuit, Lock, Sparkles } from 'lucide-react';
+import { ArrowLeft, BrainCircuit, Lock, Sparkles, Eye, EyeOff, RotateCcw, GripVertical } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { CURRENCIES, TIMEZONES, LANGUAGE_OPTIONS } from '../../constants/appData';
 import { inputClasses } from '../../utils/tripUtils';
 import { checkAIUsageLimit } from '../../services/ai-parsing';
 
-const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack }) => {
-    const [activeTab, setActiveTab] = useState('general');
+// Default Widget Configuration
+const DEFAULT_WIDGETS = [
+    { id: 'weather', name: '天氣預報', visible: true },
+    { id: 'news', name: '旅遊新聞', visible: true },
+    { id: 'hotels', name: '酒店推介', visible: true },
+    { id: 'flights', name: '機票優惠', visible: true },
+    { id: 'transport', name: '交通資訊', visible: true },
+    { id: 'connectivity', name: '網絡方案', visible: true },
+    { id: 'currency', name: '匯率計算', visible: true },
+];
+
+const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, initialTab = 'general' }) => {
+    const [activeTab, setActiveTab] = useState(initialTab);
+
+    // Widget Customization State
+    const [widgetConfig, setWidgetConfig] = useState(() => {
+        const saved = localStorage.getItem('dashboardWidgets');
+        return saved ? JSON.parse(saved) : DEFAULT_WIDGETS;
+    });
+
+    // Handle Drag End for Widgets
+    const handleWidgetDragEnd = (result) => {
+        if (!result.destination) return;
+        const items = Array.from(widgetConfig);
+        const [reorderedItem] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reorderedItem);
+        setWidgetConfig(items);
+        localStorage.setItem('dashboardWidgets', JSON.stringify(items));
+    };
 
     const AI_INTERESTS = [
         { id: 'history', label: '歷史文化' },
@@ -144,6 +172,45 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack })
                                 <p className="text-xs opacity-50 mt-3 text-right">每個帳號每日免費限額 {aiUsage.total} 次</p>
                             </div>
 
+                            {/* V1.0.3: AI Feature Usage Documentation */}
+                            <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-gray-800/30 border-gray-700/50' : 'bg-gray-50/50 border-gray-200'}`}>
+                                <h4 className="font-bold text-sm mb-3 flex items-center gap-2">
+                                    <Sparkles className="w-4 h-4 text-purple-400" />
+                                    AI 功能使用說明
+                                </h4>
+                                <div className="space-y-2 text-xs">
+                                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-bold">🧠 AI 行程生成</span>
+                                            <span className="text-purple-400 font-mono text-[10px]">~500 tokens/次</span>
+                                        </div>
+                                        <p className="opacity-60 mt-1">從文字描述生成結構化行程 (每次呼叫算 1 次)</p>
+                                    </div>
+                                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-bold">✨ AI 靈感建議</span>
+                                            <span className="text-blue-400 font-mono text-[10px]">~150 tokens/次</span>
+                                        </div>
+                                        <p className="opacity-60 mt-1">新增行程時的景點/餐廳推薦 (不扣次數)</p>
+                                    </div>
+                                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-bold">🚆 交通路線建議</span>
+                                            <span className="text-emerald-400 font-mono text-[10px]">~300 tokens/次</span>
+                                        </div>
+                                        <p className="opacity-60 mt-1">多城市行程自動計算交通方式 (每次呼叫算 1 次)</p>
+                                    </div>
+                                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-bold">📝 智能摘要</span>
+                                            <span className="text-amber-400 font-mono text-[10px]">~200 tokens/次</span>
+                                        </div>
+                                        <p className="opacity-60 mt-1">Dashboard 行程卡片的 AI 摘要生成 (每張算 1 次)</p>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] opacity-40 mt-3 text-center">💡 提示：使用自訂 API Key 可無視每日限額</p>
+                            </div>
+
                             <hr className="border-gray-500/10" />
 
                             <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 p-5 rounded-2xl border border-emerald-500/20">
@@ -255,10 +322,91 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack })
                     )}
 
                     {activeTab === 'info' && (
-                        <div className="text-center py-20 opacity-50">
-                            <div className="text-4xl mb-4">🚧</div>
-                            <h3 className="text-xl font-bold mb-2">資訊中心設定開發中</h3>
-                            <p>即將推出：自訂首頁 Widget 排序與顯示</p>
+                        <div className="space-y-6 animate-fade-in">
+                            <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 p-5 rounded-2xl border border-emerald-500/20">
+                                <h4 className="font-bold flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-2 text-lg">🎛️ 資訊中心自訂</h4>
+                                <p className="text-sm opacity-70">拖曳以重新排序。眼睛圖示控制顯示/隱藏。設定會自動儲存。</p>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-2 flex-wrap">
+                                <button
+                                    onClick={() => {
+                                        const newWidgets = widgetConfig.map(w => ({ ...w, visible: true }));
+                                        setWidgetConfig(newWidgets);
+                                        localStorage.setItem('dashboardWidgets', JSON.stringify(newWidgets));
+                                    }}
+                                    className="px-3 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-500 text-xs font-bold transition-all flex items-center gap-1"
+                                >
+                                    <Eye className="w-3 h-3" /> 全部顯示
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const newWidgets = widgetConfig.map(w => ({ ...w, visible: false }));
+                                        setWidgetConfig(newWidgets);
+                                        localStorage.setItem('dashboardWidgets', JSON.stringify(newWidgets));
+                                    }}
+                                    className="px-3 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-500 text-xs font-bold transition-all flex items-center gap-1"
+                                >
+                                    <EyeOff className="w-3 h-3" /> 全部隱藏
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setWidgetConfig(DEFAULT_WIDGETS);
+                                        localStorage.removeItem('dashboardWidgets');
+                                    }}
+                                    className="px-3 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-500 text-xs font-bold transition-all flex items-center gap-1"
+                                >
+                                    <RotateCcw className="w-3 h-3" /> 重設預設
+                                </button>
+                            </div>
+
+                            {/* Widget List with Drag & Drop */}
+                            <DragDropContext onDragEnd={handleWidgetDragEnd}>
+                                <Droppable droppableId="widget-settings">
+                                    {(provided) => (
+                                        <div
+                                            {...provided.droppableProps}
+                                            ref={provided.innerRef}
+                                            className="space-y-2"
+                                        >
+                                            {widgetConfig.map((widget, index) => (
+                                                <Draggable key={widget.id} draggableId={widget.id} index={index}>
+                                                    {(provided, snapshot) => (
+                                                        <div
+                                                            ref={provided.innerRef}
+                                                            {...provided.draggableProps}
+                                                            className={`flex items-center justify-between p-4 rounded-xl border transition-all ${snapshot.isDragging ? 'ring-2 ring-indigo-500 shadow-lg' : ''} ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 rounded hover:bg-gray-500/10">
+                                                                    <GripVertical className="w-5 h-5 opacity-50" />
+                                                                </div>
+                                                                <span className={`font-bold ${!widget.visible ? 'opacity-40 line-through' : ''}`}>{widget.name}</span>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => {
+                                                                    const newWidgets = widgetConfig.map(w =>
+                                                                        w.id === widget.id ? { ...w, visible: !w.visible } : w
+                                                                    );
+                                                                    setWidgetConfig(newWidgets);
+                                                                    localStorage.setItem('dashboardWidgets', JSON.stringify(newWidgets));
+                                                                }}
+                                                                className={`p-2 rounded-full transition-all ${widget.visible ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}
+                                                            >
+                                                                {widget.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </Draggable>
+                                            ))}
+                                            {provided.placeholder}
+                                        </div>
+                                    )}
+                                </Droppable>
+                            </DragDropContext>
+
+                            <p className="text-xs opacity-50 text-center">設定會自動儲存到瀏覽器，下次開啟即生效。</p>
                         </div>
                     )}
 

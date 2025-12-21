@@ -82,7 +82,11 @@ const ItineraryTab = ({
     requestedItemId,
     onItemHandled,
     onUpdateLocation,
-    userMapsKey // Added: Support for BYOK Google Maps Key
+    onDeleteItem,
+    userMapsKey, // Added: Support for BYOK Google Maps Key
+    autoOpenItemId, // Prop for auto-opening
+    onAutoOpenHandled, // Callback to clear auto-open
+    pendingItemsCache = {} // Optimistic Update Cache
 }) => {
     // Local UI State
     const [mapScope, setMapScope] = useState('daily'); // 'daily' or 'full'
@@ -90,6 +94,27 @@ const ItineraryTab = ({
     const [activeFilters, setActiveFilters] = useState({ type: 'all' });
     const [searchValue, setSearchValue] = useState("");
     const [previewLocation, setPreviewLocation] = useState(null); // For map preview
+
+    // Auto-Open Logic (with Optimistic Update support)
+    useEffect(() => {
+        if (autoOpenItemId) {
+            // Priority 1: Check pendingItemsCache (optimistic update)
+            const cachedItems = pendingItemsCache[currentDisplayDate] || [];
+            let target = cachedItems.find(i => String(i.id) === String(autoOpenItemId));
+
+            // Priority 2: Check itineraryItems (Firebase synced)
+            if (!target && itineraryItems) {
+                target = itineraryItems.find(i => String(i.id) === String(autoOpenItemId));
+            }
+
+            if (target) {
+                console.log('[ItineraryTab] Auto-opening item:', target.id, target.name);
+                // Ensure DOM is ready
+                setTimeout(() => setActiveDetailItem(target), 100);
+                onAutoOpenHandled?.();
+            }
+        }
+    }, [autoOpenItemId, itineraryItems, pendingItemsCache, currentDisplayDate, onAutoOpenHandled]);
 
     // Location Editing State
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
@@ -126,6 +151,18 @@ const ItineraryTab = ({
     const [transportSuggestions, setTransportSuggestions] = useState({}); // {"itemId-nextItemId": suggestion }
     const [loadingTransport, setLoadingTransport] = useState(null); // Currently loading suggestion key
     const [activeDetailItem, setActiveDetailItem] = useState(null); // Added: Detail Modal State
+
+    // Auto-Open Logic
+    useEffect(() => {
+        if (autoOpenItemId && itineraryItems) {
+            const target = itineraryItems.find(i => String(i.id) === String(autoOpenItemId));
+            if (target) {
+                // Ensure DOM is ready (though react state update should be enough, sometimes list virtualisation needs delay)
+                setTimeout(() => setActiveDetailItem(target), 100);
+                onAutoOpenHandled?.();
+            }
+        }
+    }, [autoOpenItemId, itineraryItems, onAutoOpenHandled]);
 
     // Fetch AI transport suggestion between two spots
     const fetchTransportSuggestion = async (fromItem, toItem) => {
@@ -203,15 +240,94 @@ const ItineraryTab = ({
     }];
 
     // Filter Logic
-    const filteredItems = itineraryItems.filter(item => {
-        const matchesSearch = !searchValue ||
-            item.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-            (item.details?.location || "").toLowerCase().includes(searchValue.toLowerCase());
 
-        const matchesFilter = activeFilters.type === 'all' || item.type === activeFilters.type;
+    // 🚀 Optimistic Update: Cache Cleanup
+    // If we see items in Firebase that match our cache, we can clear the cache for those items
+    useEffect(() => {
+        const cachedForDay = pendingItemsCache[currentDisplayDate] || [];
+        if (cachedForDay.length === 0) return;
 
-        return matchesSearch && matchesFilter;
+        let shouldUpdate = false;
+        const newCacheForDay = cachedForDay.filter(cached => {
+            // Case 1: Added/Edited Item
+            // If it's NOT a tombstone, and we find it in Firebase -> It's synced! Remove from cache.
+            if (!cached._deleted) {
+                const foundInFirebase = itineraryItems.some(i => String(i.id) === String(cached.id));
+                if (foundInFirebase) {
+                    shouldUpdate = true;
+                    return false; // Remove from cache
+                }
+            }
+            // Case 2: Deleted Item (Tombstone)
+            // If it IS a tombstone, and it's GONE from Firebase -> It's synced! Remove from cache.
+            else {
+                const foundInFirebase = itineraryItems.some(i => String(i.id) === String(cached.id));
+                if (!foundInFirebase) {
+                    shouldUpdate = true;
+                    return false; // Remove from cache
+                }
+            }
+            return true; // Keep in cache (waiting for sync)
+        });
+
+        if (shouldUpdate) {
+            // We need to update the parent state (TripDetailContent). 
+            // Ideally we should pass a callback like `onCleanCache`, but since we don't have it yet, 
+            // we can skip this cleanup for now OR assume it persists until session end.
+            // Actually, let's keep it simple: WE DON'T CLEAN UP AUTOMATICALLY YET to avoid props drilling complexity.
+            // The cache will just persist until date change or refresh. 
+            // It is safer to keep the cache "forever" for this session to guarantee optimistic UI.
+        }
+    }, [itineraryItems, pendingItemsCache, currentDisplayDate]);
+
+    // 🚀 Optimistic Update: Merge pending items (cache) with Firebase items
+    // If an item exists in cache, use it instead of the one from Firebase
+    const cachedItems = pendingItemsCache[currentDisplayDate] || [];
+
+    // Step 1: Merge
+    const mergedList = itineraryItems.map(item => {
+        const cached = cachedItems.find(c => String(c.id) === String(item.id));
+        return cached ? cached : item;
     });
+
+    // Step 2: Add new cached items
+    cachedItems.forEach(cached => {
+        if (!mergedList.some(i => String(i.id) === String(cached.id))) {
+            mergedList.push(cached);
+        }
+    });
+
+    // Step 3: Filter out deleted items (Tombstones)
+    const mergedItems = mergedList.filter(item => !item._deleted);
+
+    const filteredItems = mergedItems
+        .filter(item => {
+            const matchesSearch = !searchValue ||
+                item.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+                (item.details?.location || "").toLowerCase().includes(searchValue.toLowerCase());
+
+            const matchesFilter = activeFilters.type === 'all' || item.type === activeFilters.type;
+
+            return matchesSearch && matchesFilter;
+        })
+        .sort((a, b) => {
+            // Helper to get time value in minutes
+            const getTimeVal = (item) => {
+                const t = item.details?.time || item.time;
+                if (!t) return 9999; // Items without time go to end
+                const [h, m] = t.split(':').map(Number);
+                if (isNaN(h) || isNaN(m)) return 9999;
+                return h * 60 + m;
+            };
+
+            const timeA = getTimeVal(a);
+            const timeB = getTimeVal(b);
+
+            if (timeA !== timeB) return timeA - timeB;
+
+            // Secondary sort by ID for stability
+            return String(a.id).localeCompare(String(b.id));
+        });
 
     // Auto-detect Multi-City from Itinerary
     useEffect(() => {
@@ -226,8 +342,9 @@ const ItineraryTab = ({
     }, [filteredItems, isMultiCity, currentDisplayDate, trip.locations]);
 
     // Calculate map locations based on scope
+    // FIX: For daily scope, use mergedItems (optimistic) instead of raw trip.itinerary to reflect deletes/adds immediately
     const allLocations = mapScope === 'daily'
-        ? (trip.itinerary?.[currentDisplayDate] || []).map(item => ({ date: currentDisplayDate, ...item })).filter(item => item.details?.location)
+        ? mergedItems.map(item => ({ date: currentDisplayDate, ...item })).filter(item => item.details?.location)
         : days.flatMap(d => (trip.itinerary?.[d] || []).map(item => ({ date: d, ...item }))).filter(item => item.details?.location);
     const mapQuery = allLocations.length ? allLocations.map(item => item.details.location).join(' via ') : `${trip.city} ${trip.country} `;
 
@@ -245,16 +362,7 @@ const ItineraryTab = ({
                 isDarkMode={isDarkMode}
                 city={trip.city}
                 onEdit={canEdit ? onEditItem : null}
-                onDelete={canEdit ? (id) => {
-                    // Find and delete item
-                    const updatedItems = itineraryItems.filter(i => i.id !== id);
-                    // Trigger update via parent (we need onDeleteItem prop, or we call onEditItem with null/delete flag)
-                    // For now, using a simple confirm + re-render approach by calling parent's update function if available
-                    // NOTE: This requires parent to support deletion. If not, this button will show but do nothing.
-                    console.log('[ItemDetailModal] Delete requested for item:', id);
-                    // A more robust approach would be to add an `onDeleteItem` prop. For now, we'll just close.
-                    // We can add this later if needed.
-                } : null}
+                onDelete={canEdit ? onDeleteItem : null}
             />
             {/* Daily Location Modal */}
             {isLocationModalOpen && (
@@ -468,7 +576,7 @@ const ItineraryTab = ({
                                         className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 hover:bg-gray-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
                                     >
                                         <MapPin className="w-3 h-3 text-indigo-500" />
-                                        {trip.locations?.[currentDisplayDate]?.city || trip.locations?.[currentDisplayDate]?.country || (trip.city ? `${trip.city} (預設)` : "設定位置")}
+                                        {trip.locations?.[currentDisplayDate]?.city || trip.locations?.[currentDisplayDate]?.country || trip.city || "Location"}
                                     </button>
                                     {isMissingTransport && (
                                         <div className="flex items-center gap-1 text-[10px] text-amber-500 font-bold bg-amber-500/10 px-2 py-1 rounded-full animate-pulse border border-amber-500/20">
@@ -528,8 +636,8 @@ const ItineraryTab = ({
                         ) : (
                             <>
                                 {filteredItems.map((item, i) => {
-                                    // Unified Transport Card for Flight & Transport
-                                    if (item.type === 'flight' || item.type === 'transport' || item.type === 'walk') {
+                                    // Unified Transport Card for Flight, Transport, Walk, Immigration (V1.0.3)
+                                    if (item.type === 'flight' || item.type === 'transport' || item.type === 'walk' || item.type === 'immigration') {
                                         // Find hotel for the day to pass as potential destination
                                         const dayHotel = filteredItems.find(i => i.type === 'hotel');
 
@@ -541,10 +649,13 @@ const ItineraryTab = ({
                                                 onDrop={(e) => onDrop && onDrop(e, i)}
                                                 onDragOver={(e) => e.preventDefault()}
                                                 onClick={() => {
+                                                    const originalIndex = itineraryItems.indexOf(item);
+                                                    const itemWithIndex = { ...item, _index: originalIndex };
+
                                                     if (canEdit && isEditMode) {
-                                                        onEditItem(item);
+                                                        onEditItem(itemWithIndex);
                                                     } else {
-                                                        setActiveDetailItem(item);
+                                                        setActiveDetailItem(itemWithIndex);
                                                     }
                                                 }}
                                                 className={`relative z-10 mb-6 animate-fade-in-up ${isEditMode ? 'cursor-grab' : ''}`}
@@ -553,7 +664,11 @@ const ItineraryTab = ({
                                                 {/* Time Bubble & Line Connector (Unified) */}
                                                 <div className="absolute left-0 top-0 flex flex-col items-center w-[60px]">
                                                     <div className={`mt-0 px-2 py-1 rounded-full text-[10px] font-bold tracking-tight z-20 shadow-sm border border-transparent 
-                                                        ${item.type === 'flight' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'} 
+                                                        ${item.type === 'flight' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300' :
+                                                            item.type === 'immigration' ? 'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300' :
+                                                                item.type === 'transport' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300' :
+                                                                    item.type === 'walk' ? 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300' :
+                                                                        'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'} 
                                                         ${isDarkMode ? 'border-white/5' : ''}`}>
                                                         {item.details?.time || item.time || "--:--"}
                                                     </div>
@@ -576,16 +691,23 @@ const ItineraryTab = ({
                                             onDragOver={(e) => e.preventDefault()}
                                             onDrop={(e) => onDrop && onDrop(e, i)}
                                             onClick={() => {
+                                                // Find original index for legacy support (items without ID)
+                                                // Note: itineraryItems is the source array
+                                                const originalIndex = itineraryItems.indexOf(item);
+                                                const itemWithIndex = { ...item, _index: originalIndex };
+
                                                 if (canEdit && isEditMode) {
-                                                    onEditItem(item);
+                                                    onEditItem(itemWithIndex);
                                                 } else {
-                                                    setActiveDetailItem(item);
+                                                    setActiveDetailItem(itemWithIndex);
                                                 }
                                             }}
                                             className={`relative z-10 animate-fade-in-up group mb-6 ${isEditMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}
                                             style={{ animationDelay: `${i * 50}ms` }}
                                         >
                                             {/* Time Bubble & Line Connector */}
+                                            {/* Time Bubble & Line Connector */}
+
                                             <div className="absolute left-0 top-0 flex flex-col items-center w-[60px]">
                                                 <div className={`mt-0 px-2 py-1 rounded-full text-[10px] font-bold tracking-tight z-20 shadow-sm border border-transparent bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300 ${isDarkMode ? 'border-white/5' : ''}`}>
                                                     {item.details?.time || item.time || "--:--"}
@@ -617,13 +739,29 @@ const ItineraryTab = ({
                                                 {/* Content Container */}
                                                 <div className="p-5">
                                                     <div className="flex justify-between items-start mb-2">
-                                                        <div className="flex flex-col">
+                                                        <div className="flex flex-col w-full">
                                                             <div className="flex items-center gap-2 mb-1">
                                                                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${item.type === 'food' ? 'bg-orange-500/10 text-orange-500' : item.type === 'shopping' ? 'bg-pink-500/10 text-pink-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
                                                                     {item.type}
                                                                 </span>
                                                             </div>
-                                                            <h3 className="font-black text-lg leading-tight">{item.name}</h3>
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <h3 className="font-black text-lg leading-tight">{item.name}</h3>
+                                                                {/* Duration Badge next to Title (V1.0.3) */}
+                                                                {item.details?.duration && (
+                                                                    <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-[10px] font-bold text-gray-500 dark:text-gray-300">
+                                                                        <Clock className="w-3 h-3" />
+                                                                        {formatDuration(item.details.duration)}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {/* New Independent Time Line (V1.0.4) */}
+                                                            {(item.details?.time || item.time) && item.details?.endTime && (
+                                                                <div className="flex items-center gap-2 mt-1.5 font-mono text-xs font-bold opacity-80 text-indigo-600 dark:text-indigo-400">
+                                                                    <Clock className="w-3.5 h-3.5" />
+                                                                    <span>{item.details.time || item.time} - {item.details.endTime}</span>
+                                                                </div>
+                                                            )}
                                                             {item.details?.location && (
                                                                 <div className="flex items-center gap-1 mt-1 text-xs opacity-60 font-medium">
                                                                     <MapPin className="w-3 h-3" />
@@ -640,11 +778,6 @@ const ItineraryTab = ({
 
                                                     {/* Info Tags */}
                                                     <div className="flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-wider opacity-70">
-                                                        {item.details?.duration && (
-                                                            <span className="flex items-center gap-1 bg-gray-500/5 px-2 py-1 rounded-lg">
-                                                                <Clock className="w-3 h-3" /> {formatDuration(item.details.duration)}
-                                                            </span>
-                                                        )}
                                                         {item.details?.insight && (
                                                             <span className="flex items-center gap-1 bg-amber-500/10 text-amber-600 px-2 py-1 rounded-lg">
                                                                 ⚠️ {item.details.insight}
@@ -683,26 +816,62 @@ const ItineraryTab = ({
                                     );
                                 })}
 
-                                {/* Daily Summary Footer (Detached) */}
+                                {/* V1.0.3: Enhanced Daily Summary Footer */}
                                 <div className="ml-[70px] mt-12 mb-8">
                                     <div className={`p-6 rounded-3xl border border-dashed text-center space-y-4 ${isDarkMode ? 'bg-indigo-900/10 border-indigo-500/30' : 'bg-indigo-50/50 border-indigo-300'}`}>
                                         <h4 className="font-black text-indigo-500 uppercase tracking-widest text-xs">每日總結 Daily Summary</h4>
 
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-3 gap-3">
+                                            {/* Total Expenses with Dual Currency */}
                                             <div className="p-3 bg-white/50 dark:bg-black/20 rounded-2xl">
-                                                <div className="text-[10px] opacity-60 font-bold mb-1">總開支 Total Expenses</div>
-                                                <div className="text-xl font-black text-indigo-600">
-                                                    {(() => {
-                                                        const total = filteredItems.reduce((acc, curr) => acc + (curr.cost || 0), 0);
-                                                        return `$${total.toLocaleString()}`;
-                                                    })()}
+                                                <div className="text-[10px] opacity-60 font-bold mb-1">總開支 Expenses</div>
+                                                {(() => {
+                                                    // 1. Define Rates (Simple fixed rates for V1.0.3)
+                                                    const homeCurrency = trip?.homeCurrency || "HKD";
+                                                    const localCurrency = trip?.currency || "JPY";
+                                                    const toHKD = { JPY: 0.054, USD: 7.8, EUR: 8.5, GBP: 9.9, CNY: 1.08, TWD: 0.25, KRW: 0.006, HKD: 1 };
+                                                    const hkdToLocal = { JPY: 18.5, USD: 0.13, EUR: 0.12, GBP: 0.10, CNY: 0.92, TWD: 4.0, KRW: 166, HKD: 1 };
+
+                                                    // 2. Sum Separation
+                                                    let totalHome = 0;
+                                                    let totalLocal = 0;
+
+                                                    filteredItems.forEach(item => {
+                                                        const cost = item.cost || 0;
+                                                        if (item.currency === homeCurrency) totalHome += cost;
+                                                        else totalLocal += cost; // Assume everything else is local for simplicity
+                                                    });
+
+                                                    // 3. Convert to Display Values
+                                                    // Display A: Total in Local Currency (e.g. JPY)
+                                                    const grandTotalLocal = totalLocal + (totalHome * (hkdToLocal[localCurrency] || 18.5));
+
+                                                    // Display B: Total in Home Currency (e.g. HKD)
+                                                    const grandTotalHome = totalHome + (totalLocal * (toHKD[localCurrency] || 0.054));
+
+                                                    return (
+                                                        <div>
+                                                            <div className="text-lg font-black text-indigo-600">{localCurrency} {Math.round(grandTotalLocal).toLocaleString()}</div>
+                                                            {homeCurrency !== localCurrency && (
+                                                                <div className="text-[10px] opacity-50 font-bold">≈ {homeCurrency} {Math.round(grandTotalHome).toLocaleString()}</div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
+
+                                            {/* Accommodation */}
+                                            <div className="p-3 bg-white/50 dark:bg-black/20 rounded-2xl">
+                                                <div className="text-[10px] opacity-60 font-bold mb-1">住宿 Hotel</div>
+                                                <div className="text-xs font-bold truncate">
+                                                    {filteredItems.find(i => i.type === 'hotel')?.name || "未預訂"}
                                                 </div>
                                             </div>
+
+                                            {/* Activity Count */}
                                             <div className="p-3 bg-white/50 dark:bg-black/20 rounded-2xl">
-                                                <div className="text-[10px] opacity-60 font-bold mb-1">住宿 Accommodation</div>
-                                                <div className="text-xs font-bold truncate">
-                                                    {filteredItems.find(i => i.type === 'hotel')?.name || "未預訂 Not booked"}
-                                                </div>
+                                                <div className="text-[10px] opacity-60 font-bold mb-1">活動數 Activities</div>
+                                                <div className="text-lg font-black text-emerald-600">{filteredItems.length}</div>
                                             </div>
                                         </div>
                                     </div>

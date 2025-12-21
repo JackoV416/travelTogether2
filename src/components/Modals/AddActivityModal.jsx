@@ -18,6 +18,7 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
     useEffect(() => {
         if (isOpen) {
             if (editData) {
+                setName(editData.name || ''); // CRITICAL: Restore name for edit
                 setCost(editData.cost || ''); setType(editData.type || editData.category || 'spot'); setCurrency(editData.currency || 'HKD');
                 setPayer(editData.payer || members[0]?.name);
                 setSplitType(editData.splitType || 'group');
@@ -44,6 +45,7 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
         { id: 'shopping', label: '購物', icon: ShoppingBag, color: 'text-pink-500', bg: 'bg-pink-500/10' },
         { id: 'transport', label: '交通', icon: Bus, color: 'text-blue-500', bg: 'bg-blue-500/10' },
         { id: 'flight', label: '航班', icon: PlaneTakeoff, color: 'text-sky-500', bg: 'bg-sky-500/10' },
+        { id: 'immigration', label: '入境程序', icon: FileText, color: 'text-amber-500', bg: 'bg-amber-500/10' },
         { id: 'hotel', label: '住宿', icon: Hotel, color: 'text-indigo-500', bg: 'bg-indigo-500/10' }
     ];
 
@@ -115,7 +117,8 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
             shopping: "例如: 澀谷109, 多慶屋...",
             transport: "例如: 東京地鐵, 機場接送...",
             flight: "例如: 長榮航空 BR198...",
-            hotel: "例如: 希爾頓酒店, 民宿..."
+            hotel: "例如: 希爾頓酒店, 民宿...",
+            immigration: "例如: 成田入境大廳, 海關檢查..."
         };
         return typeMap[itemType] || "給這個行程一個名字...";
     };
@@ -200,11 +203,11 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
                                 <input type="time" value={details.time || ''} onChange={e => setDetails({ ...details, time: e.target.value })} className={inputClasses(isDarkMode)} />
                             </div>
 
-                            {(type === 'transport' || type === 'flight') ? (
+                            {(type === 'transport' || type === 'flight' || type === 'immigration') ? (
                                 <div className="col-span-2 p-4 rounded-xl border border-gray-500/10 bg-gray-500/5 mt-2 space-y-4">
                                     <div className="flex items-center gap-2 mb-1">
                                         <div className="p-1 rounded bg-indigo-500/10 text-indigo-500"><Bus className="w-3 h-3" /></div>
-                                        <span className="text-[10px] uppercase font-bold tracking-wider opacity-70">路線詳情 (Route)</span>
+                                        <span className="text-[10px] uppercase font-bold tracking-wider opacity-70">{type === 'immigration' ? '入境詳情 (Immigration)' : '路線詳情 (Route)'}</span>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative">
                                         {/* Divider for desktop */}
@@ -313,7 +316,26 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
                     <button onClick={onClose} className="flex-1 py-3.5 rounded-xl border border-gray-500/30 font-bold opacity-70 hover:opacity-100 hover:bg-gray-500/5 transition-all">取消</button>
                     <button onClick={() => {
                         if (!name.trim()) return alert("請輸入名稱");
-                        onSave({ id: editData?.id, name, cost: Number(cost), estPrice: Number(estPrice), currency, type, details, payer, splitType, category });
+                        // CRITICAL: Spread original editData FIRST to preserve all fields
+                        // Then override with form fields (edits)
+                        const payload = {
+                            ...(editData || {}), // Preserve ALL original fields
+                            id: editData?.id,
+                            _index: editData?._index, // Pass index for legacy support
+                            // Form fields (these will override original values)
+                            name,
+                            cost: Number(cost),
+                            estPrice: Number(estPrice),
+                            currency,
+                            type,
+                            details,
+                            payer,
+                            splitType,
+                            category
+                        };
+                        console.log('[AddActivityModal] onSave payload:', JSON.stringify(payload, null, 2));
+                        console.log('[AddActivityModal] details.time:', details.time);
+                        onSave(payload);
                         onClose();
                     }} className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl py-3.5 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
                         {editData ? '儲存變更' : '確認加入'}

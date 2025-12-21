@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, updateDoc, arrayUnion, deleteDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, deleteDoc, collection, addDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import {
     Calendar, Map as MapIcon, Edit3, CalendarDays, ShoppingBag, Wallet, DollarSign, FileText, Shield, Siren, FileCheck, NotebookPen, BrainCircuit, List, Users, UserPlus, Trash2, Plus, ChevronDown, Sparkles, PackageCheck, Share2, Globe, Clock, AlertTriangle, Upload, FileIcon, ArrowLeft, MoreVertical, X, Loader2, Menu, Footprints as FootprintsIcon, Image as ImageIcon, MapPin
@@ -63,6 +63,30 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     const [visaForm, setVisaForm] = useState({ status: '', number: '', expiry: '', needsPrint: false });
     const [smartWeather, setSmartWeather] = useState(null);
     const [isGeneratingWeather, setIsGeneratingWeather] = useState(false);
+    const [autoOpenItemId, setAutoOpenItemId] = useState(null); // Auto-open new/edited item
+    // 🚀 Optimistic Update Cache (Persisted in LocalStorage)
+    const [pendingItemsCache, setPendingItemsCache] = useState(() => {
+        try {
+            const saved = localStorage.getItem(`pendingItemsCache_${trip.id}`);
+            return saved ? JSON.parse(saved) : {};
+        } catch (e) {
+            console.error("Failed to load pending items cache:", e);
+            return {};
+        }
+    });
+
+    // Sync Cache to LocalStorage whenever it changes
+    useEffect(() => {
+        try {
+            if (Object.keys(pendingItemsCache).length > 0) {
+                localStorage.setItem(`pendingItemsCache_${trip.id}`, JSON.stringify(pendingItemsCache));
+            } else {
+                localStorage.removeItem(`pendingItemsCache_${trip.id}`);
+            }
+        } catch (e) {
+            console.error("Failed to save pending items cache:", e);
+        }
+    }, [pendingItemsCache, trip.id]);
 
     // ============================================
     // SYNC EFFECTS
@@ -247,40 +271,177 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     };
 
     const handleSaveItem = async (data) => {
+        console.log('[handleSaveItem] =====================');
+        console.log('[handleSaveItem] Incoming data:', JSON.stringify(data, null, 2));
+        console.log('[handleSaveItem] canEdit:', canEdit, '| isSimulation:', isSimulation);
+
         if (!canEdit) return alert("權限不足");
         if (isSimulation) return alert("模擬模式");
 
+        // Prepare new item object
+        const itemId = data.id || Date.now().toString();
+        console.log('[handleSaveItem] Using itemId:', itemId, '| isNewItem:', !data.id);
+
+        // CRITICAL: Spread data FIRST, then set id AFTER to prevent undefined overwrite
         let newItem = {
-            id: data.id || Date.now().toString(),
             ...data,
-            createdBy: { name: user?.displayName || 'Unknown', id: user?.uid }
+            id: itemId, // Must be AFTER ...data to ensure it's not overwritten by undefined
+            // Preserve existing creator or set current user
+            createdBy: data.createdBy || { name: user?.displayName || 'Unknown', id: user?.uid }
         };
 
-        // Sanitize: Remove undefined values (Firestore crashes on undefined)
+        // Sanitize (remove _index before saving to Firebase)
+        delete newItem._index;
         newItem = JSON.parse(JSON.stringify(newItem));
 
-        if (data.type === 'shopping_plan') await updateDoc(doc(db, "trips", trip.id), { shoppingList: arrayUnion({ ...newItem, bought: false }) });
-        else if (data.type === 'shopping') await updateDoc(doc(db, "trips", trip.id), { budget: arrayUnion({ ...newItem, category: 'shopping' }) });
-        else if (data.type === 'packing') await updateDoc(doc(db, "trips", trip.id), { packingList: arrayUnion({ ...newItem, category: data.category || 'misc', checked: false }) });
-        else {
-            await updateDoc(doc(db, "trips", trip.id), { [`itinerary.${currentDisplayDate}`]: arrayUnion(newItem) });
-            if (data.cost > 0) await updateDoc(doc(db, "trips", trip.id), { budget: arrayUnion({ ...newItem, category: data.type }) });
+        console.log('[handleSaveItem] Prepared newItem:', JSON.stringify(newItem, null, 2));
 
-            // 🚀 Auto City Detection: If transport/flight with arrival city, auto-set next day's location
-            if ((data.type === 'transport' || data.type === 'flight') && (data.arrival || data.details?.arrival)) {
+        const docRef = doc(db, "trips", trip.id);
+        const docSnap = await import('firebase/firestore').then(m => m.getDoc(docRef));
+
+        if (!docSnap.exists()) return;
+
+        if (data.type === 'shopping_plan') {
+            // Check if exists in shoppingList to update, else union
+            const currentList = docSnap.data().shoppingList || [];
+            const exists = currentList.some(i => String(i.id) === String(itemId));
+
+            if (exists) {
+                const updatedList = currentList.map(i => String(i.id) === String(itemId) ? newItem : i);
+                await updateDoc(docRef, { shoppingList: updatedList });
+            } else {
+                await updateDoc(docRef, { shoppingList: arrayUnion({ ...newItem, bought: false }) });
+            }
+        } else if (data.type === 'shopping' && !data.details?.startLine) { // Budget item (legacy check)
+            // Budget logic usually uses arrayUnion but for editing we might need full array rewrite if we support budget editing
+            // For now, assume this follows standard budget flow
+            await updateDoc(docRef, { budget: arrayUnion({ ...newItem, category: 'shopping' }) });
+        } else if (data.type === 'packing') {
+            const currentList = docSnap.data().packingList || [];
+            const exists = currentList.some(i => String(i.id) === String(itemId));
+
+            if (exists) {
+                const updatedList = currentList.map(i => String(i.id) === String(itemId) ? newItem : i);
+                await updateDoc(docRef, { packingList: updatedList });
+            } else {
+                await updateDoc(docRef, { packingList: arrayUnion({ ...newItem, category: data.category || 'misc', checked: false }) });
+            }
+        } else {
+            // Itinerary Items
+            // Determine if edit based on ID presence OR explicit index provided (legacy fix)
+            const itemIndex = data._index;
+            const isEdit = !!data.id || (itemIndex !== undefined && itemIndex !== null);
+            const routeDate = currentDisplayDate; // Capture current date for safety
+
+            console.log('[handleSaveItem] Itinerary Mode');
+            console.log('[handleSaveItem] isEdit:', isEdit, '| data.id:', data.id, '| itemIndex:', itemIndex);
+            console.log('[handleSaveItem] routeDate:', routeDate);
+
+            if (isEdit) {
+                const items = docSnap.data().itinerary?.[routeDate] || [];
+                console.log('[handleSaveItem] Current items count:', items.length);
+                console.log('[handleSaveItem] Looking for ID:', data.id, 'type:', typeof data.id);
+                console.log('[handleSaveItem] Firebase item IDs:', items.map(i => ({ id: i.id, type: typeof i.id, name: i.name })));
+
+                let updatedItems;
+                let updateMethod = 'unknown';
+
+                // Priority 1: Update by ID
+                if (data.id && items.some(i => String(i.id) === String(data.id))) {
+                    updateMethod = 'BY_ID';
+                    updatedItems = items.map(item => {
+                        if (String(item.id) === String(data.id)) {
+                            console.log('[handleSaveItem] Found matching item by ID, merging...');
+                            console.log('[handleSaveItem] Original item.details:', JSON.stringify(item.details));
+                            console.log('[handleSaveItem] New item.details:', JSON.stringify(newItem.details));
+                            return { ...item, ...newItem };
+                        }
+                        return item;
+                    });
+                }
+                // Priority 2: Update by Index (Legacy/Broken ID Support)
+                else if (itemIndex !== undefined && itemIndex !== null && items[itemIndex]) {
+                    updateMethod = 'BY_INDEX';
+                    updatedItems = [...items];
+                    console.log('[handleSaveItem] Updating by index:', itemIndex);
+                    // HEAL: Assign new ID to the legacy item!
+                    updatedItems[itemIndex] = { ...items[itemIndex], ...newItem, id: newItem.id };
+                }
+                // Fallback: This shouldn't happen if isEdit is true, but safety check
+                else {
+                    updateMethod = 'FALLBACK_ADD';
+                    console.warn('[handleSaveItem] FALLBACK: Could not find item, adding as new!');
+                    updatedItems = [...items, newItem];
+                }
+
+                console.log('[handleSaveItem] Update method:', updateMethod);
+
+                // CRITICAL: Sanitize to remove undefined values (Firebase doesn't accept them)
+                const sanitizeForFirebase = (obj) => {
+                    if (obj === null || obj === undefined) return null;
+                    if (Array.isArray(obj)) return obj.map(sanitizeForFirebase);
+                    if (typeof obj === 'object') {
+                        const result = {};
+                        for (const [key, value] of Object.entries(obj)) {
+                            if (value !== undefined) {
+                                result[key] = sanitizeForFirebase(value);
+                            }
+                        }
+                        return result;
+                    }
+                    return obj;
+                };
+
+                // Sanitize each item in the array
+                const sanitizedItems = updatedItems.map(item => sanitizeForFirebase(item));
+                console.log('[handleSaveItem] Sanitized items count:', sanitizedItems.length);
+
+                console.log('[handleSaveItem] Saving to Firebase...');
+                await updateDoc(docRef, { [`itinerary.${routeDate}`]: sanitizedItems });
+                console.log('[handleSaveItem] Firebase save SUCCESS');
+            } else {
+                console.log('[handleSaveItem] Adding NEW item via arrayUnion');
+                await updateDoc(docRef, { [`itinerary.${routeDate}`]: arrayUnion(newItem) });
+                console.log('[handleSaveItem] Firebase add SUCCESS');
+            }
+
+            // Budget auto-add (only for new items or explicit logic, keeping simple here)
+            if (!isEdit && data.cost > 0) await updateDoc(docRef, { budget: arrayUnion({ ...newItem, category: data.type }) });
+
+            // Auto City Detection (only for new transport items)
+            if (!isEdit && (data.type === 'transport' || data.type === 'flight') && (data.arrival || data.details?.arrival)) {
                 const arrivalCity = data.arrival || data.details?.arrival;
                 const days = getDaysArray(trip.startDate, trip.endDate);
-                const currentIdx = days.indexOf(currentDisplayDate);
+                const currentIdx = days.indexOf(routeDate);
                 if (currentIdx >= 0 && currentIdx < days.length - 1) {
                     const nextDate = days[currentIdx + 1];
-                    // Only auto-set if next day doesn't have a custom location already
                     if (!trip.locations?.[nextDate]) {
-                        await updateDoc(doc(db, "trips", trip.id), { [`locations.${nextDate}`]: { city: arrivalCity, country: trip.country } });
+                        await updateDoc(docRef, { [`locations.${nextDate}`]: { city: arrivalCity, country: trip.country } });
                     }
                 }
             }
         }
         setIsAddModal(false);
+
+        // 🚀 Optimistic Update: Cache the saved item with its ID
+        // This allows immediate edit access before Firebase real-time sync completes
+        if (data.type !== 'shopping_plan' && data.type !== 'shopping' && data.type !== 'packing') {
+            const routeDate = currentDisplayDate;
+            setPendingItemsCache(prev => ({
+                ...prev,
+                [routeDate]: [
+                    ...(prev[routeDate] || []).filter(i => i.id !== itemId), // Remove old entry if exists
+                    { ...newItem, id: itemId } // Add/update with correct ID
+                ]
+            }));
+            console.log('[handleSaveItem] Added to pendingItemsCache:', itemId);
+        }
+
+        // Trigger auto-open for this item ID (except budget/packing which don't have detail modal yet)
+        // USER REQUEST: Disable Auto-Open
+        // if (data.type !== 'shopping_plan' && data.type !== 'shopping' && data.type !== 'packing') {
+        //    setAutoOpenItemId(itemId);
+        // }
     };
 
     const handleInvite = async (email, role) => {
@@ -317,30 +478,71 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
         if (confirm("確定刪除？")) { await deleteDoc(doc(db, "trips", trip.id)); onBack(); }
     };
 
-    const handleDeleteItineraryItem = (itemId) => {
+    const handleDeleteItineraryItem = (itemOrId) => {
+        console.log('[handleDeleteItem] =====================');
+        console.log('[handleDeleteItem] Received:', typeof itemOrId, itemOrId);
+
         if (!canEdit) return setConfirmConfig({ title: "權限不足", message: "您沒有權限執行此操作", type: "warning" });
         if (isSimulation) return setConfirmConfig({ title: "模擬模式", message: "模擬模式僅供預覽", type: "warning" });
+
+        const itemId = typeof itemOrId === 'object' ? itemOrId?.id : itemOrId;
+        const itemIndex = typeof itemOrId === 'object' ? itemOrId?._index : undefined;
+
+        console.log('[handleDeleteItem] itemId:', itemId, '| itemIndex:', itemIndex);
+
+        if (!itemId && (itemIndex === undefined || itemIndex === null)) return console.error("Missing Item ID or Index for delete");
 
         setConfirmConfig({
             title: "刪除確認",
             message: "確定要刪除這個行程項目嗎？",
             type: "warning",
             onConfirm: async () => {
+
+                // 🚀 Optimistic Delete: Immediately hide from UI via cache
+                if (itemId) {
+                    const routeDate = currentDisplayDate;
+                    setPendingItemsCache(prev => ({
+                        ...prev,
+                        [routeDate]: [
+                            ...(prev[routeDate] || []).filter(i => String(i.id) !== String(itemId)), // Remove existing cache entry if any
+                            { id: itemId, _deleted: true } // Add tombstone to hide original item
+                        ]
+                    }));
+                }
+
                 setConfirmConfig(null);
                 try {
                     const docRef = doc(db, "trips", trip.id);
-                    const docSnap = await import('firebase/firestore').then(m => m.getDoc(docRef));
+                    // FIX: Use direct getDoc instead of dynamic import which might be hanging
+                    const docSnap = await getDoc(docRef);
 
                     if (docSnap.exists()) {
                         const data = docSnap.data();
-                        const items = data.itinerary?.[currentDisplayDate] || [];
-                        const newItems = items.filter(i => i.id !== itemId);
+                        const routeDate = currentDisplayDate;
+                        const items = data.itinerary?.[routeDate] || [];
+
+                        let newItems;
+
+                        // Priority 1: Delete by ID
+                        if (itemId && items.some(i => String(i.id) === String(itemId))) {
+                            newItems = items.filter(i => String(i.id) !== String(itemId));
+                        }
+                        // Priority 2: Delete by Index (Legacy Support)
+                        else if (itemIndex !== undefined && itemIndex !== null && items[itemIndex]) {
+                            newItems = [...items];
+                            newItems.splice(itemIndex, 1);
+                        }
+                        // Fallback: If nothing matched, change nothing
+                        else {
+                            newItems = items;
+                            console.warn("Delete failed: Item not found by ID or Index");
+                        }
 
                         if (newItems.length !== items.length) {
-                            await updateDoc(docRef, { [`itinerary.${currentDisplayDate}`]: newItems });
-                            setIsAddModal(false);
+                            await updateDoc(docRef, { [`itinerary.${routeDate}`]: newItems });
                         }
                     }
+                    setIsAddModal(false);
                 } catch (err) {
                     console.error("Delete itinerary item error:", err);
                 }
@@ -991,7 +1193,10 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                         }}
                         onDragStart={onDragStart}
                         requestedItemId={requestedItemId} // Deep Link Item ID
+                        autoOpenItemId={autoOpenItemId} // Auto Open New/Edited Item
+                        onAutoOpenHandled={() => setAutoOpenItemId(null)}
                         onItemHandled={onItemHandled}
+                        pendingItemsCache={pendingItemsCache} // Optimistic Update Cache
                         onDrop={onDrop}
                         openSectionModal={openSectionModal}
                         userMapsKey={globalSettings?.userMapsKey}
@@ -1006,6 +1211,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                             if (isSimulation) return alert("模擬模式");
                             await updateDoc(doc(db, "trips", trip.id), { [`locations.${date}`]: locData });
                         }}
+                        onDeleteItem={handleDeleteItineraryItem}
                     />
                 )
             }
@@ -1157,30 +1363,50 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                 isDarkMode={isDarkMode}
             />
 
-            {/* Mobile More Menu Overlay */}
+            {/* Mobile More Menu Overlay - V1.0.3 Fixed Bottom Sheet */}
             {isMobileMoreOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm md:hidden animate-fade-in" onClick={() => setIsMobileMoreOpen(false)}>
+                <div
+                    className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm md:hidden animate-fade-in"
+                    onClick={() => setIsMobileMoreOpen(false)}
+                >
                     <div
-                        className={`${glassCard(isDarkMode)} p-6 mb-6 flex flex-col md:flex-row gap-6 items-center md:items-start relative overflow-hidden group`}
+                        className={`fixed bottom-0 left-0 right-0 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} border-t rounded-t-3xl p-6 pb-10 shadow-2xl animate-slide-up`}
                         onClick={e => e.stopPropagation()}
                     >
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 opacity-50 group-hover:opacity-80 transition-opacity duration-1000"></div>
-                        <div className="col-span-4 mb-2 flex justify-between items-center opacity-70">
-                            <span className="text-xs font-bold uppercase tracking-wider">更多功能</span>
-                            <button onClick={() => setIsMobileMoreOpen(false)}><X className="w-5 h-5" /></button>
-                        </div>
-                        {[{ id: 'shopping', label: '購物', icon: ShoppingBag }, { id: 'gallery', label: '相簿', icon: ImageIcon }, { id: 'currency', label: '匯率', icon: DollarSign }, { id: 'journal', label: '足跡', icon: FootprintsIcon }, { id: 'insurance', label: '保險', icon: Shield }, { id: 'emergency', label: '緊急', icon: Siren }, { id: 'visa', label: '簽證', icon: FileCheck }].map(t => (
+                        {/* Header */}
+                        <div className="flex justify-between items-center mb-4">
+                            <span className="text-sm font-bold opacity-70">更多功能</span>
                             <button
-                                key={t.id}
-                                onClick={() => { setActiveTab(t.id); setIsMobileMoreOpen(false); }}
-                                className={`flex flex-col items-center gap-2 p-2 rounded-xl transition-all ${activeTab === t.id ? 'bg-indigo-500 text-white' : 'hover:bg-gray-500/10'}`}
+                                onClick={() => setIsMobileMoreOpen(false)}
+                                className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'} transition-colors`}
                             >
-                                <div className={`p-3 rounded-full ${activeTab === t.id ? 'bg-white/20' : 'bg-gray-500/10'}`}>
-                                    <t.icon className="w-5 h-5" />
-                                </div>
-                                <span className={`text-[10px] font-bold ${activeTab === t.id ? 'text-white' : ''}`}>{t.label}</span>
+                                <X className="w-5 h-5" />
                             </button>
-                        ))}
+                        </div>
+                        {/* Grid Layout for Touch Targets */}
+                        <div className="grid grid-cols-4 gap-3">
+                            {[
+                                { id: 'shopping', label: '購物', icon: ShoppingBag },
+                                { id: 'gallery', label: '相簿', icon: ImageIcon },
+                                { id: 'currency', label: '匯率', icon: DollarSign },
+                                { id: 'journal', label: '足跡', icon: FootprintsIcon },
+                                { id: 'insurance', label: '保險', icon: Shield },
+                                { id: 'emergency', label: '緊急', icon: Siren },
+                                { id: 'visa', label: '簽證', icon: FileCheck },
+                                { id: 'files', label: '檔案', icon: FileText }
+                            ].map(t => (
+                                <button
+                                    key={t.id}
+                                    onClick={() => { setActiveTab(t.id); setIsMobileMoreOpen(false); }}
+                                    className={`flex flex-col items-center gap-2 p-3 rounded-2xl transition-all active:scale-95 ${activeTab === t.id ? 'bg-indigo-500 text-white shadow-lg' : (isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200')}`}
+                                >
+                                    <div className={`p-3 rounded-full ${activeTab === t.id ? 'bg-white/20' : (isDarkMode ? 'bg-gray-700' : 'bg-white')}`}>
+                                        <t.icon className="w-5 h-5" />
+                                    </div>
+                                    <span className={`text-[10px] font-bold ${activeTab === t.id ? 'text-white' : 'opacity-70'}`}>{t.label}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}

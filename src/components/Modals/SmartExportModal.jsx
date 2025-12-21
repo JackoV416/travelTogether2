@@ -57,7 +57,7 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
                 try {
                     // Slight delay to allow UI to update if switching quickly
                     await new Promise(r => setTimeout(r, 500));
-                    const blobUrl = exportToBeautifulPDF(selectedTrip, { template: 'modern', returnBlob: true });
+                    const blobUrl = await exportToBeautifulPDF(selectedTrip, { template: 'modern', returnBlob: true });
                     setPreviewUrl(blobUrl);
                 } catch (e) {
                     console.error("Preview generation failed", e);
@@ -295,6 +295,23 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
                                                 }
                                                 if (data.shopping) text += `\n🛒 購物清單 (${data.shopping.length} 項)\n`;
                                                 return text;
+                                            }
+                                            if (exportType?.id === 'ical') {
+                                                // V1.0.3: Apple Calendar style preview for iCal
+                                                let icalPreview = `📅 iCal 日曆預覽\n${'─'.repeat(25)}\n\n`;
+                                                if (data.itinerary) {
+                                                    Object.entries(data.itinerary).slice(0, 3).forEach(([date, items]) => {
+                                                        icalPreview += `📆 ${date}\n`;
+                                                        items.slice(0, 2).forEach((item) => {
+                                                            const time = item.details?.time || item.time || '--:--';
+                                                            icalPreview += `   ⏰ ${time}  ${item.name.replace(/[✈️🚆🍽️🏨⛩️🛂🛍️🎢🗼🚇💼🏙️🍳🍣]/g, '').trim()}\n`;
+                                                        });
+                                                        if (items.length > 2) icalPreview += `   ... 等 ${items.length} 個事件\n`;
+                                                        icalPreview += '\n';
+                                                    });
+                                                }
+                                                icalPreview += `🔔 匯出後可直接匯入 Apple 日曆 / Google Calendar`;
+                                                return icalPreview;
                                             }
                                             return "請選擇匯出格式以顯示預覽";
                                         })()}

@@ -5,6 +5,37 @@ import { formatDuration, getSmartItemImage, getLocalizedCityName } from '../../u
 const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDelete }) => {
     if (!isOpen || !item) return null;
 
+    // V1.0.3: Helper to calculate end time from start + duration
+    const getEndTime = () => {
+        if (item.endTime) return item.endTime;
+        if (item.details?.endTime) return item.details.endTime;
+        if (!item.time || !item.details?.duration) return null;
+
+        const [h, m] = item.time.split(':').map(Number);
+        let durationMins = 0;
+        const val = item.details.duration;
+
+        if (typeof val === 'number') {
+            durationMins = val;
+        } else if (typeof val === 'string') {
+            const hasHour = val.match(/(\d+)\s*(?:hr|hour|小时|小時|h)/i);
+            const hasMin = val.match(/(\d+)\s*(?:min|minute|分|m)/i);
+            if (hasHour) durationMins += parseInt(hasHour[1]) * 60;
+            if (hasMin) durationMins += parseInt(hasMin[1]);
+            if (!hasHour && !hasMin) {
+                const digits = val.match(/\d+/);
+                if (digits) durationMins = parseInt(digits[0]);
+            }
+        }
+
+        if (!durationMins) return null;
+        const date = new Date();
+        date.setHours(h, m + durationMins);
+        return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const endTime = getEndTime();
+
     // Helper to get Header Image
     const headerImage = getSmartItemImage(item) || "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800";
 
@@ -64,8 +95,7 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
                             <div className="w-10 flex flex-col items-center">
                                 <div className="w-3 h-3 rounded-full bg-purple-500 ring-4 ring-purple-500/20"></div>
                                 <div className="mt-1 text-[10px] font-mono opacity-50">
-                                    {/* Simple logic to add duration to time would go here if needed */}
-                                    --:--
+                                    {endTime || '--:--'}
                                 </div>
                             </div>
                             <div>
@@ -132,6 +162,19 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
                         )}
                     </div>
                 </div>
+
+                {/* V1.0.3: History/Insight Section */}
+                {(item.details?.insight || item.details?.history) && (
+                    <div className={`p-4 rounded-xl border ${isDarkMode ? 'bg-indigo-900/20 border-indigo-500/20' : 'bg-indigo-50 border-indigo-100'}`}>
+                        <div className="flex items-center gap-2 mb-2">
+                            <Info className="w-4 h-4 text-indigo-500" />
+                            <span className="text-xs font-bold text-indigo-500">知識卡 / Insight</span>
+                        </div>
+                        <p className="text-sm leading-relaxed opacity-90">
+                            {item.details.insight || item.details.history}
+                        </p>
+                    </div>
+                )}
 
                 <div className="flex gap-3 pt-2">
                     {/* External Buttons */}
@@ -205,10 +248,8 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
                         {onDelete && (
                             <button
                                 onClick={() => {
-                                    if (window.confirm("確定要刪除此行程嗎？\nAre you sure you want to delete this item?")) {
-                                        onDelete(item.id);
-                                        onClose();
-                                    }
+                                    onDelete(item);
+                                    onClose();
                                 }}
                                 className="px-4 py-3 rounded-xl font-bold text-sm bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors flex items-center justify-center gap-2"
                             >

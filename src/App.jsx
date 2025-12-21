@@ -394,6 +394,7 @@ const App = () => {
     const [previewTrip, setPreviewTrip] = useState(null);
     const [isPreviewMode, setIsPreviewMode] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [settingsInitialTab, setSettingsInitialTab] = useState('general'); // V1.0.3: Support direct navigation to specific settings tab
 
     // --- URL Routing for Sharing ---
     useEffect(() => {
@@ -482,6 +483,38 @@ const App = () => {
             return () => clearTimeout(timer);
         }
     }, [user]);
+
+    // V1.0.3: Auto-show Version Modal when version changes
+    useEffect(() => {
+        const lastSeenVersion = localStorage.getItem('app_last_seen_version');
+        const isNewVersion = lastSeenVersion !== APP_VERSION;
+
+        if (isNewVersion && user) {
+            // Delay to ensure onboarding closes first if applicable
+            const timer = setTimeout(() => {
+                // Only show if onboarding is already done (or returning users)
+                if (localStorage.getItem('hasSeenOnboarding')) {
+                    setIsVersionOpen(true);
+                    localStorage.setItem('app_last_seen_version', APP_VERSION);
+                }
+            }, 2500); // Slightly longer delay to accommodate onboarding
+            return () => clearTimeout(timer);
+        }
+    }, [user]);
+
+    // Handle Onboarding close to trigger version modal for new users
+    const handleOnboardingComplete = () => {
+        localStorage.setItem('hasSeenOnboarding', 'true');
+        setIsOnboardingOpen(false);
+        // After onboarding, check if version modal should show
+        const lastSeenVersion = localStorage.getItem('app_last_seen_version');
+        if (lastSeenVersion !== APP_VERSION) {
+            setTimeout(() => {
+                setIsVersionOpen(true);
+                localStorage.setItem('app_last_seen_version', APP_VERSION);
+            }, 500);
+        }
+    };
 
     const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
     const [isAdminFeedbackModalOpen, setIsAdminFeedbackModalOpen] = useState(false);
@@ -838,7 +871,7 @@ const App = () => {
                                 weatherData={weatherData}
                                 isLoadingWeather={isLoadingWeather}
                                 onViewChange={setView}
-                                onOpenSettings={() => setIsSettingsOpen(true)}
+                                onOpenSettings={(tab) => { setSettingsInitialTab(tab || 'general'); setView('settings'); }}
                                 isBanned={isBanned}
                             />
                         </ErrorBoundary>
@@ -885,6 +918,7 @@ const App = () => {
                             setGlobalSettings={setGlobalSettings}
                             isDarkMode={isDarkMode}
                             onBack={() => setView('dashboard')}
+                            initialTab={settingsInitialTab}
                         />
                     </div>
                 )}
@@ -925,7 +959,7 @@ const App = () => {
                     // Do NOT close modal here - SmartImportModal will show result and close itself
                 }}
             />
-            <OnboardingModal isOpen={isOnboardingOpen} onClose={() => setIsOnboardingOpen(false)} isDarkMode={isDarkMode} />
+            <OnboardingModal isOpen={isOnboardingOpen} onClose={handleOnboardingComplete} isDarkMode={isDarkMode} />
         </div>
     );
 };

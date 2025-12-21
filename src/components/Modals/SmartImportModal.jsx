@@ -11,6 +11,7 @@ const IMPORT_TYPES = [
     { id: 'screenshot', label: '行程截圖', icon: Image, desc: '上傳行程圖片，AI 自動識別', color: 'indigo' },
     { id: 'receipt', label: '預算單據', icon: Receipt, desc: '機票、酒店、收據掃描', color: 'green' },
     { id: 'memory', label: '回憶 / 靈感', icon: Brain, desc: '相片或文件存檔', color: 'purple' },
+    { id: 'plaintext', label: '純文字', icon: FileText, desc: '貼上/輸入行程文字', color: 'pink' },
     { id: 'json', label: 'JSON 匯入', icon: FileJson, desc: '完整行程資料結構', color: 'blue' },
     { id: 'csv', label: 'CSV 匯入', icon: FileSpreadsheet, desc: '表格格式匯入', color: 'amber' },
 ];
@@ -33,6 +34,7 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
     const [progress, setProgress] = useState({ current: 0, total: 0, percent: 0 }); // Progress tracking
     const [result, setResult] = useState(null);
     const [reviewItems, setReviewItems] = useState([]); // Items staged for review
+    const [plaintextInput, setPlaintextInput] = useState(''); // V1.0.3: Plain text input
     const fileInputRef = useRef(null);
 
     const [selectedTripId, setSelectedTripId] = useState(trip?.id || (trips.length > 0 ? trips[0].id : ''));
@@ -72,6 +74,55 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
     };
 
     const handleSubmit = async () => {
+        // V1.0.3: Handle plaintext mode
+        if (importType?.id === 'plaintext') {
+            if (!plaintextInput.trim() || !selectedTripId) return;
+            setIsProcessing(true);
+            setStage(3);
+
+            try {
+                const lines = plaintextInput.trim().split('\n').filter(l => l.trim());
+                const parsedItems = lines.map((line, idx) => {
+                    let time = '10:00';
+                    let name = line.trim();
+
+                    // Extract time if format is "HH:MM name"
+                    const timeMatch = line.match(/^(\d{1,2}:\d{2})\s+(.+)/);
+                    if (timeMatch) {
+                        time = timeMatch[1].padStart(5, '0');
+                        name = timeMatch[2].trim();
+                    }
+
+                    // Infer type from emoji or keywords
+                    let type = 'spot';
+                    if (/🍴|🍽️|餐|食|午餐|晚餐|早餐|restaurant|cafe|食堂/.test(name)) type = 'food';
+                    if (/🚆|🚇|🚅|🚌|JR|線|站|transport|metro|train|bus/.test(name)) type = 'transport';
+                    if (/✈️|航班|flight|airport|機場/.test(name)) type = 'flight';
+                    if (/🏨|hotel|酒店|check.?in|check.?out/.test(name)) type = 'hotel';
+                    if (/🛍️|買|購物|shopping|mall/.test(name)) type = 'shopping';
+
+                    return {
+                        id: crypto.randomUUID(),
+                        name: name.replace(/^[\u{1F300}-\u{1F9FF}]+\s*/u, '').trim() || `項目 ${idx + 1}`,
+                        time,
+                        type,
+                        category: 'itinerary',
+                        details: { desc: '', source: 'Plain Text Import' }
+                    };
+                });
+
+                setReviewItems(parsedItems);
+                setStage(4);
+            } catch (e) {
+                console.error(e);
+                setResult({ success: false, message: `解析失敗: ${e.message}` });
+                setStage(5);
+            } finally {
+                setIsProcessing(false);
+            }
+            return;
+        }
+
         if (files.length === 0 || !importType || !selectedTripId) return;
         setIsProcessing(true);
         setStage(3);
@@ -379,6 +430,7 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
         setResult(null);
         setReviewItems([]);
         setImportedIds([]);
+        setPlaintextInput(''); // V1.0.3: Reset plaintext input
     };
 
     const handleClose = () => {
@@ -449,7 +501,7 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                         </div>
                     )}
 
-                    {/* Stage 2: File Upload */}
+                    {/* Stage 2: File Upload / Text Input */}
                     {stage === 2 && importType && (
                         <div className="p-6">
                             <div className="flex items-center gap-2 mb-4 text-sm">
@@ -458,45 +510,65 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                                 <button onClick={handleReset} className="ml-auto text-xs opacity-60 hover:opacity-100">更改類型</button>
                             </div>
 
-                            <div
-                                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${files.length > 0 ? 'border-green-500 bg-green-500/10' : (isDarkMode ? 'border-white/20 hover:border-white/40' : 'border-gray-300 hover:border-gray-400')}`}
-                                onClick={() => fileInputRef.current?.click()}
-                                onDragOver={(e) => e.preventDefault()}
-                                onDrop={handleDrop}
-                            >
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept={getAcceptTypes()}
-                                    multiple={importType.id !== 'json'}
-                                    className="hidden"
-                                    onChange={handleFileChange}
-                                />
-                                {files.length > 0 ? (
-                                    <div>
-                                        <Check className="w-10 h-10 mx-auto text-green-500 mb-2" />
-                                        <p className="font-bold text-green-400">{files.length} 個檔案已選擇</p>
-                                        <p className="text-xs opacity-60 mt-1">{files.map(f => f.name).join(', ')}</p>
-                                    </div>
-                                ) : (
-                                    <div>
-                                        <Upload className="w-10 h-10 mx-auto opacity-30 mb-2" />
-                                        <p className="font-bold">拖放檔案或點擊上傳</p>
-                                        <p className="text-xs opacity-60 mt-1">
-                                            {importType.id === 'receipt' || importType.id === 'screenshot'
-                                                ? '支援圖片 (JPG, PNG) - AI 自動識別內容'
-                                                : '選擇您的檔案'}
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
+                            {/* V1.0.3: Plaintext Input Mode */}
+                            {importType.id === 'plaintext' ? (
+                                <div className="space-y-3">
+                                    <textarea
+                                        value={plaintextInput}
+                                        onChange={(e) => setPlaintextInput(e.target.value)}
+                                        className={`w-full h-48 p-4 rounded-xl border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'} text-sm resize-none`}
+                                        placeholder={`貼上或輸入行程 (每行一個項目):
+
+09:00 新宿站出發
+10:30 淺草寺觀光
+12:00 午餐: 壽司店
+14:00 🚆 JR山手線 往澀谷`}
+                                    />
+                                    <p className="text-[10px] opacity-50">💡 提示: 支援格式 "時間 活動名稱" 或純文字。會自動識別🍴餐廳/🚆交通/⛩️景點等。</p>
+                                </div>
+                            ) : (
+
+                                <div
+                                    className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${files.length > 0 ? 'border-green-500 bg-green-500/10' : (isDarkMode ? 'border-white/20 hover:border-white/40' : 'border-gray-300 hover:border-gray-400')}`}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    onDragOver={(e) => e.preventDefault()}
+                                    onDrop={handleDrop}
+                                >
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept={getAcceptTypes()}
+                                        multiple={importType.id !== 'json'}
+                                        className="hidden"
+                                        onChange={handleFileChange}
+                                    />
+                                    {files.length > 0 ? (
+                                        <div>
+                                            <Check className="w-10 h-10 mx-auto text-green-500 mb-2" />
+                                            <p className="font-bold text-green-400">{files.length} 個檔案已選擇</p>
+                                            <p className="text-xs opacity-60 mt-1">{files.map(f => f.name).join(', ')}</p>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <Upload className="w-10 h-10 mx-auto opacity-30 mb-2" />
+                                            <p className="font-bold">拖放檔案或點擊上傳</p>
+                                            <p className="text-xs opacity-60 mt-1">
+                                                {importType.id === 'receipt' || importType.id === 'screenshot'
+                                                    ? '支援圖片 (JPG, PNG) - AI 自動識別內容'
+                                                    : '選擇您的檔案'}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+
+                            )}
 
                             <button
                                 onClick={handleSubmit}
-                                disabled={files.length === 0}
-                                className={`w-full mt-4 py-3 rounded-xl font-bold transition-all ${files.length > 0 ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700' : 'bg-gray-500/30 text-gray-400 cursor-not-allowed'}`}
+                                disabled={importType.id === 'plaintext' ? !plaintextInput.trim() : files.length === 0}
+                                className={`w-full mt-4 py-3 rounded-xl font-bold transition-all ${(importType.id === 'plaintext' ? plaintextInput.trim() : files.length > 0) ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700' : 'bg-gray-500/30 text-gray-400 cursor-not-allowed'}`}
                             >
-                                開始識別並匯入
+                                {importType.id === 'plaintext' ? '解析並預覽' : '開始識別並匯入'}
                             </button>
                         </div>
                     )}

@@ -45,14 +45,18 @@ const SmartSummaryCard = ({ trip, onClick, isDarkMode }) => {
     }
 
     // Reminders (Simulated logic for now based on timing)
-    const reminders = [];
-    if (daysLeft > 0 && daysLeft <= 14) reminders.push({ text: "檢查簽證", icon: FileText, color: "text-amber-500" });
-    if (daysLeft > 0 && daysLeft <= 3) reminders.push({ text: "收拾行李", icon: Package, color: "text-red-500" });
-    if (daysLeft > 0 && daysLeft <= 30 && !trip.insurance) reminders.push({ text: "購買保險", icon: AlertTriangle, color: "text-blue-500" });
+    // V1.0.3: Sort by priority (urgency)
+    let reminders = [];
+    if (daysLeft > 0 && daysLeft <= 3) reminders.push({ text: "收拾行李", icon: Package, color: "text-red-500", priority: 1 });
+    if (daysLeft > 0 && daysLeft <= 30 && !trip.insurance) reminders.push({ text: "購買保險", icon: AlertTriangle, color: "text-blue-500", priority: 3 });
+    if (daysLeft > 0 && daysLeft <= 14) reminders.push({ text: "檢查簽證", icon: FileText, color: "text-amber-500", priority: 2 });
+
+    // Sort by priority (lower = more urgent)
+    reminders.sort((a, b) => a.priority - b.priority);
 
     // Fallback reminder if empty
     if (reminders.length === 0 && daysLeft > 0) {
-        reminders.push({ text: "規劃行程", icon: MapPin, color: "text-indigo-400" });
+        reminders.push({ text: "規劃行程", icon: MapPin, color: "text-indigo-400", priority: 10 });
     }
 
     // Background Image
@@ -98,7 +102,7 @@ const SmartSummaryCard = ({ trip, onClick, isDarkMode }) => {
 
                     <div className="flex justify-between items-end pt-1">
                         <div className="text-[10px] opacity-60">
-                            {trip.startDate} - {trip.endDate}
+                            {trip.startDate && trip.endDate ? `${trip.startDate} - ${trip.endDate}` : '日期待定'}
                         </div>
                         <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center group-hover:bg-indigo-500 transition-colors">
                             <ArrowRight className="w-4 h-4 text-white" />
