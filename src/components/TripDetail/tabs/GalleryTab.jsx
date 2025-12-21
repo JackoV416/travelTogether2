@@ -35,10 +35,30 @@ const GalleryTab = ({ trip, isDarkMode }) => {
             trip.files.forEach(file => {
                 if (file.type?.startsWith('image/') && !seenUrls.has(file.url)) {
                     seenUrls.add(file.url);
+
+                    let dateStr = '';
+                    if (file.uploadedAt) {
+                        try {
+                            // Handle Firestore Timestamp object
+                            if (file.uploadedAt.seconds) {
+                                dateStr = new Date(file.uploadedAt.seconds * 1000).toISOString().split('T')[0];
+                            }
+                            // Handle string or Date object
+                            else {
+                                const d = new Date(file.uploadedAt);
+                                if (!isNaN(d.getTime())) {
+                                    dateStr = d.toISOString().split('T')[0];
+                                }
+                            }
+                        } catch (e) {
+                            console.error("Gallery: Invalid date for file", file.name, e);
+                        }
+                    }
+
                     images.push({
                         url: file.url,
                         source: 'file',
-                        date: file.uploadedAt ? new Date(file.uploadedAt.seconds * 1000).toISOString().split('T')[0] : '',
+                        date: dateStr,
                         title: file.name,
                         description: 'Uploaded File',
                         type: 'file'

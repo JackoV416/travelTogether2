@@ -2,13 +2,32 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // --- Multi-API Key + Multi-Model Configuration ---
 // Add multiple keys in .env: VITE_GEMINI_API_KEY, VITE_GEMINI_API_KEY_2, etc.
-const API_KEYS = [
+// --- Multi-API Key + Multi-Model Configuration ---
+// Add multiple keys in .env: VITE_GEMINI_API_KEY, VITE_GEMINI_API_KEY_2, etc.
+const getStoredKey = () => {
+    try {
+        const settings = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+        return settings.userGeminiKey;
+    } catch { return null; }
+};
+
+const getStoredModel = () => {
+    try {
+        const settings = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+        return settings.userGeminiModel;
+    } catch { return null; }
+};
+
+// ... (ENV_KEYS, API_KEYS setup)
+const ENV_KEYS = [
     import.meta.env.VITE_GEMINI_API_KEY,
     import.meta.env.VITE_GEMINI_API_KEY_2,
     import.meta.env.VITE_GEMINI_API_KEY_3,
     import.meta.env.VITE_GEMINI_API_KEY_4,
     import.meta.env.VITE_GEMINI_API_KEY_5,
-].filter(Boolean); // Remove undefined keys
+].filter(Boolean);
+
+const API_KEYS = [...(getStoredKey() ? [getStoredKey()] : []), ...ENV_KEYS];
 
 if (API_KEYS.length === 0) {
     console.warn("[Gemini AI] No API keys found. Add VITE_GEMINI_API_KEY to .env");
@@ -17,9 +36,10 @@ if (API_KEYS.length === 0) {
 
 // Model priority chain: Try these in order when one hits quota
 const MODEL_CHAIN = [
-    "gemini-2.5-flash",      // Primary: Good balance of speed/quality
-    "gemini-2.5-flash-lite", // Fallback: Faster, lighter
-    "gemini-1.5-flash",      // Legacy fallback
+    ...(getStoredModel() ? [getStoredModel()] : []), // User's custom model comes first!
+    "gemini-2.0-flash-exp",   // Updating to latest stable/exp
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-8b",
 ];
 
 let currentKeyIndex = 0;
@@ -86,7 +106,22 @@ async function callWithSmartRetry(apiFn, maxRetries = 2, trackUsage = true) {
     // Check usage limit first (if tracking is enabled)
     if (trackUsage) {
         const usage = getUsageData();
-        const remaining = DEFAULT_DAILY_LIMIT - usage.count;
+
+        // Get dynamic limit
+        let dailyLimit = DEFAULT_DAILY_LIMIT;
+        try {
+            const settings = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+            if (settings.userGeminiLimit) {
+                dailyLimit = parseInt(settings.userGeminiLimit);
+            }
+        } catch (e) { }
+
+        // If limit is manually cleared (null/0/empty), treat as unlimited warning zone but allow it via logic 
+        // OR enforce a safer default if input was empty. Design choice: user input number overwrites. 
+        // If user input is "0" or invalid, fallback to default.
+        if (isNaN(dailyLimit) || dailyLimit <= 0) dailyLimit = DEFAULT_DAILY_LIMIT;
+
+        const remaining = dailyLimit - usage.count;
 
         if (usage.count >= DEFAULT_DAILY_LIMIT) {
             const error = new Error(`AI_LIMIT_EXCEEDED: 你今日已經用咗 ${DEFAULT_DAILY_LIMIT} 次 AI 功能，請聽日再試！`);
@@ -196,20 +231,8 @@ function incrementUsage() {
     return usage;
 }
 
-/**
- * ✅ Check if user can make AI call
- * @returns {{ allowed: boolean, remaining: number, total: number }}
- */
-export function checkAIUsageLimit() {
-    const usage = getUsageData();
-    const remaining = Math.max(0, DEFAULT_DAILY_LIMIT - usage.count);
-    return {
-        allowed: usage.count < DEFAULT_DAILY_LIMIT,
-        remaining,
-        total: DEFAULT_DAILY_LIMIT,
-        used: usage.count
-    };
-}
+// function removed - moved to end of file to support BYOK settings
+// export function checkAIUsageLimit() ... replaced
 
 /**
  * 🛡️ Wrapper that checks limit before calling AI
@@ -803,7 +826,7 @@ export async function suggestTransportBetweenSpots({
     preference = 'public'
 }) {
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+        const model = getGenAI().getGenerativeModel({ model: "gemini-3-flash-preview" });
 
         const prompt = `You are a local transport expert for ${city}. Suggest the best way to travel between two locations.
 
@@ -882,7 +905,7 @@ Preference: ${preference} (public/taxi/walking)
  */
 export async function getLocationDetails(placeName, city) {
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+        const model = getGenAI().getGenerativeModel({ model: "gemini-3-flash-preview" });
 
         const prompt = `Provide location details for "${placeName}" in ${city}.
 
@@ -934,7 +957,7 @@ If the place doesn't exist or you're unsure, set coordinates to null.`;
  */
 export async function askTravelAI(question, context = {}) {
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+        const model = getGenAI().getGenerativeModel({ model: "gemini-3-flash-preview" });
 
         const prompt = `You are a helpful travel assistant. Answer the following travel question.
 
@@ -1107,7 +1130,7 @@ Activities: ${activities.slice(0, 10).join(', ') || 'General sightseeing'}
  */
 export async function generateWeatherSummaryWithGemini(city, rawWeatherData = {}) {
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+        const model = getGenAI().getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
         const prompt = `你係一個旅遊天氣專家。請根據提供嘅原始數據，為 ${city} 生成一個詳細嘅天氣與穿著建議。
 
@@ -1172,7 +1195,7 @@ ${JSON.stringify(rawWeatherData, null, 2)}
  */
 export async function generateTripName(trip) {
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = getGenAI().getGenerativeModel({ model: "gemini-2.0-flash" });
 
         const destination = trip.city || trip.cities?.[0] || trip.country || "Unknown";
         const country = trip.country || "";
@@ -1216,3 +1239,20 @@ Return ONLY the trip name, nothing else. No quotes, no explanation.`;
         return `${city} Trip`;
     }
 }
+export const checkAIUsageLimit = () => {
+    const usage = getUsageData();
+    let limit = DEFAULT_DAILY_LIMIT;
+    try {
+        const settings = JSON.parse(localStorage.getItem("travelTogether_settings") || "{}");
+        if (settings.userGeminiLimit) {
+            const parsed = parseInt(settings.userGeminiLimit);
+            if (!isNaN(parsed) && parsed > 0) limit = parsed;
+        }
+    } catch (e) { }
+
+    return {
+        used: usage.count,
+        total: limit,
+        remaining: Math.max(0, limit - usage.count)
+    };
+};

@@ -1,11 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { List, CheckSquare, FileUp, Upload, Loader2, Trash2, Sparkles, Plus, ShoppingBag, Receipt, Tag } from 'lucide-react';
+import { List, CheckSquare, FileUp, Upload, Loader2, Trash2, Sparkles, Plus, ShoppingBag, Receipt, Tag, Users } from 'lucide-react';
 import SearchFilterBar from '../../Shared/SearchFilterBar';
 import EmptyState from '../../Shared/EmptyState';
 import { Search } from 'lucide-react';
 
 const ShoppingTab = ({
     trip,
+    user,
     isDarkMode,
     onOpenSectionModal,
     onOpenAIModal,
@@ -21,21 +22,67 @@ const ShoppingTab = ({
     const fileInputRef = useRef(null);
     const [searchValue, setSearchValue] = useState("");
 
-    const filteredShopping = (trip.shoppingList || []).filter(item =>
-        !searchValue || item.name.toLowerCase().includes(searchValue.toLowerCase())
-    );
+    const members = trip.members || [];
+    // Default to current user's list if possible, else All
+    const [activeMemberId, setActiveMemberId] = useState(user?.uid);
+    // Fallback logic
+    React.useEffect(() => {
+        if (!activeMemberId && user?.uid) setActiveMemberId(user.uid);
+    }, [user, activeMemberId]);
 
-    const filteredBought = (trip.budget || []).filter(item =>
-        item.category === 'shopping' &&
-        (!searchValue || (item.name || item.desc || "").toLowerCase().includes(searchValue.toLowerCase()))
-    );
+    // Helpers to filter by activeMember
+    const matchesUser = (item) => {
+        const owner = item.ownerId || item.payer || item.createdBy?.id; // Shopping items might have ownerId, bought items have payer
+        if (activeMemberId === 'all') return true;
+        // For bought items, payer might be name string "Use name" or ID. 
+        // If it's a name, we try to match member name.
+        if (members.some(m => m.id === owner)) return owner === activeMemberId;
+        // If payer is a name string like "Alex"
+        const member = members.find(m => m.id === activeMemberId);
+        if (member && owner === member.name) return true;
+
+        return (!owner && activeMemberId === 'all');
+    };
+
+    const filteredShopping = (trip.shoppingList || [])
+        .filter(item => matchesUser(item))
+        .filter(item =>
+            !searchValue || item.name.toLowerCase().includes(searchValue.toLowerCase())
+        );
+
+    const filteredBought = (trip.budget || [])
+        .filter(item => item.category === 'shopping')
+        .filter(item => matchesUser(item))
+        .filter(item =>
+            (!searchValue || (item.name || item.desc || "").toLowerCase().includes(searchValue.toLowerCase()))
+        );
 
     return (
         <div className="space-y-6 animate-fade-in pb-10">
+            {/* Member Filter Tabs */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                <button
+                    onClick={() => setActiveMemberId('all')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all whitespace-nowrap border ${activeMemberId === 'all' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                >
+                    <Users className="w-4 h-4" /> 全部成員
+                </button>
+                {members.map(m => (
+                    <button
+                        key={m.id}
+                        onClick={() => setActiveMemberId(m.id)}
+                        className={`flex items-center gap-2 px-1 py-1 pr-3 rounded-full font-bold transition-all whitespace-nowrap border ${activeMemberId === m.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                    >
+                        <img src={m.photoURL || m.avatar || `https://ui-avatars.com/api/?name=${m.name}`} className="w-6 h-6 rounded-full" alt={m.name} />
+                        <span className="text-xs">{m.name}</span>
+                    </button>
+                ))}
+            </div>
+
             <SearchFilterBar
                 searchValue={searchValue}
                 onSearchChange={setSearchValue}
-                placeholder="搜尋商品名稱或描述..."
+                placeholder={`搜尋 ${members.find(m => m.id === activeMemberId)?.name || '全部'} 的商品...`}
                 isDarkMode={isDarkMode}
             />
 
@@ -54,7 +101,7 @@ const ShoppingTab = ({
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => onOpenAIModal('shopping')}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 rounded-lg transition-all text-[10px] font-black uppercase tracking-wider"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-purple-400 rounded-lg transition-all text-[10px] font-black uppercase tracking-wider"
                                 >
                                     <Sparkles className="w-3 h-3" /> AI 靈感
                                 </button>
@@ -94,6 +141,13 @@ const ShoppingTab = ({
                                         <div className="flex flex-col">
                                             <span className="font-bold text-sm tracking-tight">{item.name}</span>
                                             {item.desc && <span className="text-[10px] opacity-50 line-clamp-1">{item.desc}</span>}
+                                            {/* Show Owner Tag if 'All' */}
+                                            {activeMemberId === 'all' && (item.ownerId || item.createdBy?.id) && (
+                                                <div className="flex items-center gap-1 mt-1">
+                                                    <Users className="w-2 h-2 opacity-50" />
+                                                    <span className="text-[9px] opacity-50">{members.find(m => m.id === (item.ownerId || item.createdBy?.id))?.name || 'User'}</span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="text-right flex flex-col items-end">
@@ -181,7 +235,7 @@ const ShoppingTab = ({
                         </div>
                     </div>
                     <div className="relative group max-w-sm mx-auto overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
-                        <img src={receiptPreview.shopping} alt="receipt preview" className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-110" />
+                        <img src={receiptPreview.shopping} alt="receipt preview" className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     </div>
                 </div>

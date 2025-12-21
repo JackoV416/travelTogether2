@@ -16,7 +16,7 @@ import {
 import { convertCurrency } from '../services/exchangeRate';
 
 // Glassmorphism 2.0 - Premium Effect (Uses CSS Variables in index.css)
-export const glassCard = (isDarkMode) => `glass-card rounded-2xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10 hover:border-indigo-500/30 group`;
+export const glassCard = (isDarkMode) => `glass-card rounded-2xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10 hover:border-indigo-500/30 group relative isolate`;
 
 export const getHolidayMap = (region) => HOLIDAYS_BY_REGION[region] || HOLIDAYS_BY_REGION.Global;
 
@@ -130,10 +130,22 @@ export const getUserInitial = (nameOrEmail = "") => (nameOrEmail[0] || "T").toUp
 
 export const inputClasses = (isDarkMode) => `w-full px-4 py-3.5 rounded-xl border transition-all outline-none font-medium tracking-wide ${isDarkMode ? 'bg-gray-800/90 border-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-white placeholder-gray-500' : 'bg-white border-gray-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 text-gray-900 placeholder-gray-400 shadow-sm'}`;
 
-export const formatDuration = (durationStr) => {
-    if (!durationStr) return "";
+export const formatDuration = (duration) => {
+    if (!duration) return "";
+
+    // Handle number input (minutes)
+    if (typeof duration === 'number') {
+        const totalMins = duration;
+        if (totalMins < 60) return `${totalMins} min`;
+        const h = Math.floor(totalMins / 60);
+        const m = totalMins % 60;
+        if (m === 0) return `${h} hr`;
+        return `${h} hr ${m} min`;
+    }
+
+    const durationStr = String(duration);
     // If it's already localized, or not a simple minute string, return as is
-    if (durationStr.includes('小時') || durationStr.includes('時')) return durationStr;
+    if (durationStr.includes('小時') || durationStr.includes('時') || durationStr.includes('hr')) return durationStr;
 
     const minsMatch = durationStr.match(/(\d+)\s*(?:min|m|分鐘|分)?/i);
     if (!minsMatch) return durationStr;
@@ -144,15 +156,36 @@ export const formatDuration = (durationStr) => {
     const h = Math.floor(totalMins / 60);
     const m = totalMins % 60;
 
-    if (m === 0) return `${h} 小時`;
-    return `${h} 小時 ${m} 分`;
+    if (m === 0) return `${h} hr`;
+    return `${h} hr ${m} min`;
+};
+
+
+// Helper to optimize image URL for Data Saver
+const optimizeImage = (url) => {
+    if (!url || typeof url !== 'string') return url;
+    try {
+        const settings = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+        if (settings.dataSaver) {
+            // Unsplash specific optimization
+            if (url.includes('images.unsplash.com')) {
+                // Replace existing quality/width params or append low quality ones
+                // Simple regex replacement for typical Unsplash params
+                let newUrl = url.replace(/w=\d+/, 'w=400').replace(/q=\d+/, 'q=60');
+                if (!newUrl.includes('w=')) newUrl += '&w=400';
+                if (!newUrl.includes('q=')) newUrl += '&q=60';
+                return newUrl;
+            }
+        }
+    } catch (e) { }
+    return url;
 };
 
 
 export const getSmartItemImage = (item, tripOrCity) => {
     // 1. User/Uploaded Image (Priority 1)
-    if (item.image) return item.image;
-    if (item.details?.image) return item.details.image;
+    if (item.image) return optimizeImage(item.image);
+    if (item.details?.image) return optimizeImage(item.details.image);
 
     const itemName = (item.name || "").toLowerCase();
     const city = (typeof tripOrCity === 'string' ? tripOrCity : tripOrCity?.city) || "";
@@ -160,24 +193,25 @@ export const getSmartItemImage = (item, tripOrCity) => {
 
     // 2. Journal File Match (Priority 2) - Search fuzzy match in trip.files (Journal)
     // "User means images in Journal"
-    const tripFiles = typeof tripOrCity === 'object' ? (tripOrCity.files || []) : [];
-    const matchedFile = tripFiles.find(f =>
+    // We try to find if there is an image in trip.files that matches the item name
+    const files = (typeof tripOrCity === 'object' ? tripOrCity?.files : []) || [];
+    const matchedFile = files.find(f =>
         f.type?.startsWith('image/') && f.name?.toLowerCase().includes(itemName)
     );
-    if (matchedFile) return matchedFile.url;
+    if (matchedFile) return optimizeImage(matchedFile.url);
 
     // 3. Exact Landmark Name Match (Smart Match)
     for (const [key, url] of Object.entries(LANDMARK_IMAGES)) {
-        if (itemName.includes(key.toLowerCase())) return url;
+        if (itemName.includes(key.toLowerCase())) return optimizeImage(url);
     }
 
     // 4. City-specific default fallback if no better image
     if (CITY_IMAGES[city] && (item.type === 'spot' || item.type === 'hotel')) {
-        return CITY_IMAGES[city];
+        return optimizeImage(CITY_IMAGES[city]);
     }
 
     // 5. Type Default
-    return TYPE_DEFAULT_IMAGES[item.type] || TYPE_DEFAULT_IMAGES.spot;
+    return optimizeImage(TYPE_DEFAULT_IMAGES[item.type] || TYPE_DEFAULT_IMAGES.spot);
 };
 
 export const formatFileSize = (bytes) => {

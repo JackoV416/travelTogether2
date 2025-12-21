@@ -1,50 +1,146 @@
 import React from 'react';
-import { X } from 'lucide-react';
-import { VERSION_HISTORY, AUTHOR_NAME, APP_VERSION } from '../../constants/tripData';
+import { X, GitCommit, Calendar, Tag } from 'lucide-react';
+import { VERSION_HISTORY, APP_VERSION, APP_AUTHOR } from '../../constants/appData';
 
 const VersionModal = ({ isOpen, onClose, isDarkMode, globalSettings }) => {
-    const currentLang = globalSettings?.lang || 'zh-TW';
     if (!isOpen) return null;
+
+    const currentLang = globalSettings?.language || 'zh-TW'; // Use globalSettings.language which matches App.jsx state
+
+    // Helper to format body text (handle \n string or array)
+    const renderDetails = (detailsRaw) => {
+        if (!detailsRaw) return null;
+        const text = detailsRaw[currentLang] || detailsRaw['en'];
+
+        if (Array.isArray(text)) {
+            return (
+                <ul className="space-y-1.5 mt-2">
+                    {text.map((line, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-xs opacity-80 leading-relaxed">
+                            <span className="mt-1.5 w-1 h-1 rounded-full bg-current opacity-50 flex-shrink-0"></span>
+                            <span>{line}</span>
+                        </li>
+                    ))}
+                </ul>
+            );
+        }
+
+        // Handle legacy string with \n
+        return (
+            <div className="space-y-1.5 mt-2">
+                {text.split('\n').map((line, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-xs opacity-80 leading-relaxed">
+                        {line.trim().startsWith('•') ? (
+                            <>
+                                <span className="mt-1.5 w-1 h-1 rounded-full bg-current opacity-50 flex-shrink-0"></span>
+                                <span>{line.replace('•', '').trim()}</span>
+                            </>
+                        ) : (
+                            <span>{line}</span>
+                        )}
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
     return (
         <div className="fixed inset-0 bg-black/60 z-[80] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in">
-            <div className={`w-full max-w-md rounded-2xl p-8 ${isDarkMode ? 'bg-gray-900 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-200'} shadow-2xl border transition-all h-[80vh] flex flex-col`}>
-                <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                    <h3 className="text-2xl font-bold tracking-tight">
-                        {currentLang === 'zh-TW' ? '版本紀錄' : 'Version History'}
-                        <span className="ml-2 text-xs bg-indigo-500/10 text-indigo-500 px-2 py-1 rounded-full font-mono">Beta</span>
-                    </h3>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-500/10 transition-colors">
-                        <X className="w-6 h-6 opacity-70" />
+            <div
+                className={`w-full max-w-lg rounded-2xl flex flex-col max-h-[85vh] shadow-2xl transition-all ${isDarkMode ? 'bg-gray-900 text-white border border-gray-700' : 'bg-white text-gray-900 border border-gray-200'}`}
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className={`p-5 border-b flex justify-between items-center flex-shrink-0 ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}>
+                    <div>
+                        <h2 className="text-lg font-bold flex items-center gap-2">
+                            <GitCommit className="w-5 h-5 text-indigo-500" />
+                            版本紀錄
+                        </h2>
+                        <div className="text-xs opacity-50 mt-1 font-mono">Current: {APP_VERSION}</div>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
+                    >
+                        <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                <div className="space-y-8 overflow-y-auto custom-scrollbar pr-4 flex-grow">
-                    {VERSION_HISTORY.map((v, i) => (
-                        <div key={i} className="border-l-2 border-indigo-500/30 pl-6 pb-2 relative group">
-                            <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-4 transition-all ${i === 0 ? 'bg-indigo-500 border-indigo-200 dark:border-indigo-900 scale-110' : 'bg-gray-500 border-transparent'}`}></div>
-                            <div className="flex justify-between items-baseline mb-2">
-                                <span className={`font-bold text-xl ${i === 0 ? 'text-indigo-500' : 'text-gray-500'}`}>{v.ver}</span>
-                                <span className="text-xs opacity-50 font-mono bg-gray-500/5 px-2 py-1 rounded">{v.date}</span>
-                            </div>
-                            <div className="font-bold opacity-90 mb-2 text-base">
-                                {typeof v.desc === 'object' ? v.desc[currentLang] || v.desc['zh-TW'] : v.desc}
-                            </div>
-                            {v.details && (
-                                <div className="text-sm opacity-70 whitespace-pre-wrap leading-relaxed p-4 rounded-xl bg-gray-500/5 border border-gray-500/10 group-hover:bg-gray-500/10 transition-colors">
-                                    {typeof v.details === 'object' ? v.details[currentLang] || v.details['zh-TW'] : v.details}
+                {/* Scrollable Content */}
+                <div className="overflow-y-auto p-5 space-y-8 custom-scrollbar">
+                    {VERSION_HISTORY.map((ver, i) => {
+                        const isLatest = i === 0;
+                        return (
+                            <div key={ver.ver} className="relative pl-6 before:absolute before:left-[7px] before:top-2 before:bottom-[-32px] before:w-[2px] before:bg-gray-500/10 last:before:hidden">
+                                {/* Timeline Dot */}
+                                <div className={`absolute left-0 top-1.5 w-4 h-4 rounded-full border-[3px] z-10 ${isLatest ? 'border-indigo-500 bg-white dark:bg-gray-900' : 'border-gray-400/30 bg-gray-200 dark:bg-gray-700'}`}></div>
+
+                                {/* Version Card */}
+                                <div className={`p-4 rounded-xl border transition-all ${isLatest ? (isDarkMode ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-indigo-50 border-indigo-200') : (isDarkMode ? 'bg-gray-800/50 border-gray-700/50' : 'bg-gray-50 border-gray-100')}`}>
+
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <h3 className={`font-bold font-mono text-sm ${isLatest ? 'text-indigo-500' : 'opacity-90'}`}>
+                                                    {ver.ver}
+                                                </h3>
+                                                {ver.tag && (
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${isLatest ? 'bg-indigo-500 text-white' : 'bg-gray-500/10 opacity-70'}`}>
+                                                        {ver.tag}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="text-xs opacity-50 mt-0.5 flex items-center gap-1">
+                                                <Calendar className="w-3 h-3" />
+                                                {ver.date}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Description (Title) */}
+                                    <div className="font-bold text-sm mb-1">
+                                        {ver.desc?.[currentLang] || ver.desc?.['en']}
+                                    </div>
+
+                                    {/* Details (Body) */}
+                                    {renderDetails(ver.details)}
+
+                                    {/* Changes (Technical) - Optional */}
+                                    {ver.changes && (
+                                        <div className={`mt-3 pt-3 border-t ${isDarkMode ? 'border-white/5' : 'border-black/5'}`}>
+                                            <div className="text-[10px] font-bold opacity-60 mb-1 uppercase tracking-wider flex items-center gap-1">
+                                                <Tag className="w-3 h-3" /> Tech Specs
+                                            </div>
+                                            <ul className="space-y-1">
+                                                {ver.changes.map((c, idx) => (
+                                                    <li key={idx} className="text-[10px] font-mono opacity-50 truncate">
+                                                        - {c}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    ))}
+                            </div>
+                        );
+                    })}
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-gray-500/20 text-center text-xs opacity-40 flex justify-between items-center flex-shrink-0">
-                    <span className="font-mono">Author: {AUTHOR_NAME}</span>
-                    <span className="font-mono bg-gray-500/10 px-2 py-0.5 rounded">{APP_VERSION}</span>
+                {/* Footer */}
+                <div className={`p-4 border-t text-center text-[10px] opacity-40 font-mono flex justify-between items-center flex-shrink-0 ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-100 bg-gray-50'} rounded-b-2xl`}>
+                    <span>Developed by {APP_AUTHOR}</span>
+                    <span>{parseAppVersion(APP_VERSION).build || 'Build 2025'}</span>
                 </div>
             </div>
         </div>
     );
+};
+
+// Helper to parse existing version string if needed (optional utility)
+const parseAppVersion = (verStr) => {
+    // e.g. "V0.27.0-PreRelease"
+    return { build: 'Stable' };
 };
 
 export default VersionModal;

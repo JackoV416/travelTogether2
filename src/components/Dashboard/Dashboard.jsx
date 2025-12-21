@@ -315,6 +315,8 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                 setSelectedCountryImg={setSelectedCountryImg}
                 setIsSmartImportModalOpen={setIsSmartImportModalOpen}
                 setIsSmartExportOpen={setIsSmartExportOpen}
+                trips={trips}
+                onSelectTrip={onSelectTrip}
             />
 
 

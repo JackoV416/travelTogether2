@@ -1,9 +1,29 @@
-# Travel Together (智能旅遊規劃) V1.0.0
+# Travel Together (智能旅遊規劃) V1.0.1
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.0.0-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.0.2-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-10.x-orange.svg)](https://firebase.google.com/)
+
+## 🚀 V1.0.2: Zero-Loop Fix & Guest Mode (2025-12-21)
+**V1.0.2: [Zero-Loop Fix] 遊客模式終極修復！**
+徹底解決了遊客模式下的無限重載 (Redirect Loop) 與 WebSocket 錯誤。加入了全新的 **"Try Demo"** 入口，無需登入即可一鍵體驗完整教學模式。
+
+### ✨ V1.0.2 核心修復 (Fixes)
+- **🐛 Critical Fix**: 修復遊客模式無限 Loop 及 `null` 引用崩潰。
+- **⚡️ Performance**: 清除殘留伺服器進程，解決 WebSocket 連接錯誤。
+- **🛡️ Null Safety**: 全面強化 `ActiveUsersList` 與 Modals 的防錯機制。
+- **🖱️ UX Upgrade**: Landing Page 新增醒目「試用模擬模式」按鈕。
+
+## 🚀 V1.0.1: Matrix & Encyclopedia Sync (2025-12-21)
+**V1.0.1: [Matrix Protocol] 最終爆發同步！**
+這是一次內容與邏輯的深度同步，確保教學範例與數據結構達成 100% 匹配。我們引進了極致細節的「導航矩陣」與「全員角色任務」。
+
+### ✨ V1.0.1 核心更新 (Updates)
+- **🚀 Matrix Protocol**: 補足所有行程空檔 (如 Day 6 千日前)，達成 0 死角導航矩陣。
+- **📚 Encyclopedia Content**: 深入挖掘 Senso-ji, USJ, W Osaka 等地標的建築與歷史背景。
+- **👥 Per-Person Metadata**: 每一項行李、預算與購物任務均分配至具體成員。
+- **🐛 Loop Bug Fix**: 徹底修復非會員無法進入教學模式的程式邏輯問題。
 
 ## 🚀 V1.0.0: The Intelligent Era (2025-12-20)
 **Travel Together V1.0 正式發布！**
@@ -35,7 +55,7 @@
 - **Onboarding**: 新手引導模式，30 秒學會所有功能。
 
 ### 💰 財務與協作 (Budget & Collab)
-- **多幣種分帳**: 即時匯率換算，支援「在地幣值」與「本幣」雙顯示。
+- **多幣種分帳**: 即時匯率換算，支援匯出報表。
 - **實時同步**: 多人同時編輯，毫秒級同步 (Firebase Realtime)。
 - **債務結算**: 一鍵計算 "Who owes who"，支援匯出報表。
 
@@ -64,10 +84,13 @@ graph TD
 
 | 版本 | 標籤 | 狀態 |
 | :--- | :--- | :--- |
-| **V1.0.0** | **Official Release** | 🚀 正式版 |
-| **V0.27.0** | **Admin Suite**: Autoban, Rate Limits | ✅ 已發布 |
+| **V1.0.2** | **Zero-Loop Fix** | 🚀 最新版 |
+| **V1.0.1** | **Matrix Sync Update** | ✅ 已發布 |
+| **V1.0.0** | **Official Release** | ✅ 已發布 |
 | **V0.25.0** | **Mobile First**: PWA, Bottom Nav | ✅ 已發布 |
 | **V0.24.0** | **Osaka Express**: Smart Transport | ✅ 已發布 |
+
+---
 
 ---
 
@@ -82,4 +105,4 @@ graph TD
 ---
 
 **Author**: [Jamie Kwok](https://github.com/JackoV416)
-**Last Updated**: 2025-12-20
+**Last Updated**: 2025-12-21

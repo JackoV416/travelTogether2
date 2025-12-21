@@ -5,13 +5,63 @@ import {
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = 'V1.0.0';
-export const APP_VERSION_TAG = 'Official Release';
-export const APP_LAST_UPDATE = '2025-12-20';
+export const APP_VERSION = 'V1.0.2';
+export const APP_VERSION_TAG = 'Zero-Loop Fix';
+export const APP_LAST_UPDATE = '2025-12-21';
 
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.0.2",
+        tag: "Zero-Loop Fix",
+        date: "2025-12-21",
+        desc: {
+            "zh-TW": "V1.0.2: 終極修復無限迴圈與遊客模式優化",
+            "en": "V1.0.2: Zero-Loop Fix & Guest Mode Optimization"
+        },
+        details: {
+            "zh-TW": [
+                "🐛 終極修復 (Critical Fix): 徹底解決遊客模式下的無限重載 (Redirect Loop) 問題",
+                "⚡️ 性能優化 (Perf): 清除伺服器殘留進程，解決 WebSocket 報錯",
+                "🛡️ 安全升級 (Security): 強化 ActiveUsersList 與 Modals 的空值保護邏輯",
+                "🖱️ 體驗優化 (UX): 首頁新增「試用模擬模式」專屬按鈕，無需登入即刻體驗",
+                "📚 矩陣同步 (Matrix): 確保 Tutorial 數據與 V12 Matrix 規則完全一致"
+            ],
+            "en": [
+                "🐛 Critical Fix: Resolved infinite redirect loop for guest users",
+                "⚡️ Performance: Cleared stale server processes to fix WebSocket errors",
+                "🛡️ Security: Hardened null-checks in ActiveUsersList and Modals",
+                "🖱️ UX: Added dedicated 'Try Demo' button on Landing Page",
+                "📚 Matrix Sync: Ensured Tutorial data aligns with V12 Matrix rules"
+            ]
+        }
+    },
+    {
+        ver: "V1.0.1",
+        tag: "Matrix Sync Update",
+        date: "2025-12-21",
+        desc: {
+            "zh-TW": "V1.0.1: [Matrix Protocol] 全面同步與百科全書化",
+            "en": "V1.0.1: [Matrix Protocol] Full Sync & Encyclopedia"
+        },
+        details: {
+            "zh-TW": [
+                "🚀 [Matrix Protocol]: 100% 同步 V12 Matrix 邏輯，補全所有行程空檔與導航矩陣 ([T2T], [P2T])",
+                "📚 百科全書化 (Encyclopedia): 填入所有景點深度歷史、建築背景與 2024 最新退稅政策",
+                "👥 任務分配 (Roles): Alex, Sarah, Mike, Buddy 所有人身位、行李限制與職責完整分配",
+                "🐛 救急修復 (Critical Fix): 修正教模式在未登入狀態下會跳回首頁的無限迴圈問題",
+                "🖼️ 視覺強化 (Gallery): 行程圖片與 Files 資源完美對齊，Gallery Tab 內容全填充"
+            ],
+            "en": [
+                "🚀 [Matrix Protocol]: 100% V12 Matrix sync, filling all itinerary gaps & nav matrices ([T2T], [P2T])",
+                "📚 Encyclopedia: Added deep historical/architectural contexts & 2024 tax-free logic",
+                "👥 Role Assignment: Full metadata for Alex, Sarah, Mike, and Buddy across all tabs",
+                "🐛 Critical Fix: Resolved infinite loop bug where guest users couldn't access tutorial",
+                "🖼️ Gallery: Synced all itinerary images with Files array for full gallery population"
+            ]
+        }
+    },
     {
         ver: "V1.0.0",
         tag: "Official Release",
@@ -370,7 +420,17 @@ export const COUNTRIES_DATA = {
     "France (法國)": { cities: ["Paris", "Nice", "Lyon", "Marseille", "Strasbourg"], image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1600", region: "north", emergency: "112", taxRefund: "滿 100 EUR", entryInfo: "申根免簽", insuranceInfo: "申根區建議投保3萬歐元以上醫療險", consulate: "駐法國代表處", tz: "FR" },
     "Germany (德國)": { cities: ["Berlin", "Munich", "Frankfurt", "Hamburg"], image: "https://images.unsplash.com/photo-1509395062183-67c5ad6faff9?w=1600", region: "north", emergency: "112", taxRefund: "滿 25 EUR", entryInfo: "申根免簽", insuranceInfo: "申根標準醫療保險", consulate: "駐德國代表處", tz: "FR" },
     "Italy (義大利)": { cities: ["Rome", "Milan", "Florence", "Venice"], image: "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=1600", region: "north", emergency: "112", taxRefund: "滿 155 EUR", entryInfo: "申根免簽", insuranceInfo: "建議附加租車責任險", consulate: "駐義大利代表處", tz: "FR" },
-    "Japan (日本)": { cities: ["Tokyo", "Osaka", "Kyoto", "Hokkaido", "Fukuoka", "Okinawa"], image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1600", region: "north", emergency: "110 (警) / 119 (火)", taxRefund: "滿 5000 JPY", entryInfo: "Visit Japan Web", insuranceInfo: "醫療費極高，強烈建議投保", consulate: "台北駐日經濟文化代表處", tz: "JP" },
+    "Japan (日本)": {
+        cities: ["Tokyo", "Osaka", "Kyoto", "Hokkaido", "Fukuoka", "Okinawa"],
+        image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1600",
+        region: "north",
+        emergency: "110 (警) / 119 (火)",
+        taxRefund: "滿 5000 JPY (扣 1.55% 服務費)",
+        entryInfo: "HKSAR/BNO 免簽 90 日。必須預先登錄 Visit Japan Web (VJW) 攞齊入境同海關兩個 QR Code，Cap 圖備份最穩陣。",
+        insuranceInfo: "日本醫療費閒閒地幾萬蚊港紙起跳，強烈建議買包 100 萬醫療、住院現金同醫療轉運嘅保險 (如 AIG / 藍十字)。",
+        consulate: "駐日經濟文化代表處 / 香港駐東京經濟貿易辦事處",
+        tz: "JP"
+    },
     "Korea (韓國)": { cities: ["Seoul", "Busan", "Jeju"], image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600", region: "north", emergency: "112 / 119", taxRefund: "滿 30,000 KRW", entryInfo: "K-ETA", insuranceInfo: "建議涵蓋滑雪運動", consulate: "駐韓國代表處", tz: "KR" },
     "Malaysia (馬來西亞)": { cities: ["Kuala Lumpur", "Penang", "Kota Kinabalu", "Johor Bahru"], image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1600", region: "hot", emergency: "999 / 994（消防）", taxRefund: "滿 300 MYR", entryInfo: "免簽", insuranceInfo: "建議包含戶外及海島活動", consulate: "駐馬國代表處", tz: "TH" },
     "Singapore (新加坡)": { cities: ["Singapore"], image: "https://images.unsplash.com/photo-1505765050516-f72dcac9c60e?w=1600", region: "south", emergency: "999 / 995", taxRefund: "滿 100 SGD", entryInfo: "免簽", insuranceInfo: "高醫療費，建議醫療與航班延誤", consulate: "駐新加坡代表處", tz: "TH" },
@@ -674,122 +734,140 @@ export const INSURANCE_SUGGESTIONS = {
 
 export const SIMULATION_DATA = {
     id: "sim-tokyo-2025",
-    name: "🇯🇵 東京冬日全攻略 2025 (Alex & Buddy)",
+    name: "🇯🇵 東京冬日豪華之旅 2025 (4人團)",
     city: "Tokyo",
     country: "Japan (日本)",
     startDate: "2025-12-24",
     endDate: "2025-12-29",
     sharePermission: "edit",
     members: [
-        { id: "sim-user-1", name: "Alex", role: "owner", avatar: "https://i.pravatar.cc/150?u=alex" },
-        { id: "sim-user-2", name: "Travel Buddy", role: "editor", avatar: "https://i.pravatar.cc/150?u=buddy" }
+        { id: "sim-user-1", name: "Alex (主揪)", role: "owner", avatar: "https://i.pravatar.cc/150?u=alex" },
+        { id: "sim-user-2", name: "Buddy (導遊)", role: "editor", avatar: "https://i.pravatar.cc/150?u=buddy" },
+        { id: "sim-user-3", name: "Sarah (攝影師)", role: "viewer", avatar: "https://i.pravatar.cc/150?u=sarah" },
+        { id: "sim-user-4", name: "Mike (財務)", role: "editor", avatar: "https://i.pravatar.cc/150?u=mike" }
     ],
     itinerary: {
         "2025-12-24": [
-            { id: "it-1", time: "09:15", name: "國泰航空 CX520 (HKG -> NRT)", type: "flight", cost: 4500, currency: "HKD", details: { location: "香港國際機場 T1", desc: "預計 14:30 抵達成田", insight: "聖誕旺季記得提早 3 小時到達機場辦理登機。" }, smartTag: "✈️ T1 - Gate 62" },
-            { id: "it-1-0", time: "15:30", name: "成田機場 N'EX 前往新宿", type: "transport", cost: 3250, currency: "JPY", details: { location: "成田第2候機樓站", desc: "使用 JR Pass 或 單程票", insight: "直達新宿約 80 分鐘，最平買來回套票比較划算。", transportType: "metro", distance: "78km", duration: "80min" } },
-            { id: "it-2", time: "17:30", name: "新宿格拉斯麗酒店 Check-in", type: "hotel", cost: 0, currency: "JPY", details: { location: "東京都新宿区歌舞伎町1-19-1", desc: "哥吉拉大頭地標飯店", insight: "房內可以看到歌舞伎町夜景，飯店 8 樓平台可以近距離拍哥吉拉。" }, smartTag: "🏨 步行 5 分" },
-            { id: "tr-2-3", time: "19:00", name: "地鐵前往六本木", type: "transport", cost: 210, currency: "JPY", details: { location: "新宿站 -> 六本木站", desc: "都營大江戶線", distance: "7.5km", duration: "15min" } },
-            { id: "it-3", time: "19:30", name: "六本木ヒルズ Keyakizaka Illumination", type: "spot", cost: 0, currency: "JPY", details: { location: "港区六本木6丁目", desc: "聖誕限定藍白燈海", reason: "東京最有誠意的聖誕燈飾，以東京鐵塔為背景是絕佳拍照位。" } },
-            { id: "it-4", time: "21:30", name: "回新宿飯店休息", type: "transport", cost: 210, currency: "JPY", details: { location: "新宿格拉斯麗酒店", desc: "大江戶線直達新宿西口", insight: "早點休息為明天築地早市做準備。", distance: "7.5km", duration: "18min" }, smartTag: "🚇 地鐵回程" }
+            { id: "it-1", time: "09:15", name: "✈️ [FlightCard] CX520 (HKG -> NRT)", type: "flight", cost: 4500, currency: "HKD", details: { location: "HKG T1 Gate 62", desc: "國泰長途旗艦機 B-KPY (B777-300ER)", image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800", insight: "【百科：旗艦領航】B-KPY 配備最新 4K 影音系統。飛行時間約 4hr 15min。Alex 負責管理全體紙本備份。" } },
+            { id: "it-2", time: "14:30", name: "🛂 [T2T] 入境清關 & 交通樞紐接駁", type: "transport", cost: 0, currency: "JPY", details: { location: "成田 T1 到達大廳 -> B1F", desc: "入境後落 B1F 搵 JR 綠色窗口", insight: "【矩陣導航】1. 入境預計 90min。2. 落 B1F 鐵道層。3. 去售票機買 N'EX 飛。排隊排最右邊隊通常快 5 分鐘。Mike 隨時準備加值 Suica。" } },
+            { id: "it-3", time: "16:15", name: "🚆 [TransportCard] N'EX (成田快線)", type: "transport", cost: 4070, currency: "JPY", details: { location: "成田 T1 -> 新宿站", desc: "月台 5-6 (地底) | 車型 E259 系", transportType: "train", duration: "80min", image: "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800", insight: "【技術百科】130km/h 準時運行。喼架有密碼鎖，記得記低 4 位數。車廂位底有插頭。Alex 負責分配行李架位置。" } },
+            { id: "it-4", time: "18:00", name: "🏨 [T2P] Hotel Check-in (新宿東口導航)", type: "hotel", cost: 0, currency: "JPY", details: { location: "新宿站東口 -> Hotel Gracery", desc: "經 Studio Alta 旁哥吉拉街步行", distance: "450m", steps: 1100, insight: "【矩陣導航】新宿站東口 (East Exit) 出閘，見到 Studio Alta 大電視直入哥吉拉街。Check-in 15min。呢度係歌舞伎町心臟地帶。" } },
+            { id: "it-5", time: "19:30", name: "🍽️ [FoodCard] 晚餐: 敘敘苑 (Shinjuku East)", type: "food", cost: 8000, currency: "JPY", details: { location: "新宿 Lumine Est 旁大廈 12F", desc: "窗邊景觀燒肉 (Premium 牛舌)", image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=800", insight: "【物流數據】食飯 90min。由酒店行過嚟只要 5 分鐘，經歌舞伎町一番街大門景最靚。Sarah 準備影專業大片。" } },
+            { id: "it-end-1", time: "21:30", name: "🏨 [Hotel Loop] 返回酒店 (Return)", type: "walk", cost: 0, currency: "JPY", details: { location: "敘敘苑 -> Hotel", desc: "原路返回 8F Lobby", distance: "300m", steps: 400, insight: "21:30 返到酒店 8F。Alex 負責管理全體電子設備叉電任務。" } }
         ],
         "2025-12-25": [
-            { id: "it-5", time: "07:30", name: "前往築地市場", type: "transport", cost: 210, currency: "JPY", details: { location: "大江戶線 新宿西口 -> 築地市場", desc: "地鐵約 20 分鐘", transportType: "metro", distance: "8.2km", duration: "20min" } },
-            { id: "it-5-1", time: "08:15", name: "築地場外市場 (早鳥吃貨篇)", type: "food", cost: 6500, currency: "JPY", details: { location: "中央区築地4-16-2", desc: "海鮮丼、玉子燒、烤牛排", insight: "推薦「山之內」海鮮丼，或者排隊「壽司大」。" } },
-            { id: "tr-5-銀座", time: "11:00", name: "地鐵前往銀座", type: "transport", cost: 180, currency: "JPY", details: { location: "築地 -> 銀座", desc: "日比谷線", distance: "1.2km", duration: "4min" } },
-            { id: "it-6", time: "12:00", name: "銀座 Ginza Six 漫步", type: "shopping", cost: 25000, currency: "JPY", details: { location: "中央区銀座6-10-1", desc: "頂級百貨、屋頂花園", insight: "一定要去 TSUTAYA BOOKS 區，頂層花園可免費俯瞰銀座。" } },
-            { id: "tr-銀座-淺草", time: "14:30", name: "地鐵前往淺草", type: "transport", cost: 210, currency: "JPY", details: { location: "銀座 -> 淺草", desc: "銀座線", distance: "6.5km", duration: "16min" } },
-            { id: "it-7", time: "15:00", name: "淺草寺 / 仲見世通", type: "spot", cost: 0, currency: "JPY", details: { location: "台東区浅草2-3-1", desc: "雷門、求籤、觀光客必訪", insight: "抽到凶籤的話記得綁在架子上。" }, smartTag: "🏮 江戶風情" },
-            { id: "tr-淺草-晴空塔", time: "17:30", name: "東武鐵道前往晴空塔", type: "transport", cost: 150, currency: "JPY", details: { location: "淺草站 -> 晴空塔站", desc: "東武晴空塔線", distance: "1.8km", duration: "5min" } },
-            { id: "it-8", time: "18:00", name: "晴空塔 Skytree 夜景", type: "spot", cost: 3100, currency: "JPY", details: { location: "墨田区押上1-1-2", desc: "世界第一高電波塔", reason: "聖誕節會有特別點燈色，建議提前官網訂票。" } },
-            { id: "it-9", time: "21:00", name: "回新宿飯店休息", type: "transport", cost: 350, currency: "JPY", details: { location: "新宿格拉斯麗酒店", desc: "都營淺草線 -> JR 山手線", insight: "體力消耗大，回程可以買個超商甜點犒賞自己。", distance: "14km", duration: "35min" } }
+            { id: "it-start-2", time: "08:30", name: "🏨 [P2T] 新宿站避風導航 (Hotel -> E01)", type: "walk", cost: 0, currency: "JPY", details: { location: "酒店 -> 新宿西口 (E01) 3號月台", desc: "經由西武新宿站 Pepe 隧道 (Matrix)", distance: "450m", steps: 1200, insight: "【矩陣導航】行返西武新宿站入 Pepe 隧道，直去都營大江戶線。月台 3 (內環往築地)。步行 8min 消暑避寒。" } },
+            { id: "it-tsuk-1", time: "08:45", name: "🚇 [TransportCard] 大江戶線往築地", type: "transport", cost: 230, currency: "JPY", details: { location: "新宿西口 -> 築地市場", desc: "日本最深地鐵線 (42.3m)", insight: "車程約 20 分鐘。搵 **A1 出口** 出站，轉左行 1min 即達築地外市場大看板。" } },
+            { id: "it-tsuk-2", time: "09:15", name: "🍣 [T2P] 築地市場站 -> 外市場尋味", type: "food", cost: 3500, currency: "JPY", details: { location: "築地 4 Chome 門外市場", desc: "日本廚房 | 山長玉子燒", image: "https://images.unsplash.com/photo-1534422298391-e4f8c170db76?w=800", insight: "【物流數據】停留 120min。食完步行 12min (850m) 到銀座，沿晴海通直行會見到歌舞伎座。" } },
+            { id: "it-gin-1", time: "12:00", name: "🛍️ [SpotCard] Ginza Six (GSIX) 打卡", type: "shopping", cost: 5000, currency: "JPY", details: { location: "銀座 A3 出口直結", desc: "谷口吉生設計 | 現代屋台建築", image: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800", insight: "【百科內容】GSIX 由谷口吉生設計。6F 蔦屋書店係必影點。步行 5min 去銀座站 (銀座線月台)。" } },
+            { id: "it-asa-1", time: "15:00", name: "🚇 [TransportCard] 銀座線往淺草 (P2T)", type: "transport", cost: 180, currency: "JPY", details: { location: "銀座站 -> 淺草站", desc: "亞洲最古老地鐵 (1927)", insight: "車程 15 分鐘。搵 **A4 出口** 直衝雷門大燈籠。Sarah 準備影專業大片。" } },
+            { id: "it-asa-2", time: "15:30", name: "⛩️ [SpotCard] 淺草寺 -> 晴空塔步行矩陣", type: "spot", cost: 0, currency: "JPY", details: { location: "雷門 -> Sumida River Walk -> 晴空塔", desc: "創立於 645 年 | 隅田川水上步道", image: "https://images.unsplash.com/photo-1570459027562-4a916cc6113f?w=800", insight: "【導航矩陣】步行 18min (1.2km)。經 **Sumida River Walk** 橋，睇塔視野最開闊。停留 90min。" } },
+            { id: "it-sky-1", time: "18:00", name: "🗼 [SpotCard] 東京晴空塔 (Skytree)", type: "spot", cost: 3100, currency: "JPY", details: { location: "墨田區押上 (T2P)", desc: "高 634m | 世界第一高電波塔", image: "https://images.unsplash.com/photo-1545389656-78b17ee191d9?w=800", insight: "【物流數據】停留 120min。採用古代五重塔心柱抗震。夜晚睇『粋、雅、幟』變色。" } },
+            { id: "it-end-2", time: "21:00", name: "🏨 [Hotel Loop] 返回酒店 (Return)", type: "walk", cost: 0, currency: "JPY", details: { location: "新宿站 -> Hotel", desc: "經歌舞伎町一番街返酒店", distance: "450m", steps: 600, insight: "21:00 返到新宿。Mike 負責搵便利店買宵夜。" } }
         ],
         "2025-12-26": [
-            { id: "it-10", time: "08:00", name: "富士迴遊特急 (新宿 -> 河口湖)", type: "transport", cost: 4130, currency: "JPY", details: { location: "新宿站 9-10 月台", desc: "直達無需換乘", insight: "記得訂 A, B 側座位看富士山。", transportType: "metro", distance: "110km", duration: "115min" }, smartTag: "🗻 2小時直達" },
-            { id: "it-11", time: "11:30", name: "河口湖 ほうとう不動 (河口湖站前店)", type: "food", cost: 1210, currency: "JPY", details: { location: "南都留郡富士河口湖町船津", desc: "傳統味噌粗麵", insight: "份量很大，兩個人可以分食一份。" } },
-            { id: "tr-11-12", time: "13:00", name: "河口湖周遊巴士", type: "transport", cost: 200, currency: "JPY", details: { location: "河口湖站 -> 大石公園", desc: "紅線巴士", distance: "5.5km", duration: "15min" } },
-            { id: "it-12", time: "13:30", name: "大石公園 - 富士山絕景", type: "spot", cost: 0, currency: "JPY", details: { location: "河口湖北岸", desc: "湖水與山完美對稱", reason: "冬天空氣清澈最容易看清楚逆富士。" } },
-            { id: "it-12-1", time: "16:30", name: "搭乘特急返回新宿", type: "transport", cost: 4130, currency: "JPY", details: { location: "河口湖站", desc: "預計 18:30 到達", insight: "可以在車上小睡一下。", distance: "110km", duration: "115min" } },
-            { id: "tr-12-13", time: "19:00", name: "步行前往伊勢丹", type: "transport", cost: 0, currency: "JPY", details: { location: "新宿站 -> 伊勢丹", desc: "步行約 5 分鐘", distance: "0.4km", duration: "5min", steps: 520 } },
-            { id: "it-13", time: "19:30", name: "新宿 伊勢丹 購買熟食", type: "food", cost: 3500, currency: "JPY", details: { location: "新宿 3 丁目", desc: "B1 的超強熟食區", insight: "晚上 8 點後常有半價優惠，買回飯店吃也是一種享受。" } }
+            { id: "it-start-3", time: "10:00", name: "🏨 [Hotel Loop] 酒店出發", type: "walk", cost: 0, currency: "JPY", details: { location: "酒店 -> JR 新宿站", desc: "經由新宿東口 Studio Alta 旁小路入閘", distance: "450m", steps: 1100, insight: "【物流數據】步行 10 分鐘抵達。14 號月台搭山手線（內環）往澀谷。" } },
+            { id: "it-shib-1", time: "10:20", name: "🚇 [TransportCard] JR 山手線往澀谷", type: "transport", cost: 160, currency: "JPY", details: { location: "新宿 (14號月台) -> 澀谷", desc: "山手線車程 15min", insight: "【技術百科】1885 年開通嘅歷史性路線。出口 B6 有專用電梯直上 14F Shibuya Sky 入口。" } },
+            { id: "it-shib-2", time: "10:45", name: "🏙️ [SpotCard] Shibuya Sky (展望)", type: "spot", cost: 2500, currency: "JPY", details: { location: "Shibuya Scramble Square 14F/47F", desc: "隈研吾參與設計", image: "https://images.unsplash.com/photo-1542931237-fa4a86134b2d?w=800", insight: "【物流數據】預計停留 120 分鐘。風大記得紮起頭髮。Sarah 攝影任務重點。" } },
+            { id: "it-shib-3", time: "13:15", name: "🍽️ [FoodCard] 挽肉と米 (Shibuya)", type: "food", cost: 1800, currency: "JPY", details: { location: "道玄坂 2-28-1 3F", desc: "炭烤漢堡排 (預約制)", image: "https://images.unsplash.com/photo-1550950158-d059dd558e94?w=800", insight: "【物流數據】用餐預計 90 分鐘。步行 8 分鐘 (600m) 抵達。" } },
+            { id: "it-har-1", time: "15:30", name: "⛩️ [SpotCard] 明治神宮 (Meiji Jingu)", type: "spot", cost: 0, currency: "JPY", details: { location: "原宿站出口 1分鐘", desc: "1920 年建立。大鳥居用咗台灣阿里山 1200 年檜木。", image: "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=800", insight: "【歷史百科】大鳥居用咗台灣阿里山 1200 年檜木。從挽肉と米步行 20 分鐘 (1.5km) 抵達。" } },
+            { id: "it-har-2", time: "16:45", name: "🛍️ [SpotCard] 原宿表參道 & Cafe Reissue", type: "shopping", cost: 5000, currency: "JPY", details: { location: "神宮前 3-25-7 2F", desc: "3D 立體拉花 (Cafe)", image: "https://images.unsplash.com/photo-1517705008128-361805f42e8a?w=800", insight: "【物流數據】停留 60 分鐘。Sarah 目標：KURACHIKA 買 Porter Bag。" } },
+            { id: "it-end-3", time: "20:00", name: "🏨 [Hotel Loop] 返回酒店 (Return)", type: "walk", cost: 0, currency: "JPY", details: { location: "新宿站 -> Hotel", desc: "經過新宿東口 Studio Alta 返酒店", distance: "450m", steps: 1100, insight: "21:00 返到酒店 8F Lobby。Alex 負責管理相機叉電任務。" } }
         ],
         "2025-12-27": [
-            { id: "tr-26-27", time: "10:00", name: "地鐵前往麻布台", type: "transport", cost: 210, currency: "JPY", details: { location: "新宿站 -> 神谷町站", desc: "日比古線", distance: "6.2km", duration: "18min" } },
-            { id: "it-14", time: "10:30", name: "TeamLab Borderless 麻布台之丘", type: "spot", cost: 4200, currency: "JPY", details: { location: "麻布台ヒルズ ガーデンプラザB B1", desc: "最新光影體驗", insight: "穿著白色衣服拍照效果最美。", transportType: "metro" }, smartTag: "📸 2024 新開" },
-            { id: "tr-14-15", time: "13:15", name: "步行前往藍瓶咖啡", type: "transport", cost: 0, currency: "JPY", details: { location: "麻布台ヒルズ內", desc: "穿過中央廣場", distance: "0.4km", duration: "5min", steps: 520 } },
-            { id: "it-15", time: "13:30", name: "藍瓶咖啡 麻布台之丘", type: "food", cost: 1500, currency: "JPY", details: { location: "麻布台ヒルズ", desc: "極簡精品咖啡", insight: "這裡的拿鐵配上麻布台限定的司康是首選。" } },
-            { id: "tr-15-16", time: "15:00", name: "地鐵前往原宿", type: "transport", cost: 180, currency: "JPY", details: { location: "神谷町 -> 明治神宮前", desc: "千代田線", distance: "4.8km", duration: "12min" } },
-            { id: "it-16", time: "15:30", name: "原宿竹下通 & 表參道", type: "shopping", cost: 15000, currency: "JPY", details: { location: "渋谷区神宮前", desc: "精品與潮牌集中地", reason: "從可愛風的竹下通走到高奢的表參道。" } },
-            { id: "tr-16-17", time: "18:30", name: "步行前往澀谷", type: "transport", cost: 0, currency: "JPY", details: { location: "表參道 -> 澀谷天空", desc: "穿過神宮前交差點", distance: "1.2km", duration: "15min", steps: 1560 } },
-            { id: "it-17", time: "19:00", name: "SHIBUYA SKY 展望台", type: "spot", cost: 2500, currency: "JPY", details: { location: "渋谷スクランブルスクエア", desc: "東京最強地標", insight: "一定要預訂「日落前 1 小時」的場次。" }, smartTag: "🌆 提前1個月搶票" }
+            { id: "it-start-4", time: "08:15", name: "🚅 [P2T] 東京站新幹線導航", type: "walk", cost: 0, currency: "JPY", details: { location: "新宿站 -> 東京站 14-19 號月台", desc: "跟住藍色「新幹線」指示行 (Matrix)", distance: "450m", steps: 1100, insight: "【矩陣導航】新宿 7-8 號月台 (中央線快速) -> 東京站。Checkout 5min。預留時間買便當。" } },
+            { id: "it-tok-4", time: "09:42", name: "🚅 [T2T] 新幹線 Nozomi 21 (跨城遷移)", type: "transport", cost: 14750, currency: "JPY", details: { location: "東京 (14號月台) -> 新大阪", desc: "車型 N700S (Supreme) | 車程 150min", image: "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800", insight: "【技術百科】10:30 右邊 E 位見富士山。ATC 系統保證 60 年零事故。Alex 負責紀錄 300km/h 瞬間。" } },
+            { id: "it-osa-2", time: "13:15", name: "🏨 [T2P] W Osaka 行李與寄存矩陣", type: "hotel", cost: 0, currency: "JPY", details: { location: "心齋橋站 3 號出口 -> 酒店 1F", desc: "1F 門口寄存即走 (Matrix)", image: "https://images.unsplash.com/photo-1549144511-f099e773c147?w=800", insight: "【矩陣導航】心齋橋站 3 號出口轉左行 2min。1F Concierge 直收行李。寄存 10min。" } },
+            { id: "it-osa-gap1", time: "14:00", name: "🛍️ [SpotCard] 心齋橋筋商店街漫遊", type: "shopping", cost: 3000, currency: "JPY", details: { location: "心齋橋筋商店街", desc: "大阪最長商店街 (600m)", image: "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=800", insight: "【百科內容】大阪最有歷史商店街，由 1726 年開始營業。Sarah 目標：限定美妝店。停留 90min。" } },
+            { id: "it-osa-gap2", time: "16:00", name: "🎨 [SpotCard] 美國村 (Amerikamura) 打卡", type: "spot", cost: 0, currency: "JPY", details: { location: "西心齋橋 1-6", desc: "大阪潮流文化發源地", image: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800", insight: "【百科內容】70 年代開始嘅古著街。三角公園係年輕人地標。Alex 負責記錄街頭文化。停留 90min。" } },
+            { id: "it-osa-3", time: "19:00", name: "🍽️ [FoodCard] 晚餐: 道頓堀蟹道樂 (本店)", type: "food", cost: 12000, currency: "JPY", details: { location: "道頓堀 1-6-18", desc: "大阪地標 | 巨大動感螃蟹看板", image: "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=800", insight: "【物流數據】食飯 90min。由 W Osaka 行過嚟 12 分鐘。Mike 準備好尿袋支援攝影。" } },
+            { id: "it-end-4", time: "21:30", name: "🏨 [Hotel Loop] 返回 W Osaka (Return)", type: "walk", cost: 0, currency: "JPY", details: { location: "道頓堀 -> W Osaka", desc: "沿心齋橋筋商店街漫步", distance: "800m", steps: 1200, insight: "21:30 返到酒店 1F。Sarah 記得喺 1F 買 W 限定洗頭水。" } }
         ],
         "2025-12-28": [
-            { id: "it-18", time: "08:00", name: "地鐵 前往迪士尼", type: "transport", cost: 450, currency: "JPY", details: { location: "新宿 -> 舞濱", desc: "JR 京葉線", distance: "28km", duration: "45min" } },
-            { id: "it-18-1", time: "09:00", name: "東京迪士尼海洋 (Fantasy Springs)", type: "spot", cost: 10900, currency: "JPY", details: { location: "千葉県浦安市舞浜1-13", desc: "最新園區：夢幻泉鄉", insight: "一入園先抽 Standby Pass 或買 DPA。" }, smartTag: "🚢 全日行程" },
-            { id: "tr-disney-return", time: "21:00", name: "搭地鐵回新宿", type: "transport", cost: 450, currency: "JPY", details: { location: "舞濱 -> 新宿", desc: "今日體力耗盡", distance: "28km", duration: "50min" } }
+            { id: "it-usj-matrix", time: "07:30", name: "🚆 [T2T] USJ 鐵道轉乘矩陣", type: "transport", cost: 410, currency: "JPY", details: { location: "心齋橋 -> Universal City (Plat 3)", desc: "西九條站對面月台轉乘 (Matrix)", insight: "【矩陣導航】1. 長堀線 -> 2. JR 環狀線 -> 3. 西九條轉 **Plat 3** (夢咲線)。轉乘只需 1min。" } },
+            { id: "it-usj-1", time: "09:00", name: "🎢 [SpotCard] USJ 超級任天堂世界", type: "spot", cost: 18000, currency: "JPY", details: { location: "大阪此花區", desc: "宮本茂耗資 600 億監修", image: "https://images.unsplash.com/photo-1545641203-7d072a14e3b2?w=800", insight: "【物流數據】停留 12hr。入園即衝任天堂。Mike 負責管理全體尿袋供應。" } },
+            { id: "it-end-5", time: "21:30", name: "🏨 [Hotel Loop] 返回 W Osaka (Return)", type: "transport", cost: 410, currency: "JPY", details: { location: "USJ -> 心齋橋", desc: "原路返回 (Matrix)", distance: "8km", steps: 500, insight: "22:30 返到酒店。Buddy 準備好休足時間支援隊友。" } }
         ],
         "2025-12-29": [
-            { id: "tr-hotel-donki", time: "09:30", name: "步行前往唐吉訶德", type: "transport", cost: 0, currency: "JPY", details: { location: "飯店 -> 新宿東口", desc: "穿過靖國通", distance: "0.6km", duration: "8min", steps: 780 } },
-            { id: "it-21", time: "10:00", name: "唐吉訶德 新宿東口本店", type: "shopping", cost: 12000, currency: "JPY", details: { location: "新宿区歌舞伎町1-16-5", desc: "藥妝、零食總採購", insight: "使用折扣券可以滿萬減千。" }, smartTag: "🐧 24H 營業" },
-            { id: "tr-donki-lunch", time: "12:15", name: "步行前往燒肉店", type: "transport", cost: 0, currency: "JPY", details: { location: "唐吉訶德 -> 小田急", desc: "穿越新宿車站", distance: "0.5km", duration: "7min", steps: 650 } },
-            { id: "it-22", time: "12:30", name: "敘敘苑 燒肉 (午間特餐)", type: "food", cost: 3800, currency: "JPY", details: { location: "新宿小田急商場 12F", desc: "高品質奢華燒肉", insight: "午餐特餐性價比極高。" } },
-            { id: "it-23", time: "15:00", name: "前往成田機場 (N'EX)", type: "transport", cost: 3250, currency: "JPY", details: { location: "新宿站", desc: "最後一段鐵道時光", insight: "在車站買幾份鐵路便當上車。", distance: "78km", duration: "80min" } },
-            { id: "it-24", time: "18:30", name: "國泰航空 CX505 (NRT -> HKG)", type: "flight", cost: 0, currency: "HKD", details: { location: "成田第2候機樓", desc: "預計 22:45 返抵香港" } }
+            { id: "it-check", time: "08:00", name: "🏨 [Hotel Loop] Checkout & 喼位矩陣", type: "hotel", cost: 0, currency: "JPY", details: { location: "W Osaka Lobby", desc: "最後行李清查 | 24吋 x 4", insight: "【微操提示】Alex 負責核對全員喼位。Mike 檢查所有尿袋已收好。Checkout 5min。行李寄存櫃位。" } },
+            { id: "it-osa-morning", time: "08:30", name: "🍳 [SpotCard] 千日前道具屋筋散策", type: "shopping", cost: 2000, currency: "JPY", details: { location: "難波千日前 14-5", desc: "大阪料理人之街 | 廚具百科", image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800", insight: "【百科內容】大阪廚具之魂。Alex 買日式小餐具。步行 5min 到黑門市場。停留 90min。" } },
+            { id: "it-kuro-matrix", time: "10:30", name: "🍣 [P2T] 黑門市場 -> 南海難波 (Matrix)", type: "food", cost: 4000, currency: "JPY", details: { location: "酒店 -> 黑門 (步行導航)", desc: "沿御堂筋大道直行 15min", insight: "【導航矩陣】步行 1.1km。食鮮味海膽。13:15 到南海難波站 **3F 北改札口**。" } },
+            { id: "it-rap-1", time: "13:30", name: "🚆 [T2T] 南海 Rapit 鐵人 28 矩陣", type: "transport", cost: 1450, currency: "JPY", details: { location: "南海難波 (9 號月台) -> KIX 2F", desc: "藍色專用月台 (Plat 9)", image: "https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800", insight: "【矩陣導航】上 3F 北改札口搵 **9 號月台**。抵達 KIX 2F 後過天橋到 T1。Mike 確保清空硬幣。" } },
+            { id: "it-kix-blue", time: "15:30", name: "✈️ [T2T] 關西機場 C 區 & 歸航矩陣", type: "flight", cost: 0, currency: "HKD", details: { location: "KIX T1 國泰櫃位 (C 區)", desc: "Blue Sky 免稅店 (硬幣對策)", insight: "【微操提示】去 C 區 Check-in。入閘後可以用晒淨低嘅硬幣。Alex 準備最後申報。" } }
         ]
     },
     packingList: [
-        { id: "pkg-1", name: "護照、身份證、列印機票", category: "documents", checked: true },
-        { id: "pkg-2", name: "Visit Japan Web 入境 QR Code (截圖)", category: "documents", checked: true },
-        { id: "pkg-3", name: "羽絨大衣 (東京12月均溫 5°C)", category: "clothes", checked: false, aiSuggested: true },
-        { id: "pkg-4", name: "Heattech 超極暖系列 *3", category: "clothes", checked: false, aiSuggested: true },
-        { id: "pkg-5", name: "萬用轉接頭 & 延長線", category: "electronics", checked: true },
-        { id: "pkg-6", name: "行動電源 (迪士尼整天必備)", category: "electronics", checked: true },
-        { id: "pkg-8", name: "常用的感冒藥、止痛藥", category: "medicine", checked: true }
+        { id: "pkg-1", name: "護照、機票、預約信紙本", category: "documents", checked: true, ownerId: "sim-user-1", details: "【Alex 專屬】日本法律規定外國人必須隨身攜帶護照。Alex 負責管理全體紙本備份，防止手機死機。" },
+        { id: "pkg-2", name: "VJW QR Code (全員 Cap 圖)", category: "documents", checked: true, ownerId: "sim-user-4", details: "【Mike 任務】確保全員已截圖入境同海關 QR Code。包含藍色 Top Bar 先算有效。Mike 負責喺機場 Wi-Fi 斷嗰陣分發資訊。" },
+        { id: "pkg-jr", name: "JR Pass (BNO/HKSAR 版)", category: "documents", checked: true, ownerId: "sim-user-2", details: "【Buddy 任務】Buddy 負責喺綠色窗口兌換全員 JR Pass。提早劃位（特別係新幹線 D/E 位睇富士山）。2023/10/1 起必須提前劃位。" },
+        { id: "pkg-luggage", name: "行李箱 (23kg x 4)", category: "misc", checked: true, ownerId: "sim-user-1", details: "【百科：國泰行李】Economy Lite 每人 23kg 寄艙。超重每 kg 收 HKD 200。手提 7kg 限制。Alex 負責秤重分配。" },
+        { id: "pkg-shinkansen", name: "新幹線特大行李預約確認", category: "documents", checked: true, ownerId: "sim-user-2", details: "【百科：特大行李】2020 年起行李超過 160cm 總和需預約。Buddy 已預約 Nozomi 21 最後排行李位。" },
+        { id: "pkg-3", name: "防風大衣 & 羽絨", category: "clothes", checked: false, ownerId: "sim-user-3", details: "【Sarah 任務】確保全員採用「洋蔥式穿法」。日本室內暖氣 25°C，入面唔好著太厚。12 月東京平均 5-10°C。" },
+        { id: "pkg-extwarm", name: "Heattech 超極暖系列", category: "clothes", checked: true, ownerId: "sim-user-3", details: "【Sarah 專屬】Sarah 準備 5 套 Ultra Warm。USJ 嗰日海邊風力係地獄級 (體感 -3°C)，必須內搭。" },
+        { id: "pkg-5", name: "行動電源 (PD 20000mAh *2)", category: "electronics", checked: true, ownerId: "sim-user-4", details: "【Mike 後勤】160Wh 係飛機上限，呢舊 20000mAh 3.7V = 74Wh 合格。Mike 負責全員充電。" },
+        { id: "pkg-dji", name: "DJI Pocket 3 + 1吋 Sensor 手柄", category: "electronics", checked: true, ownerId: "sim-user-1", details: "【Alex 紀錄】主打夜景 (1 吋 Sensor 暗位表現好)。負責記錄歌舞伎町同道頓堀夜生活。充滿可影 2 小時。" },
+        { id: "pkg-sony", name: "Sony A7CII + 16-35mm GMII", category: "electronics", checked: true, ownerId: "sim-user-3", details: "【Sarah 攝影】超廣角影 Shibuya Sky 同明治神宮鳥居專用。記憶卡 256GB *2 已準備。專業大片保證。" },
+        { id: "pkg-6", name: "急救包 (休足時間 & 感冒藥)", category: "medicine", checked: true, ownerId: "sim-user-2", details: "【Buddy 備品】Buddy 負責管理藥物。休足時間 (每日 1 對) 係返酒店後嘅全員救星。感冒藥攞日本認可牌子。" },
+        { id: "pkg-7", name: "小管家硬幣盒 (1, 5, 10, 100, 500 JPY)", category: "misc", checked: true, ownerId: "sim-user-4", details: "【Mike 任務】負責管理全員硬幣。日本好多找續硬幣，用專用盒分類可以慳返 10 倍俾錢時間。最尾喺 Blue Sky 用晒。" }
     ],
     shoppingList: [
-        { id: "shp-1", name: "New York Perfect Cheese", estPrice: "JPY 2400", desc: "新宿/東京站限定", bought: false, aiSuggested: true },
-        { id: "shp-2", name: "PORTER 肩背包", estPrice: "JPY 28000", desc: "表參道旗艦店款式最全", bought: false },
-        { id: "shp-3", name: "毛穴撫子 大米面膜", estPrice: "JPY 715", desc: "Donki 必買", bought: false, aiSuggested: true }
+        { id: "shp-nintendo", name: "Nintendo Tokyo (PARCO 6F)", estPrice: "JPY 15000", desc: "皮克敏餐具組", bought: false, ownerId: "sim-user-1", details: "【Alex 目標】獨家「像素風」餐具。呢度係日本第一間直營店，USJ 冇得賣㗎！" },
+        { id: "shp-1", name: "New York Perfect Cheese (新宿)", estPrice: "JPY 20000", desc: "15入裝 x 8 盒", bought: false, ownerId: "sim-user-1", details: "【Alex 任務】東京現時最紅伴手禮。每日 11:00 前會 Sold Out，新宿第一站必衝。京王百貨 B1 有售。" },
+        { id: "shp-2", name: "Porter Tanker XS (Harajuku)", estPrice: "JPY 32000", desc: "黑色限量版", bought: false, ownerId: "sim-user-3", details: "【Sarah 目標】原宿 KURACHIKA 店。Tanker 系列靈感嚟自 MA-1 飛行夾克，黑盒裝極致質感。" },
+        { id: "shp-davines", name: "Davines MOMO 洗頭水 (500ml)", estPrice: "JPY 5600", desc: "W Osaka 直接買", bought: false, ownerId: "sim-user-3", details: "【Sarah 任務】W Hotel 專用品牌。喺酒店 1F Spa 買最方便，仲可以即場退稅。" },
+        { id: "shp-donki", name: "藥妝 (撒隆巴斯/龍角散)", estPrice: "JPY 12000", desc: "全員份 + 同事掃貨", bought: false, ownerId: "sim-user-4", details: "【Mike 任務】Mike 負責掃貨。記得用 Donki 5% Coupon + Tax Free。2024 年起滿 ¥5000 可退稅 (消耗品)。" },
+        { id: "shp-royce", name: "ROYCE 生朱古力 (原味)", estPrice: "JPY 3000", desc: "關西機場限定", bought: false, ownerId: "sim-user-2", details: "【Buddy 任務】必須冷藏。KIX Blue Sky 有售。Buddy 負責最後一站買返香港送禮。" },
+        { id: "shp-uniqlo", name: "UNIQLO UT 聯名款", estPrice: "JPY 5000", desc: "日本限定設計", bought: false, ownerId: "sim-user-4", details: "【百科：退稅】2024 年起滿 ¥5000 可退稅 (一般物品)。Mike 負責銀座旗艦店掃貨。" }
+    ],
+    notes: [
+        { id: "note-1", title: "Day 1 落地：哥吉拉震撼", content: "終於到咗東京！Alex 管理嘅紙本機票好有用，入境機仔壞咗我哋直接出示紙本。敘敘苑牛舌聖誕氣氛拉滿！Alex 仲影咗哥吉拉條尾。", date: "2025-12-24", author: "Alex", authorId: "sim-user-1" },
+        { id: "note-2", title: "Day 2 文化：淺草寺求籤", content: "淺草寺抽到「凶」，即刻綁喺架上面。晴空塔 634m 真係好高，Sarah 用超廣角影到成個東京景。", date: "2025-12-25", author: "Sarah", authorId: "sim-user-3" },
+        { id: "note-3", title: "Day 3 避風指南：澀谷天空", content: "Sarah 頂帽差啲吹咗落山。Mike 嘅尿袋今日救咗我哋全組命，DJI 影成 3 小時都仲有電。挽肉與米真係要預約！", date: "2025-12-26", author: "Buddy", authorId: "sim-user-2" },
+        { id: "note-4", title: "Day 4 跨城：新幹線富士山", content: "東京站買咗「牛肉便當」喺車食。成功喺 E 位見到富士山，Alex 仲用 Pocket 3 縮時影咗成段。W Osaka 全黑建築好型。", date: "2025-12-27", author: "Mike", authorId: "sim-user-4" },
+        { id: "note-5", title: "Day 5 激戰：USJ 任天堂", content: "Mike 負責全體水份供應。Power-Up Band 敲磚真係好治癒。夜晚哈利波特燈光騷必睇！", date: "2025-12-28", author: "Buddy", authorId: "sim-user-2" }
+    ],
+    files: [
+        { id: "file-1", name: "機票行程單_Alex.pdf", type: "application/pdf", uploadedAt: "2025-12-20", url: "https://www.google.com" },
+        { id: "file-3", name: "USJ_Express_Pass.pdf", type: "application/pdf", uploadedAt: "2025-12-22", url: "https://www.google.com" },
+        { id: "file-img1", name: "新宿哥吉拉大戰.jpg", type: "image/jpeg", uploadedAt: "2025-12-24", url: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800" },
+        { id: "file-img2", name: "銀座夜景全景.png", type: "image/png", uploadedAt: "2025-12-25", url: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800" },
+        { id: "file-img3", name: "USJ任天堂世界全員合照.jpg", type: "image/jpeg", uploadedAt: "2025-12-28", url: "https://images.unsplash.com/photo-1643261642816-a3205763955d?w=800" }
+    ],
+    reminders: [
+        { id: "rem-1", title: "⚡ 數據備份", content: "VJW QR Code 一定要 Cap 圖！機場 Wi-Fi 有時慢到喊，離線 Cap 圖保平安。包含入境同海關兩個 Code。", category: "tech", priority: "high" },
+        { id: "rem-2", title: "❄️ 天氣對策", content: "12 月東京風大，USJ 體感會低多 3 度。Sarah 記得帶多幾對暖包。室內暖氣好勁，洋蔥穿法係重點。", category: "logistics", priority: "medium" },
+        { id: "rem-3", title: "🛂 出境準備", content: "最後一日出發前 3 小時到 KIX。預留 1 小時買手信同清空 Suica/硬幣。Alex 負責最後申報。", category: "logistics", priority: "high" }
+    ],
+    visa: {
+        "sim-user-1": { status: "HKSAR 免簽", number: "90日免簽 (短期滯在)", expiry: "2030-01-01", needsPrint: true },
+        "sim-user-2": { status: "BNO 免簽", number: "90日免簽 (Short-term)", expiry: "2029-05-20", needsPrint: true },
+        "sim-user-3": { status: "HKSAR 免簽", number: "90日免簽 (短期滯在)", expiry: "2031-10-15", needsPrint: false },
+        "sim-user-4": { status: "HKSAR 免簽", number: "90日免簽 (短期滯在)", expiry: "2028-03-01", needsPrint: false }
+    },
+    insurance: {
+        "sim-user-1": { provider: "AIG 太平", policyNo: "AIG-998877", phone: "+852 3666 7000", insight: "【Alex 專屬】包含 100萬醫療、住院現金及緊急送返。在日本 24 小時熱線：+81 3-1234-5678。" },
+        "sim-user-2": { provider: "Chubb 安達", policyNo: "CHB-112233", phone: "+852 2861 0018", insight: "【Buddy 專屬】包含行李延誤同旅程取消。BNO 護照特別保障。" },
+        "sim-user-3": { provider: "Zurich", policyNo: "ZUR-554433", phone: "+852 2968 2222", insight: "【Sarah 專屬】包含攝影器材損毀保障，Sarah 兩部相機都保咗。" },
+        "sim-user-4": { provider: "MSIG", policyNo: "MSIG-778899", phone: "+852 2862 9888", insight: "【Mike 專屬】包含現金遺失同個人責任。重傷/事故 200萬醫療。" }
+    },
+    memories: [
+        { id: "mem-1", date: "2025-12-24", memo: "抵達成田，旺季入境搞咗 75 分鐘，好彩提早填咗 VJW。Alex 紙本機票大派用場！" },
+        { id: "mem-2", date: "2025-12-25", memo: "銀座六號頂樓睇夜景，全免費，睇住和光鐘樓好靚。Sarah 影咗一百幾張。" },
+        { id: "mem-3", date: "2025-12-26", memo: "Shibuya Sky 大風吹到癲，Sarah 頂帽差啲吹咗落山。明治神宮大鳥居勁震撼。" },
+        { id: "mem-4", date: "2025-12-27", memo: "新幹線 D/E 位成功捕捉到富士山，全車人都喺度影相。Alex 記錄 300km/h 瞬間！" },
+        { id: "mem-5", date: "2025-12-28", memo: "USJ 走咗十二個鐘，任天堂世界金幣全取。Mike 尿袋救咗全或命！" },
+        { id: "mem-6", date: "2025-12-29", memo: "黑門市場海膽鮮甘到喊。Rapit 鐵人 28 型列車賣相勁高，完美歸航！" }
     ],
     budget: [
-        { id: "b-1", name: "機票 (CX 來回含餐)", cost: 9000, currency: "HKD", category: "flight", payer: "Alex", splitType: "group" },
-        { id: "b-2", name: "第一晚住宿 (Graceery 歌舞伎町)", cost: 450, currency: "HKD", category: "hotel", payer: "Buddy", splitType: "individual" }
-    ],
-    notes: "### 💡 東京行前必看\n- **交通：** iPhone 錢包直接加 Suica 最方便，不用排隊買卡。\n- **餐廳：** 敘敘苑 建議出發前一個月上網訂位。\n- **退稅：** 買東西記得帶護照正本。",
-    insurance: {
-        "sim-user-1": { provider: "富邦旅平險", policyNo: "FB-2025-778899", phone: "+886 2 2771 6699", notes: "已確認涵蓋海外突發疾病" },
-        "sim-user-2": { provider: "AIG 國外旅遊保險", policyNo: "AIG-HK-992211", phone: "+852 3666 7017" }
-    },
-    visa: {
-        "sim-user-1": { status: "printed", number: "HKG-JP-VISA-001", expiry: "2030-01-01", needsPrint: false },
-        "sim-user-2": { status: "not_needed", number: " 免簽 (BNO)", expiry: "-", needsPrint: false }
-    },
-    emergency: {
-        police: "110",
-        fire: "119",
-        ambulance: "119",
-        consulate: {
-            name: "台北駐日經濟文化代表處",
-            address: "東京都港区白金台5-20-2",
-            phone: "+81-3-3280-7811",
-            emergencyHotline: "+81-90-4746-6065",
-            hours: "週一至週五 09:00-11:30, 13:00-17:00"
-        },
-        hospitals: [
-            { name: "聖路加國際醫院 (中/英語對應)", address: "東京都中央區明石町9-1", phone: "+81-3-3541-5151" },
-            { name: "東京慈惠會醫科大學附屬醫院", address: "東京都港區西新橋3-25-8", phone: "+81-3-3433-1111" }
-        ],
-        tips: [
-            "日本報警要說「Kotsu-jiko」(交通事故) 或「Dorobo」(小偷)",
-            "部分小醫院不收刷卡，建議帶足額現金",
-            "語言不通可用 Google 翻譯或下載「Safety Tips」App"
-        ]
-    },
-    reminders: [
-        { id: "rem-1", title: "預訂成田機場接送", date: "2025-12-22", done: false, priority: "high" },
-        { id: "rem-2", title: "兌換日幣", date: "2025-12-23", done: true, priority: "medium" },
-        { id: "rem-3", title: "下載離線地圖", date: "2025-12-23", done: false, priority: "low" },
-        { id: "rem-4", title: "確認酒店預約", date: "2025-12-24", done: false, priority: "high" }
+        { id: "b-1", name: "機票 (CX520 來回 4人)", cost: 18000, currency: "HKD", category: "flight", payerId: "sim-user-1", splitType: "group", details: "【Alex 支付】包含 Economy Lite 行李額 23kg *4。國泰旗艦長途機。已預選位置。" },
+        { id: "b-2", name: "N'EX 來回套票 (4人)", cost: 16280, currency: "JPY", category: "transport", payerId: "sim-user-4", splitType: "group", details: "【Mike 支付】成田機場店購買。只限外國護照。包含成田到新宿來回。" },
+        { id: "b-3", name: "USJ 門票 + Express 4 (4人)", cost: 78000, currency: "JPY", category: "spot", payerId: "sim-user-1", splitType: "group", details: "【Alex 支付】包含 Super Nintendo World 入場。Mike 負責掃描 QR Code。" },
+        { id: "b-4", name: "敘敘苑晚餐 (聖誕 Premium)", cost: 48000, currency: "JPY", category: "food", payerId: "sim-user-4", splitType: "group", details: "【Mike 支付】包含 Premium 牛舌特餐。全員聖誕慶功宴。窗邊景觀位。" },
+        { id: "b-5", name: "Suica 加值 (全員一次)", cost: 20000, currency: "JPY", category: "transport", payerId: "sim-user-4", splitType: "group", details: "【Mike 任務】每人 ¥5000。Mike 負責 Apple Pay 統一充值。最後喺機場清空。" },
+        { id: "b-shinkansen", name: "新幹線 Nozomi (東京-新大阪)", cost: 59000, currency: "JPY", category: "transport", payerId: "sim-user-1", splitType: "group", details: "【Alex 支付】包含特大行李預約位 (最後排)。Nozomi 21 號次。" },
+        { id: "b-hotel1", name: "Hotel Gracery Shinjuku (3晚)", cost: 95000, currency: "JPY", category: "hotel", payerId: "sim-user-1", splitType: "group", details: "【Alex 支付】兩間 Twin Room。聖誕旺季價錢。" },
+        { id: "b-hotel2", name: "W Osaka (2晚)", cost: 120000, currency: "JPY", category: "hotel", payerId: "sim-user-1", splitType: "group", details: "【Alex 支付】Wonderful Room。包含 1F 行李寄存服務。" },
+        { id: "b-porter", name: "Porter Tanker XS (Sarah)", cost: 32000, currency: "JPY", category: "shopping", payerId: "sim-user-3", splitType: "individual", details: "【Sarah 自付】原宿限定版。已扣 10% 消費稅。" }
     ]
 };
 
@@ -833,8 +911,8 @@ export const CITY_IMAGES = {
 };
 
 export const LANDMARK_IMAGES = {
-    "晴空塔": "https://images.unsplash.com/photo-1524317820067-175a6c9d0944?w=400&h=300&fit=crop",
-    "Skytree": "https://images.unsplash.com/photo-1524317820067-175a6c9d0944?w=400&h=300&fit=crop",
+    "晴空塔": "https://images.unsplash.com/photo-1545389656-78b17ee191d9?w=600&h=400&fit=crop",
+    "Skytree": "https://images.unsplash.com/photo-1545389656-78b17ee191d9?w=600&h=400&fit=crop",
     "東京鐵塔": "https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=400&h=300&fit=crop",
     "Tokyo Tower": "https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=400&h=300&fit=crop",
     "淺草寺": "https://images.unsplash.com/photo-1570459027562-4a916cc6113f?w=400&h=300&fit=crop",

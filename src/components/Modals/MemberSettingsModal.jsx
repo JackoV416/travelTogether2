@@ -18,9 +18,22 @@ const MemberSettingsModal = ({ isOpen, onClose, members, onUpdateRole, isDarkMod
                     {members.map(m => (
                         <div key={m.id} className={`flex justify-between items-center p-4 border rounded-xl transition-all ${isDarkMode ? 'border-gray-700 bg-gray-800/50 hover:bg-gray-800' : 'border-gray-200 bg-gray-50 hover:bg-gray-100'}`}>
                             <div className="flex items-center gap-3">
-                                <div className={`relative w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'}`}>
-                                    {getUserInitial(m.name)}
-                                    {m.status === 'pending' && <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-yellow-500 rounded-full border-2 border-white dark:border-gray-800"></span>}
+                                <div className={`relative w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold overflow-hidden ${!m.photoURL ? (isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700') : ''}`}>
+                                    {m.photoURL && m.photoURL !== "" ? (
+                                        <img
+                                            src={m.photoURL}
+                                            alt={m.name}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                                        />
+                                    ) : (
+                                        getUserInitial(m.name)
+                                    )}
+                                    {/* Fallback container if image fails (hidden by default unless error) */}
+                                    <div className="absolute inset-0 hidden items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                                        {getUserInitial(m.name)}
+                                    </div>
+                                    {m.status === 'pending' && <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-yellow-500 rounded-full border-2 border-white dark:border-gray-800 z-10"></span>}
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-sm font-bold flex items-center gap-2">

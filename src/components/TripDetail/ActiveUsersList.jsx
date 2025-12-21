@@ -8,16 +8,16 @@ const ActiveUsersList = ({ tripId, user, activeTab, language = "zh-TW" }) => {
     const [activeUsers, setActiveUsers] = useState([]);
 
     useEffect(() => {
-        if (!tripId || !user) return;
+        if (!tripId || !user?.uid) return;
 
-        const presenceRef = doc(db, "trips", tripId, "presence", user.uid);
+        const presenceRef = doc(db, "trips", tripId, "presence", user?.uid);
 
         const updatePresence = () => {
             setDoc(presenceRef, {
                 user: {
-                    uid: user.uid,
-                    name: user.displayName || user.email.split('@')[0],
-                    photo: user.photoURL || null
+                    uid: user?.uid,
+                    name: user?.displayName || user?.email?.split('@')[0] || 'Guest',
+                    photo: user?.photoURL || null
                 },
                 activeTab,
                 lastActive: Date.now()
@@ -40,8 +40,9 @@ const ActiveUsersList = ({ tripId, user, activeTab, language = "zh-TW" }) => {
             });
             // 排序：自己排第一個，然後按時間倒序
             users.sort((a, b) => {
-                if (a.user.uid === user.uid) return -1;
-                if (b.user.uid === user.uid) return 1;
+                const myUid = user?.uid;
+                if (a.user.uid === myUid) return -1;
+                if (b.user.uid === myUid) return 1;
                 return b.lastActive - a.lastActive;
             });
             setActiveUsers(users);
@@ -53,14 +54,14 @@ const ActiveUsersList = ({ tripId, user, activeTab, language = "zh-TW" }) => {
             // Optional: deleteDoc(presenceRef) - 保留這行如果想離線即刪除，或者註解掉以保留 "Last seen"
             deleteDoc(presenceRef).catch(err => console.error("Presence cleanup failed", err));
         };
-    }, [tripId, user.uid, activeTab, language]);
+    }, [tripId, user?.uid, activeTab, language]);
 
     if (activeUsers.length === 0) return null;
 
     return (
         <div className="flex items-center -space-x-2 mr-4 animate-fade-in pointer-events-auto">
             {activeUsers.slice(0, 5).map((u, i) => {
-                const isMe = u.user.uid === user.uid;
+                const isMe = u.user.uid === user?.uid;
                 const timeDiff = Math.floor((Date.now() - u.lastActive) / 1000);
                 const statusText = timeDiff < 15 ? (language === 'zh-TW' ? '剛剛' : 'Just now') : `${timeDiff}${language === 'zh-TW' ? '秒前' : 's ago'}`;
                 const tabName = TAB_LABELS[u.activeTab]?.[language] || u.activeTab || (language === 'zh-TW' ? '總覽' : 'Overview');

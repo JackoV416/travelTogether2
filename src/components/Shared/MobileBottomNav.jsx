@@ -63,7 +63,7 @@ const BottomNav = ({ view, setView, onOpenMore, isDarkMode }) => {
                     <span className="text-[10px] font-bold">更多</span>
                 </button>
             </div>
-        </div>
+        </div >
     );
 };
 

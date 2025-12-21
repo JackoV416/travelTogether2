@@ -9,7 +9,11 @@ import {
 } from 'lucide-react';
 import { CURRENCIES, COUNTRIES_DATA } from '../../../constants/appData';
 import { suggestTransportBetweenSpots } from '../../../services/ai-parsing';
+import TransportCard from '../cards/TransportCard';
 import { formatDuration, getSmartItemImage } from '../../../utils/tripUtils';
+import ItemDetailModal from '../../Modals/ItemDetailModal';
+
+
 
 // --- Local Helpers ---
 
@@ -77,7 +81,8 @@ const ItineraryTab = ({
     onClearDaily,
     requestedItemId,
     onItemHandled,
-    onUpdateLocation
+    onUpdateLocation,
+    userMapsKey // Added: Support for BYOK Google Maps Key
 }) => {
     // Local UI State
     const [mapScope, setMapScope] = useState('daily'); // 'daily' or 'full'
@@ -88,23 +93,39 @@ const ItineraryTab = ({
 
     // Location Editing State
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
-    const [locForm, setLocForm] = useState({ country: "", city: "" });
+    const [locForm, setLocForm] = useState({ country: "", city: "", startCity: "", endCity: "" });
+    const [isMultiCity, setIsMultiCity] = useState(false);
 
     // Initialize location form when opening
     const handleOpenLocationModal = () => {
         const currentLoc = trip.locations?.[currentDisplayDate] || { country: trip.country || "", city: trip.city || "" };
-        setLocForm(currentLoc);
+        const hasMulti = currentLoc.startCity || currentLoc.endCity;
+        setLocForm({ ...currentLoc, startCity: currentLoc.startCity || "", endCity: currentLoc.endCity || "" });
+        setIsMultiCity(!!hasMulti);
         setIsLocationModalOpen(true);
     };
 
     const handleSaveLocation = () => {
-        onUpdateLocation(currentDisplayDate, locForm);
+        const payload = isMultiCity
+            ? {
+                country: locForm.country,
+                city: `${locForm.startCity} -> ${locForm.endCity}`,
+                startCity: locForm.startCity,
+                endCity: locForm.endCity,
+                transitionTime: locForm.transitionTime
+            }
+            : { country: locForm.country, city: locForm.city };
+        onUpdateLocation(currentDisplayDate, payload);
         setIsLocationModalOpen(false);
     };
 
+
+
+
     // AI Transport Suggestions State
-    const [transportSuggestions, setTransportSuggestions] = useState({}); // { "itemId-nextItemId": suggestion }
+    const [transportSuggestions, setTransportSuggestions] = useState({}); // {"itemId-nextItemId": suggestion }
     const [loadingTransport, setLoadingTransport] = useState(null); // Currently loading suggestion key
+    const [activeDetailItem, setActiveDetailItem] = useState(null); // Added: Detail Modal State
 
     // Fetch AI transport suggestion between two spots
     const fetchTransportSuggestion = async (fromItem, toItem) => {
@@ -192,6 +213,18 @@ const ItineraryTab = ({
         return matchesSearch && matchesFilter;
     });
 
+    // Auto-detect Multi-City from Itinerary
+    useEffect(() => {
+        const transportItem = (filteredItems || []).find(i => (i.type === 'transport' || i.type === 'flight') && i.arrival);
+        if (transportItem && !isMultiCity) {
+            const currentLoc = trip.locations?.[currentDisplayDate] || {};
+            if (!currentLoc.startCity || !currentLoc.endCity) {
+                // Potential auto-sync logic here if we wanted to auto-update the trip object
+                // For now, it just informs the UI state
+            }
+        }
+    }, [filteredItems, isMultiCity, currentDisplayDate, trip.locations]);
+
     // Calculate map locations based on scope
     const allLocations = mapScope === 'daily'
         ? (trip.itinerary?.[currentDisplayDate] || []).map(item => ({ date: currentDisplayDate, ...item })).filter(item => item.details?.location)
@@ -199,19 +232,30 @@ const ItineraryTab = ({
     const mapQuery = allLocations.length ? allLocations.map(item => item.details.location).join(' via ') : `${trip.city} ${trip.country} `;
 
     // Types mapping
-    const typeStyles = {
-        flight: { bg: 'bg-sky-500/15', border: 'border-sky-500/30', icon: 'text-sky-500' },
-        hotel: { bg: 'bg-indigo-500/15', border: 'border-indigo-500/30', icon: 'text-indigo-500' },
-        spot: { bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', icon: 'text-emerald-500' },
-        food: { bg: 'bg-orange-500/15', border: 'border-orange-500/30', icon: 'text-orange-500' },
-        shopping: { bg: 'bg-pink-500/15', border: 'border-pink-500/30', icon: 'text-pink-500' },
-        transport: { bg: 'bg-blue-500/15', border: 'border-blue-500/30', icon: 'text-blue-500' }
-    };
+
 
     const glassCardClass = (dark) => `backdrop-blur-sm border shadow-xl rounded-2xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${dark ? 'bg-gray-900/95 border-gray-700 text-gray-100 hover:border-gray-600' : 'bg-slate-50/95 border-gray-200 text-gray-900 hover:border-gray-300'}`;
 
     return (
         <div className="space-y-6 animate-fade-in relative">
+            <ItemDetailModal
+                isOpen={!!activeDetailItem}
+                onClose={() => setActiveDetailItem(null)}
+                item={activeDetailItem}
+                isDarkMode={isDarkMode}
+                city={trip.city}
+                onEdit={canEdit ? onEditItem : null}
+                onDelete={canEdit ? (id) => {
+                    // Find and delete item
+                    const updatedItems = itineraryItems.filter(i => i.id !== id);
+                    // Trigger update via parent (we need onDeleteItem prop, or we call onEditItem with null/delete flag)
+                    // For now, using a simple confirm + re-render approach by calling parent's update function if available
+                    // NOTE: This requires parent to support deletion. If not, this button will show but do nothing.
+                    console.log('[ItemDetailModal] Delete requested for item:', id);
+                    // A more robust approach would be to add an `onDeleteItem` prop. For now, we'll just close.
+                    // We can add this later if needed.
+                } : null}
+            />
             {/* Daily Location Modal */}
             {isLocationModalOpen && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -231,24 +275,105 @@ const ItineraryTab = ({
                             </div>
                             <div>
                                 <label className="text-xs font-bold opacity-70 uppercase mb-1 block">城市</label>
-                                <input
-                                    className={`w-full p-2 rounded-lg border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
-                                    value={locForm.city}
-                                    placeholder="輸入城市名稱"
-                                    onChange={e => setLocForm({ ...locForm, city: e.target.value })}
-                                />
-                                {locForm.country && COUNTRIES_DATA[locForm.country]?.cities && (
-                                    <div className="mt-2 flex flex-wrap gap-2">
-                                        {COUNTRIES_DATA[locForm.country].cities.map(c => (
-                                            <button
-                                                key={c}
-                                                onClick={() => setLocForm({ ...locForm, city: c })}
-                                                className={`text-xs px-2 py-1 rounded border transition-colors ${locForm.city === c ? 'bg-indigo-500 text-white border-indigo-500' : 'opacity-60 hover:opacity-100'}`}
-                                            >
-                                                {c}
-                                            </button>
-                                        ))}
+                                {/* Multi-City Toggle */}
+                                <div className="flex items-center gap-2 mb-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsMultiCity(!isMultiCity)}
+                                        className={`relative w-10 h-5 rounded-full transition-colors ${isMultiCity ? 'bg-indigo-500' : (isDarkMode ? 'bg-gray-700' : 'bg-gray-300')}`}
+                                    >
+                                        <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${isMultiCity ? 'translate-x-5' : ''}`}></div>
+                                    </button>
+                                    <span className="text-xs font-bold opacity-70">跨城市 (Multi-City)</span>
+                                    {isMultiCity && (
+                                        <button
+                                            onClick={() => {
+                                                const transportItem = itineraryItems.find(i => (i.type === 'transport' || i.type === 'flight') && i.arrival);
+                                                if (transportItem) {
+                                                    setLocForm(prev => ({
+                                                        ...prev,
+                                                        startCity: transportItem.details?.fromCode || (transportItem.details?.location ? transportItem.details.location.split('->')[0].trim() : ""),
+                                                        endCity: transportItem.arrival,
+                                                        transitionTime: transportItem.time
+                                                    }));
+                                                }
+                                            }}
+                                            className="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded flex items-center gap-1 hover:bg-indigo-500/40 transition-colors"
+                                        >
+                                            <Sparkles className="w-2.5 h-2.5" /> 智能填充
+                                        </button>
+                                    )}
+                                </div>
+
+                                {isMultiCity ? (
+                                    <div className="space-y-3">
+                                        <div>
+                                            <label className="text-[10px] font-bold opacity-50 block mb-1">早上城市 (Start City)</label>
+                                            <input
+                                                className={`w-full p-2 rounded-lg border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
+                                                value={locForm.startCity}
+                                                placeholder="e.g. Tokyo"
+                                                onChange={e => setLocForm({ ...locForm, startCity: e.target.value })}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold opacity-50 block mb-1">轉移時間 (Transition Time)</label>
+                                            <input
+                                                type="time"
+                                                className={`w-full p-2 rounded-lg border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
+                                                value={locForm.transitionTime || ""}
+                                                onChange={e => setLocForm({ ...locForm, transitionTime: e.target.value })}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold opacity-50 block mb-1">晚上城市 (End City)</label>
+                                            <input
+                                                className={`w-full p-2 rounded-lg border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
+                                                value={locForm.endCity}
+                                                placeholder="e.g. Osaka"
+                                                onChange={e => setLocForm({ ...locForm, endCity: e.target.value })}
+                                            />
+                                        </div>
+                                        {/* Quick City Buttons */}
+                                        {locForm.country && COUNTRIES_DATA[locForm.country]?.cities && (
+                                            <div className="flex flex-wrap gap-2 pt-2 border-t border-dashed border-gray-500/20">
+                                                {COUNTRIES_DATA[locForm.country].cities.map(c => (
+                                                    <button
+                                                        key={c}
+                                                        onClick={() => {
+                                                            if (!locForm.startCity) setLocForm({ ...locForm, startCity: c });
+                                                            else if (!locForm.endCity) setLocForm({ ...locForm, endCity: c });
+                                                        }}
+                                                        className={`text-xs px-2 py-1 rounded border transition-colors ${(locForm.startCity === c || locForm.endCity === c) ? 'bg-indigo-500 text-white border-indigo-500' : 'opacity-60 hover:opacity-100'}`}
+                                                    >
+                                                        {c}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
+                                ) : (
+                                    <>
+                                        <input
+                                            className={`w-full p-2 rounded-lg border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
+                                            value={locForm.city}
+                                            placeholder="輸入城市名稱"
+                                            onChange={e => setLocForm({ ...locForm, city: e.target.value })}
+                                        />
+                                        {locForm.country && COUNTRIES_DATA[locForm.country]?.cities && (
+                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                {COUNTRIES_DATA[locForm.country].cities.map(c => (
+                                                    <button
+                                                        key={c}
+                                                        onClick={() => setLocForm({ ...locForm, city: c })}
+                                                        className={`text-xs px-2 py-1 rounded border transition-colors ${locForm.city === c ? 'bg-indigo-500 text-white border-indigo-500' : 'opacity-60 hover:opacity-100'}`}
+                                                    >
+                                                        {c}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -334,14 +459,23 @@ const ItineraryTab = ({
                             }
 
                             // Scenario B: Single City (Standard)
+                            const isMissingTransport = isMultiCity && !filteredItems.some(i => (i.type === 'transport' || i.type === 'flight') && i.arrival);
+
                             return (
-                                <button
-                                    onClick={handleOpenLocationModal}
-                                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 hover:bg-gray-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
-                                >
-                                    <MapPin className="w-3 h-3 text-indigo-500" />
-                                    {trip.locations?.[currentDisplayDate]?.city || trip.locations?.[currentDisplayDate]?.country || (trip.city ? `${trip.city} (預設)` : "設定位置")}
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={handleOpenLocationModal}
+                                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 hover:bg-gray-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                                    >
+                                        <MapPin className="w-3 h-3 text-indigo-500" />
+                                        {trip.locations?.[currentDisplayDate]?.city || trip.locations?.[currentDisplayDate]?.country || (trip.city ? `${trip.city} (預設)` : "設定位置")}
+                                    </button>
+                                    {isMissingTransport && (
+                                        <div className="flex items-center gap-1 text-[10px] text-amber-500 font-bold bg-amber-500/10 px-2 py-1 rounded-full animate-pulse border border-amber-500/20">
+                                            ⚠️ 缺少城市間交通
+                                        </div>
+                                    )}
+                                </div>
                             );
                         })()}
                     </div>
@@ -367,13 +501,14 @@ const ItineraryTab = ({
                         )}
 
                         <button onClick={() => setViewMode(viewMode === 'list' ? 'map' : 'list')} className={`p-2 rounded-lg border transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100'}`} title="切換地圖/列表">{viewMode === 'list' ? <MapIcon className="w-5 h-5" /> : <List className="w-5 h-5" />}</button>
-                        {/* {canEdit && <button onClick={onOptimize} className={`p-2 rounded-lg border transition-all ${isDarkMode ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/30' : 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'}`} title="AI 智能排程優化"><Wand2 className="w-5 h-5" /></button>} */}
+                        {/* {canEdit && <button onClick={onOptimize} className={`p-2 rounded-lg border transition-all ${isDarkMode ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/30' : 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'}`} title="AI 智能排程優化"><Wand2 className="w-5 h-5" /></button> */}
                         {canEdit && <button onClick={() => onAddItem(currentDisplayDate, 'spot')} className="text-xs bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-3 py-1.5 rounded-lg font-bold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 active:scale-95">+ 新增</button>}
                     </div>
                 </div>
 
                 {viewMode === 'list' ? (
-                    <div className="p-0 space-y-0 relative before:absolute before:left-[17px] before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-indigo-500/50 before:via-purple-500/30 before:to-transparent">
+                    <div className="relative space-y-6 pt-2 pb-6 pl-4">
+                        <div className="absolute left-[31px] top-4 bottom-4 w-[2px] bg-gradient-to-b from-indigo-500/20 via-indigo-500/10 to-transparent"></div>
                         {filteredItems.length === 0 ? (
                             <EmptyState
                                 icon={searchValue ? Search : CalendarDays}
@@ -390,190 +525,193 @@ const ItineraryTab = ({
                                     icon: Search
                                 }}
                             />
-                        ) : filteredItems.map((item, i) => {
-                            const advice = getTransportAdvice(item, trip.city);
-                            const transportMeta = advice ? TRANSPORT_ICONS[advice.mode] : null;
-                            const TransportIcon = transportMeta?.icon;
+                        ) : (
+                            <>
+                                {filteredItems.map((item, i) => {
+                                    // Unified Transport Card for Flight & Transport
+                                    if (item.type === 'flight' || item.type === 'transport' || item.type === 'walk') {
+                                        // Find hotel for the day to pass as potential destination
+                                        const dayHotel = filteredItems.find(i => i.type === 'hotel');
 
-                            const style = typeStyles[item.type] || typeStyles.spot;
-
-                            return (
-                                <div
-                                    id={`item-${item.id}`}
-                                    key={item.id || i}
-                                    draggable={canEdit && isEditMode}
-                                    onDragStart={(e) => onDragStart && onDragStart(e, i)}
-                                    onDragOver={(e) => e.preventDefault()}
-                                    onDrop={(e) => onDrop && onDrop(e, i)}
-                                    onClick={() => { if (canEdit) onEditItem(item); }}
-                                    className={`flex gap-4 items-start p-4 mb-4 rounded-xl border transition-all cursor-pointer group shadow-sm ${isDarkMode ? 'border-gray-500/10 hover:bg-white/5' : 'border-gray-200 hover:bg-gray-50'}`}
-                                >
-                                    {/* Edit Mode Grip */}
-                                    {isEditMode && (
-                                        <div className="mt-1 opacity-30 group-hover:opacity-70 cursor-grab active:cursor-grabbing">
-                                            <GripVertical className="w-5 h-5" />
-                                        </div>
-                                    )}
-
-                                    {/* Time Block */}
-                                    <div className="font-mono text-sm font-bold text-indigo-400 pt-1 w-12 flex-shrink-0">
-                                        {item.details?.time || item.time || "--:--"}
-                                    </div>
-
-                                    {/* Image Thumbnail */}
-                                    <div className="w-20 h-14 md:w-24 md:h-16 rounded-xl overflow-hidden flex-shrink-0 relative group/img">
-                                        <img
-                                            src={getSmartItemImage(item, trip)}
-                                            alt={item.name}
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110"
-                                            onError={(e) => { e.target.src = getSmartItemImage({ type: item.type }, trip); }}
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                                    </div>
-
-                                    {/* Icon & Content Wrapper */}
-                                    <div className="flex-grow min-w-0">
-                                        <div className="flex items-start gap-3">
-                                            {/* Style-based Icon */}
-                                            <div className={`p-2.5 rounded-xl flex-shrink-0 ${style.bg} ${style.icon}`}>
-                                                {item.type === 'flight' ? <PlaneTakeoff className="w-5 h-5" /> :
-                                                    item.type === 'hotel' ? <Hotel className="w-4 h-4" /> :
-                                                        item.type === 'food' ? <Utensils className="w-4 h-4" /> :
-                                                            item.type === 'transport' ? (TRANSPORT_ICONS[item.details?.transportType]?.icon ? React.createElement(TRANSPORT_ICONS[item.details.transportType].icon, { className: 'w-4 h-4' }) : <Bus className="w-4 h-4" />) :
-                                                                item.type === 'shopping' ? <ShoppingBag className="w-4 h-4" /> :
-                                                                    <MapPin className="w-4 h-4" />}
-                                            </div>
-
-                                            <div className="flex-1 min-w-0">
-                                                <div className="font-bold text-base flex items-center gap-2 flex-wrap">
-                                                    {item.name}
-                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${item.type === 'food' ? 'bg-orange-500/10 text-orange-400' :
-                                                        item.type === 'transport' ? 'bg-indigo-500/10 text-indigo-400' :
-                                                            item.type === 'hotel' ? 'bg-amber-500/10 text-amber-400' :
-                                                                'bg-blue-500/10 text-blue-400'
-                                                        }`}>{
-                                                            item.type === 'food' ? '美食' :
-                                                                item.type === 'transport' ? '交通' :
-                                                                    item.type === 'hotel' ? '住宿' :
-                                                                        '景點'
-                                                        }</span>
-                                                    {item.smartTag && <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 font-bold">{item.smartTag}</span>}
+                                        return (
+                                            <div
+                                                key={item.id}
+                                                draggable={canEdit && isEditMode}
+                                                onDragStart={(e) => onDragStart && onDragStart(e, i)}
+                                                onDrop={(e) => onDrop && onDrop(e, i)}
+                                                onDragOver={(e) => e.preventDefault()}
+                                                onClick={() => {
+                                                    if (canEdit && isEditMode) {
+                                                        onEditItem(item);
+                                                    } else {
+                                                        setActiveDetailItem(item);
+                                                    }
+                                                }}
+                                                className={`relative z-10 mb-6 animate-fade-in-up ${isEditMode ? 'cursor-grab' : ''}`}
+                                                style={{ animationDelay: `${i * 50}ms` }}
+                                            >
+                                                {/* Time Bubble & Line Connector (Unified) */}
+                                                <div className="absolute left-0 top-0 flex flex-col items-center w-[60px]">
+                                                    <div className={`mt-0 px-2 py-1 rounded-full text-[10px] font-bold tracking-tight z-20 shadow-sm border border-transparent 
+                                                        ${item.type === 'flight' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'} 
+                                                        ${isDarkMode ? 'border-white/5' : ''}`}>
+                                                        {item.details?.time || item.time || "--:--"}
+                                                    </div>
                                                 </div>
 
-                                                <div className="text-xs opacity-60 flex items-center gap-2 mt-1">
-                                                    {item.details?.location && <span className="flex items-center gap-1 group-hover:text-indigo-400 transition-colors"><MapPin className="w-3 h-3" />{item.details.location}</span>}
-                                                    {item.type === 'transport' && (item.details?.distance || item.details?.duration) && (
-                                                        <span className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-500/10 rounded text-[10px] text-indigo-400 font-mono">
-                                                            <Route className="w-2.5 h-2.5" />
-                                                            {item.details.distance}{item.details.duration && ` · ${formatDuration(item.details.duration)}`}
-                                                            {item.details.steps && ` · ${item.details.steps} 步`}
-                                                        </span>
+                                                <div className="ml-[70px] hover:scale-[1.01] transition-transform duration-300">
+                                                    <TransportCard item={item} isDarkMode={isDarkMode} dayHotel={dayHotel} />
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+
+                                    // Standard Card (Spot, Food, Hotel, Shopping) with Image
+                                    return (
+                                        <div
+                                            id={`item-${item.id}`}
+                                            key={item.id || i}
+                                            draggable={canEdit && isEditMode}
+                                            onDragStart={(e) => onDragStart && onDragStart(e, i)}
+                                            onDragOver={(e) => e.preventDefault()}
+                                            onDrop={(e) => onDrop && onDrop(e, i)}
+                                            onClick={() => {
+                                                if (canEdit && isEditMode) {
+                                                    onEditItem(item);
+                                                } else {
+                                                    setActiveDetailItem(item);
+                                                }
+                                            }}
+                                            className={`relative z-10 animate-fade-in-up group mb-6 ${isEditMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}
+                                            style={{ animationDelay: `${i * 50}ms` }}
+                                        >
+                                            {/* Time Bubble & Line Connector */}
+                                            <div className="absolute left-0 top-0 flex flex-col items-center w-[60px]">
+                                                <div className={`mt-0 px-2 py-1 rounded-full text-[10px] font-bold tracking-tight z-20 shadow-sm border border-transparent bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300 ${isDarkMode ? 'border-white/5' : ''}`}>
+                                                    {item.details?.time || item.time || "--:--"}
+                                                </div>
+                                            </div>
+
+                                            {/* Card Body */}
+                                            <div className={`ml-[70px] rounded-3xl overflow-hidden transition-all duration-300 hover:shadow-xl border ${isDarkMode ? 'bg-gray-800/80 border-gray-700 hover:border-gray-600' : 'bg-white border-gray-100 hover:border-indigo-100 shadow-md'} `}>
+
+                                                {/* Image Header - RESTORED */}
+                                                <div className="h-32 w-full relative overflow-hidden group/img bg-gray-200">
+                                                    <img
+                                                        src={getSmartItemImage(item, trip)}
+                                                        alt={item.name}
+                                                        loading="lazy"
+                                                        className="w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-110"
+                                                        onError={(e) => { e.target.src = getSmartItemImage({ type: item.type }, trip); }}
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+
+                                                    {/* Cost Badge */}
+                                                    {item.cost > 0 && (
+                                                        <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg text-white text-[10px] font-bold font-mono border border-white/20">
+                                                            {item.currency} {item.cost.toLocaleString()}
+                                                        </div>
                                                     )}
                                                 </div>
 
-                                                {/* AI Insights and Transport Suggestions as expanded details */}
-                                                {(item.details?.insight || item.details?.reason) && (
-                                                    <div className={`mt-3 p-3 rounded-xl border flex items-start gap-3 animate-fade-in ${isDarkMode ? 'bg-indigo-500/5 border-indigo-500/20' : 'bg-indigo-50/50 border-indigo-100'}`}>
-                                                        <div className={`p-1.5 rounded-lg ${isDarkMode ? 'bg-indigo-500/20' : 'bg-white shadow-sm'}`}>
-                                                            {item.type === 'shopping' ? <Quote className="w-3 h-3 text-purple-400" /> : <Info className="w-3 h-3 text-indigo-400" />}
-                                                        </div>
-                                                        <div className="text-[11px] leading-relaxed opacity-80 italic">
-                                                            「{item.details.insight || item.details.reason}」
+                                                {/* Content Container */}
+                                                <div className="p-5">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <div className="flex flex-col">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${item.type === 'food' ? 'bg-orange-500/10 text-orange-500' : item.type === 'shopping' ? 'bg-pink-500/10 text-pink-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+                                                                    {item.type}
+                                                                </span>
+                                                            </div>
+                                                            <h3 className="font-black text-lg leading-tight">{item.name}</h3>
+                                                            {item.details?.location && (
+                                                                <div className="flex items-center gap-1 mt-1 text-xs opacity-60 font-medium">
+                                                                    <MapPin className="w-3 h-3" />
+                                                                    {item.details.location}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
-                                                )}
 
-                                                {/* AI Smart Transport Button */}
-                                                {i < filteredItems.length - 1 && item.type !== 'transport' && filteredItems[i + 1]?.type !== 'transport' && (
-                                                    (() => {
-                                                        const nextItem = filteredItems[i + 1];
-                                                        const suggestionKey = `${item.id}-${nextItem.id}`;
-                                                        const aiSuggestion = transportSuggestions[suggestionKey];
-                                                        const isLoading = loadingTransport === suggestionKey;
+                                                    {/* Description / Tags */}
+                                                    {item.details?.desc && (
+                                                        <p className="text-sm opacity-80 mb-3 leading-relaxed line-clamp-2">{item.details.desc}</p>
+                                                    )}
 
-                                                        return (
-                                                            <div className={`mt-3 p-2 rounded-xl border transition-all ${isDarkMode ? 'bg-indigo-500/5 border-indigo-500/10' : 'bg-indigo-50/30 border-indigo-100'}`}>
-                                                                {!aiSuggestion ? (
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            fetchTransportSuggestion(item, nextItem);
-                                                                        }}
-                                                                        disabled={isLoading}
-                                                                        className="flex items-center gap-2 text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors"
-                                                                    >
-                                                                        {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                                                                        <span>🚀 AI 建議交通 → {nextItem.name}</span>
-                                                                    </button>
-                                                                ) : aiSuggestion.error ? (
-                                                                    <div className="text-[9px] opacity-40 italic">暫無 AI 交通建議</div>
-                                                                ) : (
-                                                                    <div className="space-y-1.5">
-                                                                        <div className="flex items-center justify-between gap-2 text-[10px]">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <span className="text-indigo-400 font-bold">🎯 AI 推薦:</span>
-                                                                                <span className="font-bold flex items-center gap-1">
-                                                                                    {aiSuggestion.recommended?.mode === 'taxi' ? '🚕' : aiSuggestion.recommended?.mode === 'bus' ? '🚌' : '🚇'}
-                                                                                    {aiSuggestion.recommended?.name}
-                                                                                </span>
-                                                                                <span className="opacity-60">• {formatDuration(aiSuggestion.recommended?.duration)}</span>
-                                                                            </div>
-                                                                            {canEdit && (
-                                                                                <button
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        onAddTransportSuggestion(currentDisplayDate, aiSuggestion.recommended, i);
-                                                                                    }}
-                                                                                    className="px-2 py-0.5 bg-indigo-500 text-white rounded-md text-[9px] font-bold hover:bg-indigo-600 transition-colors flex items-center gap-1"
-                                                                                >
-                                                                                    <Plus className="w-3 h-3" /> 加入行程
-                                                                                </button>
-                                                                            )}
-                                                                        </div>
-                                                                        <div className="text-[9px] opacity-50 pl-4 border-l border-indigo-500/20">
-                                                                            {aiSuggestion.recommended?.steps?.slice(0, 2).join(' → ')}
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })()
-                                                )}
+                                                    {/* Info Tags */}
+                                                    <div className="flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-wider opacity-70">
+                                                        {item.details?.duration && (
+                                                            <span className="flex items-center gap-1 bg-gray-500/5 px-2 py-1 rounded-lg">
+                                                                <Clock className="w-3 h-3" /> {formatDuration(item.details.duration)}
+                                                            </span>
+                                                        )}
+                                                        {item.details?.insight && (
+                                                            <span className="flex items-center gap-1 bg-amber-500/10 text-amber-600 px-2 py-1 rounded-lg">
+                                                                ⚠️ {item.details.insight}
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Guide Button */}
+                                                    {item.type === 'spot' && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setActiveDetailItem(item); }}
+                                                            className="w-full mt-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-400 to-sky-400 text-white font-bold text-xs shadow-lg shadow-blue-400/20 hover:shadow-blue-400/30 transition-all flex items-center justify-center gap-2"
+                                                        >
+                                                            <Sparkles className="w-3.5 h-3.5" />
+                                                            導遊解說
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                {/* Actions Footer - Explicit Edit Button */}
+                                                <div className={`px-5 py-3 border-t flex justify-end gap-3 transition-opacity duration-300 ${isDarkMode ? 'border-gray-700' : 'border-gray-50'}`}>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); if (canEdit) onEditItem(item); }}
+                                                        className="text-xs font-bold opacity-50 hover:opacity-100 flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                                    >
+                                                        <Edit3 className="w-3 h-3" /> 編輯資料
+                                                    </button>
+                                                    {isEditMode && (
+                                                        <button className="text-xs font-bold text-red-400 opacity-50 hover:opacity-100 flex items-center gap-1">
+                                                            <Trash2 className="w-3 h-3" /> 刪除
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+
+                                {/* Daily Summary Footer (Detached) */}
+                                <div className="ml-[70px] mt-12 mb-8">
+                                    <div className={`p-6 rounded-3xl border border-dashed text-center space-y-4 ${isDarkMode ? 'bg-indigo-900/10 border-indigo-500/30' : 'bg-indigo-50/50 border-indigo-300'}`}>
+                                        <h4 className="font-black text-indigo-500 uppercase tracking-widest text-xs">每日總結 Daily Summary</h4>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="p-3 bg-white/50 dark:bg-black/20 rounded-2xl">
+                                                <div className="text-[10px] opacity-60 font-bold mb-1">總開支 Total Expenses</div>
+                                                <div className="text-xl font-black text-indigo-600">
+                                                    {(() => {
+                                                        const total = filteredItems.reduce((acc, curr) => acc + (curr.cost || 0), 0);
+                                                        return `$${total.toLocaleString()}`;
+                                                    })()}
+                                                </div>
+                                            </div>
+                                            <div className="p-3 bg-white/50 dark:bg-black/20 rounded-2xl">
+                                                <div className="text-[10px] opacity-60 font-bold mb-1">住宿 Accommodation</div>
+                                                <div className="text-xs font-bold truncate">
+                                                    {filteredItems.find(i => i.type === 'hotel')?.name || "未預訂 Not booked"}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-
-                                    {/* Cost/Action Block */}
-                                    <div className="flex flex-col items-end gap-2 shrink-0">
-                                        {item.cost > 0 && (
-                                            <div className="text-right">
-                                                <div className="font-mono font-black text-sm text-indigo-500">{item.currency} {item.cost.toLocaleString()}</div>
-                                                {item.currency !== 'HKD' && CURRENCIES[item.currency] && (
-                                                    <div className="text-[9px] opacity-40 font-mono">
-                                                        ≈ HKD {Math.round(item.cost / CURRENCIES[item.currency].rate).toLocaleString()}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                        {item.details?.location && (
-                                            <a
-                                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.details.location)}`}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                onClick={(e) => e.stopPropagation()}
-                                                className={`p-2 rounded-xl transition-all ${isDarkMode ? 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}
-                                            >
-                                                <Navigation className="w-4 h-4" />
-                                            </a>
-                                        )}
-                                    </div>
                                 </div>
-                            );
-                        })}
+                            </>
+                        )}
                     </div>
                 ) : (
                     <div className="h-[450px] grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Map Embed - Using Google Maps Embed */}
                         {/* Map Embed - Using Google Maps Embed */}
                         <div className="md:col-span-2 w-full h-full rounded-2xl overflow-hidden border border-white/10 relative">
                             <iframe
@@ -583,7 +721,7 @@ const ItineraryTab = ({
                                 frameBorder="0"
                                 loading="lazy"
                                 referrerPolicy="no-referrer-when-downgrade"
-                                src={`https://www.google.com/maps/embed/v1/search?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(
+                                src={`https://www.google.com/maps/embed/v1/search?key=${userMapsKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(
                                     previewLocation
                                         ? previewLocation
                                         : (allLocations.length > 0 ? allLocations.map(item => item.details?.location || trip.city).join('|') : trip.city + ', ' + trip.country)

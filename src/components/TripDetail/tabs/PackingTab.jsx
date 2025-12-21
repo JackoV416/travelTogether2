@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     CheckSquare, Plus, Trash2, Sparkles, ChevronDown, ChevronRight, PackageCheck,
-    Shirt, Bath, Smartphone, Clipboard, Pill, Box, AlertCircle
+    Shirt, Bath, Smartphone, Clipboard, Pill, Box, AlertCircle, Users
 } from 'lucide-react';
 import SearchFilterBar from '../../Shared/SearchFilterBar';
 import EmptyState from '../../Shared/EmptyState';
@@ -9,6 +9,7 @@ import { Search } from 'lucide-react';
 
 const PackingTab = ({
     trip,
+    user,
     isDarkMode,
     onAddItem,
     onToggleItem,
@@ -18,6 +19,15 @@ const PackingTab = ({
     glassCard
 }) => {
     const packingList = trip.packingList || [];
+    const members = trip.members || [];
+
+    // Default to current user's list if possible, else All
+    const [activeMemberId, setActiveMemberId] = useState(user?.uid);
+
+    // Fallback if user.uid is not found or null
+    React.useEffect(() => {
+        if (!activeMemberId && user?.uid) setActiveMemberId(user.uid);
+    }, [user, activeMemberId]);
 
     const categories = [
         { id: 'clothes', label: '衣物鞋履', icon: <Shirt className="w-4 h-4 text-orange-400" /> },
@@ -35,34 +45,72 @@ const PackingTab = ({
         setExpandedCats(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
     };
 
-    const getProgress = () => {
-        if (packingList.length === 0) return 0;
-        const checked = packingList.filter(i => i.checked).length;
-        return Math.round((checked / packingList.length) * 100);
+    // Filter list based on active member
+    const currentList = packingList.filter(item => {
+        const owner = item.ownerId || item.createdBy?.id;
+        // If viewing "All" (conceptually, though we default to tabs), or specific user
+        // We implement Tabs: All vs Specific. 
+        // Let's allow 'all' as a special key.
+        if (activeMemberId === 'all') return true;
+        // If item has no owner, maybe show in everyone's? Or just creator's? 
+        // Let's assume ownership by creator if available.
+        return owner === activeMemberId || (!owner && activeMemberId === 'all');
+    });
+
+    const getProgress = (targetList) => {
+        if (targetList.length === 0) return 0;
+        const checked = targetList.filter(i => i.checked).length;
+        return Math.round((checked / targetList.length) * 100);
     };
+
+    const currentProgress = getProgress(currentList);
 
     return (
         <div className="space-y-6 animate-fade-in pb-10">
+            {/* Member Filter Tabs */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                <button
+                    onClick={() => setActiveMemberId('all')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all whitespace-nowrap border ${activeMemberId === 'all' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                >
+                    <Users className="w-4 h-4" /> 全部成員
+                </button>
+                {members.map(m => (
+                    <button
+                        key={m.id}
+                        onClick={() => setActiveMemberId(m.id)}
+                        className={`flex items-center gap-2 px-1 py-1 pr-3 rounded-full font-bold transition-all whitespace-nowrap border ${activeMemberId === m.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                    >
+                        <img src={m.photoURL || m.avatar || `https://ui-avatars.com/api/?name=${m.name}`} className="w-6 h-6 rounded-full" alt={m.name} />
+                        <span className="text-xs">{m.name}</span>
+                        {/* Mini Status Dot */}
+                        <span className={`w-2 h-2 rounded-full ${getProgress(packingList.filter(i => (i.ownerId || i.createdBy?.id) === m.id)) === 100 ? 'bg-green-400' : 'bg-gray-400'}`}></span>
+                    </button>
+                ))}
+            </div>
+
             <SearchFilterBar
                 searchValue={searchValue}
                 onSearchChange={setSearchValue}
-                placeholder="搜尋行李項目..."
+                placeholder={`搜尋 ${members.find(m => m.id === activeMemberId)?.name || '全部'} 的行李...`}
                 isDarkMode={isDarkMode}
             />
+
             {/* Header / Progress */}
             <div className={`${glassCard(isDarkMode)} p-6 border-l-4 border-l-indigo-500`}>
                 <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                     <div className="flex-1 w-full">
                         <div className="flex items-center justify-between mb-3">
                             <h3 className="text-lg font-black flex items-center gap-2">
-                                <PackageCheck className="w-6 h-6 text-indigo-500" /> 行李準備進度
+                                <PackageCheck className="w-6 h-6 text-indigo-500" />
+                                {activeMemberId === 'all' ? '團隊總進度' : `${members.find(m => m.id === activeMemberId)?.name || '個人'} 進度`}
                             </h3>
-                            <span className="text-sm font-black text-indigo-500 bg-indigo-500/10 px-3 py-1 rounded-full">{getProgress()}%</span>
+                            <span className="text-sm font-black text-indigo-500 bg-indigo-500/10 px-3 py-1 rounded-full">{currentProgress}%</span>
                         </div>
                         <div className="relative w-full h-3 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden shadow-inner">
                             <div
                                 className="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-1000 ease-out rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]"
-                                style={{ width: `${getProgress()}%` }}
+                                style={{ width: `${currentProgress}%` }}
                             >
                                 <div className="absolute inset-0 w-full h-full animate-shimmer scale-[2] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                             </div>
@@ -95,7 +143,7 @@ const PackingTab = ({
             {/* Categories */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {categories.map(cat => {
-                    const items = packingList.filter(i => i.category === cat.id && (i.name || "").toLowerCase().includes(searchValue.toLowerCase()));
+                    const items = currentList.filter(i => i.category === cat.id && (i.name || "").toLowerCase().includes(searchValue.toLowerCase()));
                     const isExpanded = expandedCats.includes(cat.id);
                     const completedInCat = items.filter(i => i.checked).length;
 
@@ -126,7 +174,7 @@ const PackingTab = ({
                                             icon={searchValue ? Search : AlertCircle}
                                             mini={true}
                                             title={searchValue ? "找不到項目" : "無內容"}
-                                            description={searchValue ? "嘗試換個關鍵字搜尋。" : "尚未加入任何行李項目。"}
+                                            description={searchValue ? "嘗試換個關鍵字搜尋。" : "此類別尚未有行李項目。"}
                                             isDarkMode={isDarkMode}
                                             action={!searchValue ? {
                                                 label: "新增",
@@ -151,11 +199,20 @@ const PackingTab = ({
                                                     <span className={`text-sm font-medium ${item.checked ? 'line-through opacity-40 text-gray-400' : ''}`}>
                                                         {item.name}
                                                     </span>
-                                                    {item.aiSuggested && (
-                                                        <span className="text-[8px] text-purple-400 font-black uppercase tracking-tighter flex items-center gap-0.5">
-                                                            <Sparkles className="w-2 h-2" /> AI Suggested
-                                                        </span>
-                                                    )}
+                                                    <div className="flex items-center gap-2">
+                                                        {item.aiSuggested && (
+                                                            <span className="text-[8px] text-purple-400 font-black uppercase tracking-tighter flex items-center gap-0.5">
+                                                                <Sparkles className="w-2 h-2" /> AI Suggested
+                                                            </span>
+                                                        )}
+                                                        {/* Show Owner if 'All' view */}
+                                                        {activeMemberId === 'all' && (item.ownerId || item.createdBy?.id) && (
+                                                            <span className="text-[8px] bg-gray-500/20 text-gray-400 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                                                                <Users className="w-2 h-2" />
+                                                                {members.find(m => m.id === (item.ownerId || item.createdBy?.id))?.name || 'User'}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                             <button

@@ -51,7 +51,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     const [viewMode, setViewMode] = useState('list');
     const [noteEdit, setNoteEdit] = useState(false);
     const [tempNote, setTempNote] = useState(trip.notes || '');
-    const [myInsurance, setMyInsurance] = useState(trip.insurance?.private?.[isSimulation ? 'sim' : user.uid] || { provider: '', policyNo: '', phone: '', notes: '' });
+    const [myInsurance, setMyInsurance] = useState(trip.insurance?.private?.[isSimulation ? 'sim' : user?.uid] || { provider: '', policyNo: '', phone: '', notes: '' });
     const [editingItem, setEditingItem] = useState(null);
     const [sectionModalConfig, setSectionModalConfig] = useState(null); // { mode: 'import'|'export', section: 'shopping'|... }
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -73,53 +73,53 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     const currentDisplayDate = selectDate || days[0];
 
     // 🚀 Restored Permission Logic (Enhanced for Email Invites)
-    const myMemberEntry = trip.members?.find(m => m.id === user.uid || m.id === user.email);
-    const myRole = isPreview ? (trip.sharePermission === 'edit' && user.uid ? 'editor' : 'viewer') : (myMemberEntry?.role || 'viewer');
+    const myMemberEntry = trip.members?.find(m => m.id === user?.uid || m.id === user?.email);
+    const myRole = isPreview ? (trip.sharePermission === 'edit' && user?.uid ? 'editor' : 'viewer') : (myMemberEntry?.role || 'viewer');
     const isOwner = !isPreview && (myRole === 'owner' || isSimulation);
     const canEdit = (myRole === 'owner' || myRole === 'editor' || isSimulation);
 
     // 🚀 Auto-Claim Invite Logic
     useEffect(() => {
-        if (!user.uid || !user.email || isSimulation || isPreview) return;
+        if (!user?.uid || !user?.email || isSimulation || isPreview) return;
 
         // Check if I'm invited by Email but haven't claimed key (still pending/email id)
-        const pendingInvite = trip.members?.find(m => m.id === user.email && m.status === 'pending');
+        const pendingInvite = trip.members?.find(m => m.id === user?.email && m.status === 'pending');
 
         if (pendingInvite) {
             // Auto-claim the spot: Update ID to UID, remove pending status
             const claimInvite = async () => {
                 const newMembers = trip.members.map(m =>
-                    m.id === user.email ? { ...m, id: user.uid, status: 'active', claimedAt: Date.now() } : m
+                    m.id === user?.email ? { ...m, id: user?.uid, status: 'active', claimedAt: Date.now() } : m
                 );
                 await updateDoc(doc(db, "trips", trip.id), { members: newMembers });
             };
             claimInvite();
         }
-    }, [trip.members, user.uid, user.email, trip.id, isSimulation, isPreview]);
+    }, [trip.members, user?.uid, user?.email, trip.id, isSimulation, isPreview]);
 
     // 🚀 Auto-Sync User Profile (Avatar & Name)
     useEffect(() => {
-        if (!user.uid || isSimulation || isPreview) return;
+        if (!user?.uid || isSimulation || isPreview) return;
 
-        const myEntry = trip.members?.find(m => m.id === user.uid);
+        const myEntry = trip.members?.find(m => m.id === user?.uid);
         if (myEntry) {
             // Check if profile needs update (Avatar, Name, or Email changed)
-            if (myEntry.photoURL !== user.photoURL || (user.displayName && myEntry.name !== user.displayName) || myEntry.email !== user.email) {
+            if (myEntry.photoURL !== user?.photoURL || (user?.displayName && myEntry.name !== user?.displayName) || myEntry.email !== user?.email) {
                 const syncProfile = async () => {
                     // 1. Update Trip Member List
                     const newMembers = trip.members.map(m =>
-                        m.id === user.uid ? { ...m, photoURL: user.photoURL, name: user.displayName || m.name, email: user.email } : m
+                        m.id === user?.uid ? { ...m, photoURL: user?.photoURL, name: user?.displayName || m.name, email: user?.email } : m
                     );
                     await updateDoc(doc(db, "trips", trip.id), { members: newMembers });
 
                     // 2. Ensure Global User Record Exists (Fix for Admin Panel "Unknown User")
                     await import('firebase/firestore').then(m => {
-                        m.setDoc(m.doc(db, "users", user.uid), {
-                            email: user.email,
-                            displayName: user.displayName,
-                            photoURL: user.photoURL,
+                        m.setDoc(m.doc(db, "users", user?.uid), {
+                            email: user?.email,
+                            displayName: user?.displayName,
+                            photoURL: user?.photoURL,
                             lastLogin: m.serverTimestamp(),
-                            uid: user.uid
+                            uid: user?.uid
                         }, { merge: true });
                     });
                 };
@@ -134,18 +134,18 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                 // For now, attaching to the discrepancy check is good, but let's add a "Force Sync" via this side-effect if the user doc is missing.
             }
         }
-    }, [trip.members, user.uid, user.photoURL, user.displayName, trip.id, isSimulation, isPreview]);
+    }, [trip.members, user?.uid, user?.photoURL, user?.displayName, trip.id, isSimulation, isPreview]);
 
     useEffect(() => {
         const visaStore = trip.visa || {};
-        const myVisa = isSimulation ? visaStore.sim : (visaStore[user.uid] || visaStore.default);
+        const myVisa = isSimulation ? visaStore.sim : (visaStore[user?.uid] || visaStore.default);
         setVisaForm({
             status: myVisa?.status || '',
             number: myVisa?.number || '',
             expiry: myVisa?.expiry || '',
             needsPrint: Boolean(myVisa?.needsPrint)
         });
-    }, [trip.visa, user.uid, isSimulation]);
+    }, [trip.visa, user?.uid, isSimulation]);
 
     useEffect(() => {
         // Carousel effect for multi-city trips
@@ -183,8 +183,8 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
 
     useEffect(() => {
         setTempNote(trip.notes || "");
-        setMyInsurance(trip.insurance?.private?.[isSimulation ? 'sim' : user.uid] || { provider: '', policyNo: '', phone: '', notes: '' });
-    }, [trip.notes, trip.insurance, user.uid, isSimulation]);
+        setMyInsurance(trip.insurance?.private?.[isSimulation ? 'sim' : user?.uid] || { provider: '', policyNo: '', phone: '', notes: '' });
+    }, [trip.notes, trip.insurance, user?.uid, isSimulation]);
 
     // Handle Notification Deep Link Tab Switch
     useEffect(() => {
@@ -218,7 +218,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     }, [realWeather, currentDisplayDate, trip.country, mockWeather]);
     const debtInfo = calculateDebts(trip.budget || [], trip.repayments || [], trip.members || [], globalSettings.currency, exchangeRates);
     const timeDiff = getTimeDiff(globalSettings.region, trip.country);
-    const tripSummary = getTripSummary(trip, user.uid);
+    const tripSummary = getTripSummary(trip, user?.uid);
     const countryInfo = getSafeCountryInfo(trip.country);
     const currentLang = globalSettings?.lang || 'zh-TW';
     const displayCountry = getLocalizedCountryName(trip.country, currentLang);
@@ -253,7 +253,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
         let newItem = {
             id: data.id || Date.now().toString(),
             ...data,
-            createdBy: { name: user.displayName || 'Unknown', id: user.uid }
+            createdBy: { name: user?.displayName || 'Unknown', id: user?.uid }
         };
 
         // Sanitize: Remove undefined values (Firestore crashes on undefined)
@@ -349,13 +349,19 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     };
 
     const handleGenerateWeatherSummary = async () => {
-        if (!realWeather) return;
+        if (!realWeather) {
+            alert("正在獲取天氣資訊，請稍候...");
+            return;
+        }
         setIsGeneratingWeather(true);
         try {
             const result = await generateWeatherSummaryWithGemini(trip.city, realWeather);
-            setSmartWeather(result);
+            if (result) {
+                setSmartWeather(result);
+            }
         } catch (err) {
             console.error("Weather summary generation error:", err);
+            alert("天氣分析失敗，請檢查網絡或稍後再試。");
         } finally {
             setIsGeneratingWeather(false);
         }
@@ -385,13 +391,13 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
 
     const handleSaveInsurance = async () => {
         if (isSimulation) return alert("模擬模式");
-        await updateDoc(doc(db, "trips", trip.id), { [`insurance.private.${user.uid}`]: myInsurance });
+        await updateDoc(doc(db, "trips", trip.id), { [`insurance.private.${user?.uid}`]: myInsurance });
         alert("已儲存");
     };
 
     const handleSaveVisa = async () => {
         if (isSimulation) return alert("模擬模式");
-        await updateDoc(doc(db, "trips", trip.id), { [`visa.${user.uid}`]: visaForm });
+        await updateDoc(doc(db, "trips", trip.id), { [`visa.${user?.uid}`]: visaForm });
         alert("簽證資訊已更新");
     };
 
@@ -512,7 +518,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                 bought: false,
                 aiSuggested: true,
                 createdAt: Date.now(),
-                createdBy: { name: user.displayName, id: user.uid },
+                createdBy: { name: user?.displayName, id: user?.uid },
                 category: 'shopping'
             }));
             updates.shoppingList = arrayUnion(...newShopItems);
@@ -527,7 +533,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                 checked: false,
                 aiSuggested: true,
                 createdAt: Date.now(),
-                createdBy: { name: user.displayName, id: user.uid }
+                createdBy: { name: user?.displayName, id: user?.uid }
             }));
             updates.packingList = arrayUnion(...newPackItems);
         }
@@ -559,7 +565,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                 cost: item.cost,
                 currency: item.currency,
                 category: 'transport',
-                payer: user.displayName,
+                payer: user?.displayName,
                 splitType: 'group'
             }));
             updates.budget = arrayUnion(...newBudgetItems);
@@ -610,7 +616,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                     cost: Number(item.cost) || 0,
                     currency: item.currency || globalSettings.currency,
                     details: item.details || {},
-                    createdBy: { name: user.displayName, id: user.uid }
+                    createdBy: { name: user?.displayName, id: user?.uid }
                 }));
                 await Promise.all(normalized.map(val => updateDoc(docRef, { [`itinerary.${currentDisplayDate}`]: arrayUnion(val) })));
             } else if (section === 'shopping') {
@@ -629,7 +635,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                     cost: Number(item.cost) || 0,
                     currency: item.currency || globalSettings.currency,
                     category: item.category || 'misc',
-                    payer: item.payer || user.displayName,
+                    payer: item.payer || user?.displayName,
                     splitType: item.splitType || 'group'
                 }));
                 await updateDoc(docRef, { budget: arrayUnion(...normalized) });
@@ -693,7 +699,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     };
 
     return (
-        <div id="trip-detail-content" className="max-w-6xl mx-auto p-4 pb-20 animate-fade-in">
+        <div id="trip-detail-content" className="max-w-6xl mx-auto p-4 pb-36 md:pb-20 animate-fade-in">
             {/* Unified Hero Header Card */}
             <div className={`${glassCard(isDarkMode)} relative mb-8 z-40 group hover:shadow-2xl transition-all duration-500`}>
                 {/* Background Layer with Overflow Hidden to clip scaling image */}
@@ -725,7 +731,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                     {/* Left Col: Trip Core Info */}
                     <div className="lg:col-span-2 flex flex-col justify-between min-h-[220px]">
                         <div>
-                            <div className="text-[10px] text-indigo-300 uppercase font-black tracking-widest mb-2">TRIP OVERVIEW</div>
+                            <div className="text-[10px] text-indigo-300 uppercase font-black tracking-widest mb-2">行程概覽</div>
                             <div className="flex items-center gap-2 mb-4">
                                 <span className="bg-indigo-500/80 text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur-md uppercase tracking-wider font-bold shadow-lg shadow-indigo-500/20">{displayCountry} {displayCity}</span>
                                 {trip.isPublic && <span className="bg-emerald-500/80 text-white text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-emerald-500/20"><Globe className="w-3 h-3" /> 公開</span>}
@@ -736,9 +742,9 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                                 <h2 className="text-2xl md:text-3xl lg:text-4xl font-black leading-tight tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-gray-400">{trip.name}</h2>
                                 <div className="flex items-center gap-2">
                                     <div className="px-3 py-1 bg-white/10 rounded-lg backdrop-blur-md border border-white/20 text-[10px] md:text-xs font-bold whitespace-nowrap">
-                                        <span className="text-indigo-300">Day {getDaysArray(trip.startDate, trip.endDate).findIndex(d => d === currentDisplayDate) + 1 || '-'}</span>
+                                        <span className="text-indigo-300">第 {getDaysArray(trip.startDate, trip.endDate).findIndex(d => d === currentDisplayDate) + 1 || '-'} 天</span>
                                         <span className="mx-2 opacity-30">/</span>
-                                        <span>{getDaysArray(trip.startDate, trip.endDate).length} Days</span>
+                                        <span>共 {getDaysArray(trip.startDate, trip.endDate).length} 天</span>
                                     </div>
                                     {isOwner && (
                                         <button
@@ -766,9 +772,9 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                                         {trip.members?.slice(0, 5).map(m => (
                                             <div key={m.id} onClick={() => setViewingMember(m)} className="relative group cursor-pointer" title={`${m.name} (${m.role})`}>
                                                 {m.photoURL ? (
-                                                    <img src={m.photoURL} alt={m.name} className={`w-8 h-8 rounded-full object-cover border-2 border-black/20 ${m.id === user.uid ? 'ring-2 ring-indigo-500' : ''}`} />
+                                                    <img src={m.photoURL} alt={m.name} className={`w-8 h-8 rounded-full object-cover border-2 border-black/20 ${m.id === user?.uid ? 'ring-2 ring-indigo-500' : ''}`} />
                                                 ) : (
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-black/20 text-white ${m.id === user.uid ? 'bg-indigo-500' : 'bg-gray-600'}`}>
+                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-black/20 text-white ${m.id === user?.uid ? 'bg-indigo-500' : 'bg-gray-600'}`}>
                                                         {m.name?.[0]?.toUpperCase() || '?'}
                                                     </div>
                                                 )}
@@ -988,6 +994,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                         onItemHandled={onItemHandled}
                         onDrop={onDrop}
                         openSectionModal={openSectionModal}
+                        userMapsKey={globalSettings?.userMapsKey}
                         onOptimize={handleOptimizeSchedule}
                         onOpenAIModal={handleOpenAIModal}
                         onOpenSmartImport={onOpenSmartImport}
@@ -1112,6 +1119,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                 activeTab === 'packing' && (
                     <PackingTab
                         trip={trip}
+                        user={user}
                         isDarkMode={isDarkMode}
                         onAddItem={() => { setAddType('packing'); setIsAddModal(true); }}
                         onToggleItem={handlePackingToggle}
@@ -1127,6 +1135,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                 activeTab === 'shopping' && (
                     <ShoppingTab
                         trip={trip}
+                        user={user}
                         isDarkMode={isDarkMode}
                         onOpenSectionModal={openSectionModal}
                         onOpenAIModal={(mode) => { setAIMode(mode); setIsAIModal(true); }}
@@ -1176,7 +1185,7 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                 </div>
             )}
 
-            <AddActivityModal isOpen={isAddModal} onClose={() => setIsAddModal(false)} onSave={handleSaveItem} onDelete={handleDeleteItineraryItem} isDarkMode={isDarkMode} date={selectDate} defaultType={addType} editData={editingItem} members={trip.members || [{ id: user.uid, name: user.displayName }]} trip={trip} />
+            <AddActivityModal isOpen={isAddModal} onClose={() => setIsAddModal(false)} onSave={handleSaveItem} onDelete={handleDeleteItineraryItem} isDarkMode={isDarkMode} date={selectDate} defaultType={addType} editData={editingItem} members={trip.members || [{ id: user?.uid || 'guest', name: user?.displayName || 'Guest' }]} trip={trip} />
             <TripSettingsModal isOpen={isTripSettingsOpen} onClose={() => setIsTripSettingsOpen(false)} trip={trip} onUpdate={(d) => !isSimulation && updateDoc(doc(db, "trips", trip.id), d)} isDarkMode={isDarkMode} />
             <MemberSettingsModal isOpen={isMemberModalOpen} onClose={() => setIsMemberModalOpen(false)} members={trip.members || []} onUpdateRole={handleUpdateRole} isDarkMode={isDarkMode} />
             <InviteModal isOpen={isInviteModal} onClose={() => setIsInviteModal(false)} tripId={trip.id} onInvite={handleInvite} isDarkMode={isDarkMode} />

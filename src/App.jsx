@@ -23,6 +23,9 @@ import AIGeminiModal from './components/Modals/AIGeminiModal';
 import ErrorBoundary from './components/Shared/ErrorBoundary';
 import OnboardingModal from './components/Modals/OnboardingModal';
 import FeedbackModal from './components/Modals/FeedbackModal';
+import VersionModal from './components/Modals/VersionModal'; // Imported
+import AdminFeedbackModal from './components/Modals/AdminFeedbackModal';
+import SettingsView from './components/Views/SettingsView'; // New View
 
 // --- V0.16.2 Refactored Imports ---
 import {
@@ -30,7 +33,6 @@ import {
     DEFAULT_BG_IMAGE, CITY_COORDS, COUNTRIES_DATA, INFO_DB,
     SIMULATION_DATA, CURRENCIES, VERSION_HISTORY, TIMEZONES, LANGUAGE_OPTIONS
 } from './constants/appData';
-import AdminFeedbackModal from './components/Modals/AdminFeedbackModal';
 import {
     glassCard, getHolidayMap, getLocalizedCountryName,
     getLocalizedCityName, getSafeCountryInfo, formatDate,
@@ -38,6 +40,7 @@ import {
     getTimeDiff, getLocalCityTime, getWeatherForecast,
     buildDailyReminder, getUserInitial, inputClasses
 } from './utils/tripUtils';
+import { suggestTransportBetweenSpots, checkAIUsageLimit } from './services/ai-parsing';
 
 import Dashboard from './components/Dashboard/Dashboard';
 import CreateTripModal from './components/Modals/CreateTripModal';
@@ -241,143 +244,9 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
 
 
 
-const SettingsModal = ({ isOpen, onClose, globalSettings, setGlobalSettings, isDarkMode }) => {
-    const [activeTab, setActiveTab] = useState('general');
+// --- Settings View replaces SettingsModal ---
 
-    if (!isOpen) return null;
-
-    const AI_INTERESTS = [
-        { id: 'history', label: '歷史文化' },
-        { id: 'nature', label: '自然風光' },
-        { id: 'food', label: '地道美食' },
-        { id: 'shopping', label: '購物血拼' },
-        { id: 'adventure', label: '冒險體驗' },
-        { id: 'art', label: '藝術展覽' },
-        { id: 'nightlife', label: '夜生活' },
-        { id: 'relax', label: '休閒放鬆' }
-    ];
-
-    const toggleInterest = (id) => {
-        const current = globalSettings.preferences || [];
-        const newPrefs = current.includes(id)
-            ? current.filter(i => i !== id)
-            : [...current, id];
-        setGlobalSettings({ ...globalSettings, preferences: newPrefs });
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in">
-            <div className={`w-full max-w-md rounded-2xl shadow-2xl border transition-all overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-900'}`}>
-
-                {/* Header */}
-                <div className="p-6 border-b border-gray-500/10 flex justify-between items-center bg-gray-500/5">
-                    <h3 className="text-xl font-bold tracking-tight">個人設定</h3>
-                    <div className="flex bg-gray-500/10 rounded-lg p-1">
-                        <button onClick={() => setActiveTab('general')} className={`px-3 py-1 rounded-md text-sm font-bold transition-all ${activeTab === 'general' ? (isDarkMode ? 'bg-gray-700 text-white shadow' : 'bg-white text-gray-900 shadow') : 'opacity-60'}`}>一般</button>
-                        <button onClick={() => setActiveTab('ai')} className={`px-3 py-1 rounded-md text-sm font-bold transition-all flex items-center gap-1 ${activeTab === 'ai' ? (isDarkMode ? 'bg-indigo-600 text-white shadow' : 'bg-indigo-500 text-white shadow') : 'opacity-60'}`}><Sparkles className="w-3 h-3" /> AI 偏好</button>
-                    </div>
-                </div>
-
-                <div className="p-6 h-[400px] overflow-y-auto custom-scrollbar">
-                    {activeTab === 'general' ? (
-                        <div className="space-y-6">
-                            <div>
-                                <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">貨幣</label>
-                                <select value={globalSettings.currency} onChange={e => setGlobalSettings({ ...globalSettings, currency: e.target.value })} className={inputClasses(isDarkMode) + " cursor-pointer appearance-none"}>
-                                    {Object.keys(CURRENCIES).map(c => <option key={c} value={c}>{c} - {CURRENCIES[c].symbol}</option>)}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">所在地 (用於緊急資訊)</label>
-                                <select value={globalSettings.region} onChange={e => setGlobalSettings({ ...globalSettings, region: e.target.value })} className={inputClasses(isDarkMode) + " cursor-pointer appearance-none"}>
-                                    {Object.keys(TIMEZONES).map(r => <option key={r} value={r}>{TIMEZONES[r].label}</option>)}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">介面語言</label>
-                                <select value={globalSettings.language} onChange={e => setGlobalSettings({ ...globalSettings, language: e.target.value })} className={inputClasses(isDarkMode) + " cursor-pointer appearance-none"}>
-                                    {Object.entries(LANGUAGE_OPTIONS).map(([code, conf]) => <option key={code} value={code}>{conf.label}</option>)}
-                                </select>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="space-y-6 animate-fade-in">
-                            <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 p-4 rounded-xl border border-indigo-500/20">
-                                <h4 className="font-bold flex items-center gap-2 text-indigo-500 mb-1"><BrainCircuit className="w-4 h-4" /> AI 助手設定</h4>
-                                <p className="text-xs opacity-60">設定您的旅遊偏好，讓 AI 為您提供更精準的行程建議。</p>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                {AI_INTERESTS.map(item => (
-                                    <label key={item.id} className={`p-3 rounded-lg border flex items-center gap-3 cursor-pointer transition-all ${globalSettings.preferences?.includes(item.id) ? 'bg-indigo-500/10 border-indigo-500 text-indigo-500' : 'border-gray-500/20 hover:bg-gray-500/5'}`}>
-                                        <input type="checkbox" className="hidden" checked={globalSettings.preferences?.includes(item.id)} onChange={() => toggleInterest(item.id)} />
-                                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${globalSettings.preferences?.includes(item.id) ? 'bg-indigo-500 border-transparent' : 'border-gray-400'}`}>
-                                            {globalSettings.preferences?.includes(item.id) && <CheckSquare className="w-3 h-3 text-white" />}
-                                        </div>
-                                        <span className="text-sm font-bold">{item.label}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                <div className="p-6 border-t border-gray-500/10">
-                    <button onClick={onClose} className="w-full py-3 rounded-xl shadow-lg font-bold tracking-wide bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white transition-all">
-                        完成設定
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const VersionModal = ({ isOpen, onClose, isDarkMode, globalSettings }) => {
-    const currentLang = globalSettings?.lang || 'zh-TW';
-    if (!isOpen) return null;
-    return (
-        <div className="fixed inset-0 bg-black/60 z-[80] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in">
-            <div className={`w-full max-w-md rounded-2xl p-8 ${isDarkMode ? 'bg-gray-900 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-200'} shadow-2xl border transition-all h-[80vh] flex flex-col`}>
-                <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                    <h3 className="text-2xl font-bold tracking-tight">
-                        {currentLang === 'zh-TW' ? '版本紀錄' : 'Version History'}
-                        <span className="ml-2 text-xs bg-indigo-500/10 text-indigo-500 px-2 py-1 rounded-full font-mono">Beta</span>
-                    </h3>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-500/10 transition-colors">
-                        <X className="w-6 h-6 opacity-70" />
-                    </button>
-                </div>
-
-                <div className="space-y-8 overflow-y-auto custom-scrollbar pr-4 flex-grow">
-                    {VERSION_HISTORY.map((v, i) => (
-                        <div key={i} className="border-l-2 border-indigo-500/30 pl-6 pb-2 relative group">
-                            <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-4 transition-all ${i === 0 ? 'bg-indigo-500 border-indigo-200 dark:border-indigo-900 scale-110' : 'bg-gray-500 border-transparent'}`}></div>
-                            <div className="flex justify-between items-baseline mb-2">
-                                <span className={`font-bold text-xl ${i === 0 ? 'text-indigo-500' : 'text-gray-500'}`}>{v.ver}</span>
-                                <span className="text-xs opacity-50 font-mono bg-gray-500/5 px-2 py-1 rounded">{v.date}</span>
-                            </div>
-                            <div className="font-bold opacity-90 mb-2 text-base">
-                                {typeof v.desc === 'object' ? v.desc[currentLang] || v.desc['zh-TW'] : v.desc}
-                            </div>
-                            {v.details && (
-                                <div className="text-sm opacity-70 whitespace-pre-wrap leading-relaxed p-4 rounded-xl bg-gray-500/5 border border-gray-500/10 group-hover:bg-gray-500/10 transition-colors">
-                                    {typeof v.details === 'object' ? v.details[currentLang] || v.details['zh-TW'] : v.details}
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-gray-500/20 text-center text-xs opacity-40 flex justify-between items-center flex-shrink-0">
-                    <span className="font-mono">Author: {APP_AUTHOR}</span>
-                    <span className="font-mono bg-gray-500/10 px-2 py-0.5 rounded">{APP_VERSION}</span>
-                </div>
-            </div>
-        </div>
-    );
-};
+// --- Version Modal moved to components/Modals/VersionModal.jsx ---
 
 
 
@@ -540,7 +409,7 @@ const App = () => {
                             setPreviewTrip({ id: tripId, ...tripData });
                             setIsPreviewMode(true);
                             setView('detail');
-                            if (tripData.sharePermission === 'edit' && !user.uid) {
+                            if (tripData.sharePermission === 'edit' && !user?.uid) {
                                 // Optional: You might want to show a toast or message that they need to login to edit
                                 console.log("Can edit if logged in");
                             }
@@ -559,6 +428,15 @@ const App = () => {
                     window.history.replaceState({}, '', '/');
                 });
             }
+        }
+
+        // --- Handle Direct View Params (?view=tutorial) ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewParam = urlParams.get('view');
+        if (viewParam === 'tutorial') {
+            setView('tutorial');
+            // Clean up URL without reload
+            window.history.replaceState({}, '', '/');
         }
     }, []);
 
@@ -584,7 +462,7 @@ const App = () => {
     }, [globalSettings, user]);
 
     // Modals State
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    // isSettingsOpen state removed
     const [isVersionOpen, setIsVersionOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -672,6 +550,34 @@ const App = () => {
 
     // --- Notification System Hook ---
     const { notifications, sendNotification, setNotifications, markNotificationsRead, removeNotification } = useNotifications(user);
+
+    // BYOK State
+    const [userGeminiKey, setUserGeminiKey] = useState("");
+    const [userMapsKey, setUserMapsKey] = useState("");
+    const [userGeminiModel, setUserGeminiModel] = useState("");
+    const [userGeminiLimit, setUserGeminiLimit] = useState("");
+
+    // Load Settings from LocalStorage
+    useEffect(() => {
+        const savedSettings = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+        if (savedSettings.preference) {
+            setGlobalSettings(prev => ({ ...prev, preferences: savedSettings.preference }));
+        }
+        if (savedSettings.userGeminiKey) setUserGeminiKey(savedSettings.userGeminiKey);
+        if (savedSettings.userMapsKey) {
+            setUserMapsKey(savedSettings.userMapsKey);
+            setGlobalSettings(prev => ({ ...prev, userMapsKey: savedSettings.userMapsKey }));
+        }
+        if (savedSettings.userGeminiModel) setUserGeminiModel(savedSettings.userGeminiModel);
+        if (savedSettings.userGeminiLimit) setUserGeminiLimit(savedSettings.userGeminiLimit);
+        if (savedSettings.dataSaver) setGlobalSettings(prev => ({ ...prev, dataSaver: savedSettings.dataSaver }));
+
+        // Check Ban Status
+        const checkBanStatus = async () => {
+            // ... logic if needed, or leave empty if handled elsewhere
+        };
+        if (user) checkBanStatus();
+    }, [user?.uid]);
 
     // 新增：匯率與天氣狀態
     const [exchangeRates, setExchangeRates] = useState(null);
@@ -882,29 +788,22 @@ const App = () => {
 
     const handleNotificationNavigate = (notif) => {
         if (!notif.context) return;
-        const handleNotificationNavigate = (notif) => {
-            if (!notif.context) return;
-            const { tripId, view: targetView, tab: targetTab, itemId: targetItemId } = notif.context;
+        const { tripId, view: targetView, tab: targetTab, itemId: targetItemId } = notif.context;
 
-            // 1. Switch View
-            if (targetView) setView(targetView);
+        // 1. Switch View
+        if (targetView) setView(targetView);
 
-            // 2. Load Trip if needed - For now, skip this as we don't have allTrips in App scope
-            // The notification should have enough context from the current view
-            // 3. Tab switching logic is handled via props/state communication
-            // We might need to store the target tab globally or pass it to TripDetail
-            if (targetTab) {
-                setRequestedTab(targetTab);
-            }
+        // 2. Tab switching logic is handled via props/state communication
+        if (targetTab) {
+            setRequestedTab(targetTab);
+        }
 
-            if (targetItemId) {
-                setRequestedItemId(targetItemId);
-            }
+        if (targetItemId) {
+            setRequestedItemId(targetItemId);
+        }
 
-            // 4. Mark as read
-            removeNotification(notif.id);
-        };
-
+        // 3. Mark as read
+        removeNotification(notif.id);
     };
 
     const [requestedTab, setRequestedTab] = useState(null);
@@ -915,7 +814,7 @@ const App = () => {
         return <DashboardSkeleton isDarkMode={isDarkMode} />;
     }
 
-    if (!user && !isPreviewMode) return <LandingPage onLogin={() => signInWithPopup(auth, googleProvider)} />;
+    if (!user && !isPreviewMode && view !== 'tutorial') return <LandingPage onLogin={() => signInWithPopup(auth, googleProvider)} />;
 
     return (
         <div className={`min-h-screen transition-colors duration-500 font-sans selection:bg-indigo-500/30 ${isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-slate-50 text-gray-900'}`}>
@@ -925,7 +824,7 @@ const App = () => {
             {/* Background Image (Global) */}
             <div className="fixed inset-0 z-0 opacity-20 pointer-events-none transition-all duration-1000" style={{ backgroundImage: `url(${globalBg})`, backgroundSize: 'cover' }}></div>
             <div className="relative z-10 flex-grow">
-                {view !== 'tutorial' && <Header title="✈️ Travel Together" user={user} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} onLogout={() => signOut(auth)} onBack={view !== 'dashboard' ? () => setView('dashboard') : null} onTutorialStart={() => setView('tutorial')} onViewChange={setView} onOpenUserSettings={() => setIsSettingsOpen(true)} onOpenFeedback={() => setIsFeedbackModalOpen(true)} onOpenAdminFeedback={() => setIsAdminFeedbackModalOpen(true)} isAdmin={isAdmin} adminPendingCount={openFeedbackCount} onOpenVersion={() => setIsVersionOpen(true)} notifications={notifications} onRemoveNotification={removeNotification} onMarkNotificationsRead={markNotificationsRead} onNotificationClick={handleNotificationNavigate} />}
+                {view !== 'tutorial' && <Header title="✈️ Travel Together" user={user} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} onLogout={() => signOut(auth)} onBack={(view !== 'dashboard' && view !== 'settings') ? () => setView('dashboard') : null} onTutorialStart={() => setView('tutorial')} onViewChange={setView} onOpenUserSettings={() => setView('settings')} onOpenFeedback={() => setIsFeedbackModalOpen(true)} onOpenAdminFeedback={() => setIsAdminFeedbackModalOpen(true)} isAdmin={isAdmin} adminPendingCount={openFeedbackCount} onOpenVersion={() => setIsVersionOpen(true)} notifications={notifications} onRemoveNotification={removeNotification} onMarkNotificationsRead={markNotificationsRead} onNotificationClick={handleNotificationNavigate} />}
                 {view === 'dashboard' && (
                     <div className="animate-fade-in">
                         <ErrorBoundary fallbackMessage="儀表板載入失敗，請重新整理">
@@ -979,11 +878,21 @@ const App = () => {
                         </ErrorBoundary>
                     </div>
                 )}
+                {view === 'settings' && (
+                    <div className="animate-fade-in">
+                        <SettingsView
+                            globalSettings={globalSettings}
+                            setGlobalSettings={setGlobalSettings}
+                            isDarkMode={isDarkMode}
+                            onBack={() => setView('dashboard')}
+                        />
+                    </div>
+                )}
 
                 {view === 'tutorial' && <div className="h-screen flex flex-col animate-fade-in"><div className="p-4 border-b flex gap-4"><button onClick={() => { setView('dashboard'); setIsPreviewMode(false); }}><ChevronLeft /></button> 模擬模式 (東京範例)</div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} isPreview={false} globalSettings={globalSettings} exchangeRates={exchangeRates} weatherData={weatherData} onOpenSmartImport={() => setIsSmartImportModalOpen(true)} /></div></div>}
             </div>
             {view !== 'tutorial' && <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} />}
-            <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} globalSettings={globalSettings} setGlobalSettings={setGlobalSettings} isDarkMode={isDarkMode} />
+            {/* SettingsModal removed */}
             <VersionModal isOpen={isVersionOpen} onClose={() => setIsVersionOpen(false)} isDarkMode={isDarkMode} globalSettings={globalSettings} />
             <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} isDarkMode={isDarkMode} user={user} isBanned={isBanned} />
             <AdminFeedbackModal
@@ -1030,10 +939,16 @@ const LandingPage = ({ onLogin }) => (
                 <div className="absolute bottom-10 left-10 text-white">
                     <h1 className="text-6xl font-bold mb-4">Travel Together</h1>
                     <p className="text-2xl opacity-90 mb-8">下一站，與你同行。</p>
-                    <button onClick={onLogin} className="bg-white text-black px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition flex flex-col items-center gap-1">
-                        <div className="flex items-center gap-2"><LogIn className="w-5 h-5" /> Google 登入</div>
-                        <span className="text-[10px] opacity-50 font-normal">支援 Google 帳戶註冊並安裝為 PWA 使用</span>
-                    </button>
+                    <div className="flex flex-col gap-3">
+                        <button onClick={onLogin} className="bg-white text-black px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition flex flex-col items-center gap-1 w-full">
+                            <div className="flex items-center gap-2"><LogIn className="w-5 h-5" /> Google 登入</div>
+                            <span className="text-[10px] opacity-50 font-normal">支援 Google 帳戶註冊並安裝為 PWA 使用</span>
+                        </button>
+                        <button onClick={() => window.location.href = '/?view=tutorial'} className="bg-white/10 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/20 transition flex items-center justify-center gap-2 w-full border border-white/10 group/demo">
+                            <MonitorPlay className="w-5 h-5 text-indigo-400 group-hover/demo:animate-pulse" />
+                            試用模擬模式 (免登入)
+                        </button>
+                    </div>
                 </div>
             </div>
             <div className="grid grid-rows-3 gap-6">

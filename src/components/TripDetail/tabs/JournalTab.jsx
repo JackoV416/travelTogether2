@@ -58,7 +58,7 @@ const JournalTab = ({ trip, user, isOwner, isDarkMode, glassCard, currentLang })
             isImage: f.type?.startsWith('image/')
         }));
 
-        const noteMemories = (trip.notes || []).map(n => ({
+        const noteMemories = (Array.isArray(trip.notes) ? trip.notes : []).map(n => ({
             ...n,
             memoryType: 'note',
             parsedDate: getSafeDate(n.date || n.createdAt)
@@ -115,7 +115,8 @@ const JournalTab = ({ trip, user, isOwner, isDarkMode, glassCard, currentLang })
 
     const handleSaveNoteEdit = async (oldNote) => {
         try {
-            const updatedNotes = (trip.notes || []).map(n =>
+            const currentNotes = Array.isArray(trip.notes) ? trip.notes : [];
+            const updatedNotes = currentNotes.map(n =>
                 n.id === oldNote.id ? { ...n, ...editNote, updatedAt: new Date().toISOString() } : n
             );
             await updateDoc(doc(db, "trips", trip.id), { notes: updatedNotes });
@@ -288,7 +289,7 @@ const JournalTab = ({ trip, user, isOwner, isDarkMode, glassCard, currentLang })
                     )}
 
                     <div className="grid grid-cols-1 gap-4">
-                        {(trip.notes || []).length === 0 ? (
+                        {(Array.isArray(trip.notes) ? trip.notes : []).length === 0 ? (
                             <EmptyState
                                 icon={PenLine}
                                 title="筆記本是空的"
@@ -301,7 +302,7 @@ const JournalTab = ({ trip, user, isOwner, isDarkMode, glassCard, currentLang })
                                 }}
                             />
                         ) : (
-                            trip.notes.map(note => (
+                            (Array.isArray(trip.notes) ? trip.notes : []).map(note => (
                                 <div key={note.id} className={`${glassCard(isDarkMode)} transition-all duration-300 hover:shadow-xl group`}>
                                     {editingNoteId === note.id ? (
                                         <div className="p-6 space-y-4">
