@@ -1,9 +1,20 @@
-# Travel Together (智能旅遊規劃) V1.0.4
+# Travel Together (智能旅遊規劃) V1.0.5
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.0.4-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.0.5-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-5.x-purple.svg)](https://vitejs.dev/)
-[![Firebase](https://img.shields.io/badge/Firebase-10.x-orange.svg)](https://firebase.google.com/)
+[![Vite](https://img.shields.io/badge/Vite-6.x-purple.svg)](https://vitejs.dev/)
+[![Firebase](https://img.shields.io/badge/Firebase-11.x-orange.svg)](https://firebase.google.com/)
+
+## 🚀 V1.0.5: Security Update (2025-12-21)
+**V1.0.5: [Security] 核心依賴全面升級！**
+為確保系統長遠安全與穩定，我們將核心依賴 (Firebase/Vite) 升級至最新版本，並修復了所有已知的 `npm audit` 漏洞。
+
+### ✨ V1.0.5 核心更新 (Updates)
+- **🛡️ 漏洞修復**: 解決 12 個 `moderate` 級別安全漏洞 (主要涉及 `esbuild` 與 `undici`)。
+- **📦 依賴升級**:
+    - **Firebase**: `v10.x` ➔ `v11.x`
+    - **Vite**: `v5.x` ➔ `v6.x`
+- **🔧 穩定性驗證**: 通過完整的 Build 與 Runtime 測試，確保新版本兼容性。
 
 ## 🚀 V1.0.4: Optimistic UI & Data Integrity (2025-12-21)
 **V1.0.4: [Optimistic UI] 極速行程管理體驗！**
@@ -18,16 +29,6 @@
 ## 🚀 V1.0.3: Immigration & PWA Matrix (2025-12-21)
 **V1.0.3: [Immigration System] 入境程序全面智能化！**
 專為國際航班打造的入境程序卡片，配合 Dashboard Widget 個人化系統，讓旅程管理更貼心。
-
-### ✨ V1.0.3 核心更新 (Updates)
-- **🛂 Immigration Card**: 專屬琥珀色入境卡片，一目了然。
-- **⚙️ Dashboard Personalization**: Widget 可自由拖拽排序、隱藏/顯示，設定自動保存。
-- **📱 PWA Upgrade**: 全新 Mobile Menu 設計，提升觸控體驗。
-- **📉 Currency Dual-Display**: 每日總結同時顯示當地貨幣與港幣估算。
-
-## 🚀 V1.0.2: Zero-Loop Fix & Guest Mode (2025-12-21)
-**V1.0.2: [Zero-Loop Fix] 遊客模式終極修復！**
-徹底解決了遊客模式下的無限重載 (Redirect Loop) 與 WebSocket 錯誤。
 
 ---
 
@@ -78,7 +79,8 @@ graph TD
 
 | 版本 | 標籤 | 狀態 |
 | :--- | :--- | :--- |
-| **V1.0.4** | **Optimistic UI Update** | 🚀 最新版 |
+| **V1.0.5** | **Security Update** | 🚀 最新版 |
+| **V1.0.4** | **Optimistic UI Update** | ✅ 已發布 |
 | **V1.0.3** | **Immigration System** | ✅ 已發布 |
 | **V1.0.2** | **Zero-Loop Fix** | ✅ 已發布 |
 | **V1.0.1** | **Matrix Sync Update** | ✅ 已發布 |

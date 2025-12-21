@@ -5,13 +5,34 @@ import {
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = 'V1.0.4';
-export const APP_VERSION_TAG = 'Optimistic UI & Fixes';
+export const APP_VERSION = 'V1.0.5';
+export const APP_VERSION_TAG = 'Security Update';
 export const APP_LAST_UPDATE = '2025-12-21';
 
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.0.5",
+        tag: "Security Update",
+        date: "2025-12-21",
+        desc: {
+            "zh-TW": "V1.0.5: 安全性更新 (Dependencies Upgrade)",
+            "en": "V1.0.5: Security Update (Dependencies Upgrade)"
+        },
+        details: {
+            "zh-TW": [
+                "🛡️ Security Audit: 修復 12 個 npm moderate vulnerabilities",
+                "📦 Dependencies: 升級 Firebase (v11.x) 與 Vite (v6.x) 至最新版",
+                "🔧 Stability: 驗證 Build Process 與 Runtime 兼容性"
+            ],
+            "en": [
+                "🛡️ Security Audit: Fixed 12 moderate npm vulnerabilities",
+                "📦 Dependencies: Upgraded Firebase (v11.x) and Vite (v6.x)",
+                "🔧 Stability: Validated build process and runtime compatibility"
+            ]
+        }
+    },
     {
         ver: "V1.0.4",
         tag: "Optimistic UI & Fixes",
