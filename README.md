@@ -1,18 +1,23 @@
-# Travel Together (智能旅遊規劃) V1.0.6
+# Travel Together (智能旅遊規劃) V1.1.7
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.0.6-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.1.7-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-11.x-orange.svg)](https://firebase.google.com/)
 
-## 🚀 V1.0.6: UI Polish & Integrity Boost (2025-12-22)
-**V1.0.6: [Optimization] 介面細節與穩定性的終極拋光！**
-本次更新重點提升了匯率計算機的可讀性，並整合了底部狀態欄，讓資訊顯示更加精簡流暢。
+## 🚀 V1.1.7: Daily Intelligence (2025-12-23)
+**V1.1.7: [Daily Intelligence] 每日總覽智能化 + 匯出預覽升級！**
+本次更新專注於「每日行程」的深度分析，引入 AI 每日總覽功能，並大幅強化匯出預覽體驗，支援全格式的全螢幕預覽。
 
-### ✨ V1.0.6 核心更新 (Updates)
-- **💎 Currency Readability**: 購物與預算清單全面改為「本地貨幣」高亮顯示，更符合用戶記帳直覺。
-- **底部狀態整合**: 將時間、時區與 Firebase 同步狀態整合至單一行，新增「最新同步時間」標籤。
-- **🛡️ Image & Error Resilience**: 全面部署 `ImageWithFallback` 處理損壞資源，並統一 HTTP 錯誤頁面風格。
+### ✨ V1.1.7 核心更新 (Updates)
+- **🧠 Daily AI Analysis**: 「每日總覽」實裝 AI 分析按鈕，一鍵生成當日交通建議、行程合理性分析與貼心 Tips (Gemini 1.5 Flash)。
+- **📄 PDF Pagination**: 匯出引擎支援智能分頁，根據設定 (Items Per Page) 自動切割行程並加入頁碼。
+- **👁️ Enhanced Previews**: 匯出預覽支援「JSON / Text / iCal」全螢幕放大查看 (Full View)，並優化文字顯示清晰度。
+- **🐞 Core Fixes**: 修復 ai-parsing 語法錯誤及 Modal 重複代碼，提升穩定性。
+
+## 🚀 V1.1.2: Audit & Precision (2025-12-23)
+**V1.1.2: [Logic & Workflow] 全面審計與匯出精準化！**
+本次更新實裝了行程匯出的「範圍選擇」(Scope)，讓你可以單獨匯出購物清單或預算記錄，不再需要強行帶上整個行程。同時引入了 AI Agent 代碼審計工作流。
 
 ## 🚀 V1.1.0: Ticket Style & Smart Connections (2025-12-21)
 **V1.1.0: [Design & Intelligence] 行程管理極致進化！**
@@ -120,7 +125,9 @@ graph TD
 
 | 版本 | 標籤 | 狀態 |
 | :--- | :--- | :--- |
-| **V1.0.6** | **UI & Integrity Polish** | 🚀 最新版 |
+| **V1.1.7** | **Daily Intelligence** | 🚀 最新版 |
+| **V1.1.2** | **Audit & Precision** | ✅ 已發布 |
+| **V1.1.1** | **Resilience & Polish** | ✅ 已發布 |
 | **V1.0.5** | **Security Update** | ✅ 已發布 |
 | **V1.0.4** | **Optimistic UI Update** | ✅ 已發布 |
 | **V1.0.3** | **Immigration System** | ✅ 已發布 |
@@ -143,4 +150,4 @@ graph TD
 ---
 
 **Author**: [Jamie Kwok](https://github.com/JackoV416)
-**Last Updated**: 2025-12-22
+**Last Updated**: 2025-12-23

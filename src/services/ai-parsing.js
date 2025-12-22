@@ -1237,3 +1237,80 @@ Return ONLY the trip name, nothing else. No quotes, no explanation.`;
         return `${city} Trip`;
     }
 }
+
+
+/**
+ * 🚀 Analyze a specific day's itinerary for feasibility, tips, and transport.
+ * @param {Object} params
+ * @returns {Promise<Object>} Analysis result
+ */
+export async function generateDailyAnalysis({
+    city,
+    date,
+    items = [],
+    weather = null
+}) {
+    const prompt = `你係一個專業嘅香港旅遊領隊 AI。請分析以下這一天嘅行程，並提供實用建議。
+
+=== 背景資料 ===
+城市: ${city}
+日期: ${date}
+天氣: ${weather ? `${weather.temp}, ${weather.desc}` : '未知'}
+
+=== 當日行程 ===
+${items.map((i, idx) => `${idx + 1}. [${i.time || '??:??'}] ${i.name} (${i.details?.location || '未知地點'})`).join('\n')}
+
+=== 分析要求 (必須使用繁體中文/廣東話) ===
+1. **行程合理性檢查**:
+   - 景點之間係咪太趕？
+   - 有冇漏咗食飯時間？
+   - 景點開放時間有冇問題？
+2. **交通建議**:
+   - 根據景點分佈，推薦最抵嘅交通券 (Day Pass)。
+   - 跨區移動係咪需要搭特急/新幹線？
+3. **貼心提示 (Tips)**:
+   - 針對具體景點嘅參觀貼士 (例如：清水寺最好朝早去避人潮)。
+   - 天氣相關嘅衣著或帶遮建議。
+
+=== OUTPUT FORMAT (JSON ONLY) ===
+{
+    "tips": [
+        "建議 1 (e.g. 清水寺建議 08:00 前到達)",
+        "建議 2 (e.g. 中午未安排午餐，建議在 X 區用餐)",
+        "建議 3 (e.g. 今日落雨，記得帶遮)"
+    ],
+    "transport": [
+        {
+            "id": "trans-1",
+            "type": "metro|bus|pass",
+            "name": "推薦交通券名稱 (e.g. 大阪周遊卡)",
+            "price": "預估價格 (e.g. JPY 2800)",
+            "desc": "推薦原因",
+            "recommended": true
+        }
+    ],
+    "warnings": [
+        "警告 1 (e.g. 景點 A 與 B 距離太遠，交通需時 1 小時)"
+    ]
+}`;
+
+    const apiTask = async (model) => {
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(jsonStr);
+    };
+
+    try {
+        return await callWithSmartRetry(apiTask, 2, true);
+    } catch (error) {
+        console.error("Daily Analysis Error:", error);
+        // Fallback mock check
+        return {
+            tips: ["AI 分析暫時無法使用，請稍後再試。", "建議檢查景點開放時間。"],
+            transport: [],
+            warnings: []
+        };
+    }
+}

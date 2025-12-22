@@ -11,7 +11,8 @@ import {
     getLocationDetails,
     askTravelAI,
     generateShoppingWithGemini,
-    generatePackingList
+    generatePackingList,
+    generateDailyAnalysis // V1.1.7: Daily Analysis
 } from '../../services/ai-parsing';
 import { CURRENCIES } from '../../constants/appData';
 import {
@@ -50,7 +51,8 @@ const AIGeminiModal = ({
     contextCity = "Tokyo",
     trip = null,
     weatherData = null,
-    mode = 'full'
+    mode = 'full',
+    targetDate = null // V1.1.7: Specific date for analysis
 }) => {
     // V0.22: Coming Soon removed - Full functionality restored
     const [loading, setLoading] = useState(false);
@@ -327,6 +329,54 @@ const AIGeminiModal = ({
         }
     };
 
+    const handleDailySummaryAnalyze = async () => {
+        setLoading(true);
+        setProgress(10);
+        try {
+            // Filter items for the target date
+            const dateItems = (trip?.itinerary?.[targetDate] || []).map(i => ({
+                time: i.time,
+                name: i.name,
+                details: i.details
+            }));
+
+            // Call Real AI
+            const analysis = await generateDailyAnalysis({
+                city: contextCity || trip?.city,
+                date: targetDate,
+                items: dateItems,
+                weather: weatherData?.[contextCity] || null
+            });
+
+            setResult(prev => ({
+                ...(prev || {}),
+                itinerary: [],
+                tips: analysis.tips || [],
+                transport: analysis.transport || [],
+                warnings: analysis.warnings || [],
+                source: 'real-daily-summary'
+            }));
+
+            // Auto-select recommended transport
+            if (analysis.transport && analysis.transport.length > 0) {
+                setSelections(prev => ({
+                    ...prev,
+                    transport: analysis.transport.filter(t => t.recommended).map(t => t.id)
+                }));
+            }
+
+            setItineraryStep('result');
+            setActiveTab('transport');
+
+        } catch (err) {
+            console.error("Daily Summary AI Error:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+
     const toggleCat = (id) => {
         if (selectedCats.includes(id)) setSelectedCats(prev => prev.filter(c => c !== id));
         else setSelectedCats(prev => [...prev, id]);
@@ -421,18 +471,37 @@ const AIGeminiModal = ({
 
                             {/* Visual Option Cards */}
                             <div className="grid grid-cols-2 gap-4">
-                                <button
-                                    onClick={() => setItineraryStep('preferences')}
-                                    className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-center gap-3 transition-all hover:shadow-lg hover:-translate-y-1 active:scale-95 ${isDarkMode ? 'border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20' : 'border-indigo-200 bg-indigo-50 hover:bg-indigo-100'}`}
-                                >
-                                    <div className={`p-2.5 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-white shadow-sm'}`}>
-                                        <Sparkles className="w-6 h-6 text-indigo-500" />
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="font-bold">客製化行程</div>
-                                        <div className="text-[10px] opacity-60 mt-1">深度自選，AI 精準規劃</div>
-                                    </div>
-                                </button>
+                                {mode === 'daily-summary' ? (
+                                    <button
+                                        onClick={handleDailySummaryAnalyze}
+                                        className={`col-span-2 p-8 rounded-2xl border-2 flex flex-col items-center justify-center gap-4 transition-all hover:shadow-xl hover:-translate-y-1 active:scale-95 ${isDarkMode ? 'border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20' : 'border-amber-200 bg-amber-50 hover:bg-amber-100'}`}
+                                    >
+                                        <div className={`p-4 rounded-full ${isDarkMode ? 'bg-amber-500/20' : 'bg-white shadow-md'} animate-pulse`}>
+                                            <BrainCircuit className="w-8 h-8 text-amber-500" />
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="font-bold text-lg">開始分析當日行程</div>
+                                            <div className="text-sm opacity-60 mt-2 max-w-xs mx-auto">
+                                                AI 將檢視您當天的安排，提供優化建議、交通提醒以及漏掉的精彩景點。
+                                            </div>
+                                        </div>
+                                    </button>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={() => setItineraryStep('preferences')}
+                                            className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-center gap-3 transition-all hover:shadow-lg hover:-translate-y-1 active:scale-95 ${isDarkMode ? 'border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20' : 'border-indigo-200 bg-indigo-50 hover:bg-indigo-100'}`}
+                                        >
+                                            <div className={`p-2.5 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-white shadow-sm'}`}>
+                                                <Sparkles className="w-6 h-6 text-indigo-500" />
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="font-bold">客製化行程</div>
+                                                <div className="text-[10px] opacity-60 mt-1">深度自選，AI 精準規劃</div>
+                                            </div>
+                                        </button>
+                                    </>
+                                )}
 
                                 <button
                                     onClick={() => {
@@ -965,6 +1034,23 @@ const AIGeminiModal = ({
                                 <div className="text-center py-12 opacity-60">
                                     <p className="text-lg font-bold">暫時無法生成行程建議</p>
                                     <p className="text-sm mt-2">AI 限額已用完，請稍後再試。</p>
+                                </div>
+                            )}
+
+                            {/* Tips Section for Daily Summary */}
+                            {(mode === 'daily-summary' || result.tips) && result.tips && result.tips.length > 0 && (
+                                <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 mb-6 animate-fade-in">
+                                    <h4 className="font-bold text-sm text-indigo-500 mb-3 flex items-center gap-2">
+                                        <Sparkles className="w-4 h-4" /> AI 貼心提醒
+                                    </h4>
+                                    <ul className="space-y-2">
+                                        {result.tips.map((tip, idx) => (
+                                            <li key={idx} className="text-xs opacity-80 flex gap-2">
+                                                <span className="text-indigo-400">•</span>
+                                                {tip}
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
                             )}
 
