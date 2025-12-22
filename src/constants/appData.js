@@ -25,6 +25,44 @@ export const VERSION_HISTORY = [
         ]
     },
     {
+        ver: "V1.1.6",
+        date: "2025-12-22",
+        tag: "Advanced Layout",
+        changes: [
+            "PDF 佈局模式切換: 支援 [簡易] / [專業] Tab 切換",
+            "每頁項目選擇器: 可下拉選擇 2/3/4/6 項目/頁",
+            "專業模式預告: 顯示開發中區塊提示"
+        ]
+    },
+    {
+        ver: "V1.1.5",
+        date: "2025-12-22",
+        tag: "Custom Export",
+        changes: [
+            "PDF 數據清洗: 移除所有 null, undefined, [object Object] 顯示",
+            "PDF 樣式美化: 優化區域間距，加入中文標籤 (服飾/盥洗/電子等)"
+        ]
+    },
+    {
+        ver: "V1.1.4",
+        date: "2025-12-22",
+        tag: "Smart Features",
+        changes: [
+            "PDF 放大預覽: Export Modal 新增「全屏預覽」按鈕",
+            "CSS 背景 Fallback: 圖片載入失敗時自動顯示紫色漸變背景"
+        ]
+    },
+    {
+        ver: "V1.1.3",
+        date: "2025-12-22",
+        tag: "UX Enhancement",
+        changes: [
+            "Budget Chart 修復: 修正缺少 trip prop 導致崩潰問題",
+            "Files Tab 移除: 在 More Menu 刪除空置選項",
+            "Hotel 名稱本地化: 教學數據更新 (格拉斯麗新宿, 大阪W)"
+        ]
+    },
+    {
         ver: "V1.1.2",
         date: "2025-12-23",
         tag: "Audit & Precision",
