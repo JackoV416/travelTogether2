@@ -1,4 +1,5 @@
-import { Plane, TrainFront, BusFront, Car, Ship, CheckCircle2, Clock, Footprints, MapPin, ArrowRight, Pencil, Ticket, Undo2, Stamp } from 'lucide-react';
+import React from 'react';
+import { Plane, Train, Bus, Car, Ship, CheckCircle2, Clock, Footprints, MapPin, ArrowRight, Pencil, Ticket, Undo2, Stamp, DollarSign } from 'lucide-react';
 import { formatDuration, getSmartItemImage } from '../../../utils/tripUtils';
 
 // Mini-map for airport codes (Could be moved to appData)
@@ -11,337 +12,265 @@ const AIRPORT_NAMES = {
     "LHR": { en: "Heathrow", zh: "希斯洛機場" }
 };
 
-const TransportCard = ({ item, isDarkMode, dayHotel, onEdit }) => {
-    // 1. Color & Icon Logic (Auto-detect from Name/Type)
+const TransportCard = ({ item, isDarkMode, dayHotel, onEdit, language = 'zh-TW' }) => {
+    // 1. Color & Icon Logic
     const getTheme = () => {
         const type = (item.details?.transportType || item.type).toLowerCase();
         const name = (item.name || "").toLowerCase();
 
-        let label = "Transport";
-        let icon = <Car className="w-6 h-6 mb-2 opacity-90" />;
-        let color = isDarkMode ? 'bg-indigo-600' : 'bg-indigo-500';
-
-        // Flight
-        if (type === 'flight' || name.includes('flight') || name.includes('航空') || name.includes('cx') || name.includes('uo') || name.includes('jl') || name.includes('nh')) {
-            return { color: isDarkMode ? 'bg-blue-600' : 'bg-blue-500', icon: <Plane className="w-6 h-6 rotate-90 mb-2 opacity-90" />, label: "Flight" };
+        if (type === 'flight' || name.includes('flight') || name.includes('航空')) {
+            return {
+                bg: isDarkMode ? 'bg-blue-900/40' : 'bg-blue-50/80',
+                border: 'border-blue-500/20',
+                accent: 'text-blue-500',
+                iconBg: 'bg-blue-500',
+                label: 'Flight',
+                // Dynamic Rotation: Check if it's a Return flight (回程/歸航) -> -135deg (Leftward/Home), else 45deg (Top-Right/Departure)
+                icon: <Plane className={`w-4 h-4 text-white ${name.includes('return') || name.includes('回程') || name.includes('歸航') ? '-rotate-[135deg]' : 'rotate-45'}`} />
+            };
         }
-
-        // Walk
-        if (type === 'walk' || name.includes('walk') || name.includes('步') || name.includes('散策')) {
-            return { color: isDarkMode ? 'bg-orange-600' : 'bg-orange-500', icon: <Footprints className="w-6 h-6 mb-2 opacity-90" />, label: "Walking" };
+        if (type === 'walk' || name.includes('walk') || name.includes('步')) {
+            return {
+                bg: isDarkMode ? 'bg-purple-900/40' : 'bg-purple-50/80',
+                border: 'border-purple-500/20',
+                accent: 'text-purple-500',
+                iconBg: 'bg-purple-500',
+                label: 'Walking',
+                icon: <Footprints className="w-4 h-4 text-white" />
+            };
         }
-
-        // Train / Metro / Shinkansen
-        if (type === 'train' || type === 'metro' || name.includes('train') || name.includes('鐵') || name.includes('jr') || name.includes('metro') || name.includes('subway') || name.includes('地下鐵') || name.includes('新幹線') || name.includes('快線') || name.includes('express')) {
-            const isMetro = type === 'metro' || name.includes('metro') || name.includes('subway') || name.includes('地下鐵') || name.includes('地鐵');
-            const isShinkansen = name.includes('新幹線');
-
-            label = isShinkansen ? "Shinkansen" : (isMetro ? "Metro" : "Train");
-            return { color: isDarkMode ? 'bg-emerald-600' : 'bg-emerald-500', icon: <TrainFront className="w-6 h-6 mb-2 opacity-90" />, label };
+        if (type === 'metro' || type === 'subway' || name.includes('metro') || name.includes('subway') || name.includes('地鐵') || name.includes('捷運') || name.includes('都營') || name.includes('MTR')) {
+            return {
+                bg: isDarkMode ? 'bg-teal-900/40' : 'bg-teal-50/80',
+                border: 'border-teal-500/20',
+                accent: 'text-teal-500',
+                iconBg: 'bg-teal-500',
+                label: 'Metro',
+                icon: <Train className="w-4 h-4 text-white" />
+            };
         }
-
-        // Bus
-        if (type === 'bus' || name.includes('bus') || name.includes('巴')) {
-            return { color: isDarkMode ? 'bg-teal-600' : 'bg-teal-500', icon: <BusFront className="w-6 h-6 mb-2 opacity-90" />, label: "Bus" };
+        if (type === 'train' || type === 'shinkansen' || name.includes('jr') || name.includes('鐵') || name.includes('rail') || name.includes('express')) {
+            return {
+                bg: isDarkMode ? 'bg-emerald-900/40' : 'bg-emerald-50/80',
+                border: 'border-emerald-500/20',
+                accent: 'text-emerald-500',
+                iconBg: 'bg-emerald-500',
+                label: 'Rail',
+                icon: <Train className="w-4 h-4 text-white" />
+            };
         }
-
-        // Ferry
-        if (type === 'ferry' || name.includes('ship') || name.includes('boat') || name.includes('船')) {
-            return { color: isDarkMode ? 'bg-cyan-600' : 'bg-cyan-500', icon: <Ship className="w-6 h-6 mb-2 opacity-90" />, label: "Ferry" };
+        if (type === 'immigration' || name.includes('入境') || name.includes('海關') || name.includes('immigration') || name.includes('customs')) {
+            return {
+                bg: isDarkMode ? 'bg-amber-900/40' : 'bg-amber-50/80',
+                border: 'border-amber-500/20',
+                accent: 'text-amber-500',
+                iconBg: 'bg-amber-500',
+                label: 'Immigration',
+                icon: <Stamp className="w-4 h-4 text-white" />
+            };
         }
-
-        // Taxi / Car / Other
-        if (type === 'taxi' || type === 'car' || name.includes('taxi') || name.includes('的士') || name.includes('車')) {
-            return { color: isDarkMode ? 'bg-yellow-600' : 'bg-yellow-500', icon: <Car className="w-6 h-6 mb-2 opacity-90" />, label: "Taxi" };
-        }
-
-        // Immigration / Customs (V1.0.3)
-        if (type === 'immigration' || name.includes('入境') || name.includes('出境') || name.includes('海關') || name.includes('customs') || name.includes('immigration')) {
-            return { color: isDarkMode ? 'bg-rose-600' : 'bg-rose-500', icon: <Stamp className="w-6 h-6 mb-2 opacity-90" />, label: "Immigration" };
-        }
-
-        // If generic Transport, try to detect anything else, otherwise default
-        return { color, icon, label: (type && type !== 'transport' ? (type.charAt(0).toUpperCase() + type.slice(1)) : "Transport") };
+        return {
+            bg: isDarkMode ? 'bg-indigo-900/40' : 'bg-indigo-50/80',
+            border: 'border-indigo-500/20',
+            accent: 'text-indigo-500',
+            iconBg: 'bg-indigo-500',
+            label: 'Transport',
+            icon: <Car className="w-4 h-4 text-white" />
+        };
     };
 
     const theme = getTheme();
+    const bgImage = getSmartItemImage(item);
 
-    // 2. Time Logic with Robust Parsing
+    // 2. Time Logic
     const getEndTime = () => {
-        // Priority 0: Explicit endTime field
         if (item.endTime) return item.endTime;
         if (item.details?.endTime) return item.details.endTime;
-
         if (!item.time || !item.details?.duration) return null;
         const [h, m] = item.time.split(':').map(Number);
-
-        let durationMins = 0;
-        const val = item.details.duration;
-
-        if (typeof val === 'number') {
-            durationMins = val;
-        } else if (typeof val === 'string') {
-            const hasHour = val.match(/(\d+)\s*(?:hr|hour|小时|小時|h)/i);
-            const hasMin = val.match(/(\d+)\s*(?:min|minute|分|m)/i);
-
-            if (hasHour) durationMins += parseInt(hasHour[1]) * 60;
-            if (hasMin) durationMins += parseInt(hasMin[1]);
-
-            if (!hasHour && !hasMin) {
-                const digits = val.match(/\d+/);
-                if (digits) durationMins = parseInt(digits[0]);
-            }
-        }
-
+        const durationMins = typeof item.details.duration === 'number' ? item.details.duration : 0;
         if (!durationMins) return null;
-
         const date = new Date();
         date.setHours(h, m + durationMins);
         return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     };
     const endTime = getEndTime();
 
-    // 3. Location / Labels Logic
-    const getLabels = () => {
-        let fromCode = "Start";
-        let toCode = "End";
-        let fromName = "";
-        let toName = "";
+    // 3. Journey Details
+    const getJourneyData = () => {
+        // Try to parse explicit from/to from name first (e.g. "CX507 (KIX -> HKG)")
+        const arrowMatch = item.name.match(/\((.*?)\s*(?:->|to)\s*(.*?)\)/i) || item.name.match(/(.*?)\s*(?:->|to)\s*(.*)/i);
 
-        if (item.type === 'flight') {
-            const airportMatch = item.name.match(/\((.*?)\s*->\s*(.*?)\)/);
-            fromCode = airportMatch ? airportMatch[1] : (item.details?.fromCode || "DEP");
-            toCode = airportMatch ? airportMatch[2] : (item.details?.toCode || "ARR");
+        // Try to parse from details.location (e.g. "KIX T1 -> HKG")
+        const locParts = (item.details?.location || "").split(/->|to/i).map(p => p.trim());
 
-            // Base Airport Names
-            const fromNameBase = AIRPORT_NAMES[fromCode]?.zh || AIRPORT_NAMES[fromCode]?.en || "";
-            const toNameBase = AIRPORT_NAMES[toCode]?.zh || AIRPORT_NAMES[toCode]?.en || "";
+        let fromCode = "Origin";
+        let toCode = "Dest";
 
-            // Build From Label: "Airport (T1 - Gate A)"
-            const depInfo = [];
-            if (item.details?.terminal) depInfo.push(item.details.terminal);
-            if (item.details?.gate) depInfo.push(`Gate ${item.details.gate}`);
-
-            fromName = depInfo.length > 0 ? `${fromNameBase} (${depInfo.join(" · ")})` : fromNameBase;
-
-            // Build To Label: "Airport (T2)"
-            // Assuming arrival info might be in "desc" or "arrivalTerminal" if we had it, but standard parsing usually doesn't have it.
-            // We'll stick to just Name for To, unless user added specific info.
-            toName = toNameBase;
-
-        } else {
-            const locString = item.details?.location || "";
-            const locParts = locString.includes('->') ? locString.split('->') : [locString];
-
-            const rawFrom = locParts[0]?.trim() || "Start";
-            const fromSplit = splitName(rawFrom);
-
-            // For Metro/Train: If code exists (e.g. E27), prioritize displaying it prominently if name is short?
-            // Current splitName: "Shinjuku (E27)" -> primary="Shinjuku", secondary="E27"
-            // Display: CODE (Big) = Shinjuku, Name (Small) = E27.
-            // User requested: "If Metro, display station number info".
-            // If primary is English name, secondary is Code.
-            // Strategy: Keep BIG English Name, Small Code is fine, BUT user specifically asked for "T1 C" style or Station Number.
-            // Let's ensure secondary is displayed.
-
-            fromCode = fromSplit.primary;
-            fromName = fromSplit.secondary;
-
-            let rawTo = item.details?.arrival; // Prioritize explicit arrival field (e.g. for Immigration/customs)
-
-            if (!rawTo && locParts[1]) {
-                rawTo = locParts[1].trim();
-            }
-
-            if (!rawTo || rawTo === "End") {
-                // Only fallback to dayHotel if explicitly "End" or absolutely nothing found, 
-                // AND it's likely leading to hotel (last item). 
-                // But for Immigration, we usually have arrival="B1F...".
-                // If not present, defaulting to hotel is risky if it's not the last item.
-                if (item.name.includes('前往')) {
-                    rawTo = item.name.split('前往')[1];
-                } else if (dayHotel && (item.type === 'transport' || item.type === 'walk')) {
-                    // Only default to Hotel for Transport/Walk where destination is ambiguous
-                    rawTo = dayHotel.name.replace('Check-in', '').trim();
-                } else {
-                    rawTo = "Destination";
-                }
-            }
-
-            const toSplit = splitName(rawTo, rawTo === dayHotel?.name.replace('Check-in', '').trim());
-            toCode = toSplit.primary;
-            toName = toSplit.secondary;
+        if (arrowMatch && arrowMatch.length >= 3) {
+            fromCode = arrowMatch[1].trim();
+            toCode = arrowMatch[2].trim();
+        } else if (locParts.length >= 2) {
+            fromCode = locParts[0];
+            toCode = locParts[1];
+        } else if (item.details?.fromCode && item.details?.toCode) {
+            fromCode = item.details.fromCode;
+            toCode = item.details.toCode;
         }
 
-        return { fromCode, toCode, fromName, toName };
+        // Clean up common prefixes if needed, but keeping full names for clarity as requested
+        return { fromCode, toCode };
     };
-
-    const splitName = (text, isHotel = false) => {
-        if (!text) return { primary: "End", secondary: "" };
-        const match = text.match(/([^(]+)\(([^)]+)\)/);
-
-        if (match) {
-            return { primary: match[1].trim(), secondary: match[2].trim() };
-        }
-        return { primary: text, secondary: isHotel ? "Accommodation" : "" };
-    };
-
-    const labels = getLabels();
-    const bgImage = getSmartItemImage(item);
+    const journey = getJourneyData();
 
     return (
-        <div className={`relative w-full rounded-3xl overflow-hidden shadow-lg transition-transform hover:scale-[1.01] ${theme.color} text-white group`}>
+        <div className={`relative w-full rounded-2xl overflow-hidden border ${theme.border} ${theme.bg} backdrop-blur-md transition-all duration-300 hover:shadow-xl group flex flex-col md:flex-row h-auto md:min-h-[200px]`}>
 
-            {/* V1.0.3: Seamless Dual Image - Full height for glass effect on details */}
-            {/* Left Side Image (Departure) - 50% width, full height, fades to center */}
-            {bgImage && (
-                <div className="absolute left-0 top-0 bottom-0 w-1/2 opacity-50 pointer-events-none overflow-hidden">
-                    <div className="absolute inset-0 z-10" style={{ background: 'linear-gradient(to right, transparent 0%, transparent 40%, rgba(0,0,0,0.9) 100%)' }} />
-                    <img src={bgImage} alt="Departure" className="w-full h-full object-cover" />
+            {/* Left Section: Image (Top on Mobile, Left on Desktop) */}
+            <div className="relative w-full h-32 md:w-1/3 md:h-full overflow-hidden shrink-0">
+                <img
+                    src={bgImage}
+                    alt={item.name}
+                    className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-500 group-hover:scale-110"
+                    onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800"; // Fallback generic transport
+                    }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/50 to-transparent" />
+                <div className={`absolute top-2 left-2 p-1.5 rounded-lg ${theme.iconBg} shadow-lg z-10`}>
+                    {theme.icon}
                 </div>
-            )}
+            </div>
 
-            {/* Right Side Image (Arrival) - 50% width, full height, fades to center */}
-            {bgImage && (
-                <div className="absolute right-0 top-0 bottom-0 w-1/2 opacity-50 pointer-events-none overflow-hidden">
-                    <div className="absolute inset-0 z-10" style={{ background: 'linear-gradient(to left, transparent 0%, transparent 40%, rgba(0,0,0,0.9) 100%)' }} />
-                    <img src={dayHotel?.details?.image || bgImage} alt="Arrival" className="w-full h-full object-cover" />
-                </div>
-            )}
+            {/* Ticket Notches (Hidden on Mobile) */}
+            <div className="hidden md:flex absolute left-[33.33%] top-0 bottom-0 flex-col justify-between py-2 -translate-x-1/2 z-20">
+                <div className={`w-4 h-4 rounded-full -mt-4 ${isDarkMode ? 'bg-gray-900' : 'bg-white'} border-b ${theme.border}`} />
+                <div className="flex-1 border-r border-dashed border-gray-400/30 mx-[7px] my-1" />
+                <div className={`w-4 h-4 rounded-full -mb-4 ${isDarkMode ? 'bg-gray-900' : 'bg-white'} border-t ${theme.border}`} />
+            </div>
 
-            {/* Edit Button */}
-            <button
-                onClick={(e) => { e.stopPropagation(); onEdit && onEdit(item); }}
-                className="absolute top-4 right-4 z-30 p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity"
-                title="Edit"
-            >
-                <Pencil className="w-4 h-4 text-white" />
-            </button>
-
-
-            {/* Ticket Notch Effect */}
-            <div className={`absolute top-1/2 -left-3 w-6 h-6 rounded-full ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}></div>
-            <div className={`absolute top-1/2 -right-3 w-6 h-6 rounded-full ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}></div>
-
-            {/* Content Container */}
-            <div className="p-5 pb-8 relative z-20">
-                {/* Header: Tag & Time Range */}
-                <div className="flex justify-between items-center mb-6 opacity-90">
-                    <span className="bg-white/20 px-3 py-1 rounded text-[10px] font-bold tracking-wider uppercase backdrop-blur-sm border border-white/10 flex items-center gap-1">
-                        <Ticket className="w-3 h-3" />
-                        {theme.label}
-                    </span>
-                    <div className="flex items-center gap-2 font-mono font-bold text-xl tracking-tight shadow-sm">
-                        <span>{item.details?.time || item.time}</span>
-                        {endTime && (
-                            <>
-                                <span className="opacity-50 text-base">-</span>
-                                <span>{endTime}</span>
-                            </>
+            {/* Right Section: Content */}
+            <div className="flex-1 p-3 md:p-5 flex flex-col min-w-0">
+                <div className="space-y-1">
+                    {/* Line 1: Localized Name / Airline */}
+                    <div className="flex justify-between items-start gap-2">
+                        <h3 className={`text-sm font-black truncate leading-none ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {item.name}
+                        </h3>
+                        {item.cost > 0 && (
+                            <div className="flex items-center gap-0.5 text-xs font-bold text-emerald-500 shrink-0">
+                                <DollarSign className="w-3 h-3" />
+                                {item.cost}
+                            </div>
                         )}
                     </div>
-                </div>
 
-                {/* Main Journey Flow */}
-                <div className="flex justify-between items-start px-1 relative">
-                    {/* FROM */}
-                    <div className="text-left w-[35%] z-10">
-                        <div className="text-[10px] opacity-70 font-bold mb-1 tracking-wider uppercase">FROM</div>
-                        <div className={`font-black tracking-tight leading-none mb-1 break-words ${labels.fromCode.length > 8 ? 'text-lg' : 'text-3xl'} drop-shadow-md`}>
-                            {labels.fromCode}
-                        </div>
-                        {labels.fromName && <div className="text-[10px] opacity-90 truncate font-medium mt-1">{labels.fromName}</div>}
+                    {/* Line 2: Route / Flight No / Subtitle */}
+                    <div className="text-[10px] opacity-40 font-bold truncate italic leading-none">
+                        {item.details?.flightNo || item.details?.trainNo || item.details?.nameEn || item.details?.route || "Local Journey"}
                     </div>
 
-                    {/* CENTER ICON & DURATION */}
-                    <div className="flex-1 flex flex-col items-center justify-center px-2 mt-1 z-10">
-                        {theme.icon}
-
-                        <div className="w-full h-[2px] border-t-2 border-dashed border-white/40 relative my-2">
-                            {item.cost > 0 && (
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] px-2 font-bold whitespace-nowrap bg-black/20 rounded-full backdrop-blur-sm border border-white/10">
-                                    ${item.cost}
+                    {/* Line 3: Journey Flow (Visual Row) - Hide for customs/static items */}
+                    {(item.type === 'flight' || item.type === 'transport' || item.type === 'train' || item.type === 'walk') && (
+                        <div className="flex items-center gap-2 py-2">
+                            {/* Origin */}
+                            <div className="flex flex-col min-w-[60px]">
+                                <span className={`text-sm font-black tracking-tight leading-none ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                    {journey.fromCode}
+                                </span>
+                                <span className="text-[9px] opacity-50 font-bold uppercase mt-0.5">{item.time}</span>
+                            </div>
+                            {/* Ticket-Style Route Line */}
+                            <div className="flex-1 flex items-center justify-center relative mx-2">
+                                <div className="w-full border-t-2 border-dashed border-gray-400/40"></div>
+                                <div className={`absolute px-2 py-1 rounded-full ${theme.iconBg} shadow-md`}>
+                                    {React.cloneElement(theme.icon, { className: "w-3 h-3 text-white" })}
                                 </div>
-                            )}
-                        </div>
-
-                        <div className="text-[10px] opacity-90 font-mono flex items-center gap-1.5 bg-black/20 px-2 py-0.5 rounded backdrop-blur-sm">
-                            <Clock className="w-3 h-3" />
-                            {item.details?.duration ? formatDuration(item.details.duration) : (
-                                endTime ? formatDuration(Math.round((new Date(`1970-01-01T${endTime}:00`).getTime() - new Date(`1970-01-01T${item.time}:00`).getTime()) / 60000)) : "--"
-                            )}
-                        </div>
-
-                        {/* Walking Discovery: Steps & Distance */}
-                        {item.type === 'walk' && (item.details?.steps || item.details?.distance) && (
-                            <div className="mt-3 flex gap-1 items-center">
-                                {item.details.distance && (
-                                    <span className="bg-orange-500/20 text-orange-200 px-1.5 py-0.5 rounded text-[9px] font-black border border-orange-500/30">
-                                        {item.details.distance}
-                                    </span>
-                                )}
-                                {item.details.steps && (
-                                    <span className="bg-blue-500/20 text-blue-200 px-1.5 py-0.5 rounded text-[9px] font-black border border-blue-500/30 whitespace-nowrap">
-                                        {item.details.steps} 步
-                                    </span>
-                                )}
                             </div>
-                        )}
-                    </div>
-
-                    {/* TO */}
-                    <div className="text-right w-[35%] z-10">
-                        <div className="text-[10px] opacity-70 font-bold mb-1 tracking-wider uppercase">TO</div>
-                        <div className={`font-black tracking-tight leading-none mb-1 break-words ${labels.toCode.length > 8 ? 'text-lg' : 'text-3xl'} drop-shadow-md`}>
-                            {labels.toCode}
-                        </div>
-                        {labels.toName && <div className="text-[10px] opacity-90 truncate font-medium mt-1">{labels.toName}</div>}
-                    </div>
-                </div>
-            </div>
-
-            {/* Bottom Info Bar */}
-            <div className={`px-5 py-3 flex justify-between items-center ${isDarkMode ? 'bg-black/40' : 'bg-white/10'} backdrop-blur-md border-t border-white/10 relative z-20`}>
-                <div className="flex flex-col flex-1 mr-4 overflow-hidden">
-                    <span className="text-[9px] opacity-60 uppercase font-bold mb-0.5">NOTES</span>
-                    <div className="flex items-center gap-2 text-xs font-bold truncate">
-                        {item.name.includes('(Return)') && <Undo2 className="w-3 h-3 text-orange-400" />}
-                        {item.details?.desc || item.name}
-                        {item.details?.exit && (
-                            <span className="bg-emerald-500/80 text-white px-1.5 py-0.5 rounded text-[10px] whitespace-nowrap ml-1 shadow-sm">
-                                {item.details.exit}
-                            </span>
-                        )}
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    {item.type === 'flight' ? (
-                        <div className="text-right flex flex-col items-end">
-                            <span className="text-[9px] opacity-60 uppercase font-bold">INFO</span>
-                            <div className="flex items-center gap-1">
-                                {item.smartTag ? <span className="font-bold text-xs">{item.smartTag}</span> : (
-                                    <span className="bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1">
-                                        <CheckCircle2 className="w-3 h-3" /> Confirmed
-                                    </span>
-                                )}
+                            {/* Destination */}
+                            <div className="flex flex-col items-end min-w-[60px]">
+                                <span className={`text-sm font-black tracking-tight leading-none ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                    {journey.toCode}
+                                </span>
+                                <span className="text-[9px] opacity-50 font-bold uppercase mt-0.5">{endTime || '--:--'}</span>
                             </div>
                         </div>
-                    ) : (
-                        item.smartTag ? (
-                            <div className="text-right pl-4">
-                                <span className="text-[9px] opacity-60 uppercase font-bold">INFO</span>
-                                <div className="font-bold text-xs">{item.smartTag}</div>
-                            </div>
-                        ) : (
-                            <div className="opacity-50">
-                                <ArrowRight className="w-4 h-4" />
-                            </div>
-                        )
                     )}
+
+                    {/* Line 4: Departure & Arrival Details (Gate, Baggage) */}
+                    <div className="flex items-center justify-between gap-2 text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                        {/* Departure Info */}
+                        <div className="flex items-center gap-1.5">
+                            <Ticket className="w-2.5 h-2.5 opacity-60" />
+                            <span className="truncate opacity-70">{language === 'en' ? 'Dep' : '出發'}</span>
+                            <span className="truncate">{item.details?.gate || item.details?.platform || (item.details?.location?.split(/->|to/i)?.[0]?.trim()) || "Gate ??"}</span>
+                        </div>
+                        {/* Arrival Info - Always show for flight, show for others if has arrival data */}
+                        <div className="flex items-center gap-1.5 text-right">
+                            <span className="truncate opacity-70">{language === 'en' ? 'Arr' : '抵達'}</span>
+                            <span className="truncate">
+                                {item.details?.arrivalGate || item.details?.arrivalTerminal || (item.type === 'flight' ? journey.toCode : '--')}
+                                {item.details?.baggageClaim && (
+                                    <span className="ml-1 text-amber-500">🧳{item.details.baggageClaim}</span>
+                                )}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Line 5: Timing Details (Matrix Style) - Theme Color Matched */}
+                    <div className="flex items-center gap-2 text-[10px] font-black tracking-tight uppercase whitespace-nowrap">
+                        <span className={`px-1.5 py-0.5 rounded border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-gray-200'} ${theme.accent}`}>
+                            {item.time} — {endTime || '??:??'}
+                        </span>
+                        <span className="opacity-20">/</span>
+                        <span className="text-gray-400/60 font-medium">{item.details?.duration ? formatDuration(item.details.duration) : 'No Duration'}</span>
+                    </div>
+
+                    {/* Line 6: Notes / Insight - Improved preview */}
+                    {(item.details?.insight || item.details?.desc) && (
+                        <div className={`text-[10px] opacity-70 leading-relaxed line-clamp-2 italic font-medium tracking-tight ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {(() => {
+                                const text = item.details?.insight || item.details?.desc || '';
+                                // Extract first meaningful section, clean up brackets
+                                const cleaned = text.replace(/【/g, '').replace(/】/g, ': ').replace(/\s+/g, ' ').trim();
+                                return cleaned.length > 100 ? cleaned.substring(0, 100) + '...' : cleaned;
+                            })()}
+                        </div>
+                    )}
+
+                </div>
+
+                {/* Line 7: Tags - MOVED OUTSIDE space-y-1 to correctly respect mt-auto */}
+                <div className="flex items-center gap-1.5 mt-auto pt-2 overflow-hidden">
+                    {((item.details?.tags?.length > 0 ? item.details.tags : [theme.label])).slice(0, 3).map((tag, i) => (
+                        <span key={i} className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter ${isDarkMode ? 'bg-white/5 text-gray-400 border border-white/5' : 'bg-gray-100 text-gray-500'}`}>
+                            #{tag}
+                        </span>
+                    ))}
+                </div>
+
+                {/* Hover Actions */}
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onEdit && onEdit(item); }}
+                        className="p-2 bg-indigo-600 rounded-xl text-white shadow-xl shadow-indigo-500/40 hover:bg-indigo-700 transition-colors"
+                    >
+                        <Pencil className="w-3.5 h-3.5" />
+                    </button>
                 </div>
             </div>
-        </div>
+
+            {/* Decorative Background Icon - Adjusted to avoid text cut-off */}
+            <div className={`absolute -bottom-4 -right-4 opacity-[0.04] pointer-events-none select-none ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                {React.cloneElement(theme.icon, {
+                    className: `w-24 h-24 ${theme.icon.props.className.includes('rotate') ? theme.icon.props.className.match(/-?rotate-\[\d+deg\]|-?rotate-\d+/)?.[0] || '' : ''}`
+                })}
+            </div>
+
+            {/* Selection Overlay */}
+            <div className="absolute inset-0 border-2 border-indigo-500/0 group-hover:border-indigo-500/10 pointer-events-none rounded-2xl transition-colors" />
+        </div >
     );
 };
 

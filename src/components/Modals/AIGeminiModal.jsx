@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrainCircuit, X, Loader2, List, BusFront, Wallet, TrainFront, Car, Route, ShoppingBag, Sparkles, CheckSquare, Square, Plus, PackageCheck, Check, ArrowRightLeft } from 'lucide-react';
+import { BrainCircuit, X, Loader2, List, Bus, Wallet, Train, Car, Route, ShoppingBag, Sparkles, CheckSquare, Square, Plus, PackageCheck, Check, ArrowRightLeft } from 'lucide-react';
 import {
     generateShoppingSuggestions,
     generateFullItinerary,
@@ -688,7 +688,7 @@ const AIGeminiModal = ({
                                             onClick={() => setLogistics(prev => ({ ...prev, transportMode: 'public' }))}
                                             className={`py-3 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${logistics.transportMode === 'public' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-gray-500/10 hover:bg-gray-500/5'}`}
                                         >
-                                            <TrainFront className="w-4 h-4" /> 大眾運輸
+                                            <Train className="w-4 h-4" /> 大眾運輸
                                         </button>
                                         <button
                                             onClick={() => setLogistics(prev => ({ ...prev, transportMode: 'driving' }))}
@@ -852,7 +852,7 @@ const AIGeminiModal = ({
                                     ? [{ id: 'shopping', label: '購物推薦', icon: ShoppingBag }]
                                     : (mode === 'packing'
                                         ? [{ id: 'packing', label: '行李清單', icon: PackageCheck }]
-                                        : [{ id: 'itinerary', label: '行程建議', icon: List }, { id: 'packing', label: '行李清單', icon: PackageCheck }, { id: 'transport', label: '交通分析', icon: BusFront }, { id: 'budget', label: '預算預估', icon: Wallet }, { id: 'shopping', label: '購物推薦', icon: ShoppingBag }])
+                                        : [{ id: 'itinerary', label: '行程建議', icon: List }, { id: 'packing', label: '行李清單', icon: PackageCheck }, { id: 'transport', label: '交通分析', icon: Bus }, { id: 'budget', label: '預算預估', icon: Wallet }, { id: 'shopping', label: '購物推薦', icon: ShoppingBag }])
                                 ).map(t => (
                                     <button
                                         key={t.id}
@@ -982,7 +982,7 @@ const AIGeminiModal = ({
                                                 {selections.transport?.includes(t.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                             </div>
                                             <div className={`w-10 h-10 rounded-full flex items-center justify-center ${t.type === 'metro' ? 'bg-blue-500/10 text-blue-500' : t.type === 'bus' ? 'bg-green-500/10 text-green-500' : t.type === 'taxi' ? 'bg-yellow-500/10 text-yellow-500' : 'bg-gray-500/10 text-gray-500'}`}>
-                                                {t.type === 'metro' ? <TrainFront className="w-5 h-5" /> : t.type === 'bus' ? <BusFront className="w-5 h-5" /> : t.type === 'taxi' ? <Car className="w-5 h-5" /> : <Route className="w-5 h-5" />}
+                                                {t.type === 'metro' ? <Train className="w-5 h-5" /> : t.type === 'bus' ? <Bus className="w-5 h-5" /> : t.type === 'taxi' ? <Car className="w-5 h-5" /> : <Route className="w-5 h-5" />}
                                             </div>
                                             <div className="flex-1">
                                                 <div className="font-bold flex items-center gap-2">

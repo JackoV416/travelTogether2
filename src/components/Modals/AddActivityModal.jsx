@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X, Map as MapIcon, Utensils, ShoppingBag, Bus, PlaneTakeoff, Hotel, Shirt, Sparkles, Smartphone, FileText, Pill, Package, Trash2, ArrowRight } from 'lucide-react';
+import { X, Map as MapIcon, Utensils, ShoppingBag, Bus, PlaneTakeoff, Hotel, Shirt, Sparkles, Smartphone, FileText, Pill, Package, Trash2, ArrowRight, Clock } from 'lucide-react';
 import { inputClasses, formatDate, getWeekday } from '../../utils/tripUtils';
 import { buttonPrimary } from '../../constants/styles';
-import { CURRENCIES } from '../../constants/appData';
+import { CURRENCIES, MODAL_LABELS } from '../../constants/appData';
 
-const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date, defaultType = 'spot', editData = null, members = [], trip = {} }) => {
+const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date, defaultType = 'spot', editData = null, members = [], trip = {}, language = 'zh-TW' }) => {
+    // i18n helper
+    const t = (key) => MODAL_LABELS[key]?.[language] || MODAL_LABELS[key]?.['zh-TW'] || key;
     const [name, setName] = useState('');
     const [cost, setCost] = useState('');
     const [type, setType] = useState('spot');
@@ -40,22 +42,21 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
     if (!isOpen) return null;
 
     const categories = [
-        { id: 'spot', label: '景點', icon: MapIcon, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-        { id: 'food', label: '餐廳', icon: Utensils, color: 'text-orange-500', bg: 'bg-orange-500/10' },
-        { id: 'shopping', label: '購物', icon: ShoppingBag, color: 'text-pink-500', bg: 'bg-pink-500/10' },
-        { id: 'transport', label: '交通', icon: Bus, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-        { id: 'flight', label: '航班', icon: PlaneTakeoff, color: 'text-sky-500', bg: 'bg-sky-500/10' },
-        { id: 'immigration', label: '入境程序', icon: FileText, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-        { id: 'hotel', label: '住宿', icon: Hotel, color: 'text-indigo-500', bg: 'bg-indigo-500/10' }
+        { id: 'spot', label: t('spot'), icon: MapIcon, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+        { id: 'food', label: t('food'), icon: Utensils, color: 'text-orange-500', bg: 'bg-orange-500/10' },
+        { id: 'shopping', label: t('shopping'), icon: ShoppingBag, color: 'text-pink-500', bg: 'bg-pink-500/10' },
+        { id: 'transport', label: t('transport'), icon: Bus, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+        { id: 'flight', label: t('flight'), icon: PlaneTakeoff, color: 'text-sky-500', bg: 'bg-sky-500/10' },
+        { id: 'hotel', label: t('hotel'), icon: Hotel, color: 'text-indigo-500', bg: 'bg-indigo-500/10' }
     ];
 
     const packingCategories = [
-        { id: 'clothes', label: '衣物鞋履', icon: Shirt },
-        { id: 'toiletries', label: '個人護理', icon: Sparkles },
-        { id: 'electronics', label: '電子產品', icon: Smartphone },
-        { id: 'documents', label: '證件/文件', icon: FileText },
-        { id: 'medicine', label: '藥品/急救', icon: Pill },
-        { id: 'misc', label: '其他雜項', icon: Package }
+        { id: 'clothes', label: t('clothes'), icon: Shirt },
+        { id: 'toiletries', label: t('toiletries'), icon: Sparkles },
+        { id: 'electronics', label: t('electronics'), icon: Smartphone },
+        { id: 'documents', label: t('documents'), icon: FileText },
+        { id: 'medicine', label: t('medicine'), icon: Pill },
+        { id: 'misc', label: t('misc'), icon: Package }
     ];
 
     const isPacking = type === 'packing' || defaultType === 'packing';
@@ -178,13 +179,13 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
                 <div className="space-y-5">
                     <div>
                         <div className="flex justify-between items-center mb-2 ml-1">
-                            <label className="block text-xs font-bold opacity-70 uppercase tracking-wider">名稱</label>
+                            <label className="block text-xs font-bold opacity-70 uppercase tracking-wider">{t('name')}</label>
                             {!isPacking && (
                                 <button
                                     onClick={handleAIInspiration}
                                     className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all ${isDarkMode ? 'border-purple-500/50 text-purple-400 hover:bg-purple-500/10' : 'border-purple-200 text-purple-600 hover:bg-purple-50'}`}
                                 >
-                                    <Sparkles className="w-2.5 h-2.5" /> AI 靈感
+                                    <Sparkles className="w-2.5 h-2.5" /> {t('aiInspiration')}
                                 </button>
                             )}
                         </div>
@@ -197,10 +198,91 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
                     </div>
 
                     {!isPacking && (
-                        <div className="grid grid-cols-2 gap-5">
-                            <div>
-                                <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">時間</label>
-                                <input type="time" value={details.time || ''} onChange={e => setDetails({ ...details, time: e.target.value })} className={inputClasses(isDarkMode)} />
+                        <div className="space-y-5">
+                            {/* Time Section - Improved 3-column layout */}
+                            <div className={`p-4 rounded-xl border transition-all ${isDarkMode ? 'bg-gray-800/50 border-gray-700/50' : 'bg-gray-50 border-gray-200'}`}>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Clock className="w-4 h-4 text-indigo-500" />
+                                    <span className="text-xs font-bold uppercase tracking-wider opacity-70">{language === 'en' ? 'Time & Duration' : '時間設定'}</span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div>
+                                        <label className="block text-[10px] font-bold opacity-60 uppercase tracking-wider mb-1.5 ml-1">{t('startTime')}</label>
+                                        <input
+                                            type="time"
+                                            value={details.time || ''}
+                                            onChange={e => {
+                                                const newTime = e.target.value;
+                                                if (newTime && details.duration) {
+                                                    const [h, m] = newTime.split(':').map(Number);
+                                                    const endMins = h * 60 + m + Number(details.duration);
+                                                    const endH = Math.floor(endMins / 60) % 24;
+                                                    const endM = endMins % 60;
+                                                    const endTime = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+                                                    setDetails({ ...details, time: newTime, endTime });
+                                                } else {
+                                                    setDetails({ ...details, time: newTime });
+                                                }
+                                            }}
+                                            className={inputClasses(isDarkMode) + " text-center text-sm"}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold opacity-60 uppercase tracking-wider mb-1.5 ml-1">{t('duration')}</label>
+                                        <div className="relative">
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="15"
+                                                value={details.duration || ''}
+                                                onChange={e => {
+                                                    const newDuration = e.target.value;
+                                                    if (details.time && newDuration) {
+                                                        const [h, m] = details.time.split(':').map(Number);
+                                                        const endMins = h * 60 + m + Number(newDuration);
+                                                        const endH = Math.floor(endMins / 60) % 24;
+                                                        const endM = endMins % 60;
+                                                        const endTime = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+                                                        setDetails({ ...details, duration: newDuration, endTime });
+                                                    } else {
+                                                        setDetails({ ...details, duration: newDuration });
+                                                    }
+                                                }}
+                                                placeholder="60"
+                                                className={inputClasses(isDarkMode) + " text-center pr-10 text-sm"}
+                                            />
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold opacity-50">{t('minutes')}</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold opacity-60 uppercase tracking-wider mb-1.5 ml-1 flex items-center gap-1">
+                                            {t('endTime')} <span className="opacity-40 normal-case">({t('optional')})</span>
+                                        </label>
+                                        <input
+                                            type="time"
+                                            value={details.endTime || ''}
+                                            onChange={e => {
+                                                const newEndTime = e.target.value;
+                                                if (details.time && newEndTime) {
+                                                    const [sh, sm] = details.time.split(':').map(Number);
+                                                    const [eh, em] = newEndTime.split(':').map(Number);
+                                                    let durationMins = (eh * 60 + em) - (sh * 60 + sm);
+                                                    if (durationMins < 0) durationMins += 24 * 60;
+                                                    setDetails({ ...details, endTime: newEndTime, duration: String(durationMins) });
+                                                } else {
+                                                    setDetails({ ...details, endTime: newEndTime });
+                                                }
+                                            }}
+                                            className={inputClasses(isDarkMode) + " text-center text-sm"}
+                                        />
+                                    </div>
+                                </div>
+                                {/* Time Summary Badge */}
+                                {details.time && details.duration && (
+                                    <div className={`mt-3 text-xs font-medium px-3 py-2 rounded-lg text-center ${isDarkMode ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>
+                                        ⏱️ {details.time} → {details.endTime || '??:??'} ({details.duration} {t('minutes')})
+                                    </div>
+                                )}
                             </div>
 
                             {(type === 'transport' || type === 'flight' || type === 'immigration') ? (
@@ -230,14 +312,53 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
                                     </div>
 
                                     {type === 'flight' && (
-                                        <div className="pt-4 mt-2 border-t border-gray-500/10">
-                                            <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">航班資訊</label>
+                                        <div className="pt-4 mt-2 border-t border-gray-500/10 space-y-4">
+                                            <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">{language === 'en' ? 'Flight Details' : '航班詳情'}</label>
                                             <div className="flex gap-4 items-center">
-                                                <input value={details.number || ''} onChange={e => setDetails({ ...details, number: e.target.value })} placeholder="航班編號 (如: BR198)" className={inputClasses(isDarkMode)} />
+                                                <input value={details.number || ''} onChange={e => setDetails({ ...details, number: e.target.value })} placeholder={language === 'en' ? 'Flight No. (e.g. BR198)' : '航班編號 (如: BR198)'} className={inputClasses(isDarkMode)} />
                                                 <label className="flex items-center gap-2 text-sm cursor-pointer select-none whitespace-nowrap bg-gray-500/10 px-4 py-3.5 rounded-xl border border-transparent hover:border-gray-500/20 transition-all hover:bg-gray-500/20">
                                                     <input type="checkbox" checked={details.layover} onChange={e => setDetails({ ...details, layover: e.target.checked })} className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500" />
-                                                    需轉機
+                                                    {language === 'en' ? 'Layover' : '需轉機'}
                                                 </label>
+                                            </div>
+
+                                            {/* Gate & Baggage Details */}
+                                            <div className="grid grid-cols-3 gap-3">
+                                                <div>
+                                                    <label className="block text-[10px] font-bold opacity-60 uppercase tracking-wider mb-1.5 ml-1 flex items-center gap-1">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                        {language === 'en' ? 'Dep Gate' : '離境閘口'}
+                                                    </label>
+                                                    <input
+                                                        value={details.gate || ''}
+                                                        onChange={e => setDetails({ ...details, gate: e.target.value })}
+                                                        placeholder="T1 Gate 62"
+                                                        className={inputClasses(isDarkMode) + " text-sm"}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-bold opacity-60 uppercase tracking-wider mb-1.5 ml-1 flex items-center gap-1">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                                        {language === 'en' ? 'Arr Gate' : '抵達閘口'}
+                                                    </label>
+                                                    <input
+                                                        value={details.arrivalGate || ''}
+                                                        onChange={e => setDetails({ ...details, arrivalGate: e.target.value })}
+                                                        placeholder="T2 Gate 15"
+                                                        className={inputClasses(isDarkMode) + " text-sm"}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-bold opacity-60 uppercase tracking-wider mb-1.5 ml-1 flex items-center gap-1">
+                                                        🧳 {language === 'en' ? 'Baggage' : '行李帶'}
+                                                    </label>
+                                                    <input
+                                                        value={details.baggageClaim || ''}
+                                                        onChange={e => setDetails({ ...details, baggageClaim: e.target.value })}
+                                                        placeholder="Belt 5"
+                                                        className={inputClasses(isDarkMode) + " text-sm"}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     )}
@@ -246,6 +367,27 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
                                 <div>
                                     <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">地點</label>
                                     <input value={details.location || ''} onChange={e => setDetails({ ...details, location: e.target.value })} placeholder="輸入地點" className={inputClasses(isDarkMode)} />
+                                </div>
+                            )}
+
+                            {type === 'hotel' && (
+                                <div className="col-span-2 pt-2 border-t border-gray-500/10">
+                                    <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1 flex items-center gap-2">
+                                        <Clock className="w-3.5 h-3.5 text-indigo-500" />
+                                        住宿晚數
+                                    </label>
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={details.duration || '1'}
+                                            onChange={e => setDetails({ ...details, duration: e.target.value })}
+                                            placeholder="住宿晚數 (例如: 3)"
+                                            className={inputClasses(isDarkMode) + " w-24 text-center"}
+                                        />
+                                        <span className="text-sm opacity-60 font-bold">晚 (Nights)</span>
+                                        <p className="text-[10px] opacity-40 ml-auto max-w-[150px]">系統將自動在後續日期的行程中顯示此酒店</p>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -313,9 +455,9 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
                             <Trash2 className="w-4 h-4" />
                         </button>
                     )}
-                    <button onClick={onClose} className="flex-1 py-3.5 rounded-xl border border-gray-500/30 font-bold opacity-70 hover:opacity-100 hover:bg-gray-500/5 transition-all">取消</button>
+                    <button onClick={onClose} className="flex-1 py-3.5 rounded-xl border border-gray-500/30 font-bold opacity-70 hover:opacity-100 hover:bg-gray-500/5 transition-all">{t('cancel')}</button>
                     <button onClick={() => {
-                        if (!name.trim()) return alert("請輸入名稱");
+                        if (!name.trim()) return alert(language === 'en' ? "Please enter a name" : "請輸入名稱");
                         // CRITICAL: Spread original editData FIRST to preserve all fields
                         // Then override with form fields (edits)
                         const payload = {
@@ -338,7 +480,7 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
                         onSave(payload);
                         onClose();
                     }} className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl py-3.5 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
-                        {editData ? '儲存變更' : '確認加入'}
+                        {editData ? t('save') : t('confirm')}
                     </button>
                 </div>
             </div>

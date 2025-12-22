@@ -11,15 +11,19 @@ import SkeletonLoader from '../../Shared/SkeletonLoader';
  */
 const ConnectivityWidget = ({ isDarkMode, connectivity, loadingConnectivity }) => {
     return (
-        <div className="break-inside-avoid">
-            <div className={`${glassCard(isDarkMode)} p-6 flex flex-col`}>
-                <div className="flex justify-between items-center mb-4">
+        <div className="break-inside-avoid shadow-xl">
+            <div className={`${glassCard(isDarkMode)} p-6 flex flex-col overflow-hidden`}>
+                <div className="absolute top-0 left-0 right-0 h-1 bg-teal-500 rounded-t-2xl"></div>
+                <div className="flex justify-between items-center mb-6 relative z-10">
                     <h4 className="font-bold flex items-center gap-2 text-teal-400">
                         <Wifi className="w-5 h-5" /> 網卡 / WiFi
                     </h4>
-                    <span className="text-[9px] opacity-40 bg-white/10 px-2 py-0.5 rounded font-mono uppercase tracking-widest">
-                        {loadingConnectivity ? 'Fetching...' : 'Live'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse"></div>
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold font-mono tracking-wider ${isDarkMode ? 'bg-white/5 text-white/40 border border-white/10' : 'bg-black/5 text-black/40 border border-black/5'}`}>
+                            CONNECTIVITY
+                        </span>
+                    </div>
                 </div>
                 <div className="space-y-2">
                     {loadingConnectivity ? (

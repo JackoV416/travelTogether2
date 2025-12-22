@@ -58,30 +58,28 @@ const DashboardHeader = ({
                     </div>
                 </div>
 
-                {/* Smart Summary Cards Area */}
+                {/* Smart Summary Cards Area (Vertical List Mode) */}
                 {hasTrips && (
-                    <div className="w-full overflow-x-auto pb-4 pt-2 -mx-2 px-2 custom-scrollbar">
-                        <div className="flex gap-4">
-                            {trips.slice(0, 5).map(trip => (
-                                <SmartSummaryCard
-                                    key={trip.id}
-                                    trip={trip}
-                                    isDarkMode={isDarkMode}
-                                    onClick={() => onSelectTrip(trip)}
-                                />
-                            ))}
+                    <div className="w-full space-y-3 mt-2">
+                        {trips.slice(0, 3).map(trip => (
+                            <SmartSummaryCard
+                                key={trip.id}
+                                trip={trip}
+                                isDarkMode={isDarkMode}
+                                onClick={() => onSelectTrip(trip)}
+                            />
+                        ))}
 
-                            {/* Create New Card (Mini) */}
-                            <button
-                                onClick={() => setIsCreateModalOpen(true)}
-                                className={`min-w-[100px] w-[100px] h-[180px] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all group ${isDarkMode ? 'border-gray-700 hover:border-indigo-500 hover:bg-gray-800' : 'border-gray-300 hover:border-indigo-500 hover:bg-white/50'}`}
-                            >
-                                <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-colors text-indigo-500">
-                                    <Plus className="w-5 h-5" />
-                                </div>
-                                <span className="text-xs font-bold opacity-60 group-hover:opacity-100 transition-opacity">新增</span>
-                            </button>
-                        </div>
+                        {/* Create New Banner (Bottom of list) */}
+                        <button
+                            onClick={() => setIsCreateModalOpen(true)}
+                            className={`w-full py-3 rounded-2xl border-2 border-dashed flex items-center justify-center gap-2 transition-all group ${isDarkMode ? 'border-gray-700 hover:border-indigo-500 hover:bg-gray-800' : 'border-gray-300 hover:border-indigo-500 hover:bg-white/50'}`}
+                        >
+                            <div className="w-6 h-6 rounded-full bg-indigo-500/10 flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-colors text-indigo-500">
+                                <Plus className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="text-sm font-bold opacity-60 group-hover:opacity-100 transition-opacity">新增行程</span>
+                        </button>
                     </div>
                 )}
 

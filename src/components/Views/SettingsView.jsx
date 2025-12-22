@@ -54,17 +54,25 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
         setGlobalSettings({ ...globalSettings, preferences: newPrefs });
     };
 
-    const [aiUsage, setAiUsage] = useState({ used: 0, total: 20, remaining: 20 });
+    // V1.4: Track both calls and tokens
+    const [aiUsage, setAiUsage] = useState({ used: 0, total: 20, remaining: 20, tokens: 0 });
 
     useEffect(() => {
-        if (activeTab === 'intelligence') {
+        const updateStats = () => {
             const usage = checkAIUsageLimit();
             setAiUsage({
                 used: usage.used,
                 total: usage.total,
-                remaining: usage.remaining
+                remaining: usage.remaining,
+                tokens: usage.tokens || 0
             });
-        }
+        };
+
+        updateStats();
+
+        // Listen for real-time updates (V1.4)
+        window.addEventListener('AI_USAGE_UPDATED', updateStats);
+        return () => window.removeEventListener('AI_USAGE_UPDATED', updateStats);
     }, [activeTab]);
 
     return (
@@ -160,16 +168,27 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                             {/* AI Usage */}
                             <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
                                 <div className="flex justify-between items-end mb-4">
-                                    <label className="text-sm font-bold opacity-90 flex items-center gap-2"><BrainCircuit className="w-5 h-5 text-indigo-500" />今日 AI 使用量</label>
-                                    <span className="text-xl font-mono font-black text-indigo-500">{aiUsage.used} <span className="text-sm opacity-50 font-normal text-gray-500">/ {aiUsage.total}</span></span>
+                                    <div>
+                                        <label className="text-sm font-bold opacity-90 flex items-center gap-2">
+                                            <BrainCircuit className="w-5 h-5 text-indigo-500" />今日 AI 使用量
+                                        </label>
+                                        <p className="text-[10px] opacity-40 mt-1">累積消耗: <span className="text-indigo-400 font-mono font-bold">{aiUsage.tokens.toLocaleString()} Tokens</span></p>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-xl font-black text-indigo-500 font-mono">{aiUsage.used} <span className="text-sm opacity-50 font-normal text-gray-500">/ {aiUsage.total}</span></div>
+                                        <div className="text-[10px] opacity-50 font-bold uppercase tracking-widest">Requests</div>
+                                    </div>
                                 </div>
                                 <div className="h-3 w-full bg-gray-500/10 rounded-full overflow-hidden">
                                     <div
-                                        className={`h-full rounded-full transition-all duration-500 ${aiUsage.remaining < 5 ? 'bg-red-500' : 'bg-gradient-to-r from-indigo-500 to-purple-500'}`}
-                                        style={{ width: `${(aiUsage.used / aiUsage.total) * 100}%` }}
+                                        className={`h-full rounded-full transition-all duration-500 ${aiUsage.remaining < 5 ? 'bg-red-500' : 'bg-gradient-to-r from-indigo-500 to-purple-400'}`}
+                                        style={{ width: `${Math.min(100, (aiUsage.used / aiUsage.total) * 100)}%` }}
                                     ></div>
                                 </div>
-                                <p className="text-xs opacity-50 mt-3 text-right">每個帳號每日免費限額 {aiUsage.total} 次</p>
+                                <div className="flex justify-between mt-3">
+                                    <p className="text-[10px] opacity-40 uppercase tracking-tighter font-bold">Limit Status: {aiUsage.remaining > 0 ? 'Healthy' : 'Exceeded'}</p>
+                                    <p className="text-[10px] opacity-50">每個帳號每日免費限額 {aiUsage.total} 次</p>
+                                </div>
                             </div>
 
                             {/* V1.0.3: AI Feature Usage Documentation */}

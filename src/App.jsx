@@ -6,7 +6,7 @@ import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, getD
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { auth, db, googleProvider, storage } from './firebase';
 import {
-    Plus, Trash2, MapPin, Calendar, Clock, DollarSign, User, Users, Sun, Cloud, CloudRain, Shield, Settings, LogOut, ChevronRight, X, Menu, Share2, Globe, Send, MessageCircle, FileText, CheckCircle, AlertCircle, Search, Filter, Camera, Download, Upload, AlertTriangle, Info, Loader2, Sparkles, LayoutGrid, List as ListIcon, Maximize2, Minimize2, CloudFog, CloudLightning, CloudSnow, MoveRight, ChevronLeft, CalendarDays, Bell, ChevronDown, LogIn, Map as MapIcon, BrainCircuit, Wallet, Plane, Bus, BusFront, TrainFront, Car, ShoppingBag, BedDouble, Receipt, CloudSun, Snowflake, Newspaper, TrendingUp, Siren, List, Star, Shirt, UserCircle, UserPlus, FileUp, Edit3, Lock, Save, RefreshCw, Route, MonitorPlay, CheckSquare, FileCheck, History, PlaneTakeoff, Hotel, GripVertical, Printer, ArrowUpRight, Navigation, Phone, Globe2, Link as LinkIcon, Wifi, Utensils, Image, QrCode, Copy, Instagram, MapPinned, NotebookPen, Home, PiggyBank, Moon, Keyboard
+    Plus, Trash2, MapPin, Calendar, Clock, DollarSign, User, Users, Sun, Cloud, CloudRain, Shield, Settings, LogOut, ChevronRight, X, Menu, Share2, Globe, Send, MessageCircle, FileText, CheckCircle, AlertCircle, Search, Filter, Camera, Download, Upload, AlertTriangle, Info, Loader2, Sparkles, LayoutGrid, List as ListIcon, Maximize2, Minimize2, CloudFog, CloudLightning, CloudSnow, MoveRight, ChevronLeft, CalendarDays, Bell, ChevronDown, LogIn, Map as MapIcon, BrainCircuit, Wallet, Plane, Bus, Train, Car, ShoppingBag, BedDouble, Receipt, CloudSun, Snowflake, Newspaper, TrendingUp, Siren, List, Star, Shirt, UserCircle, UserPlus, FileUp, Edit3, Lock, Save, RefreshCw, Route, MonitorPlay, CheckSquare, FileCheck, History, PlaneTakeoff, Hotel, GripVertical, Printer, ArrowUpRight, Navigation, Phone, Globe2, Link as LinkIcon, Wifi, Utensils, Image, QrCode, Copy, Instagram, MapPinned, NotebookPen, Home, PiggyBank, Moon, Keyboard
 } from 'lucide-react';
 import { getExchangeRates, convertCurrency } from './services/exchangeRate';
 import { getWeather, getWeatherInfo } from './services/weather';
@@ -45,6 +45,8 @@ import { suggestTransportBetweenSpots, checkAIUsageLimit } from './services/ai-p
 import Dashboard from './components/Dashboard/Dashboard';
 import CreateTripModal from './components/Modals/CreateTripModal';
 import DashboardSkeleton from './components/Loaders/DashboardSkeleton';
+import ImageWithFallback from './components/Shared/ImageWithFallback';
+import HttpStatusPage from './components/Shared/HttpStatusPage';
 
 
 
@@ -87,8 +89,13 @@ const Footer = ({ isDarkMode, onOpenVersion }) => {
                 <span className="hidden sm:inline">•</span>
                 <span className="hidden sm:inline">Design with ❤️</span>
             </div>
-            <div className="font-mono flex items-center gap-2"><Clock className="w-3 h-3" /> 當地時間: {time.toLocaleTimeString()} ({Intl.DateTimeFormat().resolvedOptions().timeZone})</div>
-            <div className="mt-2 text-xs">
+            <div className="font-mono flex items-center gap-3 opacity-60">
+                <div className="flex items-center gap-2">
+                    <Clock className="w-3 h-3" />
+                    <span>{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                    <span className="opacity-50">({Intl.DateTimeFormat().resolvedOptions().timeZone})</span>
+                </div>
+                <span className="opacity-30">|</span>
                 <SyncStatus isDarkMode={isDarkMode} />
             </div>
         </footer>
@@ -192,7 +199,12 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                         <button onClick={() => setHoverMenu(!hoverMenu)} className="p-1 rounded-full border-2 border-transparent hover:border-indigo-500 transition-all btn-press" aria-label="用戶選單">
                             {user ? (
                                 user.photoURL && !photoError ? (
-                                    <img src={user.photoURL} className="w-8 h-8 rounded-full object-cover" alt="user" onError={() => setPhotoError(true)} />
+                                    <ImageWithFallback
+                                        src={user.photoURL}
+                                        className="w-8 h-8 rounded-full object-cover"
+                                        alt="user"
+                                        type="avatar"
+                                    />
                                 ) : (
                                     <div className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">
                                         {getUserInitial(user.displayName || user.email)}
@@ -415,19 +427,19 @@ const App = () => {
                                 console.log("Can edit if logged in");
                             }
                         } else {
-                            alert("此行程目前不公開，請登入後查看");
-                            window.history.replaceState({}, '', '/');
+                            setView('404');
                         }
                     } else {
-                        alert("找不到此行程");
-                        window.history.replaceState({}, '', '/');
+                        setView('404');
                     }
                     setIsLoading(false);
                 }).catch(err => {
                     console.error("Error loading shared trip:", err);
                     setIsLoading(false);
-                    window.history.replaceState({}, '', '/');
+                    setView('404');
                 });
+            } else {
+                setView('404');
             }
         }
 
@@ -671,10 +683,22 @@ const App = () => {
                     const { lat, lon } = coords;
                     try {
                         const data = await getWeather(lat, lon, city);
-                        if (data && data.current) {
-                            const info = getWeatherInfo(data.current.weathercode);
+                        if (data) {
+                            const currentTemp = data.current?.temperature_2m;
+                            const maxTemp = data.daily?.temperature_2m_max?.[0]; // Get today's max
+                            const minTemp = data.daily?.temperature_2m_min?.[0]; // Get today's min
+
+                            // Use Max/Min format to trigger split clothing logic
+                            // Fallback to current temp if daily is missing (unlikely with this API call)
+                            const tempDisplay = (maxTemp !== undefined && minTemp !== undefined)
+                                ? `${Math.round(maxTemp)}°C / ${Math.round(minTemp)}°C`
+                                : `${Math.round(currentTemp)}°C`;
+
+                            const weatherCode = data.current?.weathercode;
+                            const info = getWeatherInfo(weatherCode);
+
                             newWeatherData[city] = {
-                                temp: `${Math.round(data.current.temperature_2m)}°C`,
+                                temp: tempDisplay,
                                 desc: info.desc,
                                 icon: info.icon,
                                 details: data
@@ -855,12 +879,16 @@ const App = () => {
             <OfflineBanner isDarkMode={isDarkMode} />
             <ReloadPrompt />
             {/* Background Image (Global) */}
-            <div className="fixed inset-0 z-0 opacity-20 pointer-events-none transition-all duration-1000" style={{ backgroundImage: `url(${globalBg})`, backgroundSize: 'cover' }}></div>
+            <ImageWithFallback
+                src={globalBg}
+                className="fixed inset-0 z-0 opacity-20 pointer-events-none transition-all duration-1000 object-cover w-full h-full"
+                alt="Background"
+            />
             <div className="relative z-10 flex-grow">
                 {view !== 'tutorial' && <Header title="✈️ Travel Together" user={user} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} onLogout={() => signOut(auth)} onBack={(view !== 'dashboard' && view !== 'settings') ? () => setView('dashboard') : null} onTutorialStart={() => setView('tutorial')} onViewChange={setView} onOpenUserSettings={() => setView('settings')} onOpenFeedback={() => setIsFeedbackModalOpen(true)} onOpenAdminFeedback={() => setIsAdminFeedbackModalOpen(true)} isAdmin={isAdmin} adminPendingCount={openFeedbackCount} onOpenVersion={() => setIsVersionOpen(true)} notifications={notifications} onRemoveNotification={removeNotification} onMarkNotificationsRead={markNotificationsRead} onNotificationClick={handleNotificationNavigate} />}
                 {view === 'dashboard' && (
                     <div className="animate-fade-in">
-                        <ErrorBoundary fallbackMessage="儀表板載入失敗，請重新整理">
+                        <ErrorBoundary fallbackMessage="儀表板載入失敗，請重新整理" onOpenFeedback={() => setIsFeedbackModalOpen(true)}>
                             <Dashboard
                                 user={user}
                                 onSelectTrip={(t) => { setSelectedTrip(t); setView('detail'); setIsPreviewMode(false); }}
@@ -879,7 +907,7 @@ const App = () => {
                 )}
                 {view === 'detail' && (
                     <div className="animate-slide-up">
-                        <ErrorBoundary fallbackMessage="行程詳情載入失敗，請重新整理">
+                        <ErrorBoundary fallbackMessage="行程詳情載入失敗，請重新整理" onOpenFeedback={() => setIsFeedbackModalOpen(true)}>
                             <TripDetail
                                 tripData={isPreviewMode ? previewTrip : selectedTrip}
                                 user={user}
@@ -921,6 +949,15 @@ const App = () => {
                             initialTab={settingsInitialTab}
                         />
                     </div>
+                )}
+
+                {['403', '404', '500', '503'].includes(view) && (
+                    <HttpStatusPage
+                        code={parseInt(view)}
+                        isDarkMode={isDarkMode}
+                        onBackHome={() => setView('dashboard')}
+                        onOpenFeedback={() => setIsFeedbackModalOpen(true)}
+                    />
                 )}
 
                 {view === 'tutorial' && <div className="h-screen flex flex-col animate-fade-in"><div className="p-4 border-b flex gap-4"><button onClick={() => { setView('dashboard'); setIsPreviewMode(false); }}><ChevronLeft /></button> 模擬模式 (東京範例)</div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} isPreview={false} globalSettings={globalSettings} exchangeRates={exchangeRates} weatherData={weatherData} onOpenSmartImport={() => setIsSmartImportModalOpen(true)} /></div></div>}
@@ -968,7 +1005,12 @@ const App = () => {
 const LandingPage = ({ onLogin }) => (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
         <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-3 gap-6 h-[85vh]">
-            <div className="col-span-1 md:col-span-2 bg-[url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1600')] bg-cover bg-center rounded-3xl relative overflow-hidden group">
+            <div className="col-span-1 md:col-span-2 relative rounded-3xl overflow-hidden group">
+                <ImageWithFallback
+                    src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1600"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    alt="Travel Together Destination"
+                />
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-all" />
                 <div className="absolute bottom-10 left-10 text-white">
                     <h1 className="text-6xl font-bold mb-4">Travel Together</h1>

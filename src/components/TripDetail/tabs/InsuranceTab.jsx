@@ -12,7 +12,8 @@ const InsuranceTab = ({
     insuranceResources,
     inputClasses,
     buttonPrimary,
-    glassCard
+    glassCard,
+    isSimulation
 }) => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
@@ -23,23 +24,36 @@ const InsuranceTab = ({
                 <div className="space-y-4">
                     <input
                         value={myInsurance.provider || ''}
-                        onChange={e => setMyInsurance({ ...myInsurance, provider: e.target.value })}
+                        onChange={e => !isSimulation && setMyInsurance({ ...myInsurance, provider: e.target.value })}
                         placeholder="保險公司"
                         className={inputClasses(isDarkMode)}
+                        readOnly={isSimulation}
                     />
                     <input
                         value={myInsurance.policyNo || ''}
-                        onChange={e => setMyInsurance({ ...myInsurance, policyNo: e.target.value })}
+                        onChange={e => !isSimulation && setMyInsurance({ ...myInsurance, policyNo: e.target.value })}
                         placeholder="保單號碼"
                         className={inputClasses(isDarkMode)}
+                        readOnly={isSimulation}
                     />
                     <input
                         value={myInsurance.phone || ''}
-                        onChange={e => setMyInsurance({ ...myInsurance, phone: e.target.value })}
+                        onChange={e => !isSimulation && setMyInsurance({ ...myInsurance, phone: e.target.value })}
                         placeholder="緊急聯絡電話"
                         className={inputClasses(isDarkMode)}
+                        readOnly={isSimulation}
                     />
-                    <button onClick={onSaveInsurance} className={buttonPrimary}>儲存資料</button>
+                    <button
+                        onClick={onSaveInsurance}
+                        disabled={isSimulation}
+                        className={`w-full py-3.5 flex items-center justify-center gap-2 mt-4 transition-all shadow-lg active:scale-[0.98] text-sm font-bold border border-white/10 rounded-xl ${isSimulation
+                                ? 'bg-white/5 text-white/30 cursor-not-allowed shadow-none border-dashed'
+                                : 'bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white shadow-indigo-500/20'
+                            }`}
+                    >
+                        <Shield className="w-4 h-4" />
+                        {isSimulation ? "教學展示 (唯讀模式)" : "儲存資料"}
+                    </button>
                 </div>
             </div>
             <div className={glassCard(isDarkMode) + " p-6"}>

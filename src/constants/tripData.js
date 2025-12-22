@@ -1,5 +1,5 @@
 
-import { TrainFront, BusFront } from 'lucide-react';
+import { Train, Bus } from 'lucide-react';
 
 export const CITY_COORDS = {
     "Tokyo": { lat: 35.6762, lon: 139.6503 },
@@ -402,8 +402,8 @@ export const AIRLINE_LOGOS = {
 };
 
 export const TRANSPORT_ICONS = {
-    metro: { label: "地鐵", icon: TrainFront, color: "text-indigo-500" },
-    bus: { label: "巴士", icon: BusFront, color: "text-emerald-500" },
+    metro: { label: "地鐵", icon: Train, color: "text-indigo-500" },
+    bus: { label: "巴士", icon: Bus, color: "text-emerald-500" },
 };
 
 export const OUTFIT_IMAGES = {
@@ -430,4 +430,43 @@ export const TAB_LABELS = {
     notes: { "zh-TW": "筆記", "en": "Notes" },
     currency: { "zh-TW": "匯率", "en": "Currency" },
     settings: { "zh-TW": "設定", "en": "Settings" }
+};
+const SIMULATION_TRIP_TEMPLATE = {
+    id: "trip_1766300000000",
+    name: "日本跨年之旅",
+    startDate: "2025-12-29",
+    endDate: "2026-01-04",
+    country: "Japan (日本)",
+    city: "Osaka",
+    cities: ["Osaka"],
+    members: ["Me", "Alex"],
+    currency: "JPY",
+    budget: 15000,
+    background: "https://images.unsplash.com/photo-1590559399607-994239433397?w=1600",
+    weather: {
+        temp: "9°C / 4°C",
+        desc: "晴时多云",
+        icon: "⛅",
+        clothes: "厚大衣、圍巾、發熱衣 | 厚大衣、圍巾、發熱衣"
+    },
+    cardWeather: {
+        temp: "9°C / 4°C",
+        icon: "⛅",
+        clothes: "厚大衣、圍巾、發熱衣 | 厚大衣、圍巾、發熱衣"
+    },
+    itinerary: {
+        "2025-12-29": [
+            { id: "a1", type: "flight", title: "Flight to KIX", time: "10:00", duration: 240, cost: 3000, details: "CX506", status: "confirmed" },
+            { id: "a2", type: "transport", title: "Nankai Rapi:t to Namba", time: "15:00", duration: 40, cost: 1450, details: "Seat 4A, 4B", status: "confirmed" },
+            { id: "a3", type: "hotel", title: "Swissotel Nankai Osaka", time: "16:00", cost: 0, details: "Check-in", status: "booked" }
+        ],
+        "2025-12-30": [
+            { id: "b1", type: "activity", title: "Universal Studios Japan", time: "09:00", duration: 480, cost: 8400, details: "Express Pass", status: "confirmed" },
+            { id: "b2", type: "food", title: "Dinner at Dotonbori", time: "19:00", cost: 3000, details: "Okonomiyaki", status: "planned" }
+        ]
+    }
+};
+
+export const SIMULATION_DATA = {
+    ...SIMULATION_TRIP_TEMPLATE
 };

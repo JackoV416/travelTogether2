@@ -100,21 +100,69 @@ export const getWeatherForecast = (country, currentTempStr, customDesc, customIc
     const region = getSafeCountryInfo(country).region;
     const iconUrl = OUTFIT_IMAGES[region] || OUTFIT_IMAGES.north;
 
-    // If real temp is provided (e.g. "28°C"), use distinct logic
+    // Helper: Get clothes based on temperature
+    const getClothesForTemp = (temp) => {
+        if (temp >= 28) return "背心、短褲、防曬";
+        if (temp >= 23) return "短袖、透氣帆布鞋";
+        if (temp >= 18) return "薄長袖、針織衫";
+        if (temp >= 12) return "夾克、帽T、牛仔褲";
+        return "厚大衣、圍巾、發熱衣";
+    };
+
+    // Helper: Get icon based on temperature
+    const getIconForTemp = (temp) => {
+        if (temp >= 28) return <Sun className="text-orange-500" />;
+        if (temp >= 23) return <Sun className="text-yellow-500" />;
+        if (temp >= 18) return <CloudSun className="text-emerald-500" />;
+        if (temp >= 12) return <CloudSun className="text-blue-400" />;
+        return <Snowflake className="text-blue-600" />;
+    };
+
+    // Helper: Get desc based on temperature
+    const getDescForTemp = (temp) => {
+        if (temp >= 28) return "炎熱";
+        if (temp >= 23) return "溫暖";
+        if (temp >= 18) return "舒適";
+        if (temp >= 12) return "微涼";
+        return "寒冷";
+    };
+
+    // If real temp is provided (e.g. "28°C" or "25°C / 18°C")
     if (currentTempStr) {
-        const temp = parseInt(currentTempStr);
-        if (temp >= 28) return { temp: currentTempStr, clothes: "背心、短褲、防曬", icon: customIcon || <Sun className="text-orange-500" />, desc: customDesc || "炎熱", outfitIcon: iconUrl };
-        if (temp >= 23) return { temp: currentTempStr, clothes: "短袖、透氣帆布鞋", icon: customIcon || <Sun className="text-yellow-500" />, desc: customDesc || "溫暖", outfitIcon: iconUrl };
-        if (temp >= 18) return { temp: currentTempStr, clothes: "薄長袖、針織衫", icon: customIcon || <CloudSun className="text-emerald-500" />, desc: customDesc || "舒適", outfitIcon: iconUrl };
-        if (temp >= 12) return { temp: currentTempStr, clothes: "夾克、帽T、牛仔褲", icon: customIcon || <CloudSun className="text-blue-400" />, desc: customDesc || "微涼", outfitIcon: iconUrl };
-        return { temp: currentTempStr, clothes: "厚大衣、圍巾、發熱衣", icon: customIcon || <Snowflake className="text-blue-600" />, desc: customDesc || "寒冷", outfitIcon: iconUrl };
+        const parts = currentTempStr.split('/').map(p => parseInt(p.trim()));
+        const maxTemp = parts[0] || 20;
+        const minTemp = parts[1] || maxTemp; // Fallback to maxTemp if no minTemp provided
+
+        const dayClothes = getClothesForTemp(maxTemp);
+        const nightClothes = getClothesForTemp(minTemp);
+        // Always show Day/Night format for clarity - Use standard pipe for regex compatibility
+        const clothes = `日：${dayClothes} | 夜：${nightClothes}`;
+
+        return {
+            temp: currentTempStr,
+            maxTemp,
+            minTemp,
+            dayClothes,
+            nightClothes,
+            clothes, // Combined for backward compat
+            icon: customIcon || getIconForTemp(maxTemp),
+            desc: customDesc || getDescForTemp(maxTemp),
+            outfitIcon: iconUrl
+        };
     }
 
     // Variations for mockup / off-season
-    const rand = Math.floor(Math.random() * 3);
-    if (region === "hot") return { temp: (28 + rand) + "°C", clothes: "短袖、墨鏡、人字拖", icon: <Sun className="text-orange-500" />, desc: "炎熱", outfitIcon: iconUrl };
-    if (region === "south") return { temp: (20 + rand) + "°C", clothes: rand === 1 ? "薄襯衫、休閒褲" : "輕便 T-shirt、薄外套", icon: <CloudSun className="text-yellow-500" />, desc: "舒適", outfitIcon: iconUrl };
-    return { temp: (5 + rand) + "°C", clothes: "羽絨、手套、毛帽", icon: <Snowflake className="text-blue-300" />, desc: "寒冷", outfitIcon: iconUrl };
+    // User Request: "If not loaded real API, default --"
+    // Return structured placeholder to maintain Split UI layout
+    return {
+        temp: "-- / --",
+        clothes: "-- | --",
+        dayClothes: "--",
+        nightClothes: "--",
+        icon: <Sun className="text-gray-400" />,
+        desc: "載入中...",
+        outfitIcon: iconUrl
+    };
 };
 
 export const buildDailyReminder = (date, items = []) => {
@@ -127,6 +175,73 @@ export const buildDailyReminder = (date, items = []) => {
 
 
 export const getUserInitial = (nameOrEmail = "") => (nameOrEmail[0] || "T").toUpperCase();
+
+// ============================================
+// TIME CALCULATIONS (V1.1 Smart Scheduler)
+// ============================================
+
+/**
+ * Converts "HH:mm" to minutes from start of day
+ */
+export const parseTime = (timeStr) => {
+    if (!timeStr || typeof timeStr !== 'string') return 0;
+    const parts = timeStr.split(':');
+    if (parts.length < 2) return 0;
+    const h = parseInt(parts[0]);
+    const m = parseInt(parts[1]);
+    if (isNaN(h) || isNaN(m)) return 0;
+    return h * 60 + m;
+};
+
+/**
+ * Converts minutes from start of day to "HH:mm"
+ */
+export const formatTime = (totalMins) => {
+    const hours = Math.floor(totalMins / 60) % 24;
+    const mins = totalMins % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+};
+
+/**
+ * Phase 2: Smart Ripple - Recalculates all items based on a change at a specific index
+ * @param {Array} items - The itinerary array for the day
+ * @param {Number} changedIndex - The index that was updated/moved
+ * @returns {Array} - New array with adjusted times
+ */
+export const recalculateItineraryTimes = (items = [], changedIndex = 0) => {
+    if (!items.length) return [];
+
+    const newItems = [...items];
+
+    // Iterate from the changed item onwards
+    for (let i = changedIndex + 1; i < newItems.length; i++) {
+        const prev = newItems[i - 1];
+        const current = newItems[i];
+
+        // Skip recalculation if the current item is a "Bundle" that handles its own time (managed by parent)
+        // Or if it's a fixed-time item (like a flight with a hard departure)
+        if (current.isFixedTime || current.type === 'flight') continue;
+
+        const prevStartMins = parseTime(prev.details?.time || prev.time || "00:00");
+        const prevDuration = parseInt(prev.details?.duration || 0); // Default 0 if not set
+
+        // The new start time is prev end time
+        const newStartMins = prevStartMins + prevDuration;
+        const newTimeStr = formatTime(newStartMins);
+
+        newItems[i] = {
+            ...current,
+            time: newTimeStr,
+            details: {
+                ...(current.details || {}),
+                time: newTimeStr,
+                endTime: formatTime(newStartMins + parseInt(current.details?.duration || 0))
+            }
+        };
+    }
+
+    return newItems;
+};
 
 export const inputClasses = (isDarkMode) => `w-full px-4 py-3.5 rounded-xl border transition-all outline-none font-medium tracking-wide ${isDarkMode ? 'bg-gray-800/90 border-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-white placeholder-gray-500' : 'bg-white border-gray-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 text-gray-900 placeholder-gray-400 shadow-sm'}`;
 
@@ -183,34 +298,43 @@ const optimizeImage = (url) => {
 
 
 export const getSmartItemImage = (item, tripOrCity) => {
-    // 1. User/Uploaded Image (Priority 1)
+    // 1. User/Uploaded Image (Priority 1 - 用戶上傳嘅圖片)
     if (item.image) return optimizeImage(item.image);
     if (item.details?.image) return optimizeImage(item.details.image);
 
     const itemName = (item.name || "").toLowerCase();
+    const itemNameEn = (item.details?.nameEn || "").toLowerCase();
+    const itemLocation = (item.details?.location || "").toLowerCase();
     const city = (typeof tripOrCity === 'string' ? tripOrCity : tripOrCity?.city) || "";
-    // const country = (typeof tripOrCity === 'string' ? '' : tripOrCity?.country) || "";
 
     // 2. Journal File Match (Priority 2) - Search fuzzy match in trip.files (Journal)
-    // "User means images in Journal"
-    // We try to find if there is an image in trip.files that matches the item name
     const files = (typeof tripOrCity === 'object' ? tripOrCity?.files : []) || [];
     const matchedFile = files.find(f =>
-        f.type?.startsWith('image/') && f.name?.toLowerCase().includes(itemName)
+        f.type?.startsWith('image/') && (
+            f.name?.toLowerCase().includes(itemName) ||
+            (itemNameEn && f.name?.toLowerCase().includes(itemNameEn))
+        )
     );
     if (matchedFile) return optimizeImage(matchedFile.url);
 
-    // 3. Exact Landmark Name Match (Smart Match)
+    // 3. Landmark Name Match (Priority 3 - 景點/車站/目的地/地名)
+    // Check: item.name, details.nameEn, details.location for any landmark keywords
+    const searchTexts = [itemName, itemNameEn, itemLocation].filter(Boolean);
     for (const [key, url] of Object.entries(LANDMARK_IMAGES)) {
-        if (itemName.includes(key.toLowerCase())) return optimizeImage(url);
+        const keyLower = key.toLowerCase();
+        for (const text of searchTexts) {
+            if (text.includes(keyLower) || keyLower.includes(text.split(' ')[0])) {
+                return optimizeImage(url);
+            }
+        }
     }
 
-    // 4. City-specific default fallback if no better image
+    // 4. City-specific default for spots/hotels (Priority 4)
     if (CITY_IMAGES[city] && (item.type === 'spot' || item.type === 'hotel')) {
         return optimizeImage(CITY_IMAGES[city]);
     }
 
-    // 5. Type Default
+    // 5. Type Default (Priority 5 - 每個類型嘅 default 圖片)
     return optimizeImage(TYPE_DEFAULT_IMAGES[item.type] || TYPE_DEFAULT_IMAGES.spot);
 };
 

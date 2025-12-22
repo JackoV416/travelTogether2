@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { doc, updateDoc, arrayUnion, deleteDoc, collection, addDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
-import {
-    Calendar, Map as MapIcon, Edit3, CalendarDays, ShoppingBag, Wallet, DollarSign, FileText, Shield, Siren, FileCheck, NotebookPen, BrainCircuit, List, Users, UserPlus, Trash2, Plus, ChevronDown, Sparkles, PackageCheck, Share2, Globe, Clock, AlertTriangle, Upload, FileIcon, ArrowLeft, MoreVertical, X, Loader2, Menu, Footprints as FootprintsIcon, Image as ImageIcon, MapPin
-} from 'lucide-react';
+import { Upload, Plus, Edit3, Trash2, MapPin, Calendar, Clock, DollarSign, User, Users, Sun, Cloud, CheckCircle, AlertCircle, Search, Filter, Camera, Download, AlertTriangle, Info, Loader2, Sparkles, LayoutGrid, List as ListIcon, Maximize2, Minimize2, MoveRight, ChevronLeft, Map as MapIcon, BrainCircuit, Wallet, Plane, Bus, Train, Car, ShoppingBag, BedDouble, Receipt, Newspaper, Siren, Star, UserCircle, UserPlus, FileUp, Lock, RefreshCw, Route, MonitorPlay, Save, CheckSquare, FileCheck, History, PlaneTakeoff, Hotel, GripVertical, Printer, ArrowUpRight, Navigation, Phone, Globe2, Link as LinkIcon, Wifi, Utensils, Image, QrCode, Copy, Instagram, MapPinned, NotebookPen, Home, PiggyBank, Moon, ChevronRight, ChevronDown, Share2, Brain, Wand2, X, MessageCircle, Undo, Redo, Footprints as FootprintsIcon, Image as ImageIcon, Shield, FileText } from 'lucide-react';
 import MobileBottomNav from '../Shared/MobileBottomNav';
 import ActiveUsersList from './ActiveUsersList';
 import {
@@ -20,11 +18,15 @@ import AddActivityModal from '../Modals/AddActivityModal';
 import AIGeminiModal from '../Modals/AIGeminiModal';
 import TripExportImportModal from '../Modals/TripExportImportModal';
 import SmartExportModal from '../Modals/SmartExportModal';
+import ErrorBoundary from '../Shared/ErrorBoundary';
+import FeedbackModal from '../Modals/FeedbackModal';
+import ImageWithFallback from '../Shared/ImageWithFallback';
+
 
 import {
     glassCard, getHolidayMap, getLocalizedCountryName, getLocalizedCityName, getSafeCountryInfo, formatDate,
     getDaysArray, getTripSummary, calculateDebts, getTimeDiff, getWeatherForecast, buildDailyReminder,
-    inputClasses
+    inputClasses, recalculateItineraryTimes
 } from '../../utils/tripUtils';
 import { generatePackingList, generateWeatherSummaryWithGemini } from '../../services/ai-parsing';
 import { optimizeSchedule } from '../../services/ai';
@@ -32,8 +34,44 @@ import { getWeatherInfo } from '../../services/weather';
 import { exportToBeautifulPDF } from '../../services/pdfExport';
 import { COUNTRIES_DATA, DEFAULT_BG_IMAGE, CURRENCIES, INSURANCE_SUGGESTIONS, INSURANCE_RESOURCES, CITY_IMAGES } from '../../constants/appData';
 import { buttonPrimary } from '../../constants/styles';
+import { useTripHistory } from '../../hooks/useTripHistory'; // V1.1 Phase 7
 
-const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, isPreview, globalSettings, exchangeRates, convAmount, setConvAmount, convTo, setConvTo, onOpenSmartImport, weatherData, requestedTab, onTabHandled, requestedItemId, onItemHandled, isBanned, isAdmin }) => {
+const TripDetailContent = (props) => {
+    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+    const { trip, isDarkMode, isAdmin, user, onBack } = props;
+
+    // Internal error handling if trip is missing
+    if (!trip) {
+        return (
+            <div className="p-10 text-center min-h-[400px] flex flex-col items-center justify-center">
+                <div className="text-yellow-500 mb-4 text-xl flex items-center gap-2 justify-center font-bold">
+                    <AlertTriangle className="w-6 h-6" /> 無法載入行程
+                </div>
+                <div className="flex gap-3">
+                    <button onClick={onBack} className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-lg active:scale-95">返回</button>
+                    <button
+                        onClick={() => setIsFeedbackOpen(true)}
+                        className="px-6 py-3 bg-white/5 hover:bg-white/10 text-gray-400 rounded-xl font-bold border border-white/10 transition-all flex items-center gap-2 active:scale-95"
+                    >
+                        <MessageCircle className="w-4 h-4" /> 回報問題
+                    </button>
+                </div>
+                <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} isDarkMode={isDarkMode} user={user} />
+            </div>
+        );
+    }
+
+    return (
+        <>
+            <ErrorBoundary fallbackMessage="行程內容發生錯誤" onOpenFeedback={() => setIsFeedbackOpen(true)}>
+                <TripDetailMainLayout {...props} setIsFeedbackOpen={setIsFeedbackOpen} isFeedbackOpen={isFeedbackOpen} />
+            </ErrorBoundary>
+            <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} isDarkMode={isDarkMode} user={user} />
+        </>
+    );
+};
+
+const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, isPreview, globalSettings, exchangeRates, convAmount, setConvAmount, convTo, setConvTo, onOpenSmartImport, weatherData, requestedTab, onTabHandled, requestedItemId, onItemHandled, isBanned, isAdmin, setIsFeedbackOpen, isFeedbackOpen }) => {
     // ============================================
     // UI STATE HOOKS
     // ============================================
@@ -96,11 +134,28 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     const days = getDaysArray(trip.startDate, trip.endDate);
     const currentDisplayDate = selectDate || days[0];
 
+    // V1.1 Phase 7: History System Hook (Must be after currentDisplayDate is defined)
+    const initialHistoryData = pendingItemsCache[currentDisplayDate] || trip.itinerary?.[currentDisplayDate] || [];
+    const {
+        record: recordHistory,
+        undo: undoHistory,
+        redo: redoHistory,
+        canUndo,
+        canRedo,
+        reset: resetHistory
+    } = useTripHistory(initialHistoryData, currentDisplayDate);
+
     // 🚀 Restored Permission Logic (Enhanced for Email Invites)
     const myMemberEntry = trip.members?.find(m => m.id === user?.uid || m.id === user?.email);
     const myRole = isPreview ? (trip.sharePermission === 'edit' && user?.uid ? 'editor' : 'viewer') : (myMemberEntry?.role || 'viewer');
     const isOwner = !isPreview && (myRole === 'owner' || isSimulation);
     const canEdit = (myRole === 'owner' || myRole === 'editor' || isSimulation);
+
+    // V1.1 Phase 7: Reset history when date changes
+    useEffect(() => {
+        resetHistory(trip.itinerary?.[currentDisplayDate] || []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentDisplayDate]);
 
     // 🚀 Auto-Claim Invite Logic
     useEffect(() => {
@@ -223,10 +278,22 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     // ============================================
     // Weather uses the same headerCity logic (Daily -> Carousel/Main)
     // Actually for Weather it should strictly follow the Daily plan, not carousel if no daily set.
-    // If no daily set, use trip.city (Header uses carousel for aesthetics, Weather should be accurate)
-    const weatherCity = dailyLocation?.city || trip.city;
+    // Weather uses raw city name for API lookup (not localized)
+    // dailyLocation?.city may be localized (e.g., "東京 (Tokyo)"), extract raw if needed
+    const rawDailyCity = dailyLocation?.city?.match(/\(([^)]+)\)/)?.[1] || dailyLocation?.city;
+    const weatherCity = rawDailyCity || trip.city;
     const realWeather = weatherData?.[weatherCity];
-    const mockWeather = getWeatherForecast(trip.country, realWeather?.temp);
+
+    // Generate mock temp range if only single temp available
+    const mockTempRange = (() => {
+        if (!realWeather?.temp) return null;
+        const currentTemp = parseInt(realWeather.temp);
+        if (isNaN(currentTemp)) return null;
+        // Estimate: Night is ~5°C colder than day for simulation
+        const mockNightTemp = Math.max(currentTemp - 5, -10);
+        return `${currentTemp}°C / ${mockNightTemp}°C`;
+    })();
+    const mockWeather = getWeatherForecast(trip.country, mockTempRange);
 
     const dailyWeather = React.useMemo(() => {
         if (!realWeather?.details?.daily) return mockWeather;
@@ -236,7 +303,9 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
 
         const dayCode = daily.weather_code[idx];
         const dayInfo = getWeatherInfo(dayCode);
-        const dayTemp = `${Math.round(daily.temperature_2m_max[idx])}°C`;
+        const maxTemp = Math.round(daily.temperature_2m_max[idx]);
+        const minTemp = Math.round(daily.temperature_2m_min[idx]);
+        const dayTemp = `${maxTemp}°C / ${minTemp}°C`; // Day / Night format
 
         return getWeatherForecast(trip.country, dayTemp, dayInfo.desc, dayInfo.icon);
     }, [realWeather, currentDisplayDate, trip.country, mockWeather]);
@@ -247,7 +316,56 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     const currentLang = globalSettings?.lang || 'zh-TW';
     const displayCountry = getLocalizedCountryName(trip.country, currentLang);
     const displayCity = getLocalizedCityName(headerCity || '', currentLang);
-    const itineraryItems = trip.itinerary?.[currentDisplayDate] || [];
+    // V1.1 Fix: Use pendingItemsCache for optimistic UI (drag & drop updates)
+    const baseItineraryItems = pendingItemsCache[currentDisplayDate] || trip.itinerary?.[currentDisplayDate] || [];
+
+    // V1.1 Phase 5: Hotel Intelligence - Auto-populate hotel for multi-day stays
+    const itineraryItems = useMemo(() => {
+        if (!trip.itinerary) return baseItineraryItems;
+
+        const allActiveHotels = [];
+        Object.entries(trip.itinerary).forEach(([date, items]) => {
+            if (!Array.isArray(items)) return;
+            items.forEach(item => {
+                // If it's a hotel and has a duration > 1
+                if (item.type === 'hotel' && item.details?.duration > 1) {
+                    allActiveHotels.push({ ...item, checkInDate: date });
+                }
+            });
+        });
+
+        // Current date object for comparison
+        const current = new Date(currentDisplayDate);
+        current.setHours(0, 0, 0, 0);
+
+        const injectedHotels = allActiveHotels.filter(hotel => {
+            // If it's the check-in date, it's already in baseItineraryItems
+            if (hotel.checkInDate === currentDisplayDate) return false;
+
+            const checkIn = new Date(hotel.checkInDate);
+            checkIn.setHours(0, 0, 0, 0);
+            const nights = parseInt(hotel.details.duration, 10);
+
+            const diffDays = Math.round((current - checkIn) / (1000 * 60 * 60 * 24));
+
+            // It's an active stay if we are after check-in and before check-out
+            // e.g. check-in Day 1, duration 3 nights -> Day 2 and Day 3 should show it.
+            return diffDays > 0 && diffDays < nights;
+        }).map(hotel => ({
+            ...hotel,
+            id: `virtual-hotel-${hotel.id}-${currentDisplayDate}`,
+            isVirtual: true,
+            // Visual label to show it's a continuing stay
+            name: `${hotel.name || hotel.details?.name} (續住)`,
+            time: '00:00', // Auto-pin to top
+            _originalId: hotel.id
+        }));
+
+        // Check if a virtual hotel already exists in base (unlikely but safe)
+        const finalHotels = injectedHotels.filter(vh => !baseItineraryItems.some(bi => bi.name === vh.name || bi.id === vh._originalId));
+
+        return [...finalHotels, ...baseItineraryItems];
+    }, [trip.itinerary, currentDisplayDate, baseItineraryItems]);
     const dailyReminder = buildDailyReminder(currentDisplayDate, itineraryItems);
 
     const homeHolidays = getHolidayMap(globalSettings.region || "HK");
@@ -260,14 +378,113 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     // HANDLERS
     // ============================================
 
-    const onDragStart = (e, index) => { e.dataTransfer.setData("idx", index); };
-    const onDrop = async (e, dropIndex) => {
-        if (!canEdit) return;
-        const dragIndex = Number(e.dataTransfer.getData("idx"));
-        const list = [...(trip.itinerary?.[currentDisplayDate] || [])];
-        const [reorderedItem] = list.splice(dragIndex, 1);
-        list.splice(dropIndex, 0, reorderedItem);
-        if (!isSimulation) await updateDoc(doc(db, "trips", trip.id), { [`itinerary.${currentDisplayDate}`]: list });
+    const onDragEnd = async (result, autoShiftEnabled = true) => {
+        if (!result.destination || !canEdit) return;
+
+        const { source, destination, draggableId } = result;
+        if (source.index === destination.index) return;
+
+        // Get the full source list (unfiltered)
+        let fullList = [...(trip.itinerary?.[currentDisplayDate] || [])];
+
+        // Find the item that was dragged by its ID
+        const draggedItem = fullList.find(item => String(item.id) === String(draggableId));
+        if (!draggedItem) {
+            console.warn('[onDragEnd] Could not find dragged item with ID:', draggableId);
+            return;
+        }
+
+        // Get the actual index in the full list
+        const actualSourceIndex = fullList.findIndex(item => String(item.id) === String(draggableId));
+        if (actualSourceIndex === -1) return;
+
+        // V1.1 Phase 4: Bundle Movement - Dragging one part moves the whole set
+        const bundleId = draggedItem.details?.bundleId || draggedItem.bundleId;
+        let itemsToMove = [draggedItem];
+        let originalIndices = [actualSourceIndex];
+
+        if (bundleId) {
+            // Find all items in this bundle
+            const otherBundleItems = fullList.filter((item, idx) =>
+                ((item.details?.bundleId || item.bundleId) === bundleId) && idx !== actualSourceIndex
+            );
+
+            if (otherBundleItems.length > 0) {
+                console.log(`[Bundle Move] Detected bundle ${bundleId} with ${otherBundleItems.length + 1} items`);
+                // Collect all bundle items and their current indices
+                itemsToMove = fullList.filter(item => (item.details?.bundleId || item.bundleId) === bundleId);
+                originalIndices = itemsToMove.map(item => fullList.findIndex(i => i.id === item.id)).sort((a, b) => a - b);
+
+                // Remove all bundle items from current list
+                // To avoid index shifting issues, we remove from highest index to lowest
+                [...originalIndices].reverse().forEach(idx => fullList.splice(idx, 1));
+            } else {
+                fullList.splice(actualSourceIndex, 1);
+            }
+        } else {
+            fullList.splice(actualSourceIndex, 1);
+        }
+
+        // Calculate the new position
+        let actualDestIndex = destination.index;
+        // If sorting was done by time, destination.index might be different from actual list index
+        // But here we use result.destination.index which is usually correct for the Droppable
+
+        // Insert bundle at new position
+        fullList.splice(actualDestIndex, 0, ...itemsToMove);
+
+        // V1.1 Phase 2/3: Smart Ripple - Auto-adjust times if enabled
+        if (autoShiftEnabled && actualDestIndex > 0) {
+            // Dynamic import to avoid circular dependencies
+            const { calculateSmartRipple } = await import('../../utils/timeUtils');
+            const { adjustedItems, changesNeeded, offset } = await calculateSmartRipple(fullList, actualDestIndex);
+
+            if (changesNeeded) {
+                console.log(`[Smart Ripple] Shifting ${fullList.length - actualDestIndex} items by ${offset} minutes (Phase 3 Async Enabled)`);
+                fullList = adjustedItems;
+            }
+        }
+
+        // V1.1 Phase 7: Record to history before updating
+        recordHistory(fullList, 'drag', `移動「${draggedItem.details?.name || draggedItem.name || '項目'}」`);
+
+        // Optimistic Update
+        setPendingItemsCache(prev => ({
+            ...prev,
+            [currentDisplayDate]: fullList
+        }));
+
+        if (!isSimulation) {
+            await updateDoc(doc(db, "trips", trip.id), { [`itinerary.${currentDisplayDate}`]: fullList });
+        }
+    };
+
+    // V1.1 Phase 7: Undo Handler
+    const handleUndo = async () => {
+        const previousState = undoHistory();
+        if (previousState) {
+            setPendingItemsCache(prev => ({
+                ...prev,
+                [currentDisplayDate]: previousState
+            }));
+            if (!isSimulation) {
+                await updateDoc(doc(db, "trips", trip.id), { [`itinerary.${currentDisplayDate}`]: previousState });
+            }
+        }
+    };
+
+    // V1.1 Phase 7: Redo Handler
+    const handleRedo = async () => {
+        const nextState = redoHistory();
+        if (nextState) {
+            setPendingItemsCache(prev => ({
+                ...prev,
+                [currentDisplayDate]: nextState
+            }));
+            if (!isSimulation) {
+                await updateDoc(doc(db, "trips", trip.id), { [`itinerary.${currentDisplayDate}`]: nextState });
+            }
+        }
     };
 
     const handleSaveItem = async (data) => {
@@ -277,6 +494,16 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
 
         if (!canEdit) return alert("權限不足");
         if (isSimulation) return alert("模擬模式");
+
+        const isEdit = !!data.id;
+        const routeDate = data.date || data.details?.date || currentDisplayDate; // Changed selectedDate to currentDisplayDate
+        const calculateEndTime = (startTime, durationMins) => {
+            const [h, m] = startTime.split(':').map(Number);
+            const total = h * 60 + m + durationMins;
+            const nh = Math.floor(total / 60) % 24;
+            const nm = total % 60;
+            return `${String(nh).padStart(2, '0')}:${String(nm).padStart(2, '0')}`;
+        };
 
         // Prepare new item object
         const itemId = data.id || Date.now().toString();
@@ -312,6 +539,52 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
             } else {
                 await updateDoc(docRef, { shoppingList: arrayUnion({ ...newItem, bought: false }) });
             }
+        } else if (data.type === 'flight' && !data.id && data.details?.arrival) {
+            // V1.1 Phase 5: Flight + Immigration Bundle Auto-Generation
+            // Triggered only for NEW flights (not edits) to avoid duplicates
+
+            const arrivalTime = data.details?.time || "12:00";
+            const arrivalPort = data.details?.arrival || "機場";
+
+            const { parseTime, formatTime } = await import('../../utils/timeUtils');
+            const arrivalMins = parseTime(arrivalTime) || 720; // Default to 12:00 if invalid
+
+            const immigrationItem = {
+                id: `bundle-imm-${Date.now()}`,
+                name: `入境程序 (${arrivalPort})`,
+                type: 'immigration',
+                time: formatTime(arrivalMins + 45),
+                details: { time: formatTime(arrivalMins + 45), location: arrivalPort },
+                createdBy: { name: user?.displayName || 'System', id: user?.uid }
+            };
+
+            const airportTransport = {
+                id: `bundle-trans-${Date.now() + 1}`,
+                name: `機場交通 (${arrivalPort} → 市區)`,
+                type: 'transport',
+                time: formatTime(arrivalMins + 60),
+                details: { time: formatTime(arrivalMins + 60), location: arrivalPort, arrival: '飯店/第一個景點' },
+                createdBy: { name: user?.displayName || 'System', id: user?.uid }
+            };
+
+            // Capture current itinerary for the date
+            const currentDayItinerary = docSnap.data().itinerary?.[currentDisplayDate] || [];
+            const newItinerary = [...currentDayItinerary, newItem, immigrationItem, airportTransport];
+
+            // Sort by time
+            newItinerary.sort((a, b) => {
+                const timeA = parseTime(a.details?.time || a.time || "00:00") || 0;
+                const timeB = parseTime(b.details?.time || b.time || "00:00") || 0;
+                return timeA - timeB;
+            });
+
+            await updateDoc(docRef, { [`itinerary.${currentDisplayDate}`]: newItinerary });
+
+            // Record to history
+            recordHistory(newItinerary, 'bundle', `已自動生成入境套餐 (${arrivalPort})`);
+
+            // Update cache
+            setPendingItemsCache(prev => ({ ...prev, [currentDisplayDate]: newItinerary }));
         } else if (data.type === 'shopping' && !data.details?.startLine) { // Budget item (legacy check)
             // Budget logic usually uses arrayUnion but for editing we might need full array rewrite if we support budget editing
             // For now, assume this follows standard budget flow
@@ -397,51 +670,164 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
                 console.log('[handleSaveItem] Sanitized items count:', sanitizedItems.length);
 
                 console.log('[handleSaveItem] Saving to Firebase...');
-                await updateDoc(docRef, { [`itinerary.${routeDate}`]: sanitizedItems });
-                console.log('[handleSaveItem] Firebase save SUCCESS');
+
+                // V1.1 Phase 2: Apply Smart Ripple if duration exists
+                let finalItems = sanitizedItems;
+                const editedIndex = updatedItems.findIndex(i => String(i.id) === String(data.id));
+                if (editedIndex !== -1 && (newItem.details?.duration || newItem.time)) {
+                    console.log('[handleSaveItem] Triggering Smart Ripple from index:', editedIndex);
+                    finalItems = recalculateItineraryTimes(sanitizedItems, editedIndex);
+                }
+
+                await updateDoc(docRef, { [`itinerary.${routeDate}`]: finalItems });
+                console.log('[handleSaveItem] Firebase save SUCCESS (with Ripple)');
             } else {
                 console.log('[handleSaveItem] Adding NEW item via arrayUnion');
                 await updateDoc(docRef, { [`itinerary.${routeDate}`]: arrayUnion(newItem) });
                 console.log('[handleSaveItem] Firebase add SUCCESS');
             }
 
-            // Budget auto-add (only for new items or explicit logic, keeping simple here)
-            if (!isEdit && data.cost > 0) await updateDoc(docRef, { budget: arrayUnion({ ...newItem, category: data.type }) });
+            // V1.1 Phase 5: Hotel-Transport Smart Binding
+            if (data.type === 'hotel' && isEdit && editingItem && editingItem.name !== data.name) {
+                const oldHotelName = editingItem.name || editingItem.details?.name;
+                const newHotelName = data.name;
 
-            // Auto City Detection (only for new transport items)
-            if (!isEdit && (data.type === 'transport' || data.type === 'flight') && (data.arrival || data.details?.arrival)) {
-                const arrivalCity = data.arrival || data.details?.arrival;
-                const days = getDaysArray(trip.startDate, trip.endDate);
-                const currentIdx = days.indexOf(routeDate);
-                if (currentIdx >= 0 && currentIdx < days.length - 1) {
-                    const nextDate = days[currentIdx + 1];
-                    if (!trip.locations?.[nextDate]) {
-                        await updateDoc(docRef, { [`locations.${nextDate}`]: { city: arrivalCity, country: trip.country } });
+                if (oldHotelName && newHotelName) {
+                    const fullItinerary = { ...(trip.itinerary || {}) };
+                    let syncCount = 0;
+
+                    Object.keys(fullItinerary).forEach(date => {
+                        fullItinerary[date] = fullItinerary[date].map(item => {
+                            if (item.type === 'transport' || item.type === 'flight' || item.type === 'walk') {
+                                const d = { ...(item.details || {}) };
+                                let changed = false;
+                                if (d.location === oldHotelName) { d.location = newHotelName; changed = true; }
+                                if (d.arrival === oldHotelName) { d.arrival = newHotelName; changed = true; }
+                                if (changed) { syncCount++; return { ...item, details: d }; }
+                            }
+                            return item;
+                        });
+                    });
+
+                    if (syncCount > 0) {
+                        console.log(`[Smart Binding] Syncing ${syncCount} transport items to new hotel name: ${newHotelName}`);
+                        await updateDoc(docRef, { itinerary: fullItinerary });
+                        setPendingItemsCache(prev => ({ ...prev, ...fullItinerary }));
                     }
                 }
             }
+
         }
+
+        // V1.1 Phase 5: Walk Card Auto-Generation
+        const desc = (data.name + (data.details?.notes || "")).toLowerCase();
+        if (desc.includes('步行') && !isEdit) {
+            const walkMatch = desc.match(/步行\s*(\d+)\s*分/);
+            const walkDuration = walkMatch ? parseInt(walkMatch[1]) : 15;
+            const walkLocation = data.details?.location || data.name;
+
+            console.log(`[Phase 5] Detected '步行' in description. Suggesting Walk Card (${walkDuration} mins) to ${walkLocation}`);
+
+            const walkItem = {
+                id: `walk_${Date.now()}`,
+                type: 'walk',
+                name: `步行至 ${walkLocation}`,
+                time: data.time || "00:00",
+                details: {
+                    duration: walkDuration,
+                    location: walkLocation,
+                    time: data.time || "00:00"
+                }
+            };
+
+            setConfirmConfig({
+                title: '🚶 智能步行建議',
+                message: `偵測到「${data.name}」包含步行行程，是否自動加入一個 ${walkDuration} 分鐘的步行卡片？`,
+                type: 'info',
+                onConfirm: async () => {
+                    await updateDoc(docRef, { [`itinerary.${routeDate}`]: arrayUnion(walkItem) });
+                    console.log('[Phase 5] Walk card auto-added');
+                    setConfirmConfig(null);
+                }
+            });
+        }
+
+        // V1.1 Phase 5: Immigration Bundle Suggestion (For Flights)
+        if (data.type === 'flight' && !isEdit) {
+            const arrTime = data.details?.endTime || calculateEndTime(data.time, 120); // Fallback 2h flight
+            const immigrationItem = {
+                id: `bundle_imm_${Date.now()}`,
+                type: 'walk',
+                name: '🛃 入境手續 & 提取行李',
+                time: arrTime,
+                details: { duration: 45, location: data.arrival || '機場', time: arrTime }
+            };
+            const transportItem = {
+                id: `bundle_tra_${Date.now() + 1}`,
+                type: 'transport',
+                name: '🚆 機場接駁 / 前往市區',
+                time: calculateEndTime(arrTime, 45),
+                details: { duration: 60, location: data.arrival || '機場', arrival: '行程首站', transportType: 'Transit' }
+            };
+
+            setConfirmConfig({
+                title: '✈️ 智能機票套餐建議',
+                message: `偵測到新機票行程，是否自動加入「入境手續」及「機場交通」建議卡片？`,
+                type: 'info',
+                onConfirm: async () => {
+                    await updateDoc(docRef, { [`itinerary.${routeDate}`]: arrayUnion(immigrationItem, transportItem) });
+                    console.log('[Phase 5] Immigration bundle auto-added');
+                    setConfirmConfig(null);
+                }
+            });
+        }
+
+        // Auto City Detection (only for new transport items)
+        if (!isEdit && (data.type === 'transport' || data.type === 'flight') && (data.arrival || data.details?.arrival)) {
+            const arrivalCity = data.arrival || data.details?.arrival;
+            const daysArr = getDaysArray(trip.startDate, trip.endDate);
+            const currentIdx = daysArr.indexOf(routeDate);
+            if (currentIdx >= 0 && currentIdx < daysArr.length - 1) {
+                const nextDate = daysArr[currentIdx + 1];
+                if (!trip.locations?.[nextDate]) {
+                    const dRef = doc(db, "trips", trip.id);
+                    await updateDoc(dRef, { [`locations.${nextDate}`]: { city: arrivalCity, country: trip.country } });
+                }
+            }
+        }
+
+        // V1.1 Phase 5: Multi-City Transport Suggestion
+        if (!isEdit && (data.type === 'transport' || data.type === 'flight' || data.type === 'walk')) {
+            const destCity = data.details?.arrival || data.arrival || data.details?.location || data.name;
+            const currentCity = trip.locations?.[routeDate]?.city;
+
+            if (destCity && currentCity && destCity !== currentCity && !destCity.includes(currentCity)) {
+                console.log(`[Phase 5] City change detected: ${currentCity} -> ${destCity}`);
+                setConfirmConfig({
+                    title: '🚅 跨城市交通建議',
+                    message: `偵測到目的地為「${destCity}」，同現時城市「${currentCity}」唔同。是否需要為你安排新幹線或國內線航班建議？`,
+                    type: 'info',
+                    onConfirm: async () => {
+                        alert("AI 已為你標記跨城市交通需求，請在 Transport Tab 查看建議。");
+                        setConfirmConfig(null);
+                    }
+                });
+            }
+        }
+
         setIsAddModal(false);
 
-        // 🚀 Optimistic Update: Cache the saved item with its ID
-        // This allows immediate edit access before Firebase real-time sync completes
+        // Optimistic Update: Cache the saved item with its ID
         if (data.type !== 'shopping_plan' && data.type !== 'shopping' && data.type !== 'packing') {
-            const routeDate = currentDisplayDate;
             setPendingItemsCache(prev => ({
                 ...prev,
                 [routeDate]: [
-                    ...(prev[routeDate] || []).filter(i => i.id !== itemId), // Remove old entry if exists
-                    { ...newItem, id: itemId } // Add/update with correct ID
+                    ...(prev[routeDate] || []).filter(i => i.id !== itemId),
+                    { ...newItem, id: itemId }
                 ]
             }));
             console.log('[handleSaveItem] Added to pendingItemsCache:', itemId);
         }
-
-        // Trigger auto-open for this item ID (except budget/packing which don't have detail modal yet)
-        // USER REQUEST: Disable Auto-Open
-        // if (data.type !== 'shopping_plan' && data.type !== 'shopping' && data.type !== 'packing') {
-        //    setAutoOpenItemId(itemId);
-        // }
     };
 
     const handleInvite = async (email, role) => {
@@ -901,584 +1287,615 @@ const TripDetailContent = ({ trip, tripData, onBack, user, isDarkMode, setGlobal
     };
 
     return (
-        <div id="trip-detail-content" className="max-w-6xl mx-auto p-4 pb-36 md:pb-20 animate-fade-in">
-            {/* Unified Hero Header Card */}
-            <div className={`${glassCard(isDarkMode)} relative mb-8 z-40 group hover:shadow-2xl transition-all duration-500`}>
-                {/* Background Layer with Overflow Hidden to clip scaling image */}
-                {/* Header Background layer - Consolidated Background with fixed overflow */}
-                <div className="absolute inset-0 overflow-hidden rounded-2xl">
-                    <div
-                        className="absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out group-hover:scale-110"
-                        style={{ backgroundImage: `url(${currentHeaderImage})` }}
-                    />
+        <>
+            <div id="trip-detail-content" className="max-w-7xl mx-auto p-4 pb-36 md:pb-20 animate-fade-in">
+                {/* Unified Hero Header Card */}
+                <div className={`${glassCard(isDarkMode)} relative mb-8 z-40 group hover:shadow-2xl transition-all duration-500`}>
+                    {/* Background Layer with Overflow Hidden to clip scaling image */}
+                    {/* Header Background layer - Consolidated Background with fixed overflow */}
+                    <div className="absolute inset-0 overflow-hidden rounded-2xl">
+                        <div
+                            className="absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out group-hover:scale-110"
+                            style={{ backgroundImage: `url(${currentHeaderImage})` }}
+                        />
 
-                    {/* Carousel Indicators */}
-                    {trip.cities && trip.cities.length > 1 && (
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 pt-10">
-                            {trip.cities.map((c, i) => (
-                                <div
-                                    key={c}
-                                    className={`h-1.5 rounded-full transition-all duration-500 shadow-sm ${i === carouselIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/60'}`}
-                                    title={c}
-                                />
-                            ))}
-                        </div>
-                    )}
-                    <div className={`absolute inset-0 bg-gradient-to-t ${isDarkMode ? 'from-gray-900/90 via-gray-900/40 to-black/20' : 'from-indigo-900/60 via-indigo-900/20 to-black/10'}`} />
-                </div>
-
-                {/* Content Grid */}
-                <div className="relative z-10 p-6 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8 text-white">
-
-                    {/* Left Col: Trip Core Info */}
-                    <div className="lg:col-span-2 flex flex-col justify-between min-h-[220px]">
-                        <div>
-                            <div className="text-[10px] text-indigo-300 uppercase font-black tracking-widest mb-2">行程概覽</div>
-                            <div className="flex items-center gap-2 mb-4">
-                                <span className="bg-indigo-500/80 text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur-md uppercase tracking-wider font-bold shadow-lg shadow-indigo-500/20">{displayCountry} {displayCity}</span>
-                                {trip.isPublic && <span className="bg-emerald-500/80 text-white text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-emerald-500/20"><Globe className="w-3 h-3" /> 公開</span>}
-                                {timeDiff !== 0 && <span className={`text-[10px] px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-md ${timeDiff > 0 ? 'bg-orange-500/20 text-orange-200' : 'bg-blue-500/20 text-blue-200'}`}>{timeDiff > 0 ? `+${timeDiff}h` : `${timeDiff}h`}</span>}
+                        {/* Carousel Indicators */}
+                        {trip.cities && trip.cities.length > 1 && (
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 pt-10">
+                                {trip.cities.map((c, i) => (
+                                    <div
+                                        key={c}
+                                        className={`h-1.5 rounded-full transition-all duration-500 shadow-sm ${i === carouselIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/60'}`}
+                                        title={c}
+                                    />
+                                ))}
                             </div>
-
-                            <div className="flex items-baseline gap-3 mb-4 flex-wrap">
-                                <h2 className="text-2xl md:text-3xl lg:text-4xl font-black leading-tight tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-gray-400">{trip.name}</h2>
-                                <div className="flex items-center gap-2">
-                                    <div className="px-3 py-1 bg-white/10 rounded-lg backdrop-blur-md border border-white/20 text-[10px] md:text-xs font-bold whitespace-nowrap">
-                                        <span className="text-indigo-300">第 {getDaysArray(trip.startDate, trip.endDate).findIndex(d => d === currentDisplayDate) + 1 || '-'} 天</span>
-                                        <span className="mx-2 opacity-30">/</span>
-                                        <span>共 {getDaysArray(trip.startDate, trip.endDate).length} 天</span>
-                                    </div>
-                                    {isOwner && (
-                                        <button
-                                            onClick={() => setIsTripSettingsOpen(true)}
-                                            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors flex items-center gap-1.5 border border-white/20"
-                                            title="編輯行程設定"
-                                        >
-                                            <Edit3 className="w-3.5 h-3.5 text-white/80" />
-                                            <span className="text-[10px] font-bold text-white/80">編輯</span>
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-3 text-[11px] md:text-sm opacity-80 font-medium mb-8">
-                                <span className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg border border-white/5"><Calendar className="w-3.5 h-3.5 text-indigo-400" /> {formatDate(trip.startDate)} - {formatDate(trip.endDate)}</span>
-                                <span className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg border border-white/5"><Calendar className="w-3.5 h-3.5 text-indigo-400" /> {formatDate(trip.startDate)} - {formatDate(trip.endDate)}</span>
-                                <span className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg border border-white/5"><Clock className="w-3.5 h-3.5 text-purple-400" /> {getDaysArray(trip.startDate, trip.endDate).length} 天行程</span>
-                                {/* 🚀 Dynamic Header Location */}
-                                <span className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg border border-white/5 font-bold text-white"><MapPin className="w-3.5 h-3.5 text-emerald-400" /> {displayCity}</span>
-
-                                {/* 🚀 Member Avatars (Persistent) */}
-                                <div className="flex items-center gap-1 pl-2 border-l border-white/10 ml-2">
-                                    <div className="flex -space-x-2">
-                                        {trip.members?.slice(0, 5).map(m => (
-                                            <div key={m.id} onClick={() => setViewingMember(m)} className="relative group cursor-pointer" title={`${m.name} (${m.role})`}>
-                                                {m.photoURL ? (
-                                                    <img src={m.photoURL} alt={m.name} className={`w-8 h-8 rounded-full object-cover border-2 border-black/20 ${m.id === user?.uid ? 'ring-2 ring-indigo-500' : ''}`} />
-                                                ) : (
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-black/20 text-white ${m.id === user?.uid ? 'bg-indigo-500' : 'bg-gray-600'}`}>
-                                                        {m.name?.[0]?.toUpperCase() || '?'}
-                                                    </div>
-                                                )}
-                                                {/* Pending Badge */}
-                                                {m.status === 'pending' && <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-yellow-500 rounded-full border-2 border-gray-900"></span>}
-                                                {m.role === 'owner' && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-indigo-500 rounded-full border-2 border-gray-900 flex items-center justify-center"><span className="text-[6px]">👑</span></span>}
-                                            </div>
-                                        ))}
-                                        {(trip.members?.length || 0) > 5 && (
-                                            <div className="w-8 h-8 rounded-full bg-gray-700/80 backdrop-blur border-2 border-black/20 flex items-center justify-center text-[10px] font-bold text-white">
-                                                +{trip.members.length - 5}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <button onClick={() => setIsMemberModalOpen(true)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors ml-1" title="管理成員">
-                                        <Plus className="w-4 h-4 text-white" />
-                                    </button>
-                                </div>
-
-                                <ActiveUsersList tripId={trip.id} user={user} activeTab={activeTab} language={globalSettings.language} />
-                            </div>
-                        </div>
-
-                        <div className="mt-6 flex items-center gap-3 pt-6">
-                            <button
-                                onClick={onOpenSmartImport}
-                                className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-[11px] md:text-sm font-bold transition-all shadow-lg border border-white/20 flex items-center gap-2 transform active:scale-95"
-                            >
-                                <Upload className="w-4 h-4" /> 智能匯入
-                            </button>
-                            <button
-                                onClick={() => setIsSmartExportOpen(true)}
-                                className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-[11px] md:text-sm font-bold transition-all shadow-lg shadow-indigo-900/20 flex items-center gap-2 transform active:scale-95"
-                            >
-                                <Share2 className="w-4 h-4" /> 分享與匯出
-                            </button>
-                        </div>
+                        )}
+                        <div className={`absolute inset-0 bg-gradient-to-t ${isDarkMode ? 'from-gray-900/90 via-gray-900/40 to-black/20' : 'from-indigo-900/60 via-indigo-900/20 to-black/10'}`} />
                     </div>
 
-                    {/* Right Col: Smart Summary Card */}
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col justify-between backdrop-blur-md shadow-xl hover:bg-white/10 transition-colors">
-                        <div>
-                            <div className="flex justify-between items-start mb-6">
-                                <div>
-                                    <div className="text-[10px] text-indigo-300 uppercase font-black tracking-widest mb-1">DAILY INTELLIGENCE</div>
-                                    <div className="text-xs font-bold opacity-60">{currentDisplayDate}</div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-2xl font-bold flex items-center justify-end gap-2 text-white">
-                                        {dailyWeather.temp}
-                                    </div>
-                                    <div className="text-xs opacity-60 flex items-center justify-end gap-1 font-medium">{dailyWeather.icon} {dailyWeather.desc}</div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                {/* Outfit */}
-                                <div className="p-3 bg-black/20 rounded-xl border border-white/5 hover:bg-black/30 transition-all group/weather">
-                                    <div className="flex items-start gap-3 mb-3">
-                                        <div className="p-2 bg-indigo-500/20 rounded-lg shrink-0">
-                                            {dailyWeather.outfitIcon ? <img src={dailyWeather.outfitIcon} className="w-6 h-6 object-contain" alt="outfit" /> : <Sparkles className="w-6 h-6 text-indigo-400" />}
+                    {/* Content Grid - Centered Container */}
+                    <div className="relative z-10 px-6 py-6 md:px-10 md:py-10 lg:px-14 lg:py-12">
+                        <div className="max-w-7xl mx-auto">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 text-white">
+                                {/* Left Col: Trip Core Info */}
+                                <div className="lg:col-span-2 flex flex-col justify-between min-h-[220px]">
+                                    <div>
+                                        <div className="text-[10px] text-indigo-300 uppercase font-black tracking-widest mb-2">行程概覽</div>
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <span className="bg-indigo-500/80 text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur-md uppercase tracking-wider font-bold shadow-lg shadow-indigo-500/20">{displayCountry} {displayCity}</span>
+                                            <div className="px-2.5 py-1 bg-white/10 rounded-full backdrop-blur-md border border-white/10 text-[10px] font-black whitespace-nowrap shadow-sm flex items-center gap-1.5">
+                                                <span className="text-indigo-300">DAY {getDaysArray(trip.startDate, trip.endDate).findIndex(d => d === currentDisplayDate) + 1 || '-'}</span>
+                                                <span className="opacity-30">/</span>
+                                                <span className="text-white/90">{getDaysArray(trip.startDate, trip.endDate).length} DAYS</span>
+                                            </div>
+                                            {trip.isPublic && <span className="bg-emerald-500/80 text-white text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-emerald-500/20"><Globe2 className="w-3 h-3" /> 公開</span>}
+                                            {timeDiff !== 0 && <span className={`text-[10px] px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-md ${timeDiff > 0 ? 'bg-orange-500/20 text-orange-200' : 'bg-blue-500/20 text-blue-200'}`}>{timeDiff > 0 ? `+${timeDiff}h` : `${timeDiff}h`}</span>}
                                         </div>
-                                        <div className="flex-1">
-                                            <div className="flex items-center justify-between">
-                                                <div className="text-[10px] font-bold text-indigo-300 mb-0.5 uppercase tracking-tighter">OUTFIT ADVICE</div>
+
+                                        <div className="flex flex-wrap items-center gap-4 mb-2">
+                                            <h1 className="text-3xl md:text-4xl lg:text-5xl font-black leading-tight tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-gray-300 drop-shadow-sm">{trip.name}</h1>
+                                        </div>
+
+                                        {/* Toolbar Row */}
+                                        <div className="flex items-center gap-2 mb-6 text-white/80">
+                                            <div className="flex items-center gap-1.5">
                                                 <button
-                                                    onClick={handleGenerateWeatherSummary}
-                                                    disabled={isGeneratingWeather}
-                                                    className="text-[9px] bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-200 px-2 py-0.5 rounded transition-all flex items-center gap-1"
+                                                    onClick={handleUndo}
+                                                    disabled={!canUndo}
+                                                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all backdrop-blur-md ${canUndo ? 'bg-black/40 hover:bg-black/60 text-white shadow-lg border-white/20' : 'bg-black/20 opacity-30 cursor-not-allowed border-white/5'} border`}
+                                                    title="撤銷 (Undo)"
                                                 >
-                                                    {isGeneratingWeather ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <BrainCircuit className="w-2.5 h-2.5" />}
-                                                    智慧摘要
+                                                    <Undo className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={handleRedo}
+                                                    disabled={!canRedo}
+                                                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all backdrop-blur-md ${canRedo ? 'bg-black/40 hover:bg-black/60 text-white shadow-lg border-white/20' : 'bg-black/20 opacity-30 cursor-not-allowed border-white/5'} border`}
+                                                    title="重做 (Redo)"
+                                                >
+                                                    <Redo className="w-4 h-4" />
                                                 </button>
                                             </div>
-                                            <div className="text-[11px] leading-relaxed opacity-90">{dailyWeather.clothes || "暫無穿搭建議"}</div>
+
+                                            {isOwner && (
+                                                <button
+                                                    onClick={() => setIsTripSettingsOpen(true)}
+                                                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all bg-black/40 hover:bg-black/60 text-indigo-300 border border-white/20 ml-2 shadow-lg backdrop-blur-md hover:scale-105"
+                                                    title="編輯行程設定 (Edit)"
+                                                >
+                                                    <Edit3 className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {/* 🚀 Dynamic Header Location & Metadata (Moved Back Inside) */}
+                                        <div className="mt-8 pt-8 border-t border-white/10">
+                                            <div className="flex flex-wrap items-center justify-between gap-6">
+                                                <div className="flex flex-wrap items-center gap-3 text-[11px] md:text-sm opacity-90 font-medium">
+                                                    <span className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md shadow-sm">
+                                                        <Calendar className="w-3.5 h-3.5 text-indigo-300" /> {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
+                                                    </span>
+                                                    <span className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md"><Clock className="w-3.5 h-3.5 text-purple-300" /> {getDaysArray(trip.startDate, trip.endDate).length} 天行程</span>
+                                                    {/* Dynamic Multi-City Badge - Shows Route A→B→C or A→B→A */}
+                                                    {(() => {
+                                                        // Helper: Extract clean city name (handles "Osaka -> Kyoto" format)
+                                                        const extractCityName = (city) => {
+                                                            if (!city) return null;
+                                                            if (city.includes('->')) return city.split('->').pop().trim();
+                                                            if (city.includes(' → ')) return city.split(' → ').pop().trim();
+                                                            return city.trim();
+                                                        };
+
+                                                        // Compute city route (preserving transitions, not unique)
+                                                        const cityRoute = [];
+                                                        const normalizedRoute = []; // Track normalized names for comparison
+
+                                                        if (trip.locations) {
+                                                            const sortedDates = Object.keys(trip.locations).sort();
+                                                            sortedDates.forEach(date => {
+                                                                const rawCity = trip.locations[date]?.city;
+                                                                if (!rawCity) return;
+
+                                                                // Extract clean city name (handle "Osaka -> Kyoto" format)
+                                                                const cleanCity = extractCityName(rawCity);
+                                                                // Normalize: Convert to localized name for comparison
+                                                                const normalizedCity = getLocalizedCityName(cleanCity, currentLang);
+
+                                                                // Only add if different from last normalized city
+                                                                if (normalizedRoute.length === 0 || normalizedRoute[normalizedRoute.length - 1] !== normalizedCity) {
+                                                                    cityRoute.push(normalizedCity);
+                                                                    normalizedRoute.push(normalizedCity);
+                                                                }
+                                                            });
+                                                        }
+
+                                                        // Fallback to single city
+                                                        if (cityRoute.length === 0 && trip.city) {
+                                                            cityRoute.push(getLocalizedCityName(extractCityName(trip.city), currentLang));
+                                                        }
+
+                                                        const isMultiCity = cityRoute.length > 1;
+                                                        const routeText = cityRoute.join(' → ');
+
+                                                        return (
+                                                            <span className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border backdrop-blur-md font-bold text-white shadow-sm ring-1 ring-white/5 tracking-tight text-[11px] ${isMultiCity ? 'bg-amber-500/20 border-amber-500/30' : 'bg-white/10 border-white/10'}`}>
+                                                                <MapPin className={`w-3.5 h-3.5 flex-shrink-0 ${isMultiCity ? 'text-amber-300' : 'text-emerald-300'}`} />
+                                                                <span className={isMultiCity ? 'text-amber-200' : ''}>{routeText}</span>
+                                                            </span>
+                                                        );
+                                                    })()}
+
+                                                    {/* Member Row (z-[60] to appear above action buttons z-40) */}
+                                                    <div className="flex items-center gap-3 pl-3 border-l border-white/20 ml-2 relative z-[60]">
+                                                        <div className="flex -space-x-3 flex-nowrap relative">
+                                                            {trip.members?.slice(0, 4).map(m => (
+                                                                <div key={m.id} onClick={() => setViewingMember(m)} className="relative group cursor-pointer transition-transform hover:scale-110 hover:z-50 flex-shrink-0" title={`${m.name} (${m.role})`}>
+                                                                    <div className={`w-8 h-8 rounded-full border-2 border-slate-900 overflow-hidden bg-gray-800 ${m.id === user?.uid ? 'ring-2 ring-indigo-500' : ''}`}>
+                                                                        <ImageWithFallback
+                                                                            src={m.photoURL}
+                                                                            className="w-full h-full object-cover"
+                                                                            alt={m.name}
+                                                                            type="avatar"
+                                                                        />
+                                                                    </div>
+                                                                    {m.status === 'pending' && <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-amber-500 rounded-full border-2 border-slate-900"></span>}
+                                                                    {m.role === 'owner' && <div className="absolute -top-1 -right-1 bg-amber-500 text-[10px] w-4 h-4 rounded-full border border-slate-900 flex items-center justify-center shadow-sm">👑</div>}
+                                                                </div>
+                                                            ))}
+                                                            {(trip.members?.length || 0) > 4 && (
+                                                                <div className="w-8 h-8 rounded-full bg-slate-800/90 backdrop-blur border-2 border-slate-900 flex items-center justify-center text-[10px] font-black text-indigo-300 shadow-lg flex-shrink-0">
+                                                                    +{trip.members.length - 4}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <button onClick={() => setIsMemberModalOpen(true)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all border border-white/10 hover:border-white/30 shadow-lg" title="成員管理">
+                                                            <UserPlus className="w-4 h-4 text-white" />
+                                                        </button>
+                                                    </div>
+                                                    <ActiveUsersList tripId={trip.id} user={user} activeTab={activeTab} language={globalSettings.language} />
+                                                </div>
+
+                                                {/* Action Buttons (z-40 so member hover z-60 appears above) */}
+                                                <div className="flex gap-3 items-center relative z-40">
+                                                    <button
+                                                        onClick={onOpenSmartImport}
+                                                        className="px-3 py-2.5 bg-white/15 hover:bg-white/25 text-white rounded-xl text-xs font-bold transition-all shadow-lg border border-white/20 flex justify-center items-center gap-2 active:scale-95 whitespace-nowrap backdrop-blur-md"
+                                                    >
+                                                        <Upload className="w-4 h-4" /> <span className="hidden sm:inline">智能匯入</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setIsSmartExportOpen(true)}
+                                                        className="px-3 py-2.5 bg-white/15 hover:bg-white/25 text-white rounded-xl text-xs font-bold transition-all shadow-lg border border-white/20 flex justify-center items-center gap-2 active:scale-95 whitespace-nowrap backdrop-blur-md"
+                                                    >
+                                                        <Share2 className="w-4 h-4" /> <span className="hidden sm:inline">分享</span>
+                                                    </button>
+
+                                                    <div className="relative">
+                                                        <button
+                                                            onClick={() => { setIsPlanMenuOpen(!isPlanMenuOpen); setIsManageMenuOpen(false); }}
+                                                            className="px-3 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl flex justify-center items-center gap-2 font-bold text-xs transition-all shadow-lg shadow-indigo-900/40 active:scale-95 whitespace-nowrap border border-indigo-400/30 backdrop-blur-md"
+                                                        >
+                                                            <Plus className="w-4 h-4" /> 行程規劃 <ChevronDown className={`w-3.5 h-3.5 text-indigo-200 transition-transform ${isPlanMenuOpen ? 'rotate-180' : ''}`} />
+                                                        </button>
+                                                        {isPlanMenuOpen && (
+                                                            <>
+                                                                <div className="fixed inset-0 z-[90]" onClick={() => setIsPlanMenuOpen(false)}></div>
+                                                                <div className="absolute right-0 top-full mt-2 w-48 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[100] transform origin-top-right animate-scale-in p-1">
+                                                                    <button onClick={() => { setAddType('spot'); setIsAddModal(true); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 text-left text-xs transition-colors rounded-lg text-white font-medium">
+                                                                        <Edit3 className="w-3.5 h-3.5 text-blue-400" /> 手動新增
+                                                                    </button>
+                                                                    <button onClick={() => { setAIMode('full'); setIsAIModal(true); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 text-left text-xs transition-colors rounded-lg text-white font-medium">
+                                                                        <BrainCircuit className="w-3.5 h-3.5 text-purple-400" /> AI 建議行程
+                                                                    </button>
+                                                                    <button onClick={() => { handleOptimizeSchedule(); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 text-left text-xs transition-colors rounded-lg text-white font-medium">
+                                                                        <Sparkles className="w-3.5 h-3.5 text-amber-400" /> AI 排程優化
+                                                                    </button>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="relative">
+                                                        <button
+                                                            onClick={() => { setIsManageMenuOpen(!isManageMenuOpen); setIsPlanMenuOpen(false); }}
+                                                            className={`bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-colors border border-white/10 ${isManageMenuOpen ? 'bg-white/20' : ''}`}
+                                                        >
+                                                            <ListIcon className="w-5 h-5 text-white" />
+                                                        </button>
+                                                        {isManageMenuOpen && (
+                                                            <>
+                                                                <div className="fixed inset-0 z-[90]" onClick={() => setIsManageMenuOpen(false)}></div>
+                                                                <div className="absolute right-0 top-full mt-2 w-56 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[100] transform origin-top-right animate-scale-in">
+                                                                    {isOwner && (
+                                                                        <>
+                                                                            <button onClick={() => { setIsMemberModalOpen(true); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-left text-sm transition-colors border-b border-white/10 text-gray-200">
+                                                                                <Users className="w-4 h-4 text-blue-400" /> 成員管理
+                                                                            </button>
+                                                                            <button onClick={() => { setIsInviteModal(true); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-left text-sm transition-colors border-b border-white/10 text-gray-200">
+                                                                                <UserPlus className="w-4 h-4 text-green-400" /> 邀請朋友
+                                                                            </button>
+                                                                            <button onClick={() => { handleDeleteTrip(); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 text-left text-sm text-red-400 transition-colors">
+                                                                                <Trash2 className="w-4 h-4" /> 刪除行程
+                                                                            </button>
+                                                                        </>
+                                                                    )}
+                                                                    {!isOwner && <div className="px-4 py-3 text-xs opacity-50 text-center text-gray-400">僅擁有者可操作</div>}
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-
-                                    {smartWeather && (
-                                        <div className="mt-3 pt-3 border-t border-white/5 animate-fade-in space-y-2">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <span className="text-[10px] bg-indigo-500 text-white px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">Osaka Express 摘要</span>
-                                                <span className="text-[10px] opacity-60">今日溫差: {smartWeather.tempRange?.min}°C - {smartWeather.tempRange?.max}°C</span>
-                                            </div>
-                                            <div className="grid grid-cols-3 gap-2">
-                                                {['morning', 'afternoon', 'night'].map(p => (
-                                                    <div key={p} className="bg-white/5 p-1.5 rounded-lg">
-                                                        <div className="text-[8px] opacity-40 uppercase font-black">{p === 'morning' ? '早晨' : p === 'afternoon' ? '下晝' : '夜晚'}</div>
-                                                        <div className="text-[10px] font-bold text-indigo-300">{smartWeather.periods[p].temp}</div>
-                                                        <div className="text-[9px] opacity-80 leading-tight truncate" title={smartWeather.periods[p].outfit}>{smartWeather.periods[p].outfit}</div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <p className="text-[10px] italic opacity-60 leading-relaxed text-indigo-200/80">「{smartWeather.summary}」</p>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         </div>
-
-                        <div className="mt-6 flex gap-2">
-                            {/* Plan Menu Button */}
-                            <div className="relative flex-1">
-                                <button
-                                    onClick={() => { setIsPlanMenuOpen(!isPlanMenuOpen); setIsManageMenuOpen(false); }}
-                                    className="w-full bg-white text-gray-900 py-2.5 rounded-xl flex justify-center items-center gap-2 hover:bg-gray-100 font-bold text-xs transition-all shadow-lg active:scale-95"
-                                >
-                                    <Plus className="w-4 h-4 text-indigo-600" /> 規劃行程 <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${isPlanMenuOpen ? 'rotate-180' : ''}`} />
-                                </button>
-                                {isPlanMenuOpen && (
-                                    <>
-                                        <div className="fixed inset-0 z-[90]" onClick={() => setIsPlanMenuOpen(false)}></div>
-                                        <div className="absolute left-0 right-0 bottom-full mb-2 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[100] transform origin-bottom animate-fade-in p-1 w-full min-w-[160px]">
-                                            <button onClick={() => { setAddType('spot'); setIsAddModal(true); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 text-left text-xs transition-colors rounded-lg text-white font-medium">
-                                                <Edit3 className="w-3.5 h-3.5 text-blue-400" /> 手動新增
-                                            </button>
-                                            <button onClick={() => { setAIMode('full'); setIsAIModal(true); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 text-left text-xs transition-colors rounded-lg text-white font-medium">
-                                                <BrainCircuit className="w-3.5 h-3.5 text-purple-400" /> AI 建議行程
-                                            </button>
-                                            <button onClick={() => { handleOptimizeSchedule(); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 text-left text-xs transition-colors rounded-lg text-white font-medium">
-                                                <Sparkles className="w-3.5 h-3.5 text-amber-400" /> AI 排程優化
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-
-                            {/* List Menu Button (Manage) */}
-                            <div className="relative">
-                                <button
-                                    onClick={() => { setIsManageMenuOpen(!isManageMenuOpen); setIsPlanMenuOpen(false); }}
-                                    className={`bg-white/10 hover:bg-white/20 p-2.5 rounded-xl transition-colors border border-white/10 ${isManageMenuOpen ? 'bg-white/20' : ''}`}
-                                >
-                                    <List className="w-5 h-5 text-white" />
-                                </button>
-                                {isManageMenuOpen && (
-                                    <>
-                                        <div className="fixed inset-0 z-[90]" onClick={() => setIsManageMenuOpen(false)}></div>
-                                        <div className="absolute right-0 bottom-full mb-2 w-56 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[100] transform origin-bottom-right animate-fade-in">
-                                            {isOwner && (
-                                                <>
-                                                    <button onClick={() => { setIsMemberModalOpen(true); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-left text-sm transition-colors border-b border-white/10 text-gray-200">
-                                                        <Users className="w-4 h-4 text-blue-400" /> 成員管理
-                                                    </button>
-                                                    <button onClick={() => { setIsInviteModal(true); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-left text-sm transition-colors border-b border-white/10 text-gray-200">
-                                                        <UserPlus className="w-4 h-4 text-green-400" /> 邀請朋友
-                                                    </button>
-                                                    <button onClick={() => { handleDeleteTrip(); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 text-left text-sm text-red-400 transition-colors">
-                                                        <Trash2 className="w-4 h-4" /> 刪除行程
-                                                    </button>
-                                                </>
-                                            )}
-                                            {!isOwner && <div className="px-4 py-3 text-xs opacity-50 text-center text-gray-400">僅擁有者可操作</div>}
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Tabs (Desktop / Mobile Hidden) */}
-            <div className={`hidden md:flex gap-2 overflow-x-auto pb-2 mb-4 no-scrollbar`}>
-                {[
-                    { id: 'itinerary', label: '行程', icon: CalendarDays },
-                    { id: 'packing', label: '行李', icon: ShoppingBag },
-                    { id: 'shopping', label: '購物', icon: ShoppingBag },
-                    { id: 'budget', label: '預算', icon: Wallet },
-                    { id: 'gallery', label: '相簿', icon: ImageIcon },
-                    { id: 'currency', label: '匯率', icon: DollarSign },
-                    { id: 'journal', label: '足跡', icon: FootprintsIcon },
-                    { id: 'insurance', label: '保險', icon: Shield },
-                    { id: 'emergency', label: '緊急', icon: Siren },
-                    { id: 'visa', label: '簽證', icon: FileCheck }
-                ].map(t => (
-                    <button
-                        key={t.id}
-                        onClick={() => setActiveTab(t.id)}
-                        className={`flex items-center px-4 py-2 rounded-full font-bold transition-all duration-300 whitespace-nowrap transform hover:scale-105 ${activeTab === t.id ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl scale-105' : (isDarkMode ? 'bg-gray-800/60 text-gray-300 hover:bg-gray-700' : 'bg-gray-100/80 text-gray-600 hover:bg-gray-100')}`}
-                    >
-                        <t.icon className="w-4 h-4 mr-2" />{t.label}
-                    </button>
-                ))}
-            </div>
-
-            {/* Itinerary Tab */}
-            {
-                activeTab === 'itinerary' && (
-                    <ItineraryTab
-                        trip={trip}
-                        days={days}
-                        currentDisplayDate={currentDisplayDate}
-                        setSelectDate={setSelectDate}
-                        itineraryItems={itineraryItems}
-                        destHolidays={destHolidays}
-                        homeHolidays={homeHolidays}
-                        isDarkMode={isDarkMode}
-                        dailyWeather={dailyWeather}
-                        dailyReminder={dailyReminder}
-                        viewMode={viewMode}
-                        setViewMode={setViewMode}
-                        canEdit={canEdit}
-                        onAddItem={(date, type) => {
-                            if (date) setSelectDate(date);
-                            setAddType(type);
-                            setEditingItem(null);
-                            setIsAddModal(true);
-                        }}
-                        onEditItem={(item) => {
-                            setAddType(item.type);
-                            setEditingItem(item);
-                            setIsAddModal(true);
-                        }}
-                        onDragStart={onDragStart}
-                        requestedItemId={requestedItemId} // Deep Link Item ID
-                        autoOpenItemId={autoOpenItemId} // Auto Open New/Edited Item
-                        onAutoOpenHandled={() => setAutoOpenItemId(null)}
-                        onItemHandled={onItemHandled}
-                        pendingItemsCache={pendingItemsCache} // Optimistic Update Cache
-                        onDrop={onDrop}
-                        openSectionModal={openSectionModal}
-                        userMapsKey={globalSettings?.userMapsKey}
-                        onOptimize={handleOptimizeSchedule}
-                        onOpenAIModal={handleOpenAIModal}
-                        onOpenSmartImport={onOpenSmartImport}
-                        onOpenSmartExport={() => setIsSmartExportOpen(true)}
-                        onClearDaily={handleClearDailyItinerary}
-                        onAddTransportSuggestion={handleAddTransportSuggestion}
-                        onUpdateLocation={async (date, locData) => {
-                            if (!canEdit) return;
-                            if (isSimulation) return alert("模擬模式");
-                            await updateDoc(doc(db, "trips", trip.id), { [`locations.${date}`]: locData });
-                        }}
-                        onDeleteItem={handleDeleteItineraryItem}
-                    />
-                )
-            }
-
-            {
-                activeTab === 'insurance' && (
-                    <InsuranceTab
-                        isDarkMode={isDarkMode}
-                        countryInfo={countryInfo}
-                        globalSettings={globalSettings}
-                        myInsurance={myInsurance}
-                        setMyInsurance={setMyInsurance}
-                        onSaveInsurance={handleSaveInsurance}
-                        insuranceSuggestions={INSURANCE_SUGGESTIONS}
-                        insuranceResources={INSURANCE_RESOURCES}
-                        inputClasses={inputClasses}
-                        buttonPrimary={buttonPrimary}
-                        glassCard={glassCard}
-                    />
-                )
-            }
-
-            {
-                activeTab === 'visa' && (
-                    <VisaTab
-                        trip={trip}
-                        user={user}
-                        isDarkMode={isDarkMode}
-                        isSimulation={isSimulation}
-                        countryInfo={countryInfo}
-                        displayCountry={displayCountry}
-                        displayCity={displayCity}
-                        visaForm={visaForm}
-                        setVisaForm={setVisaForm}
-                        onSaveVisa={handleSaveVisa}
-                        inputClasses={inputClasses}
-                        glassCard={glassCard}
-                    />
-                )
-            }
-
-            {
-                activeTab === 'emergency' && (
-                    <EmergencyTab
-                        isDarkMode={isDarkMode}
-                        countryInfo={countryInfo}
-                        globalSettings={globalSettings}
-                        emergencyInfoTitle={emergencyInfoTitle}
-                        emergencyInfoContent={emergencyInfoContent}
-                        glassCard={glassCard}
-                        trip={trip}
-                    />
-                )
-            }
-
-            {
-                activeTab === 'budget' && (
-                    <BudgetTab
-                        trip={trip}
-                        isDarkMode={isDarkMode}
-                        debtInfo={debtInfo}
-                        onOpenSectionModal={openSectionModal}
-                        onExportPdf={handleExportPdf}
-                        handleReceiptUpload={handleReceiptUpload}
-                        glassCard={glassCard}
-                        onOpenSmartImport={onOpenSmartImport}
-                        onOpenSmartExport={() => setIsSmartExportOpen(true)}
-                    />
-                )
-            }
-
-            {
-                activeTab === 'currency' && (
-                    <CurrencyTab
-                        isDarkMode={isDarkMode}
-                        globalSettings={globalSettings}
-                        exchangeRates={exchangeRates}
-                        convAmount={convAmount}
-                        setConvAmount={setConvAmount}
-                        convTo={convTo}
-                        setConvTo={setConvTo}
-                        currencies={CURRENCIES}
-                        glassCard={glassCard}
-                    />
-                )
-            }
-
-            {
-                activeTab === 'journal' && (
-                    <JournalTab
-                        trip={trip}
-                        user={user}
-                        isOwner={isOwner}
-                        isDarkMode={isDarkMode}
-                        glassCard={glassCard}
-                        currentLang={currentLang}
-                    />
-                )
-            }
-
-            {
-                activeTab === 'gallery' && (
-                    <GalleryTab
-                        trip={trip}
-                        isDarkMode={isDarkMode}
-                    />
-                )
-            }
-
-            {
-                activeTab === 'packing' && (
-                    <PackingTab
-                        trip={trip}
-                        user={user}
-                        isDarkMode={isDarkMode}
-                        onAddItem={() => { setAddType('packing'); setIsAddModal(true); }}
-                        onToggleItem={handlePackingToggle}
-                        onDeleteItem={handlePackingDelete}
-                        onGenerateList={handleGeneratePackingList}
-                        onClearList={handleClearPackingList}
-                        glassCard={glassCard}
-                    />
-                )
-            }
-
-            {
-                activeTab === 'shopping' && (
-                    <ShoppingTab
-                        trip={trip}
-                        user={user}
-                        isDarkMode={isDarkMode}
-                        onOpenSectionModal={openSectionModal}
-                        onOpenAIModal={(mode) => { setAIMode(mode); setIsAIModal(true); }}
-                        onAddItem={(type) => { setAddType(type); setIsAddModal(true); }}
-                        handleReceiptUpload={handleReceiptUpload}
-                        receiptPreview={receiptPreview}
-                        glassCard={glassCard}
-                        onOpenSmartImport={onOpenSmartImport}
-                        onOpenSmartExport={() => setIsSmartExportOpen(true)}
-                    />
-                )
-            }
-
-            {/* Mobile Bottom Nav System */}
-            <MobileBottomNav
-                activeTab={activeTab === 'shopping' || activeTab === 'packing' || activeTab === 'budget' || activeTab === 'itinerary' ? activeTab : 'more'}
-                onTabChange={(tab) => { setActiveTab(tab); setIsMobileMoreOpen(false); }}
-                onMoreClick={() => setIsMobileMoreOpen(!isMobileMoreOpen)}
-                isDarkMode={isDarkMode}
-            />
-
-            {/* Mobile More Menu Overlay - V1.0.3 Fixed Bottom Sheet */}
-            {isMobileMoreOpen && (
-                <div
-                    className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm md:hidden animate-fade-in"
-                    onClick={() => setIsMobileMoreOpen(false)}
-                >
-                    <div
-                        className={`fixed bottom-0 left-0 right-0 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} border-t rounded-t-3xl p-6 pb-10 shadow-2xl animate-slide-up`}
-                        onClick={e => e.stopPropagation()}
-                    >
-                        {/* Header */}
-                        <div className="flex justify-between items-center mb-4">
-                            <span className="text-sm font-bold opacity-70">更多功能</span>
+                {/* Static Tabs Navigation - Wrapped in Container */}
+                <div className="max-w-7xl mx-auto">
+                    <div className="hidden md:flex gap-2 overflow-x-auto py-4 mb-4 scrollbar-hide px-1" style={{ scrollbarWidth: 'none' }}>
+                        {[
+                            { id: 'itinerary', label: '行程', icon: Calendar },
+                            { id: 'packing', label: '行李', icon: ShoppingBag },
+                            { id: 'shopping', label: '購物', icon: ShoppingBag },
+                            { id: 'budget', label: '預算', icon: Wallet },
+                            { id: 'gallery', label: '相簿', icon: Image },
+                            { id: 'currency', label: '匯率', icon: DollarSign },
+                            { id: 'journal', label: '足跡', icon: FootprintsIcon },
+                            { id: 'insurance', label: '保險', icon: Shield },
+                            { id: 'emergency', label: '緊急', icon: Siren },
+                            { id: 'visa', label: '簽證', icon: FileCheck }
+                        ].map(t => (
                             <button
-                                onClick={() => setIsMobileMoreOpen(false)}
-                                className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'} transition-colors`}
+                                key={t.id}
+                                onClick={() => setActiveTab(t.id)}
+                                className={`flex items-center px-4 py-2 rounded-full font-bold transition-all duration-300 whitespace-nowrap transform hover:scale-105 ${activeTab === t.id ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl scale-105' : (isDarkMode ? 'bg-gray-800/60 text-gray-300 hover:bg-gray-700' : 'bg-gray-100/80 text-gray-600 hover:bg-gray-100')}`}
                             >
-                                <X className="w-5 h-5" />
+                                <t.icon className="w-4 h-4 mr-2" />{t.label}
                             </button>
-                        </div>
-                        {/* Grid Layout for Touch Targets */}
-                        <div className="grid grid-cols-4 gap-3">
-                            {[
-                                { id: 'shopping', label: '購物', icon: ShoppingBag },
-                                { id: 'gallery', label: '相簿', icon: ImageIcon },
-                                { id: 'currency', label: '匯率', icon: DollarSign },
-                                { id: 'journal', label: '足跡', icon: FootprintsIcon },
-                                { id: 'insurance', label: '保險', icon: Shield },
-                                { id: 'emergency', label: '緊急', icon: Siren },
-                                { id: 'visa', label: '簽證', icon: FileCheck },
-                                { id: 'files', label: '檔案', icon: FileText }
-                            ].map(t => (
-                                <button
-                                    key={t.id}
-                                    onClick={() => { setActiveTab(t.id); setIsMobileMoreOpen(false); }}
-                                    className={`flex flex-col items-center gap-2 p-3 rounded-2xl transition-all active:scale-95 ${activeTab === t.id ? 'bg-indigo-500 text-white shadow-lg' : (isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200')}`}
-                                >
-                                    <div className={`p-3 rounded-full ${activeTab === t.id ? 'bg-white/20' : (isDarkMode ? 'bg-gray-700' : 'bg-white')}`}>
-                                        <t.icon className="w-5 h-5" />
-                                    </div>
-                                    <span className={`text-[10px] font-bold ${activeTab === t.id ? 'text-white' : 'opacity-70'}`}>{t.label}</span>
-                                </button>
-                            ))}
-                        </div>
+                        ))}
                     </div>
-                </div>
-            )}
 
-            <AddActivityModal isOpen={isAddModal} onClose={() => setIsAddModal(false)} onSave={handleSaveItem} onDelete={handleDeleteItineraryItem} isDarkMode={isDarkMode} date={selectDate} defaultType={addType} editData={editingItem} members={trip.members || [{ id: user?.uid || 'guest', name: user?.displayName || 'Guest' }]} trip={trip} />
-            <TripSettingsModal isOpen={isTripSettingsOpen} onClose={() => setIsTripSettingsOpen(false)} trip={trip} onUpdate={(d) => !isSimulation && updateDoc(doc(db, "trips", trip.id), d)} isDarkMode={isDarkMode} />
-            <MemberSettingsModal isOpen={isMemberModalOpen} onClose={() => setIsMemberModalOpen(false)} members={trip.members || []} onUpdateRole={handleUpdateRole} isDarkMode={isDarkMode} />
-            <InviteModal isOpen={isInviteModal} onClose={() => setIsInviteModal(false)} tripId={trip.id} onInvite={handleInvite} isDarkMode={isDarkMode} />
+                    {/* Itinerary Tab */}
+                    {
+                        activeTab === 'itinerary' && (
+                            <ItineraryTab
+                                trip={trip}
+                                days={days}
+                                currentDisplayDate={currentDisplayDate}
+                                setSelectDate={setSelectDate}
+                                itineraryItems={itineraryItems}
+                                destHolidays={destHolidays}
+                                homeHolidays={homeHolidays}
+                                isDarkMode={isDarkMode}
+                                dailyWeather={dailyWeather}
+                                dailyReminder={dailyReminder}
+                                viewMode={viewMode}
+                                setViewMode={setViewMode}
+                                canEdit={canEdit}
+                                onAddItem={(date, type, prefillData = null) => {
+                                    if (date) setSelectDate(date);
+                                    setAddType(type);
+                                    setEditingItem(prefillData); // Use editingItem slot for pre-fill
+                                    setIsAddModal(true);
+                                }}
+                                onEditItem={(item) => {
+                                    let itemToEdit = item;
+                                    if (item.isVirtual && item._originalId) {
+                                        // If editing a virtual item (e.g. multi-day hotel stay), find the original
+                                        Object.entries(trip.itinerary || {}).some(([date, items]) => {
+                                            const match = items.find(it => it.id === item._originalId);
+                                            if (match) {
+                                                itemToEdit = { ...match, _index: items.indexOf(match), _currentDate: date };
+                                                return true;
+                                            }
+                                            return false;
+                                        });
+                                    }
+                                    setAddType(itemToEdit.type);
+                                    setEditingItem(itemToEdit);
+                                    setIsAddModal(true);
+                                }}
+                                // onDragStart removed
+                                requestedItemId={requestedItemId} // Deep Link Item ID
+                                autoOpenItemId={autoOpenItemId} // Auto Open New/Edited Item
+                                onAutoOpenHandled={() => setAutoOpenItemId(null)}
+                                onItemHandled={onItemHandled}
+                                pendingItemsCache={pendingItemsCache} // Optimistic Update Cache
+                                onDragEnd={onDragEnd}
+                                openSectionModal={openSectionModal}
+                                userMapsKey={globalSettings?.userMapsKey}
+                                onOptimize={handleOptimizeSchedule}
+                                onOpenAIModal={handleOpenAIModal}
+                                onOpenSmartImport={onOpenSmartImport}
+                                onOpenSmartExport={() => setIsSmartExportOpen(true)}
+                                onClearDaily={handleClearDailyItinerary}
+                                onAddTransportSuggestion={handleAddTransportSuggestion}
+                                onUpdateLocation={async (date, locData) => {
+                                    if (!canEdit) return;
+                                    if (isSimulation) return alert("模擬模式");
+                                    await updateDoc(doc(db, "trips", trip.id), { [`locations.${date}`]: locData });
+                                }}
+                                onDeleteItem={handleDeleteItineraryItem}
+                                // V1.1 Phase 7: History System
+                                onUndo={handleUndo}
+                                onRedo={handleRedo}
+                                canUndo={canUndo}
+                                canRedo={canRedo}
+                            />
+                        )
+                    }
 
-            <AIGeminiModal isOpen={isAIModal} onClose={() => setIsAIModal(false)} onApply={handleAIApply} isDarkMode={isDarkMode} contextCity={trip.city} existingItems={itineraryItems} mode={aiMode} userPreferences={globalSettings.preferences} trip={trip} weatherData={weatherData} />
+                    {
+                        activeTab === 'insurance' && (
+                            <InsuranceTab
+                                isDarkMode={isDarkMode}
+                                countryInfo={countryInfo}
+                                globalSettings={globalSettings}
+                                myInsurance={myInsurance}
+                                setMyInsurance={setMyInsurance}
+                                onSaveInsurance={handleSaveInsurance}
+                                insuranceSuggestions={INSURANCE_SUGGESTIONS}
+                                insuranceResources={INSURANCE_RESOURCES}
+                                inputClasses={inputClasses}
+                                buttonPrimary={buttonPrimary}
+                                glassCard={glassCard}
+                                isSimulation={isSimulation}
+                            />
+                        )
+                    }
 
-            <TripExportImportModal
-                isOpen={Boolean(sectionModalConfig)}
-                onClose={closeSectionModal}
-                mode={sectionModalConfig?.mode}
-                sourceType="section"
-                section={sectionModalConfig?.section}
-                data={sectionModalConfig?.data}
-                onImport={(text) => sectionModalConfig?.mode === 'import' && handleSectionImport(sectionModalConfig.section, text)}
-                isDarkMode={isDarkMode}
-                trip={trip}
-            />
-            {
-                isSmartExportOpen && (
-                    <SmartExportModal
-                        isOpen={isSmartExportOpen}
-                        onClose={() => setIsSmartExportOpen(false)}
-                        trip={trip}
+                    {
+                        activeTab === 'visa' && (
+                            <VisaTab
+                                trip={trip}
+                                user={user}
+                                isDarkMode={isDarkMode}
+                                isSimulation={isSimulation}
+                                countryInfo={countryInfo}
+                                displayCountry={displayCountry}
+                                displayCity={displayCity}
+                                visaForm={visaForm}
+                                setVisaForm={setVisaForm}
+                                onSaveVisa={handleSaveVisa}
+                                inputClasses={inputClasses}
+                                glassCard={glassCard}
+                            />
+                        )
+                    }
+
+                    {
+                        activeTab === 'emergency' && (
+                            <EmergencyTab
+                                isDarkMode={isDarkMode}
+                                countryInfo={countryInfo}
+                                globalSettings={globalSettings}
+                                emergencyInfoTitle={emergencyInfoTitle}
+                                emergencyInfoContent={emergencyInfoContent}
+                                glassCard={glassCard}
+                                trip={trip}
+                            />
+                        )
+                    }
+
+                    {
+                        activeTab === 'budget' && (
+                            <BudgetTab
+                                trip={trip}
+                                isDarkMode={isDarkMode}
+                                debtInfo={debtInfo}
+                                onOpenSectionModal={openSectionModal}
+                                onExportPdf={handleExportPdf}
+                                handleReceiptUpload={handleReceiptUpload}
+                                glassCard={glassCard}
+                                onOpenSmartImport={onOpenSmartImport}
+                                onOpenSmartExport={() => setIsSmartExportOpen(true)}
+                            />
+                        )
+                    }
+
+                    {
+                        activeTab === 'currency' && (
+                            <CurrencyTab
+                                isDarkMode={isDarkMode}
+                                globalSettings={globalSettings}
+                                exchangeRates={exchangeRates}
+                                convAmount={convAmount}
+                                setConvAmount={setConvAmount}
+                                convTo={convTo}
+                                setConvTo={setConvTo}
+                                currencies={CURRENCIES}
+                                glassCard={glassCard}
+                                budget={trip.budget || []}
+                                shoppingList={trip.shoppingList || []}
+                            />
+                        )
+                    }
+
+                    {
+                        activeTab === 'journal' && (
+                            <JournalTab
+                                trip={trip}
+                                user={user}
+                                isOwner={isOwner}
+                                isDarkMode={isDarkMode}
+                                glassCard={glassCard}
+                                currentLang={currentLang}
+                            />
+                        )
+                    }
+
+                    {
+                        activeTab === 'gallery' && (
+                            <GalleryTab
+                                trip={trip}
+                                isDarkMode={isDarkMode}
+                            />
+                        )
+                    }
+
+                    {
+                        activeTab === 'packing' && (
+                            <PackingTab
+                                trip={trip}
+                                user={user}
+                                isDarkMode={isDarkMode}
+                                onAddItem={() => { setAddType('packing'); setIsAddModal(true); }}
+                                onToggleItem={handlePackingToggle}
+                                onDeleteItem={handlePackingDelete}
+                                onGenerateList={handleGeneratePackingList}
+                                onClearList={handleClearPackingList}
+                                glassCard={glassCard}
+                            />
+                        )
+                    }
+
+                    {
+                        activeTab === 'shopping' && (
+                            <ShoppingTab
+                                trip={trip}
+                                user={user}
+                                isDarkMode={isDarkMode}
+                                onOpenSectionModal={openSectionModal}
+                                onOpenAIModal={(mode) => { setAIMode(mode); setIsAIModal(true); }}
+                                onAddItem={(type) => { setAddType(type); setIsAddModal(true); }}
+                                handleReceiptUpload={handleReceiptUpload}
+                                receiptPreview={receiptPreview}
+                                glassCard={glassCard}
+                                onOpenSmartImport={onOpenSmartImport}
+                                onOpenSmartExport={() => setIsSmartExportOpen(true)}
+                            />
+                        )
+                    }
+
+                    {/* Mobile Bottom Nav System */}
+                    <MobileBottomNav
+                        activeTab={activeTab === 'shopping' || activeTab === 'packing' || activeTab === 'budget' || activeTab === 'itinerary' ? activeTab : 'more'}
+                        onTabChange={(tab) => { setActiveTab(tab); setIsMobileMoreOpen(false); }}
+                        onMoreClick={() => setIsMobileMoreOpen(!isMobileMoreOpen)}
                         isDarkMode={isDarkMode}
-                        onExportPdf={handleExportPdf}
                     />
-                )
-            }
-            {
-                confirmConfig && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in bg-black/40">
-                        <div className={`w-full max-w-sm rounded-2xl shadow-2xl border ${isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'} p-6 overflow-hidden relative`}>
-                            <div className={`absolute top-0 left-0 w-full h-1 ${confirmConfig.type === 'warning' ? 'bg-amber-500' : (confirmConfig.type === 'error' ? 'bg-red-500' : 'bg-indigo-500')}`}></div>
-                            <h4 className="font-bold text-lg mb-2 flex items-center gap-2">
-                                {confirmConfig.type === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-500" />}
-                                {confirmConfig.type === 'error' && <X className="w-5 h-5 text-red-500" />}
-                                {confirmConfig.title}
-                            </h4>
-                            <p className="text-sm opacity-70 mb-6 whitespace-pre-wrap leading-relaxed">{confirmConfig.message}</p>
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setConfirmConfig(null)}
-                                    className={`flex-1 py-2.5 rounded-xl font-bold text-xs border ${isDarkMode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-200 hover:bg-gray-50'}`}
+
+                    {/* Mobile More Menu Overlay - V2.0 Premium Glassmorphic Sheet */}
+                    {
+                        isMobileMoreOpen && (
+                            <div
+                                className="fixed inset-0 z-[110] bg-black/40 backdrop-blur-sm md:hidden animate-fade-in"
+                                onClick={() => setIsMobileMoreOpen(false)}
+                            >
+                                <div
+                                    className={`fixed bottom-[88px] left-4 right-4 ${isDarkMode ? 'bg-gray-800/90 border-gray-700' : 'bg-white/90 border-white/20'} border backdrop-blur-xl rounded-3xl p-6 shadow-2xl animate-slide-up ring-1 ring-black/5`}
+                                    onClick={e => e.stopPropagation()}
                                 >
-                                    取消
-                                </button>
-                                {confirmConfig.onConfirm && (
-                                    <button
-                                        onClick={confirmConfig.onConfirm}
-                                        className={`flex-1 py-2.5 rounded-xl font-bold text-xs text-white shadow-lg ${confirmConfig.type === 'warning' ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-900/20' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-900/20'}`}
-                                    >
-                                        確定
-                                    </button>
-                                )}
+                                    {/* Header */}
+                                    <div className="flex justify-between items-center mb-6 pl-2">
+                                        <span className="text-sm font-black tracking-wide opacity-80 uppercase">More Features</span>
+                                        <div className="w-10 h-1 bg-gray-300/30 rounded-full mx-auto absolute left-1/2 -translate-x-1/2 top-3" />
+                                    </div>
+
+                                    {/* Premium Grid Layout */}
+                                    <div className="grid grid-cols-4 gap-y-6 gap-x-2">
+                                        {[
+                                            { id: 'shopping', label: '購物', icon: ShoppingBag, color: 'text-pink-500', bg: 'bg-pink-500/10' },
+                                            { id: 'gallery', label: '相簿', icon: ImageIcon, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+                                            { id: 'currency', label: '匯率', icon: DollarSign, color: 'text-green-500', bg: 'bg-green-500/10' },
+                                            { id: 'journal', label: '足跡', icon: FootprintsIcon, color: 'text-orange-500', bg: 'bg-orange-500/10' },
+                                            { id: 'insurance', label: '保險', icon: Shield, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+                                            { id: 'emergency', label: '緊急', icon: Siren, color: 'text-red-500', bg: 'bg-red-500/10' },
+                                            { id: 'visa', label: '簽證', icon: FileCheck, color: 'text-teal-500', bg: 'bg-teal-500/10' },
+                                            { id: 'files', label: '檔案', icon: FileText, color: 'text-gray-500', bg: 'bg-gray-500/10' }
+                                        ].map((t, index) => (
+                                            <button
+                                                key={t.id}
+                                                onClick={() => { setActiveTab(t.id); setIsMobileMoreOpen(false); }}
+                                                className="flex flex-col items-center gap-2 group active:scale-90 transition-transform duration-200"
+                                                style={{ animationDelay: `${index * 50}ms` }}
+                                            >
+                                                <div className={`p-3.5 rounded-2xl ${t.bg} ${t.color} shadow-sm group-hover:scale-110 transition-transform duration-300 relative overflow-hidden`}>
+                                                    <t.icon className="w-6 h-6 stroke-[2px]" />
+                                                </div>
+                                                <span className={`text-[10px] font-bold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} group-hover:text-indigo-500 transition-colors`}>{t.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                )
-            }
-            <UserProfileModal
-                isOpen={!!viewingMember}
-                onClose={() => setViewingMember(null)}
-                user={viewingMember}
-                isAdmin={isAdmin}
-                isDarkMode={isDarkMode}
-            />
-        </div >
+                        )
+                    }
+
+                    <AddActivityModal isOpen={isAddModal} onClose={() => setIsAddModal(false)} onSave={handleSaveItem} onDelete={handleDeleteItineraryItem} isDarkMode={isDarkMode} date={selectDate} defaultType={addType} editData={editingItem} members={trip.members || [{ id: user?.uid || 'guest', name: user?.displayName || 'Guest' }]} trip={trip} />
+                    <TripSettingsModal isOpen={isTripSettingsOpen} onClose={() => setIsTripSettingsOpen(false)} trip={trip} onUpdate={(d) => !isSimulation && updateDoc(doc(db, "trips", trip.id), d)} isDarkMode={isDarkMode} />
+                    <MemberSettingsModal isOpen={isMemberModalOpen} onClose={() => setIsMemberModalOpen(false)} members={trip.members || []} onUpdateRole={handleUpdateRole} isDarkMode={isDarkMode} />
+                    <InviteModal isOpen={isInviteModal} onClose={() => setIsInviteModal(false)} tripId={trip.id} onInvite={handleInvite} isDarkMode={isDarkMode} />
+
+                    <AIGeminiModal isOpen={isAIModal} onClose={() => setIsAIModal(false)} onApply={handleAIApply} isDarkMode={isDarkMode} contextCity={trip.city} existingItems={itineraryItems} mode={aiMode} userPreferences={globalSettings.preferences} trip={trip} weatherData={weatherData} />
+
+                    <TripExportImportModal
+                        isOpen={Boolean(sectionModalConfig)}
+                        onClose={closeSectionModal}
+                        mode={sectionModalConfig?.mode}
+                        sourceType="section"
+                        section={sectionModalConfig?.section}
+                        data={sectionModalConfig?.data}
+                        onImport={(text) => sectionModalConfig?.mode === 'import' && handleSectionImport(sectionModalConfig.section, text)}
+                        isDarkMode={isDarkMode}
+                        trip={trip}
+                    />
+                    {
+                        isSmartExportOpen && (
+                            <SmartExportModal
+                                isOpen={isSmartExportOpen}
+                                onClose={() => setIsSmartExportOpen(false)}
+                                trip={trip}
+                                isDarkMode={isDarkMode}
+                                onExportPdf={handleExportPdf}
+                            />
+                        )
+                    }
+                    {
+                        confirmConfig && (
+                            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in bg-black/40">
+                                <div className={`w-full max-w-sm rounded-2xl shadow-2xl border ${isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'} p-6 overflow-hidden relative`}>
+                                    <div className={`absolute top-0 left-0 w-full h-1 ${confirmConfig.type === 'warning' ? 'bg-amber-500' : (confirmConfig.type === 'error' ? 'bg-red-500' : 'bg-indigo-500')}`}></div>
+                                    <h4 className="font-bold text-lg mb-2 flex items-center gap-2">
+                                        {confirmConfig.type === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-500" />}
+                                        {confirmConfig.type === 'error' && <X className="w-5 h-5 text-red-500" />}
+                                        {confirmConfig.title}
+                                    </h4>
+                                    <p className="text-sm opacity-70 mb-6 whitespace-pre-wrap leading-relaxed">{confirmConfig.message}</p>
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={() => setConfirmConfig(null)}
+                                            className={`flex-1 py-2.5 rounded-xl font-bold text-xs border ${isDarkMode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-200 hover:bg-gray-50'}`}
+                                        >
+                                            取消
+                                        </button>
+                                        {confirmConfig.onConfirm && (
+                                            <button
+                                                onClick={confirmConfig.onConfirm}
+                                                className={`flex-1 py-2.5 rounded-xl font-bold text-xs text-white shadow-lg ${confirmConfig.type === 'warning' ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-900/20' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-900/20'}`}
+                                            >
+                                                確定
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    <UserProfileModal
+                        isOpen={!!viewingMember}
+                        onClose={() => setViewingMember(null)}
+                        user={viewingMember}
+                        isAdmin={isAdmin}
+                        isDarkMode={isDarkMode}
+                    />
+                </div>
+            </div>
+        </>
     );
 };
 

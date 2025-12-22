@@ -91,6 +91,7 @@ const BudgetTab = ({
 
             {viewMode === 'chart' ? (
                 <BudgetCharts
+                    trip={trip}
                     budget={filteredBudget}
                     isDarkMode={isDarkMode}
                     glassCard={glassCard}

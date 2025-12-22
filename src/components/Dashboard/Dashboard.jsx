@@ -35,6 +35,7 @@ import {
     ConnectivityWidget,
     CurrencyConverter
 } from './widgets';
+import SearchFilterBar from './SearchFilterBar';
 
 // Default Widget Configuration
 const DEFAULT_WIDGETS = [
@@ -70,11 +71,15 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
     const [convFrom, setConvFrom] = useState(globalSettings?.currency || 'HKD');
     const [convTo, setConvTo] = useState('JPY');
 
-    // Widget Customization State (Read-only from localStorage, edit in Settings)
     const [widgets, setWidgets] = useState(() => {
         const saved = localStorage.getItem('dashboardWidgets');
         return saved ? JSON.parse(saved) : DEFAULT_WIDGETS;
     });
+
+    // Search & Filter State
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortOption, setSortOption] = useState('nearest');
+    const [filterOption, setFilterOption] = useState('all');
 
     useEffect(() => {
         if (globalSettings?.currency) setConvFrom(globalSettings.currency);
@@ -106,6 +111,63 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
             setForm(prev => ({ ...prev, cities: [...currentCities, cityName] }));
         }
     };
+
+    // --- Search & Filter Logic ---
+    const getTripStatus = (t) => {
+        const today = new Date().toISOString().split('T')[0];
+        if (t.endDate && t.endDate < today) return 'completed';
+        if (t.startDate && t.startDate <= today) return 'active';
+        return 'upcoming';
+    };
+
+    const sortedTrips = React.useMemo(() => {
+        let result = [...trips];
+
+        // 1. Filter
+        if (filterOption !== 'all') {
+            result = result.filter(t => getTripStatus(t) === filterOption);
+        }
+
+        // 2. Search
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            result = result.filter(t =>
+                t.name?.toLowerCase().includes(q) ||
+                t.country?.toLowerCase().includes(q) ||
+                t.city?.toLowerCase().includes(q)
+            );
+        }
+
+        // 3. Sort
+        const today = new Date().toISOString().split('T')[0];
+
+        result.sort((a, b) => {
+            if (sortOption === 'nearest') {
+                const statusA = getTripStatus(a);
+                const statusB = getTripStatus(b);
+
+                // Priority: Active > Upcoming > Completed
+                const priority = { active: 1, upcoming: 2, completed: 3 };
+                if (priority[statusA] !== priority[statusB]) {
+                    return priority[statusA] - priority[statusB];
+                }
+
+                // If same status:
+                // Active: End Date ASC (Ends sooner = top?) or Start Date? Project usually: End Date ASC (closing soon)
+                if (statusA === 'active') return a.endDate.localeCompare(b.endDate);
+                // Upcoming: Start Date ASC (Soonest first)
+                if (statusA === 'upcoming') return a.startDate.localeCompare(b.startDate);
+                // Completed: End Date DESC (Most recent past first)
+                if (statusA === 'completed') return b.endDate.localeCompare(a.endDate);
+            }
+            if (sortOption === 'date_asc') return a.startDate.localeCompare(b.startDate);
+            if (sortOption === 'date_desc') return b.startDate.localeCompare(a.startDate);
+            if (sortOption === 'name_asc') return a.name.localeCompare(b.name);
+            return 0;
+        });
+
+        return result;
+    }, [trips, searchQuery, sortOption, filterOption]);
 
     const handleCreate = async () => {
         if (isBanned) return sendNotification("帳戶已鎖定", "您目前無法建立新行程。", "error");
@@ -333,13 +395,13 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                 setSelectedCountryImg={setSelectedCountryImg}
                 setIsSmartImportModalOpen={setIsSmartImportModalOpen}
                 setIsSmartExportOpen={setIsSmartExportOpen}
-                trips={trips}
+                trips={sortedTrips.slice(0, 2)}
                 onSelectTrip={onSelectTrip}
             />
 
 
             <TripsGrid
-                trips={trips}
+                trips={sortedTrips}
                 loadingTrips={loadingTrips}
                 isDarkMode={isDarkMode}
                 currentLang={currentLang}
@@ -349,23 +411,26 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                 setIsSmartImportModalOpen={setIsSmartImportModalOpen}
                 setIsSmartExportOpen={setIsSmartExportOpen}
                 setIsCreateModalOpen={setIsCreateModalOpen}
+                searchFilter={
+                    <SearchFilterBar
+                        onSearch={setSearchQuery}
+                        onSort={setSortOption}
+                        onFilter={setFilterOption}
+                        currentSort={sortOption}
+                        currentFilter={filterOption}
+                    />
+                }
             />
 
 
             {/* Travel Information Hub */}
             <div className="pb-10">
-                <div className="flex items-center justify-between mb-6 border-l-4 border-indigo-500 pl-3 flex-wrap gap-2">
-                    <h2 className="text-2xl font-bold">旅遊資訊中心</h2>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setRefreshTrigger(prev => prev + 1)}
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-xs font-bold transition-all active:scale-95"
-                        >
-                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> 實時連線中
-                        </button>
+                <div className="flex flex-col mb-8 border-l-4 border-indigo-500 pl-4">
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                        <h2 className="text-2xl font-black tracking-tight">旅遊資訊中心</h2>
                         <button
                             onClick={() => onOpenSettings('info')}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 text-xs font-bold transition-all border border-white/10"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 text-[11px] font-bold transition-all border border-white/10"
                         >
                             <Settings2 className="w-3.5 h-3.5" /> 自訂排序
                         </button>

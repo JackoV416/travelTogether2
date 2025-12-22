@@ -20,12 +20,21 @@ const CustomTooltip = ({ active, payload, isDarkMode }) => {
 };
 
 const BudgetCharts = ({ budget = [], currency = 'HKD', isDarkMode, glassCard }) => {
-    // 1. Process Data for Category Pie Chart
+    const CAT_LABELS = {
+        'food': '餐飲',
+        'transport': '交通',
+        'shopping': '購物',
+        'hotel': '住宿',
+        'flight': '機票',
+        'spot': '門票/景點',
+        'misc': '其他'
+    };
+
     const categoryDataMap = budget.reduce((acc, item) => {
-        const cat = item.category || 'misc';
+        const catId = item.category || 'misc';
+        const label = CAT_LABELS[catId] || catId;
         const cost = Number(item.cost) || 0;
-        // Simple currency assumption: using raw cost. In real app might need conversion.
-        acc[cat] = (acc[cat] || 0) + cost;
+        acc[label] = (acc[label] || 0) + cost;
         return acc;
     }, {});
 
@@ -33,9 +42,17 @@ const BudgetCharts = ({ budget = [], currency = 'HKD', isDarkMode, glassCard }) 
 
     // 2. Process Data for Payer Bar Chart
     const payerDataMap = budget.reduce((acc, item) => {
-        const payer = item.payer || 'Unknown';
+        const payerIdentifier = item.payer || item.payerId || 'Unknown';
+
+        // Try to resolve name from trip members if it looks like an ID
+        let payerName = payerIdentifier;
+        if (trip?.members) {
+            const member = trip.members.find(m => m.id === payerIdentifier || m.name === payerIdentifier);
+            if (member) payerName = member.name;
+        }
+
         const cost = Number(item.cost) || 0;
-        acc[payer] = (acc[payer] || 0) + cost;
+        acc[payerName] = (acc[payerName] || 0) + cost;
         return acc;
     }, {});
 

@@ -27,23 +27,33 @@ const ENV_KEYS = [
     import.meta.env.VITE_GEMINI_API_KEY_5,
 ].filter(Boolean);
 
-const API_KEYS = [...(getStoredKey() ? [getStoredKey()] : []), ...ENV_KEYS];
+const API_KEYS = [...(getStoredKey() ? [getStoredKey()] : []), ...ENV_KEYS].filter(key =>
+    key &&
+    key.length > 20 && // Real keys are long
+    !key.includes("YOUR_API_KEY") &&
+    !key.includes("PLACEHOLDER")
+);
 
 if (API_KEYS.length === 0) {
-    console.warn("[Gemini AI] No API keys found. Add VITE_GEMINI_API_KEY to .env");
-    API_KEYS.push("YOUR_API_KEY_HERE");
+    console.warn("[Gemini AI] No valid API keys found. Add VITE_GEMINI_API_KEY to .env");
 }
 
 // Model priority chain: Try these in order when one hits quota
 const MODEL_CHAIN = [
     ...(getStoredModel() ? [getStoredModel()] : []), // User's custom model comes first!
-    "gemini-2.0-flash-exp",   // Updating to latest stable/exp
-    "gemini-1.5-flash",
-    "gemini-1.5-flash-8b",
+    "gemini-2.0-flash-exp",   // Best quality for experimental
+    "gemini-1.5-flash-latest", // Use -latest for stable v1beta
+    "gemini-1.5-flash-8b-latest",
+    "gemini-1.5-pro-latest",   // Pro fallback
+    "gemini-1.5-flash",       // Base alias
 ];
 
 let currentKeyIndex = 0;
 let currentModelIndex = 0;
+
+// V1.5: Avoid hammering exhausted models
+const MODEL_COOLDOWNS = new Map(); // `${keyIndex}-${modelIndex}` -> expiry timestamp
+const COOLDOWN_MS = 60000; // 1 minute
 
 // Create GenAI instances for each API key
 const genAIInstances = API_KEYS.map(key => new GoogleGenerativeAI(key));
@@ -67,9 +77,12 @@ function getModel() {
  * @returns {boolean} True if successfully switched
  */
 function rotateToNextModel() {
+    // Mark current model as cooling down
+    MODEL_COOLDOWNS.set(`${currentKeyIndex}-${currentModelIndex}`, Date.now() + COOLDOWN_MS);
+
     if (currentModelIndex < MODEL_CHAIN.length - 1) {
         currentModelIndex++;
-        console.log(`[Gemini AI] 🔄 Rotating to model: ${MODEL_CHAIN[currentModelIndex]}`);
+        console.log(`[Gemini AI] 🔄 Rotating to: ${MODEL_CHAIN[currentModelIndex]}`);
         return true;
     }
     return false;
@@ -96,43 +109,27 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
  * 🔁 Smart API call with retry + model rotation + key rotation + usage limit
- * Strategy: Check limit → Try all models with Key 1 → Try all models with Key 2 → ...
  * @param {Function} apiFn - Async function that makes the API call
- * @param {number} maxRetries - Max retry attempts per model
- * @param {boolean} trackUsage - Whether to track this call against daily limit
- * @returns {Promise<any>} API response
+ * @param {Object} options - { maxRetries: 2, importance: 'high'|'low', trackUsage: true }
  */
-async function callWithSmartRetry(apiFn, maxRetries = 2, trackUsage = true) {
+async function callWithSmartRetry(apiFn, options = {}) {
+    const { maxRetries = 2, importance = 'high', trackUsage = true } = options;
+
     // Check usage limit first (if tracking is enabled)
     if (trackUsage) {
+        // ... (usage limit check logic)
         const usage = getUsageData();
-
-        // Get dynamic limit
         let dailyLimit = DEFAULT_DAILY_LIMIT;
         try {
             const settings = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
-            if (settings.userGeminiLimit) {
-                dailyLimit = parseInt(settings.userGeminiLimit);
-            }
+            if (settings.userGeminiLimit) dailyLimit = parseInt(settings.userGeminiLimit);
         } catch (e) { }
-
-        // If limit is manually cleared (null/0/empty), treat as unlimited warning zone but allow it via logic 
-        // OR enforce a safer default if input was empty. Design choice: user input number overwrites. 
-        // If user input is "0" or invalid, fallback to default.
         if (isNaN(dailyLimit) || dailyLimit <= 0) dailyLimit = DEFAULT_DAILY_LIMIT;
 
-        const remaining = dailyLimit - usage.count;
-
-        if (usage.count >= DEFAULT_DAILY_LIMIT) {
-            const error = new Error(`AI_LIMIT_EXCEEDED: 你今日已經用咗 ${DEFAULT_DAILY_LIMIT} 次 AI 功能，請聽日再試！`);
+        if (usage.count >= dailyLimit) {
+            const error = new Error(`AI_LIMIT_EXCEEDED: 你今日已經用咗 ${dailyLimit} 次 AI 功能，請聽日再試！`);
             error.code = "AI_LIMIT_EXCEEDED";
-            error.usage = { used: usage.count, remaining: 0, total: DEFAULT_DAILY_LIMIT };
             throw error;
-        }
-
-        // Warn if approaching limit
-        if (remaining <= 5) {
-            console.warn(`[AI Limiter] ⚠️ 仲淨返 ${remaining} 次 AI 使用量`);
         }
     }
 
@@ -140,50 +137,69 @@ async function callWithSmartRetry(apiFn, maxRetries = 2, trackUsage = true) {
 
     // Try each API key
     for (let keyAttempt = 0; keyAttempt < API_KEYS.length; keyAttempt++) {
-        // Try each model in chain
-        for (let modelAttempt = 0; modelAttempt < MODEL_CHAIN.length; modelAttempt++) {
-            // Retry within each model
+        while (currentModelIndex < MODEL_CHAIN.length) {
+            // Check Cooldown (V1.5)
+            const cooldownKey = `${currentKeyIndex}-${currentModelIndex}`;
+            if (MODEL_COOLDOWNS.has(cooldownKey) && Date.now() < MODEL_COOLDOWNS.get(cooldownKey)) {
+                // V1.6: Low priority tasks give up immediately instead of rotating
+                if (importance === 'low') {
+                    throw new Error(`Model ${MODEL_CHAIN[currentModelIndex]} is cooling down (Low Priority)`);
+                }
+
+                if (!rotateToNextModel()) {
+                    if (!rotateToNextKey()) break;
+                }
+                continue;
+            }
+
             for (let retry = 0; retry <= maxRetries; retry++) {
                 try {
-                    const result = await apiFn(getModel());
-                    // Success! Track usage if enabled
+                    const model = getModel();
+                    const result = await apiFn(model);
+
                     if (trackUsage) {
-                        incrementUsage();
+                        let tokens = 0;
+                        try {
+                            if (result.response && result.response.usageMetadata) {
+                                tokens = result.response.usageMetadata.totalTokenCount || 0;
+                            }
+                        } catch (e) { }
+                        incrementUsage(tokens);
                     }
                     return result;
                 } catch (error) {
                     lastError = error;
                     const errorMsg = error.message || "";
+                    const isQuotaError = errorMsg.includes("429") || errorMsg.includes("quota") || errorMsg.includes("limit");
+                    const isNotFoundError = errorMsg.includes("404") || errorMsg.includes("not found");
+                    const isServiceError = errorMsg.includes("503") || errorMsg.includes("500") || errorMsg.includes("overloaded");
 
-                    // Rate limit - try waiting first
-                    if (errorMsg.includes("429") || errorMsg.includes("quota")) {
-                        if (retry < maxRetries) {
-                            const waitTime = (retry + 1) * 3000; // 3s, 6s backoff
-                            console.warn(`[Gemini AI] ⏳ Rate limited. Waiting ${waitTime / 1000}s...`);
-                            await delay(waitTime);
-                            continue;
-                        }
-                        // All retries failed for this model, try next model
-                        if (rotateToNextModel()) {
-                            break; // Break retry loop, continue model loop
-                        }
-                        // All models exhausted for this key, try next key
-                        if (rotateToNextKey()) {
-                            break; // Break model loop, continue key loop
+                    // V1.5: SILENT FAIL-FAST for Low Importance
+                    if (importance === 'low') {
+                        if (isQuotaError || isNotFoundError || isServiceError) {
+                            if (isQuotaError) MODEL_COOLDOWNS.set(cooldownKey, Date.now() + COOLDOWN_MS);
+                            throw error; // SILENT
                         }
                     }
 
-                    // Other errors - don't retry
-                    if (!errorMsg.includes("429") && !errorMsg.includes("503")) {
-                        throw error;
+                    if (isQuotaError && retry < maxRetries) {
+                        const waitTime = (retry + 1) * 2000;
+                        console.warn(`[Gemini AI] ⏳ Rate limited. Waiting ${waitTime / 1000}s...`);
+                        await delay(waitTime);
+                        continue;
                     }
+
+                    if (isQuotaError || isNotFoundError || isServiceError) {
+                        console.warn(`[Gemini AI] ${importance.toUpperCase()} task failed on ${MODEL_CHAIN[currentModelIndex]}. Rotating...`);
+                        if (rotateToNextModel()) break;
+                        if (rotateToNextKey()) break;
+                        throw lastError;
+                    }
+                    throw error;
                 }
             }
         }
     }
-
-    // All keys, models, and retries exhausted
-    console.error("[Gemini AI] ❌ All API keys and models exhausted!");
     throw lastError;
 }
 
@@ -202,65 +218,60 @@ function getTodayKey() {
 }
 
 /**
- * 📈 Get current AI usage data
- * @returns {{ date: string, count: number }}
+ * 📊 Get usage data with real-time tokens (V1.4)
  */
-function getUsageData() {
+export function getUsageData() {
+    const today = getTodayKey();
     try {
-        const data = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || "{}");
-        const today = getTodayKey();
-
-        // Reset if different day
+        const data = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || '{}');
         if (data.date !== today) {
-            return { date: today, count: 0 };
+            return { date: today, count: 0, tokens: 0 };
         }
-        return data;
+        return {
+            date: data.date,
+            count: data.count || 0,
+            tokens: data.tokens || 0
+        };
     } catch {
-        return { date: getTodayKey(), count: 0 };
+        return { date: today, count: 0, tokens: 0 };
     }
 }
 
 /**
- * ➕ Increment AI usage count
+ * ➕ Increment AI usage count and tokens (V1.4)
  */
-function incrementUsage() {
+function incrementUsage(tokens = 0) {
     const usage = getUsageData();
     usage.count++;
+    usage.tokens = (usage.tokens || 0) + tokens;
     localStorage.setItem(AI_USAGE_KEY, JSON.stringify(usage));
-    console.log(`[AI Limiter] Usage: ${usage.count}/${DEFAULT_DAILY_LIMIT}`);
+
+    // Broadcast update for real-time UI
+    window.dispatchEvent(new CustomEvent('AI_USAGE_UPDATED', { detail: usage }));
+
+    console.log(`[AI Limiter] Usage: ${usage.count} calls, ${usage.tokens} tokens today`);
     return usage;
 }
 
-// function removed - moved to end of file to support BYOK settings
-// export function checkAIUsageLimit() ... replaced
+export function checkAIUsageLimit() {
+    const usage = getUsageData();
+    let limit = DEFAULT_DAILY_LIMIT;
+    try {
+        const settings = JSON.parse(localStorage.getItem("travelTogether_settings") || "{}");
+        if (settings.userGeminiLimit) {
+            const parsed = parseInt(settings.userGeminiLimit);
+            if (!isNaN(parsed) && parsed > 0) limit = parsed;
+        }
+    } catch (e) { }
 
-/**
- * 🛡️ Wrapper that checks limit before calling AI
- * @param {Function} apiFn - The AI function to call
- * @returns {Promise<any>}
- * @throws {Error} If limit exceeded
- */
-export async function callWithUsageLimit(apiFn) {
-    const { allowed, remaining, total, used } = checkAIUsageLimit();
-
-    if (!allowed) {
-        const error = new Error(`AI_LIMIT_EXCEEDED: 你今日已經用咗 ${total} 次 AI 功能，請聽日再試！`);
-        error.code = "AI_LIMIT_EXCEEDED";
-        error.usage = { used, remaining: 0, total };
-        throw error;
-    }
-
-    // Warn if approaching limit
-    if (remaining <= 5 && remaining > 0) {
-        console.warn(`[AI Limiter] ⚠️ 仲淨返 ${remaining} 次 AI 使用量`);
-    }
-
-    // Execute and increment on success
-    const result = await apiFn();
-    incrementUsage();
-
-    return result;
-}
+    return {
+        used: usage.count,
+        total: limit,
+        tokens: usage.tokens,
+        remaining: Math.max(0, limit - usage.count),
+        allowed: usage.count < limit
+    };
+};
 
 /**
  * 🔄 Reset AI usage (for testing/admin)
@@ -825,9 +836,7 @@ export async function suggestTransportBetweenSpots({
     time = null,
     preference = 'public'
 }) {
-    try {
-        const model = getGenAI().getGenerativeModel({ model: "gemini-3-flash-preview" });
-
+    const apiTask = async (model) => {
         const prompt = `You are a local transport expert for ${city}. Suggest the best way to travel between two locations.
 
 === JOURNEY ===
@@ -839,7 +848,7 @@ Preference: ${preference} (public/taxi/walking)
 === REQUIREMENTS ===
 1. Provide 2-3 transport options
 2. Include realistic prices in local currency
-3. Estimate travel duration
+3. Estimate travel duration (e.g. "15min")
 4. Consider traffic/rush hour if time specified
 5. Include walking option if distance <1km
 
@@ -876,25 +885,10 @@ Preference: ${preference} (public/taxi/walking)
         if (jsonMatch) {
             return JSON.parse(jsonMatch[0]);
         }
-
         throw new Error("Invalid response format");
-    } catch (error) {
-        console.error("[Gemini AI] Transport suggestion error:", error);
-        // Fallback to generic suggestion
-        return {
-            recommended: {
-                mode: "metro",
-                name: "Public Transport",
-                cost: 300,
-                currency: "JPY",
-                duration: "20min",
-                steps: ["Take public transport"],
-                tip: "Check local transit app for real-time info"
-            },
-            alternatives: [],
-            walkable: false
-        };
-    }
+    };
+
+    return await callWithSmartRetry(apiTask, { maxRetries: 0, importance: 'low', trackUsage: true });
 }
 
 /**
@@ -904,9 +898,7 @@ Preference: ${preference} (public/taxi/walking)
  * @returns {Promise<Object>} Location details with coordinates
  */
 export async function getLocationDetails(placeName, city) {
-    try {
-        const model = getGenAI().getGenerativeModel({ model: "gemini-3-flash-preview" });
-
+    const apiTask = async (model) => {
         const prompt = `Provide location details for "${placeName}" in ${city}.
 
 === OUTPUT FORMAT (JSON ONLY) ===
@@ -936,8 +928,11 @@ If the place doesn't exist or you're unsure, set coordinates to null.`;
         if (jsonMatch) {
             return JSON.parse(jsonMatch[0]);
         }
-
         throw new Error("Invalid response format");
+    };
+
+    try {
+        return await callWithSmartRetry(apiTask, 2, true);
     } catch (error) {
         console.error("[Gemini AI] Location details error:", error);
         return {
@@ -956,9 +951,7 @@ If the place doesn't exist or you're unsure, set coordinates to null.`;
  * @returns {Promise<string>} AI response
  */
 export async function askTravelAI(question, context = {}) {
-    try {
-        const model = getGenAI().getGenerativeModel({ model: "gemini-3-flash-preview" });
-
+    const apiTask = async (model) => {
         const prompt = `You are a helpful travel assistant. Answer the following travel question.
 
 === TRIP CONTEXT ===
@@ -978,6 +971,10 @@ ${question}
 
         const result = await model.generateContent(prompt);
         return result.response.text();
+    };
+
+    try {
+        return await callWithSmartRetry(apiTask, 2, true);
     } catch (error) {
         console.error("[Gemini AI] Chat error:", error);
         throw error;
@@ -1036,7 +1033,7 @@ Categories: ${categories.length > 0 ? categories.join(', ') : 'All categories'}
                 return JSON.parse(jsonMatch[0]);
             }
             throw new Error("Invalid response format");
-        });
+        }, { maxRetries: 1, importance: 'low', trackUsage: true });
     } catch (error) {
         console.error("[Gemini AI] Shopping generation error:", error);
 
@@ -1107,7 +1104,7 @@ Activities: ${activities.slice(0, 10).join(', ') || 'General sightseeing'}
                 return JSON.parse(jsonMatch[0]);
             }
             return Array.from(new Set(activities));
-        });
+        }, { maxRetries: 1, importance: 'low', trackUsage: true });
     } catch (error) {
         console.error("[Gemini AI] Packing generation error:", error);
 
@@ -1130,8 +1127,6 @@ Activities: ${activities.slice(0, 10).join(', ') || 'General sightseeing'}
  */
 export async function generateWeatherSummaryWithGemini(city, rawWeatherData = {}) {
     try {
-        const model = getGenAI().getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-
         const prompt = `你係一個旅遊天氣專家。請根據提供嘅原始數據，為 ${city} 生成一個詳細嘅天氣與穿著建議。
 
 === 原始數據 ===
@@ -1157,8 +1152,11 @@ ${JSON.stringify(rawWeatherData, null, 2)}
     "overallOutfit": "洋蔥式穿法 (Onion Layering)"
 }`;
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
+        const response = await callWithSmartRetry(async (model) => {
+            const res = await model.generateContent(prompt);
+            return res.response.text();
+        }, { maxRetries: 1, importance: 'high', trackUsage: true });
+        const text = response;
 
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
@@ -1195,8 +1193,6 @@ ${JSON.stringify(rawWeatherData, null, 2)}
  */
 export async function generateTripName(trip) {
     try {
-        const model = getGenAI().getGenerativeModel({ model: "gemini-2.0-flash" });
-
         const destination = trip.city || trip.cities?.[0] || trip.country || "Unknown";
         const country = trip.country || "";
         const startDate = trip.startDate || "";
@@ -1227,8 +1223,10 @@ Start Date: ${startDate}
 === OUTPUT ===
 Return ONLY the trip name, nothing else. No quotes, no explanation.`;
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text().trim();
+        const text = await callWithSmartRetry(async (model) => {
+            const result = await model.generateContent(prompt);
+            return result.response.text().trim();
+        }, { maxRetries: 1, importance: 'low', trackUsage: true });
 
         // Clean up any quotes or extra formatting
         return text.replace(/['"]/g, '').trim();
@@ -1239,20 +1237,3 @@ Return ONLY the trip name, nothing else. No quotes, no explanation.`;
         return `${city} Trip`;
     }
 }
-export const checkAIUsageLimit = () => {
-    const usage = getUsageData();
-    let limit = DEFAULT_DAILY_LIMIT;
-    try {
-        const settings = JSON.parse(localStorage.getItem("travelTogether_settings") || "{}");
-        if (settings.userGeminiLimit) {
-            const parsed = parseInt(settings.userGeminiLimit);
-            if (!isNaN(parsed) && parsed > 0) limit = parsed;
-        }
-    } catch (e) { }
-
-    return {
-        used: usage.count,
-        total: limit,
-        remaining: Math.max(0, limit - usage.count)
-    };
-};

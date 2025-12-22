@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, MessageCircle } from 'lucide-react';
 
 class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -45,13 +45,24 @@ class ErrorBoundary extends React.Component {
                         </div>
                     )}
 
-                    <button
-                        onClick={this.handleReload}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-full transition-all shadow-lg shadow-indigo-500/20 active:scale-95"
-                    >
-                        <RefreshCw className="w-4 h-4" />
-                        重新載入
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <button
+                            onClick={this.handleReload}
+                            className="flex items-center justify-center gap-2 px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-full transition-all shadow-lg shadow-indigo-500/20 active:scale-95 text-sm font-bold"
+                        >
+                            <RefreshCw className="w-4 h-4" />
+                            重新載入
+                        </button>
+                        {this.props.onOpenFeedback && (
+                            <button
+                                onClick={this.props.onOpenFeedback}
+                                className="flex items-center justify-center gap-2 px-6 py-2.5 bg-white/5 hover:bg-white/10 text-gray-400 rounded-full transition-all border border-white/10 active:scale-95 text-sm font-bold"
+                            >
+                                <MessageCircle className="w-4 h-4" />
+                                回報問題
+                            </button>
+                        )}
+                    </div>
                 </div>
             );
         }

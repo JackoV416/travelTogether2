@@ -1,17 +1,65 @@
 import {
-    TrainFront, BusFront, Car, Route
+    Train, Bus, Car, Route
 } from 'lucide-react';
 
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = 'V1.0.5';
-export const APP_VERSION_TAG = 'Security Update';
-export const APP_LAST_UPDATE = '2025-12-21';
+export const APP_VERSION = 'V1.1.0';
+export const APP_VERSION_TAG = 'Design & Intelligence';
+export const APP_LAST_UPDATE = '2025-12-22';
 
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.1.0",
+        tag: "Design & Intelligence",
+        date: "2025-12-22",
+        desc: {
+            "zh-TW": "V1.1.0: 行程管理極致進化 - 票券化、連動建議與 Undo/Redo",
+            "en": "V1.1.0: Design & Intelligence - Ticket Style, Smart Ripples & Undo System"
+        },
+        details: {
+            "zh-TW": [
+                "🔄 Undo/Redo: 實裝行程修改「悔棋」系統，手殘救星 (V1.1 Phase 7)",
+                "🌊 Smart Ripple: 編輯行程時間時，後面嘅行程會自動「漣漪式」推導時間 (V1.1 Phase 2/3)",
+                "📦 Smart Bundles: 新增機票時自動建議「入境程序」同「機場交通」套餐 (V1.1 Phase 5)",
+                "⚡ Optimistic UI+: 配合 LocalStorage 雙重快取，操作極速反應 (V1.1 Phase 1)",
+                "🎟️ Ticket Style Polish: 統一行程卡片為票券式佈局，視覺層次更分明"
+            ],
+            "en": [
+                "🔄 Undo/Redo: Global undo/redo system for itinerary edits (V1.1 Phase 7)",
+                "🌊 Smart Ripple: Auto-adjust subsequent items when changing durations (V1.1 Phase 2/3)",
+                "📦 Smart Bundles: Context-aware suggestions for Flights (Immigration/Transport bundles)",
+                "⚡ Optimistic UI+: Lightning fast CRUD with LocalStorage persistence (V1.1 Phase 1)",
+                "🎟️ Ticket Style Polish: Unified ticket-style layouts for premium visual hierarchy"
+            ]
+        }
+    },
+    {
+        ver: "V1.0.6",
+        tag: "UI & Integrity Polish",
+        date: "2025-12-22",
+        desc: {
+            "zh-TW": "V1.0.6: 介面拋光、匯率顯示優化與系統穩定性強化",
+            "en": "V1.0.6: UI Polish, Currency Readability & Integrity Boost"
+        },
+        details: {
+            "zh-TW": [
+                "💎 匯率優化: 購物與支出清單現在重點顯示「本地貨幣」，方便快速對比預算",
+                "底部狀態欄: 整合時間與同步狀態至同一行，並新增「最新同步時間」標註",
+                "🛡️ 圖像韌性: 全面實裝 ImageWithFallback，徹底消除損壞圖片圖標",
+                "⚠️ 錯誤處理: 統一頁面錯誤 (404/500/503) 視覺風格，並加入即時回報機制"
+            ],
+            "en": [
+                "💎 Currency Polish: Highlighted home currency in lists for better budget tracking",
+                "Streamlined Footer: Merged time and sync status with latest sync timestamp",
+                "🛡️ Image Resilience: Full implementation of ImageWithFallback for all assets",
+                "⚠️ Error Handling: Unified 404/500/503 pages with integrated issue reporting"
+            ]
+        }
+    },
     {
         ver: "V1.0.5",
         tag: "Security Update",
@@ -730,12 +778,12 @@ export const INFO_DB = {
         { title: "IATA 預測 2025 國際旅客量創新高", country: "Global", url: "https://www.iata.org", provider: "IATA" }
     ],
     weather: [
-        { city: "Tokyo", temp: "12°C", desc: "多雲", tz: "Asia/Tokyo" },
-        { city: "Taipei", temp: "22°C", desc: "晴朗", tz: "Asia/Taipei" },
-        { city: "London", temp: "8°C", desc: "陰雨", tz: "Europe/London" },
-        { city: "New York", temp: "5°C", desc: "寒冷", tz: "America/New_York" },
-        { city: "Bangkok", temp: "33°C", desc: "炎熱", tz: "Asia/Bangkok" },
-        { city: "Zurich", temp: "2°C", desc: "飄雪", tz: "Europe/Zurich" }
+        { city: "Tokyo", dayTemp: "12°C", nightTemp: "2°C", dayDesc: "晴朗", nightDesc: "寒冷", dayIcon: "☀️", nightIcon: "🌙", tz: "Asia/Tokyo" },
+        { city: "Taipei", dayTemp: "22°C", nightTemp: "18°C", dayDesc: "多雲", nightDesc: "涼爽", dayIcon: "⛅", nightIcon: "☁️", tz: "Asia/Taipei" },
+        { city: "London", dayTemp: "8°C", nightTemp: "3°C", dayDesc: "微雨", nightDesc: "陰暗", dayIcon: "🌦️", nightIcon: "🌧️", tz: "Europe/London" },
+        { city: "New York", dayTemp: "5°C", nightTemp: "-2°C", dayDesc: "晴時多雲", nightDesc: "嚴寒", dayIcon: "🌤️", nightIcon: "❄️", tz: "America/New_York" },
+        { city: "Bangkok", dayTemp: "33°C", nightTemp: "26°C", dayDesc: "炎熱", nightDesc: "潮濕", dayIcon: "🌡️", nightIcon: "✨", tz: "Asia/Bangkok" },
+        { city: "Zurich", dayTemp: "2°C", nightTemp: "-5°C", dayDesc: "大雪", nightDesc: "結冰", dayIcon: "🌨️", nightIcon: "⛄", tz: "Europe/Zurich" }
     ],
     hotels: [
         { name: "APA Shinjuku", country: "Japan", price: "$800", star: 4.2, img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400", url: "https://www.agoda.com", details: "雙人房 • 01/04/2025 • Agoda" },
@@ -779,8 +827,8 @@ export const AIRLINE_LOGOS = {
 };
 
 export const TRANSPORT_ICONS = {
-    metro: { label: "地鐵", icon: TrainFront, color: "text-indigo-500" },
-    bus: { label: "巴士", icon: BusFront, color: "text-emerald-500" },
+    metro: { label: "地鐵", icon: Train, color: "text-indigo-500" },
+    bus: { label: "巴士", icon: Bus, color: "text-emerald-500" },
     car: { label: "自駕", icon: Car, color: "text-amber-500" },
     walk: { label: "步行", icon: Route, color: "text-blue-500" }
 };
@@ -821,59 +869,60 @@ export const SIMULATION_DATA = {
         "2025-12-29": { city: "大阪 (Osaka)", country: "Japan (日本)" }
     },
     members: [
-        { id: "sim-user-1", name: "Alex (主揪)", role: "owner", avatar: "https://i.pravatar.cc/150?u=alex" },
-        { id: "sim-user-2", name: "Buddy (導遊)", role: "editor", avatar: "https://i.pravatar.cc/150?u=buddy" },
-        { id: "sim-user-3", name: "Sarah (攝影師)", role: "viewer", avatar: "https://i.pravatar.cc/150?u=sarah" },
-        { id: "sim-user-4", name: "Mike (財務)", role: "editor", avatar: "https://i.pravatar.cc/150?u=mike" }
+        { id: "sim-user-1", name: "Alex (主揪)", role: "owner", avatar: "https://ui-avatars.com/api/?name=Alex&background=6366f1&color=fff" },
+        { id: "sim-user-2", name: "Buddy (導遊)", role: "editor", avatar: "https://ui-avatars.com/api/?name=Buddy&background=10b981&color=fff" },
+        { id: "sim-user-3", name: "Sarah (攝影師)", role: "viewer", avatar: "https://ui-avatars.com/api/?name=Sarah&background=f43f5e&color=fff" },
+        { id: "sim-user-4", name: "Mike (財務)", role: "editor", avatar: "https://ui-avatars.com/api/?name=Mike&background=f59e0b&color=fff" }
     ],
     itinerary: {
         "2025-12-24": [
-            { id: "it-1", time: "09:15", name: "✈️ CX520 (HKG -> NRT)", type: "flight", cost: 4500, currency: "HKD", details: { location: "HKG T1 Gate 62", desc: "國泰長途旗艦機 B-KPY (B777-300ER)", startTime: "09:15", endTime: "14:30", duration: "4hr 15min", image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800", insight: "【百科：旗艦領航】B-KPY 配備最新 4K 影音系統。飛行時間約 4hr 15min。Alex 負責管理全體紙本備份。" } },
-            { id: "it-2", time: "14:30", name: "🛂 成田入境清關 & 交通樞紐", type: "immigration", cost: 0, currency: "JPY", details: { location: "成田 T1 到達大廳", arrival: "B1F 鐵道層 (Rail)", desc: "入境後落 B1F 搵 JR 綠色窗口", startTime: "14:30", endTime: "16:00", duration: "90min", insight: "【入境百科】1. 入境排隊約 30-90min (視乎航班密度)。2. Visit Japan Web QR 必須準備好。3. 海關申報落 B1F 後轉左。4. 去鐵道層買 N'EX 飛。排最右邊隊通常快 5min。Mike 隨時準備加值 Suica。" } },
-            { id: "it-3", time: "16:15", name: "🚆 N'EX (成田快線)", type: "transport", cost: 4070, currency: "JPY", details: { location: "成田 T1 -> 新宿站 (Shinjuku)", desc: "月台 5-6 (地底) | 車型 E259 系", transportType: "train", startTime: "16:15", endTime: "17:35", duration: "80min", image: "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800", insight: "【技術百科】130km/h 準時運行。喼架有密碼鎖，記得記低 4 位數。車廂位底有插頭。Alex 負責分配行李架位置。" } },
-            { id: "it-4", time: "18:00", name: "🏨 Hotel Check-in (新宿東口導航)", type: "hotel", cost: 0, currency: "JPY", details: { location: "新宿站東口 -> Hotel Gracery", desc: "經 Studio Alta 旁哥吉拉街步行", startTime: "18:00", endTime: "18:15", duration: "15min", distance: "450m", steps: 1100, insight: "【矩陣導航】新宿站東口 (East Exit) 出閘，見到 Studio Alta 大電視直入哥吉拉街。Check-in 15min。呢度係歌舞伎町心臟地帶。" } },
-            { id: "it-5", time: "19:30", name: "🍽️ 晚餐: 敘敘苑 (Shinjuku East)", type: "food", cost: 8000, currency: "JPY", details: { location: "新宿 Lumine Est 旁大廈 12F", desc: "窗邊景觀燒肉 (Premium 牛舌)", startTime: "19:30", endTime: "21:00", duration: "90min", image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=800", insight: "【物流數據】食飯 90min。由酒店行過嚟只要 5 分鐘，經歌舞伎町一番街大門景最靚。Sarah 準備影專業大片。" } },
-            { id: "it-end-1", time: "21:00", name: "🏨 返回酒店 (Return)", type: "walk", cost: 0, currency: "JPY", details: { location: "敘敘苑 -> Hotel Gracery", desc: "原路返回 8F Lobby", startTime: "21:00", endTime: "21:08", duration: "8min", distance: "300m", steps: 400, insight: "21:08 返到酒店 8F。Alex 負責管理全體電子設備叉電任務。" } }
+            { id: "it-1", time: "09:15", name: "✈️ CX520 (HKG -> NRT)", type: "flight", cost: 4500, currency: "HKD", bundleId: "arrival-bundle-d1", details: { flightNo: "CX520", nameEn: "Cathay Pacific Airways", location: "HKG T1 Gate 62", desc: "國泰長途旗艦機 B-KPY (B777-300ER)", startTime: "09:15", endTime: "14:30", duration: "4hr 15min", image: "https://images.unsplash.com/photo-1570710891163-6d3b5c47248b?w=800", insight: "【百科】B-KPY 配備最新 4K 影音系統。飛行時長約 4hr 15min。Alex 負責管理全體紙本備份。【試玩提示】長按呢張卡片可以拖曳排序！", tags: ["Cathay", "Flagship", "T1-Departure"] } },
+            { id: "it-2", time: "14:30", name: "🛂 成田入境清關 & 交通樞紐", type: "immigration", cost: 0, currency: "JPY", bundleId: "arrival-bundle-d1", details: { nameEn: "Narita Immigration", section: "Arrivals", location: "成田 T1 到達大廳", arrival: "B1F 鐵道層 (Rail)", desc: "入境後落 B1F 搵 JR 綠色窗口", startTime: "14:30", endTime: "16:00", duration: "1hr 30min", insight: "【入境百科】1. 入境排隊約 30-90min (視乎航班密度)。2. Visit Japan Web QR 必須準備好。3. 海關申報落 B1F 後轉左。4. 去鐵道層買 N'EX 票。【試玩提示】呢張入境卡同航班係 Bundle，會一齊移動㗎！", tags: ["Immigration", "VJW", "Must-Do"] } },
+            { id: "it-3", time: "16:15", name: "🚆 Narita Express (N'EX)", type: "train", cost: 4070, currency: "JPY", details: { trainNo: "N'EX 34", nameEn: "JR-East Airport Express", location: "成田 T1 -> 新宿站 (Shinjuku)", platform: "Platform 1 (B1F)", desc: "月台 5-6 (地底) | 車型 E259 系", transportType: "train", startTime: "16:15", endTime: "17:35", duration: "80min", image: "https://images.unsplash.com/photo-1490399102053-e82f67bdd1d7?w=800", insight: "【技術百科】130km/h 準時運行。喼架有密碼鎖。", tags: ["JR-East", "Fastest", "Luggage-Space"] } },
+            { id: "it-4", time: "18:00", name: "🏨 Hotel Check-in", type: "hotel", cost: 0, currency: "JPY", details: { nameEn: "Hotel Gracery Shinjuku, Tokyo", location: "新宿站東口 -> Hotel Gracery Shinjuku 8F Lobby", desc: "經 Studio Alta 旁哥吉拉街步行", startTime: "18:00", endTime: "18:15", duration: "15min", distance: "450m", steps: 1100, insight: "【導航】見到 Studio Alta 大電視直入哥吉拉街。住呢度就係為咗睇哥吉拉！", tags: ["Godzilla", "Kabukicho", "8F-Lobby"] } },
+            { id: "it-5", time: "19:30", name: "🍽️ 敘敘苑燒肉", type: "food", cost: 8000, currency: "JPY", details: { nameEn: "Jojoen Yakiniku (Shinjuku)", location: "新宿 Lumine Est 旁大廈 12F", desc: "窗邊景觀燒肉 (Premium 牛舌)", startTime: "19:30", endTime: "21:00", duration: "90min", image: "https://images.unsplash.com/photo-1514356641322-83950f146449?w=800", insight: "【物流】食飯 90min。經歌舞伎町一番街大門影相最靚。", tags: ["Famous", "Sky-View", "A5-Beef"] } },
+            { id: "it-end-1", time: "21:00", name: "🏨 返回酒店 (Return)", type: "walk", cost: 0, currency: "JPY", hasWarning: true, warningMessage: "【教學提示】『返回酒店』標誌一天結束，建議每日行程尾段都加入。", details: { nameEn: "Return to Hotel", location: "敘敘苑 -> Hotel Gracery Shinjuku 8F", desc: "原路返回 8F Lobby", startTime: "21:00", endTime: "21:08", duration: "8min", distance: "300m", steps: 400, insight: "準備聽日嘅熱血行程！", tags: ["Night-Walk", "Security-Check"] } }
         ],
         "2025-12-25": [
-            { id: "it-start-2", time: "08:30", name: "🏨 新宿站避風導航 (Hotel -> E01)", type: "walk", cost: 0, currency: "JPY", details: { location: "酒店 -> 新宿西口 (E01) 3號月台", desc: "經由西武新宿站 Pepe 隧道 (Matrix)", startTime: "08:30", endTime: "08:38", duration: "8min", distance: "450m", steps: 1200, insight: "【矩陣導航】行返西武新宿站入 Pepe 隧道，直去都營大江戶線。月台 3 (內環往築地)。步行 8min 消暑避寒。" } },
-            { id: "it-tsuk-1", time: "08:45", name: "🚇 大江戶線往築地", type: "transport", cost: 230, currency: "JPY", details: { location: "新宿西口 -> 築地市場", desc: "日本最深地鐵線 (42.3m)", startTime: "08:45", endTime: "09:05", duration: "20min", insight: "車程約 20 分鐘。搵 **A1 出口** 出站，轉左行 1min 即達築地外市場大看板。" } },
-            { id: "it-tsuk-2", time: "09:15", name: "🍣 築地市場站 -> 外市場尋味", type: "food", cost: 3500, currency: "JPY", details: { location: "築地 4 Chome 門外市場", desc: "日本廚房 | 山長玉子燒", startTime: "09:15", endTime: "11:15", duration: "120min", image: "https://images.unsplash.com/photo-1534422298391-e4f8c170db76?w=800", insight: "【物流數據】停留 120min。食完步行 12min (850m) 到銀座，沿晴海通直行會見到歌舞伎座。" } },
-            { id: "it-gin-1", time: "12:00", name: "🛍️ Ginza Six (GSIX) 打卡", type: "shopping", cost: 5000, currency: "JPY", details: { location: "銀座 A3 出口直結", desc: "谷口吉生設計 | 現代屋台建築", startTime: "12:00", endTime: "14:00", duration: "120min", image: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800", insight: "【百科內容】GSIX 由谷口吉生設計。6F 蔦屋書店係必影點。步行 5min 去銀座站 (銀座線月台)。" } },
-            { id: "it-asa-1", time: "15:00", name: "🚇 銀座線往淺草 (P2T)", type: "transport", cost: 180, currency: "JPY", details: { location: "銀座站 -> 淺草站", desc: "亞洲最古老地鐵 (1927)", startTime: "15:00", endTime: "15:15", duration: "15min", insight: "車程 15 分鐘。搵 **A4 出口** 直衝雷門大燈籠。Sarah 準備影專業大片。" } },
-            { id: "it-asa-2", time: "15:30", name: "⛩️ 淺草寺 -> 晴空塔步行矩陣", type: "spot", cost: 0, currency: "JPY", details: { location: "雷門 -> Sumida River Walk -> 晴空塔", desc: "創立於 645 年 | 隅田川水上步道", startTime: "15:30", endTime: "17:00", duration: "90min", image: "https://images.unsplash.com/photo-1570459027562-4a916cc6113f?w=800", insight: "【導航矩陣】步行 18min (1.2km)。經 **Sumida River Walk** 橋，睇塔視野最開闊。停留 90min。" } },
-            { id: "it-sky-1", time: "18:00", name: "🗼 東京晴空塔 (Skytree)", type: "spot", cost: 3100, currency: "JPY", details: { location: "墨田區押上 (T2P)", desc: "高 634m | 世界第一高電波塔", startTime: "18:00", endTime: "20:00", duration: "120min", image: "https://images.unsplash.com/photo-1545389656-78b17ee191d9?w=800", insight: "【物流數據】停留 120min。採用古代五重塔心柱抗震。夜晚睇『粋、雅、幟』變色。" } },
-            { id: "it-end-2", time: "21:00", name: "🏨 返回酒店 (Return)", type: "walk", cost: 0, currency: "JPY", details: { location: "新宿站 -> Hotel Gracery", desc: "經歌舞伎町一番街返酒店", startTime: "21:00", endTime: "21:10", duration: "10min", distance: "450m", steps: 600, insight: "21:00 返到新宿。Mike 負責搵便利店買宵夜。" } }
+            { id: "it-start-2", time: "08:30", name: "🏨 酒店出發 (西武新宿)", type: "walk", cost: 0, currency: "JPY", hasWarning: true, warningMessage: "【教學提示】『酒店出發』標誌一天開始，包含導航路線同指示。", details: { nameEn: "Pepe Tunnel Shortcut", location: "Hotel Gracery Shinjuku -> 西武新宿駅 (Seibu-Shinjuku)", desc: "經由西武新宿站 Pepe 隧道 (Matrix)", startTime: "08:30", endTime: "08:38", duration: "8min", distance: "450m", steps: 1200, insight: "【導航】直去都營大江戶線。步行 8min 消暑避寒。", tags: ["Shortcut", "Matrix-Path", "Cooling"] } },
+            { id: "it-tsuk-1", time: "08:45", name: "🚇 都營大江戶線", type: "train", cost: 230, currency: "JPY", details: { nameEn: "Oedo Line (Toei Subway)", location: "新宿西口 (E01) -> 築地市場 (E18)", desc: "日本最深地鐵線 (42.3m)", startTime: "08:45", endTime: "09:05", duration: "20min", insight: "【導航】車程約 20 分鐘。搵 **A1 出口** 出站。", tags: ["Subway", "Deepest-Line", "Fast-Link"] } },
+            { id: "it-tsuk-2", time: "09:15", name: "🍣 築地外市場", type: "food", cost: 3500, currency: "JPY", details: { nameEn: "Tsukiji Outer Market", location: "築地 4 Chome 門外市場", desc: "日本廚房 | 山長玉子燒", startTime: "09:15", endTime: "11:15", duration: "120min", image: "https://images.unsplash.com/photo-1555529921-5ae923d6f51f?w=800", insight: "【百科】食完步行 12min (850m) 到銀座。", tags: ["Seafood", "Street-Food", "Historic"] } },
+            { id: "it-gin-1", time: "12:00", name: "🛍️ Ginza Six (GSIX)", type: "shopping", cost: 5000, currency: "JPY", details: { nameEn: "Ginza Luxury Mall", location: "銀座 A3 出口直結", desc: "谷口吉生設計 | 現代屋台建築", startTime: "12:00", endTime: "14:00", duration: "120min", image: "https://images.unsplash.com/photo-1541447271487-09612b3f49f7?w=800", insight: "【百科】6F 蔦屋書店係必影點。", tags: ["Architecture", "Art", "Luxury"] } },
+            { id: "it-asa-1", time: "15:00", name: "🚇 東京地鐵銀座線", type: "train", cost: 180, currency: "JPY", details: { nameEn: "Ginza Line (Tokyo Metro)", location: "銀座站 -> 淺草站", desc: "亞洲最古老地鐵 (1927)", startTime: "15:00", endTime: "15:15", duration: "15min", insight: "【導航】車程 15 分鐘。搵 **A4 出口**。", tags: ["Vintage-Subway", "Classic-Route"] } },
+            { id: "it-asa-2", time: "15:30", name: "⛩️ 雷門 & 淺草寺", type: "spot", cost: 0, currency: "JPY", details: { nameEn: "Kaminarimon & Senso-ji Temple", location: "淺草 A4 出口 -> 雷門 -> 淺草寺", desc: "創立於 645 年 | 東京最古老寺廟", startTime: "15:30", endTime: "16:00", duration: "30min", image: "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=800", insight: "【導航】A4 出口直出見雷門。仲見世通 250m 直行入寺。", tags: ["Shrine", "Iconic", "Photo-Spot"] } },
+            { id: "it-asa-3", time: "16:15", name: "🌉 隅田川水上步道", type: "spot", cost: 0, currency: "JPY", hasWarning: true, warningMessage: "【教學提示】呢個時間同前一個活動有 15 分鐘空檔，考慮加入步行交通。", details: { nameEn: "Sumida River Walk", location: "淺草寺 -> 隅田川 -> 墨田區", desc: "2020 年開放 | 直達晴空塔天空步道", startTime: "16:15", endTime: "16:45", duration: "30min", image: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800", insight: "【導航】呢條橋可以影到晴空塔最正角度！慢慢行 15min。", tags: ["Bridge", "Scenic-Walk", "Skytree-View"] } },
+            { id: "it-sky-1", time: "18:00", name: "🗼 東京晴空塔", type: "spot", cost: 3100, currency: "JPY", details: { nameEn: "Tokyo Skytree", location: "墨田區押上 (T2P)", desc: "高 634m | 世界第一高電波塔", startTime: "18:00", endTime: "20:00", duration: "120min", image: "https://images.unsplash.com/photo-1545389336-cf090694435e?w=800", insight: "【百科】採用古代五重塔心柱抗震。", tags: ["Sky-View", "Engineering", "Night-Scene"] } },
+            { id: "it-end-2", time: "21:00", name: "🏨 返回酒店 (Return)", type: "walk", cost: 0, currency: "JPY", details: { nameEn: "Return to Shinjuku", location: "新宿站 -> Hotel Gracery Shinjuku Tokyo 8F", desc: "經歌舞伎町一番街返酒店", startTime: "21:00", endTime: "21:10", duration: "10min", distance: "450m", steps: 600, insight: "去 1 樓 7-11 買宵夜。", tags: ["Neon-Light", "Convenience-Store"] } }
         ],
         "2025-12-26": [
-            { id: "it-start-3", time: "10:00", name: "🏨 酒店出發", type: "walk", cost: 0, currency: "JPY", details: { location: "酒店 -> JR 新宿站", desc: "經由新宿東口 Studio Alta 旁小路入閘", startTime: "10:00", endTime: "10:10", duration: "10min", distance: "450m", steps: 1100, insight: "【物流數據】步行 10 分鐘抵達。14 號月台搭山手線（內環）往澀谷。" } },
-            { id: "it-shib-1", time: "10:20", name: "🚇 JR 山手線往澀谷", type: "transport", cost: 160, currency: "JPY", details: { location: "新宿 (14號月台) -> 澀谷", desc: "山手線車程 15min", startTime: "10:20", endTime: "10:35", duration: "15min", insight: "【技術百科】1885 年開通嘅歷史性路線。出口 B6 有專用電梯直上 14F Shibuya Sky 入口。" } },
-            { id: "it-shib-2", time: "10:45", name: "🏙️ Shibuya Sky (展望)", type: "spot", cost: 2500, currency: "JPY", details: { location: "Shibuya Scramble Square 14F/47F", desc: "隈研吾參與設計", startTime: "10:45", endTime: "12:45", duration: "120min", image: "https://images.unsplash.com/photo-1542931237-fa4a86134b2d?w=800", insight: "【物流數據】預計停留 120 分鐘。風大記得紮起頭髮。Sarah 攝影任務重點。" } },
-            { id: "it-shib-3", time: "13:15", name: "🍽️ 挽肉と米 (Shibuya)", type: "food", cost: 1800, currency: "JPY", details: { location: "道玄坂 2-28-1 3F", desc: "炭烤漢堡排 (預約制)", startTime: "13:15", endTime: "14:45", duration: "90min", image: "https://images.unsplash.com/photo-1550950158-d059dd558e94?w=800", insight: "【物流數據】用餐預計 90 分鐘。步行 8 分鐘 (600m) 抵達。" } },
-            { id: "it-har-1", time: "15:30", name: "⛩️ 明治神宮 (Meiji Jingu)", type: "spot", cost: 0, currency: "JPY", details: { location: "原宿站出口 1分鐘", desc: "1920 年建立。大鳥居用咗台灣阿里山 1200 年檜木。", startTime: "15:30", endTime: "16:30", duration: "60min", image: "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=800", insight: "【歷史百科】大鳥居用咗台灣阿里山 1200 年檜木。從挽肉と米步行 20 分鐘 (1.5km) 抵達。" } },
-            { id: "it-har-2", time: "16:45", name: "🛍️ 原宿表參道 & Cafe Reissue", type: "shopping", cost: 5000, currency: "JPY", details: { location: "神宮前 3-25-7 2F", desc: "3D 立體拉花 (Cafe)", startTime: "16:45", endTime: "17:45", duration: "60min", image: "https://images.unsplash.com/photo-1517705008128-361805f42e8a?w=800", insight: "【物流數據】停留 60 分鐘。Sarah 目標：KURACHIKA 買 Porter Bag。" } },
-            { id: "it-end-3", time: "20:00", name: "🏨 返回酒店 (Return)", type: "walk", cost: 0, currency: "JPY", details: { location: "新宿站 -> Hotel Gracery", desc: "經過新宿東口 Studio Alta 返酒店", startTime: "20:00", endTime: "20:10", duration: "10min", distance: "450m", steps: 1100, insight: "21:00 返到酒店 8F Lobby。Alex 負責管理相機叉電任務。" } }
+            { id: "it-start-3", time: "10:00", name: "🏨 酒店出發 (Studio Alta)", type: "walk", cost: 0, currency: "JPY", details: { nameEn: "Shinjuku East Navigation", location: "酒店 -> JR 新宿站", desc: "經由新宿東口 Studio Alta 旁小路入閘", startTime: "10:00", endTime: "10:10", duration: "10min", distance: "450m", steps: 1100, insight: "14 號月台搭山手線（內環）。", tags: ["Station-Entry", "Yamanote-Line"] } },
+            { id: "it-shib-1", time: "10:20", name: "🚇 JR 山手線", type: "train", cost: 160, currency: "JPY", details: { nameEn: "Yamanote Line (JR-East)", location: "新宿 (Plat 14) -> 澀谷", desc: "山手線車程 15min", startTime: "10:20", endTime: "10:35", duration: "15min", insight: "【歷史】1885 年開通嘅歷史性路線。", tags: ["Circular-Line", "Iconic-Tokyo"] } },
+            { id: "it-shib-2", time: "10:45", name: "🏙️ Shibuya Sky", type: "spot", cost: 2500, currency: "JPY", details: { nameEn: "Scramble Square Observatory", location: "Shibuya Scramble Square 14F/47F", desc: "隈研吾參與設計", startTime: "10:45", endTime: "12:45", duration: "120min", image: "https://images.unsplash.com/photo-1582234371439-f9c1859367d3?w=800", insight: "【物流】風大記得紮起頭髮。", tags: ["Must-Visit", "Heliport-View", "Kengo-Kuma"] } },
+            { id: "it-shib-3", time: "13:15", name: "🍽️ 挽肉と米 (澀谷店)", type: "food", cost: 1800, currency: "JPY", details: { nameEn: "Hikiniku to Kome", location: "澀谷道玄坂 2-28-1 3F", desc: "炭烤漢堡排 (預約制)", startTime: "13:15", endTime: "14:45", duration: "90min", image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=800", insight: "【物流】用餐預計 90 分鐘。", tags: ["Trending", "Gourmet", "Charcoal-Grilled"] } },
+            { id: "it-har-1", time: "15:30", name: "⛩️ 明治神宮", type: "spot", cost: 0, currency: "JPY", details: { nameEn: "Meiji Jingu Shrine", location: "原宿站出口 1分鐘", desc: "1920 年建立。大鳥居用咗台灣阿里山檜木。", startTime: "15:30", endTime: "16:30", duration: "60min", image: "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=800", insight: "【歷史】從挽肉と米步行 20 分鐘抵達。", tags: ["Forest-In-City", "Giant-Torii", "Spiritual"] } },
+            { id: "it-har-2", time: "16:45", name: "🛍️ 表參道散策", type: "shopping", cost: 5000, currency: "JPY", details: { nameEn: "Omotesando & Cafe Reissue", location: "神宮前 3-25-7 2F", desc: "3D 立體拉花 (Cafe)", startTime: "16:45", endTime: "17:45", duration: "60min", image: "https://images.unsplash.com/photo-1621609764095-b32bbe35cf3a?w=800", insight: "目標：KURACHIKA 買 Porter Bag。", tags: ["Fashion", "Architecture-Street", "3D-Latte"] } },
+            { id: "it-end-3", time: "20:00", name: "🏨 返回酒店 (Return)", type: "walk", cost: 0, currency: "JPY", details: { nameEn: "Return to Gracery Shinjuku", location: "新宿站 -> Hotel Gracery Shinjuku 8F", desc: "經過新宿東口 Studio Alta 返酒店", startTime: "20:00", endTime: "20:10", duration: "10min", distance: "450m", steps: 1100, insight: "聽日要衝新幹線，早啲休息。", tags: ["Night-Route", "Final-Check"] } }
         ],
         "2025-12-27": [
-            { id: "it-start-4", time: "08:15", name: "🚅 東京站新幹線導航", type: "walk", cost: 0, currency: "JPY", details: { location: "新宿站 -> 東京站 14-19 號月台", desc: "跟住藍色「新幹線」指示行 (Matrix)", startTime: "08:15", endTime: "08:30", duration: "15min", distance: "450m", steps: 1100, insight: "【矩陣導航】新宿 7-8 號月台 (中央線快速) -> 東京站。Checkout 5min。預留時間買便當。" } },
-            { id: "it-tok-4", time: "09:42", name: "🚅 新幹線 Nozomi 21 (跨城遷移)", type: "transport", cost: 14750, currency: "JPY", details: { location: "東京 (14號月台) -> 新大阪", arrival: "大阪 (Osaka)", desc: "車型 N700S (Supreme) | 車程 150min", startTime: "09:42", endTime: "12:12", duration: "2hr 30min", image: "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800", insight: "【技術百科】10:30 右邊 E 位見富士山。ATC 系統保證 60 年零事故。Alex 負責紀錄 300km/h 瞬間。" } },
-            { id: "it-osa-2", time: "13:15", name: "🏨 W Osaka 行李與寄存矩陣", type: "hotel", cost: 0, currency: "JPY", details: { location: "心齋橋站 3 號出口 -> 酒店 1F", desc: "1F 門口寄存即走 (Matrix)", startTime: "13:15", endTime: "13:45", duration: "30min", image: "https://images.unsplash.com/photo-1549144511-f099e773c147?w=800", insight: "【矩陣導航】心齋橋站 3 號出口轉左行 2min。1F Concierge 直收行李。寄存 10min。" } },
-            { id: "it-osa-gap1", time: "14:00", name: "🛍️ 心齋橋筋商店街漫遊", type: "shopping", cost: 3000, currency: "JPY", details: { location: "心齋橋筋商店街", desc: "大阪最長商店街 (600m)", startTime: "14:00", endTime: "15:30", duration: "90min", image: "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=800", insight: "【百科內容】大阪最有歷史商店街，由 1726 年開始營業。Sarah 目標：限定美妝店。停留 90min。" } },
-            { id: "it-osa-gap2", time: "16:00", name: "🎨 美國村 (Amerikamura) 打卡", type: "spot", cost: 0, currency: "JPY", details: { location: "西心齋橋 1-6", desc: "大阪潮流文化發源地", startTime: "16:00", endTime: "17:30", duration: "90min", image: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800", insight: "【百科內容】70 年代開始嘅古著街。三角公園係年輕人地標。Alex 負責記錄街頭文化。停留 90min。" } },
-            { id: "it-osa-3", time: "19:00", name: "🍽️ 晚餐: 道頓堀蟹道樂 (本店)", type: "food", cost: 12000, currency: "JPY", details: { location: "道頓堀 1-6-18", desc: "大阪地標 | 巨大動感螃蟹看板", startTime: "19:00", endTime: "20:30", duration: "90min", image: "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=800", insight: "【物流數據】食飯 90min。由 W Osaka 行過嚟 12 分鐘。Mike 準備好尿袋支援攝影。" } },
-            { id: "it-end-4", time: "21:30", name: "🏨 返回 W Osaka (Return)", type: "walk", cost: 0, currency: "JPY", details: { location: "道頓堀 -> W Osaka", desc: "沿心齋橋筋商店街漫步", startTime: "21:30", endTime: "21:42", duration: "12min", distance: "800m", steps: 1200, insight: "21:30 返到酒店 1F。Sarah 記得喺 1F 買 W 限定洗頭水。" } }
+            { id: "it-start-4", time: "08:15", name: "🚅 東京站新幹線導航", type: "walk", cost: 0, currency: "JPY", hasWarning: true, warningMessage: "【教學提示】大站導航建議加入詳細指示，包括月台資訊、行走方向、預留時間等。", details: { nameEn: "Tokyo Station Navigation", location: "新宿站 -> 東京站 14-19 號月台", desc: "跟住藍色「新幹線」指示行 (Matrix)", startTime: "08:15", endTime: "08:30", duration: "15min", distance: "450m", steps: 1100, insight: "預留時間買「牛肉便當」喺車食。", tags: ["Shinkansen", "Station-Flow", "Bento"] } },
+            { id: "it-tok-4", time: "09:42", name: "🚅 Nozomi 21 (新幹線)", type: "train", cost: 14750, currency: "JPY", details: { trainNo: "Nozomi 21", nameEn: "Tokaido Shinkansen (Supreme)", location: "東京 (Plat 14) -> 新大阪", arrival: "Osaka", desc: "車型 N700S (Supreme) | 車程 150min", transportType: "train", startTime: "09:42", endTime: "12:12", duration: "2hr 30min", image: "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800", insight: "【技術】10:30 右邊 E 位見富士山。", tags: ["High-Speed", "Fuji-View", "N700S"] } },
+            { id: "it-osa-2", time: "13:15", name: "🏨 W Osaka Check-in", type: "hotel", cost: 0, currency: "JPY", details: { nameEn: "W Osaka (Shinsaibashi)", location: "心齋橋站 3 號出口 -> 酒店 1F", desc: "1F 門口寄存即走 (Matrix)", startTime: "13:15", endTime: "13:45", duration: "30min", image: "https://images.unsplash.com/photo-1549144511-f099e773c147?w=800", insight: "【導航】心齋橋站 3 號出口轉左行 2min。", tags: ["Marriott", "Luxury-Design", "Iconic-Black"] } },
+            { id: "it-osa-gap1", time: "14:00", name: "🛍️ 心齋橋筋商店街", type: "shopping", cost: 3000, currency: "JPY", details: { nameEn: "Shinsaibashi-suji Shopping Street", location: "Osaka Shinsaibashi", desc: "大阪最長商店街 (600m)", startTime: "14:00", endTime: "15:30", duration: "90min", image: "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=800", insight: "大阪最有歷史商店街，由 1726 年開始。", tags: ["Fashion", "Local-Vibe", "Historic"] } },
+            { id: "it-osa-gap2", time: "16:00", name: "🎨 美國村 (Amerikamura)", type: "spot", cost: 0, currency: "JPY", details: { nameEn: "American Village Osaka", location: "西心齋橋 1-6", desc: "大阪潮流文化發源地", startTime: "16:00", endTime: "17:30", duration: "90min", image: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800", insight: "70 年代開始嘅古著街。三角形公園係地標。", tags: ["Vintage-Clothing", "Youth-Culture", "Street-Art"] } },
+            { id: "it-osa-3", time: "19:00", name: "🍽️ 蟹道樂 (道頓堀本店)", type: "food", cost: 12000, currency: "JPY", details: { nameEn: "Kani Doraku (Honten)", location: "道頓堀 1-6-18", desc: "大阪地標 | 巨大動感螃蟹看板", startTime: "19:00", endTime: "20:30", duration: "90min", image: "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=800", insight: "【物流】食完行去格力高看板影相只需 1min。", tags: ["Signature-Dish", "Crab-Specialist", "Landmark"] } },
+            { id: "it-end-4", time: "21:30", name: "🏨 返回 W Osaka (Return)", type: "walk", cost: 0, currency: "JPY", details: { nameEn: "Return to Shinsaibashi", location: "道頓堀 -> W Osaka 1F", desc: "沿心齋橋筋商店街漫步", startTime: "21:30", endTime: "21:42", duration: "12min", distance: "800m", steps: 1200, insight: "返酒店 Spa 休息吓。", tags: ["Night-Stroll", "Spa-Time"] } }
         ],
         "2025-12-28": [
-            { id: "it-usj-matrix", time: "07:30", name: "🚆 USJ 鐵道轉乘矩陣", type: "transport", cost: 410, currency: "JPY", details: { location: "心齋橋 -> Universal City (Plat 3)", desc: "西九條站對面月台轉乘 (Matrix)", startTime: "07:30", endTime: "08:15", duration: "45min", insight: "【矩陣導航】1. 長堀線 -> 2. JR 環狀線 -> 3. 西九條轉 **Plat 3** (夢咲線)。轉乘只需 1min。" } },
-            { id: "it-usj-1", time: "09:00", name: "🎢 USJ 超級任天堂世界", type: "spot", cost: 18000, currency: "JPY", details: { location: "大阪此花區", desc: "宮本茂耗資 600 億監修", startTime: "09:00", endTime: "21:00", duration: "12hr", image: "https://images.unsplash.com/photo-1545641203-7d072a14e3b2?w=800", insight: "【物流數據】停留 12hr。入園即衝任天堂。Mike 負責管理全體尿袋供應。" } },
-            { id: "it-end-5", time: "21:30", name: "🏨 返回 W Osaka (Return)", type: "transport", cost: 410, currency: "JPY", details: { location: "USJ -> W Osaka", desc: "原路返回 (Matrix)", startTime: "21:30", endTime: "22:15", duration: "45min", distance: "8km", steps: 500, insight: "22:30 返到酒店。Buddy 準備好休足時間支援隊友。" } }
+            { id: "it-usj-matrix", time: "07:30", name: "🚆 USJ 鐵道轉乘", type: "train", cost: 410, currency: "JPY", details: { nameEn: "Universal City Direct Link", location: "心齋橋 -> Universal City (Plat 3)", desc: "西九條站對面月台轉乘 (Matrix)", startTime: "07:30", endTime: "08:15", duration: "45min", insight: "西九條轉 **Plat 3** (夢咲線)。轉乘只需 1min。", tags: ["Train-Matrix", "USJ-Express", "Fast-Link"] } },
+            { id: "it-usj-1", time: "09:00", name: "🎢 USJ 超級任天堂世界", type: "spot", cost: 18000, currency: "JPY", details: { nameEn: "Super Nintendo World (USJ)", location: "大阪此花區", desc: "宮本茂耗資 600 億監修", startTime: "09:00", endTime: "21:00", duration: "12hr", image: "https://images.unsplash.com/photo-1545641203-7d072a14e3b2?w=800", insight: "入園即衝任天堂。用 Power-Up Band 敲磚。", tags: ["Mario-Kart", "Yoshi-Adventure", "Power-Up"] } },
+            { id: "it-end-5", time: "21:30", name: "🏨 返回 W Osaka (Return)", type: "walk", cost: 410, currency: "JPY", details: { nameEn: "Return to Hotel", location: "USJ -> W Osaka", desc: "原路返回 (Matrix)", startTime: "21:30", endTime: "22:15", duration: "45min", distance: "8km", steps: 500, insight: "今日行咗 2 萬步，一定要用休足時間。", tags: ["Tired-But-Happy", "Last-Night"] } }
         ],
         "2025-12-29": [
-            { id: "it-check", time: "08:00", name: "🏨 Checkout & 喼位矩陣", type: "hotel", cost: 0, currency: "JPY", details: { location: "W Osaka Lobby", desc: "最後行李清查 | 24吋 x 4", startTime: "08:00", endTime: "08:15", duration: "15min", insight: "【微操提示】Alex 負責核對全員喼位。Mike 檢查所有尿袋已收好。Checkout 5min。行李寄存櫃位。" } },
-            { id: "it-osa-morning", time: "08:30", name: "🍳 千日前道具屋筋散策", type: "shopping", cost: 2000, currency: "JPY", details: { location: "難波千日前 14-5", desc: "大阪料理人之街 | 廚具百科", startTime: "08:30", endTime: "10:00", duration: "90min", image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800", insight: "【百科內容】大阪廚具之魂。Alex 買日式小餐具。步行 5min 到黑門市場。停留 90min。" } },
-            { id: "it-kuro-matrix", time: "10:30", name: "🍣 黑門市場 -> 南海難波 (Matrix)", type: "food", cost: 4000, currency: "JPY", details: { location: "酒店 -> 黑門 (步行導航)", desc: "沿御堂筋大道直行 15min", startTime: "10:30", endTime: "12:00", duration: "90min", insight: "【導航矩陣】步行 1.1km。食鮮味海膽。13:15 到南海難波站 **3F 北改札口**。" } },
-            { id: "it-rap-1", time: "13:30", name: "🚆 南海 Rapit 鐵人 28 矩陣", type: "transport", cost: 1450, currency: "JPY", details: { location: "南海難波 (9 號月台) -> KIX 2F", desc: "藍色專用月台 (Plat 9)", startTime: "13:30", endTime: "14:10", duration: "40min", image: "https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800", insight: "【矩陣導航】上 3F 北改札口搵 **9 號月台**。抵達 KIX 2F 後過天橋到 T1。Mike 確保清空硬幣。" } },
-            { id: "it-kix-blue", time: "15:30", name: "✈️ 關西機場 C 區 & 歸航矩陣", type: "flight", cost: 0, currency: "HKD", details: { location: "KIX T1 國泰櫃位 (C 區)", desc: "Blue Sky 免稅店 (硬幣對策)", startTime: "15:30", endTime: "19:00", duration: "3hr 30min", insight: "【微操提示】去 C 區 Check-in。入閘後可以用晒淨低嘅硬幣。Alex 準備最後申報。" } }
+            { id: "it-check", time: "08:00", name: "🏨 Checkout & 寄喼", type: "hotel", cost: 0, currency: "JPY", details: { nameEn: "Final Checkout Matrix", location: "W Osaka Lobby", desc: "最後行李清查 | 24吋 x 4", startTime: "08:00", endTime: "08:15", duration: "15min", insight: "Alex 負責核對全員喼位。Checkout 5min。", tags: ["Check-Out", "Bag-Management", "Final-Day"] } },
+            { id: "it-osa-morning", time: "08:30", name: "🍳 道具屋筋 & 黑門", type: "shopping", cost: 2000, currency: "JPY", details: { nameEn: "Sennichimae Doguyasuji", location: "大阪難波千日前", desc: "大阪料理人之街 | 廚具百科", startTime: "08:30", endTime: "10:00", duration: "90min", image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800", insight: "【百科】大阪廚具之魂。買日式小餐具。", tags: ["Kitchenware", "Craftmanship", "Culinary"] } },
+            { id: "it-kuro-matrix", time: "10:30", name: "🍣 黑門市場食鮮", type: "food", cost: 4000, currency: "JPY", details: { nameEn: "Kuromon Ichiba Market", location: "黑門市場 (Namba)", desc: "沿御堂筋大道直行 15min", startTime: "10:30", endTime: "12:00", duration: "90min", insight: "【導航】食鮮味海膽。13:15 到南海難波站。", tags: ["Raw-Seafood", "Uni", "Market-Vibe"] } },
+            { id: "it-rap-1", time: "13:30", name: "🚆 南海 Rapit (藍武士)", type: "train", cost: 1450, currency: "JPY", bundleId: "departure-bundle-d6", details: { trainNo: "Rap:t Beta 42", nameEn: "Nankai Airport Express", location: "南海難波 (Plat 9) -> KIX 2F", desc: "藍色專用月台 (Plat 9)", startTime: "13:30", endTime: "14:10", duration: "40min", image: "https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800", insight: "【導航】入閘後過天橋到 T1。Mike 確保清空硬幣。【Bundle 邏輯】呢班機場快綫同回程航班係綁定，拖其中一個就一齊移動！", tags: ["Iron-Man-28", "Blue-Express", "Fast-To-KIX"] } },
+            { id: "it-kix-blue", time: "15:30", name: "✈️ 歸航: KIX -> HKG (Return)", type: "flight", cost: 0, currency: "HKD", bundleId: "departure-bundle-d6", details: { flightNo: "CX507", nameEn: "Cathay Pacific (Return)", location: "KIX T1 國泰櫃位 (C 區)", desc: "Blue Sky 免稅店 (硬幣對策)", startTime: "15:30", endTime: "19:00", duration: "3hr 30min", insight: "【微操】去 C 區 Check-in。入閘後可以用晒硬幣。【百科：回程標誌】注意飛機 Icon 變左右下角 (↘️)，寄意「回家」。", tags: ["Going-Home", "Tax-Free", "Final-Duty"] } }
         ],
     },
     packingList: [
@@ -965,6 +1014,58 @@ export const TAB_LABELS = {
     settings: { "zh-TW": "設定", "en": "Settings" }
 };
 
+// --- Modal Labels (i18n) ---
+export const MODAL_LABELS = {
+    // AddActivityModal
+    addItem: { "zh-TW": "加入行程項目", "en": "Add Activity" },
+    editItem: { "zh-TW": "編輯行程項目", "en": "Edit Activity" },
+    addPacking: { "zh-TW": "加入行李項目", "en": "Add Packing Item" },
+    editPacking: { "zh-TW": "編輯行李項目", "en": "Edit Packing Item" },
+    name: { "zh-TW": "名稱", "en": "Name" },
+    startTime: { "zh-TW": "開始時間", "en": "Start Time" },
+    endTime: { "zh-TW": "結束時間", "en": "End Time" },
+    optional: { "zh-TW": "選填", "en": "Optional" },
+    duration: { "zh-TW": "時長", "en": "Duration" },
+    durationMinutes: { "zh-TW": "預計時長 (分鐘)", "en": "Duration (mins)" },
+    durationPlaceholder: { "zh-TW": "例如: 60", "en": "e.g. 60" },
+    location: { "zh-TW": "地點", "en": "Location" },
+    locationPlaceholder: { "zh-TW": "輸入地點", "en": "Enter location" },
+    origin: { "zh-TW": "出發地", "en": "Origin" },
+    destination: { "zh-TW": "目的地", "en": "Destination" },
+    amount: { "zh-TW": "金額", "en": "Amount" },
+    currency: { "zh-TW": "貨幣", "en": "Currency" },
+    payer: { "zh-TW": "付款人", "en": "Payer" },
+    splitType: { "zh-TW": "分攤方式", "en": "Split Type" },
+    splitGroup: { "zh-TW": "多人均分", "en": "Split Equally" },
+    splitMe: { "zh-TW": "個人支出", "en": "Personal" },
+    estimatedTax: { "zh-TW": "預估稅金", "en": "Est. Tax" },
+    estimatedRefund: { "zh-TW": "預估退稅", "en": "Est. Refund" },
+    flightInfo: { "zh-TW": "航班資訊", "en": "Flight Info" },
+    flightNumber: { "zh-TW": "航班編號", "en": "Flight No." },
+    layover: { "zh-TW": "需轉機", "en": "Layover" },
+    nights: { "zh-TW": "晚", "en": "Nights" },
+    hotelNights: { "zh-TW": "住宿晚數", "en": "Hotel Nights" },
+    cancel: { "zh-TW": "取消", "en": "Cancel" },
+    confirm: { "zh-TW": "確認加入", "en": "Add Item" },
+    save: { "zh-TW": "儲存變更", "en": "Save Changes" },
+    aiInspiration: { "zh-TW": "AI 靈感", "en": "AI Inspire" },
+    minutes: { "zh-TW": "分鐘", "en": "mins" },
+    // Category labels
+    spot: { "zh-TW": "景點", "en": "Attraction" },
+    food: { "zh-TW": "餐廳", "en": "Restaurant" },
+    shopping: { "zh-TW": "購物", "en": "Shopping" },
+    transport: { "zh-TW": "交通", "en": "Transport" },
+    flight: { "zh-TW": "航班", "en": "Flight" },
+    hotel: { "zh-TW": "住宿", "en": "Hotel" },
+    // Packing categories
+    clothes: { "zh-TW": "衣物鞋履", "en": "Clothing" },
+    toiletries: { "zh-TW": "個人護理", "en": "Toiletries" },
+    electronics: { "zh-TW": "電子產品", "en": "Electronics" },
+    documents: { "zh-TW": "證件/文件", "en": "Documents" },
+    medicine: { "zh-TW": "藥品/急救", "en": "Medicine" },
+    misc: { "zh-TW": "其他雜項", "en": "Misc" }
+};
+
 // --- Smart Visual Assets ---
 
 export const TYPE_DEFAULT_IMAGES = {
@@ -991,6 +1092,7 @@ export const CITY_IMAGES = {
 };
 
 export const LANDMARK_IMAGES = {
+    // Tokyo
     "晴空塔": "https://images.unsplash.com/photo-1545389656-78b17ee191d9?w=600&h=400&fit=crop",
     "Skytree": "https://images.unsplash.com/photo-1545389656-78b17ee191d9?w=600&h=400&fit=crop",
     "東京鐵塔": "https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=400&h=300&fit=crop",
@@ -998,19 +1100,43 @@ export const LANDMARK_IMAGES = {
     "淺草寺": "https://images.unsplash.com/photo-1570459027562-4a916cc6113f?w=400&h=300&fit=crop",
     "Senso-ji": "https://images.unsplash.com/photo-1570459027562-4a916cc6113f?w=400&h=300&fit=crop",
     "雷門": "https://images.unsplash.com/photo-1570459027562-4a916cc6113f?w=400&h=300&fit=crop",
+    "隅田川": "https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=400&h=300&fit=crop",
     "富士山": "https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?w=400&h=300&fit=crop",
     "Mt. Fuji": "https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?w=400&h=300&fit=crop",
     "迪士尼": "https://images.unsplash.com/photo-1505308144658-03c69861061a?w=400&h=300&fit=crop",
     "Disney": "https://images.unsplash.com/photo-1505308144658-03c69861061a?w=400&h=300&fit=crop",
+    // Stations
+    "新宿": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop",
+    "Shinjuku": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop",
+    "渋谷": "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=400&h=300&fit=crop",
+    "Shibuya": "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=400&h=300&fit=crop",
+    "東京站": "https://images.unsplash.com/photo-1513407030348-c983a97b98d8?w=400&h=300&fit=crop",
+    "Tokyo Station": "https://images.unsplash.com/photo-1513407030348-c983a97b98d8?w=400&h=300&fit=crop",
+    // Osaka
     "環球影城": "https://images.unsplash.com/photo-1620986794611-665c2759e691?w=400&h=300&fit=crop",
     "USJ": "https://images.unsplash.com/photo-1620986794611-665c2759e691?w=400&h=300&fit=crop",
     "Universal Studios": "https://images.unsplash.com/photo-1620986794611-665c2759e691?w=400&h=300&fit=crop",
+    "道頓堀": "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&h=300&fit=crop",
+    "Dotonbori": "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&h=300&fit=crop",
+    "心齋橋": "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&h=300&fit=crop",
+    "Shinsaibashi": "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&h=300&fit=crop",
+    "黑門市場": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop",
+    "Kuromon": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop",
+    "大阪城": "https://images.unsplash.com/photo-1589452271712-64b8a66c7b71?w=400&h=300&fit=crop",
+    "Osaka Castle": "https://images.unsplash.com/photo-1589452271712-64b8a66c7b71?w=400&h=300&fit=crop",
+    // Kyoto
     "清水寺": "https://images.unsplash.com/photo-1493780474015-ba834fd0ce2f?w=400&h=300&fit=crop",
     "Kiyomizu-dera": "https://images.unsplash.com/photo-1493780474015-ba834fd0ce2f?w=400&h=300&fit=crop",
     "伏見稻荷": "https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=400&h=300&fit=crop",
     "Fushimi Inari": "https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=400&h=300&fit=crop",
+    "金閣寺": "https://images.unsplash.com/photo-1493780474015-ba834fd0ce2f?w=400&h=300&fit=crop",
+    "Kinkaku-ji": "https://images.unsplash.com/photo-1493780474015-ba834fd0ce2f?w=400&h=300&fit=crop",
+    // Taiwan
     "101": "https://images.unsplash.com/photo-1470004914212-05527e49370b?w=400&h=300&fit=crop",
     "Taipei 101": "https://images.unsplash.com/photo-1470004914212-05527e49370b?w=400&h=300&fit=crop",
     "九份": "https://images.unsplash.com/photo-1465220183746-d872b8ee34be?w=400&h=300&fit=crop",
-    "Jiufen": "https://images.unsplash.com/photo-1465220183746-d872b8ee34be?w=400&h=300&fit=crop"
+    "Jiufen": "https://images.unsplash.com/photo-1465220183746-d872b8ee34be?w=400&h=300&fit=crop",
+    // Transport
+    "新幹線": "https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=400&h=300&fit=crop",
+    "Shinkansen": "https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=400&h=300&fit=crop"
 };

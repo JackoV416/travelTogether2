@@ -28,7 +28,8 @@ const TripsGrid = ({
     weatherData,
     setIsSmartImportModalOpen,
     setIsSmartExportOpen,
-    setIsCreateModalOpen
+    setIsCreateModalOpen,
+    searchFilter
 }) => {
     return (
         <div>
@@ -55,6 +56,9 @@ const TripsGrid = ({
                     </button>
                 </div>
             </div>
+
+            {/* Search Filter Bar */}
+            {searchFilter && <div className="mb-2">{searchFilter}</div>}
 
             {loadingTrips ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
