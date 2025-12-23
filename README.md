@@ -1,20 +1,30 @@
-# Travel Together (智能旅遊規劃) V1.1.8
+# Travel Together (智能旅遊規劃) V1.2.2
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.1.8-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.2.2-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-11.x-orange.svg)](https://firebase.google.com/)
 
+## 🚀 V1.2.2: Jarvis AI Support Center (2025-12-23)
+**V1.2.2: [AI Support] Jarvis AI 視覺介面與支援中心先行版！**
+本次更新實裝了 Jarvis AI 的專屬客服入口與高質感視覺介面。
+
+### ✨ V1.2.2 核心更新 (Updates)
+- **🤖 Jarvis Visual Integration**: 實裝專屬 AI 客服介面，包含毛玻璃 Avatar 效果與動態光環感。
+- **💬 Smart Interaction**: 加入 Smart Hints 快速查問功能，為 Jarvis AI 回答邏輯奠定基礎。
+- **⚡ Pulse Animations**: 加入 `pulse-slow` 呼吸燈特效，強化 AI 助手的科技存在感。
+
+## 🚀 V1.2.1: User Group Chat (2025-12-23)
+**V1.2.1: [Social] 行程即時群聊功能正式實裝！**
+行程成員現在可以直接在 App 內溝通，無需切換至其他通訊軟體。
+
+### ✨ V1.2.1 核心更新 (Updates)
+- **💬 Real-time Chat**: 整合 Firestore `onSnapshot` 監聽，實現毫秒級訊息同步。
+- **📱 Glassmorphism Drawer**: 精美的手機側滑聊天抽屜，支援深色模式與即時頭像顯示。
+- **🔔 Live Notifications**: 呼吸燈式 Chat Button，動態提示聊天室口有新訊息/活躍中。
+
 ## 🚀 V1.1.8: Dark Mode & AI Polish (2025-12-23)
 **V1.1.8: [Visual & Stability] Dark Mode 全面回歸 + AI 韌性強化！**
-本次更新致力於極致的視覺一致性與系統穩定性。
-
-### ✨ V1.1.8 核心更新 (Updates)
-- **🌙 Dark Mode Consistency**: 統一所有 Modal (Import/Export/Create) 與 TripCard 使用 Tailwind `dark:` 變體，徹底解決深色模式切換時的視覺斷層。
-- **🛡️ AI Resilience**: 針對 Gemini API 流量限制 (429) 與配額用盡情況實裝專屬偵測與用戶提示，提升 AI 功能的可靠性。
-- **🖥️ UI Polish**: 修復匯出預覽區域的關閉按鈕與透明度問題，優化 JSON 預覽的代碼行號顯示。
-
-## 🚀 V1.1.7: Daily Intelligence (2025-12-23)
 **V1.1.7: [Daily Intelligence] 每日總覽智能化 + 匯出預覽升級！**
 本次更新專注於「每日行程」的深度分析，引入 AI 每日總覽功能，並大幅強化匯出預覽體驗，支援全格式的全螢幕預覽。
 
@@ -134,7 +144,10 @@ graph TD
 
 | 版本 | 標籤 | 狀態 |
 | :--- | :--- | :--- |
-| **V1.1.8** | **Dark Mode & AI Polish** | 🚀 最新版 |
+| **V1.2.3** | **Jarvis AI Quota & Sub-tabs** | 🚀 最新版 |
+| **V1.2.2** | **Jarvis AI Support Center** | ✅ 已發布 |
+| **V1.2.1** | **User Group Chat** | ✅ 已發布 |
+| **V1.1.8** | **Dark Mode & AI Polish** | ✅ 已發布 |
 | **V1.1.7** | **Daily Intelligence** | ✅ 已發布 |
 | **V1.1.2** | **Audit & Precision** | ✅ 已發布 |
 | **V1.1.1** | **Resilience & Polish** | ✅ 已發布 |

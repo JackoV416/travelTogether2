@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Map, Briefcase, Calculator, Menu } from 'lucide-react';
+import { Map, Briefcase, Calculator, Menu, MessageCircle } from 'lucide-react';
 
 
-const MobileBottomNav = ({ activeTab, onTabChange, onMoreClick, isDarkMode }) => {
+const MobileBottomNav = ({ activeTab, onTabChange, onMoreClick, onChatClick, isDarkMode }) => {
     const navItems = [
         { id: 'itinerary', label: '行程', icon: Map },
         { id: 'packing', label: '執嘢', icon: Briefcase },
+        { id: 'chat', label: '閒聊', icon: MessageCircle, isAction: true },
         { id: 'budget', label: '預算', icon: Calculator },
     ];
 
@@ -14,16 +15,18 @@ const MobileBottomNav = ({ activeTab, onTabChange, onMoreClick, isDarkMode }) =>
             <div className="flex items-center justify-around px-4">
                 {navItems.map((item) => {
                     const isActive = activeTab === item.id;
+                    const isChat = item.id === 'chat';
+
                     return (
                         <button
                             key={item.id}
-                            onClick={() => onTabChange(item.id)}
-                            className="flex flex-col items-center justify-center min-w-[72px] h-12 transition-all active:scale-90 duration-200 relative group"
+                            onClick={() => item.isAction ? (isChat ? onChatClick() : null) : onTabChange(item.id)}
+                            className="flex flex-col items-center justify-center min-w-[64px] h-12 transition-all active:scale-90 duration-200 relative group"
                         >
-                            <div className={`relative p-2 rounded-xl transition-all duration-300 ${isActive ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/40 -translate-y-1' : 'text-gray-400 group-hover:bg-gray-500/10'}`}>
-                                <item.icon className={`w-6 h-6 transition-transform ${isActive ? 'scale-110 stroke-[2.5px]' : 'stroke-2'}`} />
+                            <div className={`relative p-2 rounded-xl transition-all duration-300 ${isActive ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/40 -translate-y-1' : (isChat ? 'bg-indigo-600/10 text-indigo-400' : 'text-gray-400 group-hover:bg-gray-500/10')}`}>
+                                <item.icon className={`w-6 h-6 transition-transform ${isActive ? 'scale-110 stroke-[2.5px]' : (isChat ? 'animate-pulse-slow stroke-[2.5px]' : 'stroke-2')}`} />
                             </div>
-                            <span className={`text-[10px] font-black mt-1 transition-all duration-300 uppercase tracking-tighter ${isActive ? 'text-indigo-500 opacity-100' : 'text-gray-500 opacity-50'}`}>
+                            <span className={`text-[10px] font-black mt-1 transition-all duration-300 uppercase tracking-tighter ${isActive ? 'text-indigo-500 opacity-100' : (isChat ? 'text-indigo-400 opacity-100' : 'text-gray-500 opacity-50')}`}>
                                 {item.label}
                             </span>
                         </button>

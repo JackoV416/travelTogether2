@@ -18,6 +18,7 @@ const DEFAULT_WIDGETS = [
 
 const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, initialTab = 'general' }) => {
     const [activeTab, setActiveTab] = useState(initialTab);
+    const [intelTab, setIntelTab] = useState('usage'); // V1.2.3: Intelligence Sub-tabs
 
     // Widget Customization State
     const [widgetConfig, setWidgetConfig] = useState(() => {
@@ -103,7 +104,7 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">設定</h1>
                     <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        管理您的應用程式偏好、AI 設定與 API 金鑰。
+                        管理您的應用程式偏好、Jarvis 設定與 API 金鑰。
                     </p>
                 </div>
             </div>
@@ -121,7 +122,7 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                         onClick={() => setActiveTab('intelligence')}
                         className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'intelligence' ? (isDarkMode ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30' : 'bg-indigo-50 text-indigo-600 border border-indigo-100') : 'opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
                     >
-                        <BrainCircuit className="w-4 h-4" /> Intelligence
+                        <BrainCircuit className="w-4 h-4" /> Jarvis AI
                     </button>
                     <button
                         onClick={() => setActiveTab('info')}
@@ -179,182 +180,269 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                     )}
 
                     {activeTab === 'intelligence' && (
-                        <div className="space-y-8 animate-fade-in">
-                            {/* AI Usage */}
-                            <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
-                                <div className="flex justify-between items-end mb-4">
-                                    <div>
-                                        <label className="text-sm font-bold opacity-90 flex items-center gap-2">
-                                            <BrainCircuit className="w-5 h-5 text-indigo-500" />今日 AI 使用量
-                                        </label>
-                                        <p className="text-[10px] opacity-40 mt-1">累積消耗: <span className="text-indigo-400 font-mono font-bold">{aiUsage.tokens.toLocaleString()} Tokens</span></p>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="text-xl font-black text-indigo-500 font-mono">{aiUsage.used} <span className="text-sm opacity-50 font-normal text-gray-500">/ {aiUsage.total}</span></div>
-                                        <div className="text-[10px] opacity-50 font-bold uppercase tracking-widest">Requests</div>
-                                    </div>
-                                </div>
-                                <div className="h-3 w-full bg-gray-500/10 rounded-full overflow-hidden">
-                                    <div
-                                        className={`h-full rounded-full transition-all duration-500 ${aiUsage.remaining < 5 ? 'bg-red-500' : 'bg-gradient-to-r from-indigo-500 to-purple-400'}`}
-                                        style={{ width: `${Math.min(100, (aiUsage.used / aiUsage.total) * 100)}%` }}
-                                    ></div>
-                                </div>
-                                <div className="flex justify-between mt-3">
-                                    <p className="text-[10px] opacity-40 uppercase tracking-tighter font-bold">Limit Status: {aiUsage.remaining > 0 ? 'Healthy' : 'Exceeded'}</p>
-                                    <div className="text-right">
-                                        <p className="text-[10px] opacity-50">每日限額 {aiUsage.total} 次</p>
-                                        <p className="text-[10px] opacity-40 mt-0.5">將於 {timeUntilReset} 後重置</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* V1.0.3: AI Feature Usage Documentation */}
-                            <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-gray-800/30 border-gray-700/50' : 'bg-gray-50/50 border-gray-200'}`}>
-                                <h4 className="font-bold text-sm mb-3 flex items-center gap-2">
-                                    <Sparkles className="w-4 h-4 text-purple-400" />
-                                    AI 功能使用說明
-                                </h4>
-                                <div className="space-y-2 text-xs">
-                                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-bold">🧠 AI 行程生成</span>
-                                            <span className="text-purple-400 font-mono text-[10px]">~500 tokens/次</span>
-                                        </div>
-                                        <p className="opacity-60 mt-1">從文字描述生成結構化行程 (每次呼叫算 1 次)</p>
-                                    </div>
-                                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-bold">✨ AI 靈感建議</span>
-                                            <span className="text-blue-400 font-mono text-[10px]">~150 tokens/次</span>
-                                        </div>
-                                        <p className="opacity-60 mt-1">新增行程時的景點/餐廳推薦 (不扣次數)</p>
-                                    </div>
-                                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-bold">🚆 交通路線建議</span>
-                                            <span className="text-emerald-400 font-mono text-[10px]">~300 tokens/次</span>
-                                        </div>
-                                        <p className="opacity-60 mt-1">多城市行程自動計算交通方式 (每次呼叫算 1 次)</p>
-                                    </div>
-                                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-bold">📝 智能摘要</span>
-                                            <span className="text-amber-400 font-mono text-[10px]">~200 tokens/次</span>
-                                        </div>
-                                        <p className="opacity-60 mt-1">Dashboard 行程卡片的 AI 摘要生成 (每張算 1 次)</p>
-                                    </div>
-                                </div>
-                                <p className="text-[10px] opacity-40 mt-3 text-center">💡 提示：使用自訂 API Key 可無視每日限額</p>
-                            </div>
-
-                            <hr className="border-gray-500/10" />
-
-                            <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 p-5 rounded-2xl border border-emerald-500/20">
-                                <h4 className="font-bold flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-2 text-lg"><Lock className="w-5 h-5" /> 自訂 API Keys (BYOK)</h4>
-                                <p className="text-sm opacity-70 leading-relaxed">您的 API Key 只會儲存在本地瀏覽器 (localStorage)，不會上傳至我們的伺服器，安全無虞。</p>
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-6">
-                                <div>
-                                    <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">Gemini AI API Key</label>
-                                    <input
-                                        type="password"
-                                        placeholder="AIzA..."
-                                        value={globalSettings.userGeminiKey || ''}
-                                        onChange={e => {
-                                            setGlobalSettings({ ...globalSettings, userGeminiKey: e.target.value });
-                                            const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
-                                            localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, userGeminiKey: e.target.value }));
-                                        }}
-                                        className={inputClasses(isDarkMode)}
-                                    />
-                                    <div className="mt-2 text-xs opacity-60 leading-relaxed flex justify-between items-center">
-                                        <span>用於 AI 行程生成、翻譯及智能建議。</span>
-                                        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-indigo-500 hover:text-indigo-400 font-bold flex items-center gap-1">
-                                            👉 免費獲取 Key
-                                        </a>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">自訂 Model Name (選填)</label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. gemini-2.0-flash-exp"
-                                            value={globalSettings.userGeminiModel || ''}
-                                            onChange={e => {
-                                                setGlobalSettings({ ...globalSettings, userGeminiModel: e.target.value });
-                                                const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
-                                                localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, userGeminiModel: e.target.value }));
-                                            }}
-                                            className={inputClasses(isDarkMode)}
-                                        />
-                                        <div className="mt-2 text-[10px] opacity-60">
-                                            預設使用 <code className="bg-gray-500/20 px-1 rounded">gemini-2.0-flash-exp</code>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">自訂每日限額 (選填)</label>
-                                        <input
-                                            type="number"
-                                            placeholder="Default: 20"
-                                            value={globalSettings.userGeminiLimit || ''}
-                                            onChange={e => {
-                                                setGlobalSettings({ ...globalSettings, userGeminiLimit: e.target.value });
-                                                const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
-                                                localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, userGeminiLimit: e.target.value }));
-                                            }}
-                                            className={inputClasses(isDarkMode)}
-                                        />
-                                        <div className="mt-2 text-[10px] opacity-60">
-                                            建議設為 100+ 以獲得最佳體驗
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">Google Maps API Key</label>
-                                    <input
-                                        type="password"
-                                        placeholder="AIzA..."
-                                        value={globalSettings.userMapsKey || ''}
-                                        onChange={e => {
-                                            setGlobalSettings({ ...globalSettings, userMapsKey: e.target.value });
-                                            const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
-                                            localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, userMapsKey: e.target.value }));
-                                        }}
-                                        className={inputClasses(isDarkMode)}
-                                    />
-                                    <div className="mt-2 text-xs opacity-60 leading-relaxed flex justify-between items-center">
-                                        <span>用於地圖顯示及地點搜尋。</span>
-                                        <a href="https://console.cloud.google.com/google/maps-apis/credentials" target="_blank" rel="noreferrer" className="text-indigo-500 hover:text-indigo-400 font-bold flex items-center gap-1">
-                                            👉 Google Cloud Console
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <hr className="border-gray-500/10" />
-
-                            <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 p-5 rounded-2xl border border-indigo-500/20">
-                                <h4 className="font-bold flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-2 text-lg"><Sparkles className="w-5 h-5" /> 旅遊偏好</h4>
-                                <p className="text-sm opacity-70">勾選您的興趣，讓 AI 建議更懂你。</p>
-                            </div>
-
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                {AI_INTERESTS.map(item => (
-                                    <label key={item.id} className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center gap-3 cursor-pointer transition-all ${globalSettings.preferences?.includes(item.id) ? 'bg-indigo-500/10 border-indigo-500 text-indigo-500' : 'border-gray-500/20 hover:bg-gray-500/5'}`}>
-                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${globalSettings.preferences?.includes(item.id) ? 'bg-indigo-500 border-transparent' : 'border-gray-400'}`}>
-                                            {globalSettings.preferences?.includes(item.id) && <div className="w-2.5 h-2.5 bg-white rounded-sm" />}
-                                            <input type="checkbox" className="hidden" checked={globalSettings.preferences?.includes(item.id)} onChange={() => toggleInterest(item.id)} />
-                                        </div>
-                                        <span className="text-sm font-bold">{item.label}</span>
-                                    </label>
+                        <div className="animate-fade-in">
+                            {/* Intelligence Sub-Tabs */}
+                            <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+                                {['usage', 'api', 'prefs'].map(tab => (
+                                    <button
+                                        key={tab}
+                                        onClick={() => setIntelTab(tab)}
+                                        className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${intelTab === tab
+                                            ? (isDarkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white')
+                                            : (isDarkMode ? 'bg-gray-800 text-gray-400 hover:bg-gray-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200')
+                                            }`}
+                                    >
+                                        {tab === 'usage' && '📊 使用量'}
+                                        {tab === 'api' && '🔑 API Keys'}
+                                        {tab === 'prefs' && '⭐ 偏好設定'}
+                                    </button>
                                 ))}
                             </div>
+
+                            {/* 1. Usage Tab */}
+                            {intelTab === 'usage' && (
+                                <div className="space-y-6 animate-fade-in">
+                                    <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+                                        <div className="flex justify-between items-end mb-4">
+                                            <div>
+                                                <label className="text-sm font-bold opacity-90 flex items-center gap-2">
+                                                    <BrainCircuit className="w-5 h-5 text-indigo-500" />今日 Jarvis AI 使用量
+                                                </label>
+                                                <p className="text-[10px] opacity-40 mt-1">累積消耗: <span className="text-indigo-400 font-mono font-bold">{aiUsage.tokens.toLocaleString()} Tokens</span></p>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-xl font-black text-indigo-500 font-mono">{aiUsage.used} <span className="text-sm opacity-50 font-normal text-gray-500">/ {aiUsage.total}</span></div>
+                                                <div className="text-[10px] opacity-50 font-bold uppercase tracking-widest">Requests</div>
+                                            </div>
+                                        </div>
+                                        <div className="h-3 w-full bg-gray-500/10 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-500 ${aiUsage.remaining < 5 ? 'bg-red-500' : 'bg-gradient-to-r from-indigo-500 to-purple-400'}`}
+                                                style={{ width: `${Math.min(100, (aiUsage.used / aiUsage.total) * 100)}%` }}
+                                            ></div>
+                                        </div>
+                                        <div className="flex justify-between mt-3">
+                                            <p className="text-[10px] opacity-40 uppercase tracking-tighter font-bold">Limit Status: {aiUsage.remaining > 0 ? 'Healthy' : 'Exceeded'}</p>
+                                            <div className="text-right">
+                                                <p className="text-[10px] opacity-50">每日限額 {aiUsage.total} 次</p>
+                                                <p className="text-[10px] opacity-40 mt-0.5">將於 {timeUntilReset} 後重置</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* V1.0.3: AI Feature Usage Documentation */}
+                                    <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-gray-800/30 border-gray-700/50' : 'bg-gray-50/50 border-gray-200'}`}>
+                                        <h4 className="font-bold text-sm mb-3 flex items-center gap-2">
+                                            <Sparkles className="w-4 h-4 text-purple-400" />
+                                            Jarvis 功能使用說明
+                                        </h4>
+                                        <div className="space-y-2 text-xs">
+                                            <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-bold">🧠 Jarvis 行程生成</span>
+                                                    <span className="text-purple-400 font-mono text-[10px]">~500 tokens/次</span>
+                                                </div>
+                                                <p className="opacity-60 mt-1">從文字描述生成結構化行程 (每生成 1 天算 1 次)</p>
+                                            </div>
+                                            <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-bold">🌤️ 智能天氣分析</span>
+                                                    <span className="text-orange-400 font-mono text-[10px]">~150 tokens/次</span>
+                                                </div>
+                                                <p className="opacity-60 mt-1">根據天氣預報提供穿搭與活動建議 (每次分析算 1 次)</p>
+                                            </div>
+                                            <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-bold">🚆 交通路線建議</span>
+                                                    <span className="text-emerald-400 font-mono text-[10px]">~300 tokens/次</span>
+                                                </div>
+                                                <p className="opacity-60 mt-1">多城市行程自動計算交通方式 (每次呼叫算 1 次)</p>
+                                            </div>
+                                            <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-bold">💬 全能對話助手</span>
+                                                    <span className="text-pink-400 font-mono text-[10px]">~100 tokens/次</span>
+                                                </div>
+                                                <p className="opacity-60 mt-1">解答天氣、匯率、行程建議等問題 (每次對話算 1 次)</p>
+                                            </div>
+                                            <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-bold">🤖 智能命名</span>
+                                                    <span className="text-cyan-400 font-mono text-[10px]">~50 tokens/次</span>
+                                                </div>
+                                                <p className="opacity-60 mt-1">新行程建立時自動生成創意名稱 (每次生成算 1 次)</p>
+                                            </div>
+                                            <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-bold">📸 智能截圖匯入</span>
+                                                    <span className="text-blue-400 font-mono text-[10px]">~1500 tokens/次</span>
+                                                </div>
+                                                <p className="opacity-60 mt-1">AI 解析行程截圖或 PDF (每次匯入算 1 次)</p>
+                                            </div>
+                                            <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-bold">📝 客服工單摘要</span>
+                                                    <span className="text-gray-400 font-mono text-[10px]">~200 tokens/次</span>
+                                                </div>
+                                                <p className="opacity-60 mt-1">自動生成客服回報摘要 (每次提交算 1 次)</p>
+                                            </div>
+                                            <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-bold">🛍️ 購物/行李清單</span>
+                                                    <span className="text-indigo-400 font-mono text-[10px]">~100 tokens/次</span>
+                                                </div>
+                                                <p className="opacity-60 mt-1">AI 建議購物或行李清單 (每次生成算 1 次)</p>
+                                            </div>
+                                        </div>
+                                        <p className="text-[10px] opacity-40 mt-3 text-center">💡 提示：使用自訂 API Key 可無視每日限額</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* 2. API Keys Tab (Beta) */}
+                            {intelTab === 'api' && (
+                                <div className="space-y-6 animate-fade-in">
+                                    <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 p-5 rounded-2xl border border-emerald-500/20">
+                                        <h4 className="font-bold flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-2 text-lg">
+                                            <Lock className="w-5 h-5" /> 自訂 API Keys (BYOK)
+                                        </h4>
+                                        <p className="text-sm opacity-70 leading-relaxed">您的 API Key 只會儲存在本地瀏覽器 (localStorage)，不會上傳至我們的伺服器，安全無虞。</p>
+                                    </div>
+
+                                    {/* Development Notice */}
+                                    <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold flex items-center gap-2">
+                                        <span>🚧 多供應商功能 (OpenAI, Claude) 開發中 - Coming V1.2.4</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-6">
+                                        <div>
+                                            <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">Gemini AI API Key</label>
+                                            <input
+                                                type="password"
+                                                placeholder="AIzA..."
+                                                value={globalSettings.userGeminiKey || ''}
+                                                onChange={e => {
+                                                    setGlobalSettings({ ...globalSettings, userGeminiKey: e.target.value });
+                                                    const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+                                                    localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, userGeminiKey: e.target.value }));
+                                                }}
+                                                className={inputClasses(isDarkMode)}
+                                            />
+                                            <div className="mt-2 text-xs opacity-60 leading-relaxed flex justify-between items-center">
+                                                <span>用於 AI 行程生成、翻譯及智能建議。</span>
+                                                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-indigo-500 hover:text-indigo-400 font-bold flex items-center gap-1">
+                                                    👉 免費獲取 Key
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">自訂 Model Name (選填)</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. gemini-2.0-flash-exp"
+                                                    value={globalSettings.userGeminiModel || ''}
+                                                    onChange={e => {
+                                                        setGlobalSettings({ ...globalSettings, userGeminiModel: e.target.value });
+                                                        const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+                                                        localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, userGeminiModel: e.target.value }));
+                                                    }}
+                                                    className={inputClasses(isDarkMode)}
+                                                />
+                                                <div className="mt-2 text-[10px] opacity-60">
+                                                    預設使用 <code className="bg-gray-500/20 px-1 rounded">gemini-2.0-flash-exp</code>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">自訂每日限額 (選填)</label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="Default: 20"
+                                                    value={globalSettings.userGeminiLimit || ''}
+                                                    onChange={e => {
+                                                        setGlobalSettings({ ...globalSettings, userGeminiLimit: e.target.value });
+                                                        const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+                                                        localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, userGeminiLimit: e.target.value }));
+                                                    }}
+                                                    className={inputClasses(isDarkMode)}
+                                                />
+                                                <div className="mt-2 text-[10px] opacity-60">
+                                                    建議設為 100+ 以獲得最佳體驗
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">Google Maps API Key</label>
+                                            <input
+                                                type="password"
+                                                placeholder="AIzA..."
+                                                value={globalSettings.userMapsKey || ''}
+                                                onChange={e => {
+                                                    setGlobalSettings({ ...globalSettings, userMapsKey: e.target.value });
+                                                    const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+                                                    localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, userMapsKey: e.target.value }));
+                                                }}
+                                                className={inputClasses(isDarkMode)}
+                                            />
+                                            <div className="mt-2 text-xs opacity-60 leading-relaxed flex justify-between items-center">
+                                                <span>用於地圖顯示及地點搜尋。</span>
+                                                <a href="https://console.cloud.google.com/google/maps-apis/credentials" target="_blank" rel="noreferrer" className="text-indigo-500 hover:text-indigo-400 font-bold flex items-center gap-1">
+                                                    👉 Google Cloud Console
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* 3. Preferences Tab */}
+                            {intelTab === 'prefs' && (
+                                <div className="space-y-6 animate-fade-in">
+                                    <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 p-5 rounded-2xl border border-indigo-500/20">
+                                        <h4 className="font-bold flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-2 text-lg"><Sparkles className="w-5 h-5" /> Jarvis 偏好</h4>
+                                        <p className="text-sm opacity-70">勾選您的興趣，讓 Jarvis 建議更懂你。</p>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        {AI_INTERESTS.map(item => (
+                                            <label key={item.id} className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center gap-3 cursor-pointer transition-all ${globalSettings.preferences?.includes(item.id) ? 'bg-indigo-500/10 border-indigo-500 text-indigo-500' : 'border-gray-500/20 hover:bg-gray-500/5'}`}>
+                                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${globalSettings.preferences?.includes(item.id) ? 'bg-indigo-500 border-transparent' : 'border-gray-400'}`}>
+                                                    {globalSettings.preferences?.includes(item.id) && <div className="w-2.5 h-2.5 bg-white rounded-sm" />}
+                                                    <input type="checkbox" className="hidden" checked={globalSettings.preferences?.includes(item.id)} onChange={() => toggleInterest(item.id)} />
+                                                </div>
+                                                <span className="text-sm font-bold">{item.label}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+
+                                    {/* V1.2.3: Global Auto-AI Toggle */}
+                                    <div className={`p-4 rounded-xl border flex items-center justify-between ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+                                        <div>
+                                            <div className="font-bold text-sm flex items-center gap-2">
+                                                <BrainCircuit className={`w-4 h-4 ${globalSettings.autoJarvis !== false ? 'text-indigo-500' : 'text-gray-400'}`} />
+                                                自動啟用 Jarvis AI 功能
+                                            </div>
+                                            <div className="text-xs opacity-60 mt-1 max-w-sm">
+                                                {globalSettings.autoJarvis !== false ? '已啟用：Jarvis 將自動為您提供行程建議、命名及分析。' : '已停用：需手動啟用個別功能，節省用量。 (部分核心功能仍可使用)'}
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                const newVal = globalSettings.autoJarvis === false ? true : false;
+                                                setGlobalSettings({ ...globalSettings, autoJarvis: newVal });
+                                                const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+                                                localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, autoJarvis: newVal }));
+                                            }}
+                                            className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${globalSettings.autoJarvis !== false ? 'bg-indigo-600' : 'bg-gray-400'}`}
+                                        >
+                                            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${globalSettings.autoJarvis !== false ? 'left-7' : 'left-1'}`} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 

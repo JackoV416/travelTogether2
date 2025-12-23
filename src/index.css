@@ -128,3 +128,13 @@ input[type="text"].search-dark-override::placeholder {
     background: linear-gradient(90deg, #1f2937 25%, #374151 50%, #1f2937 75%); /* Gray 800 -> 700 -> 800 */
   }
 }
+
+/* V1.2 Animations */
+@keyframes pulse-slow {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.animate-pulse-slow {
+    animation: pulse-slow 3s infinite ease-in-out;
+}

@@ -5,7 +5,7 @@ import { generateTripName } from '../../services/ai-parsing';
 import { COUNTRIES_DATA } from '../../constants/appData';
 import DateRangePicker from '../Shared/DateRangePicker';
 
-const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, onAddCity, newCityInput, setNewCityInput, onSubmit, isDarkMode, globalSettings }) => {
+const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, onAddCity, newCityInput, setNewCityInput, onSubmit, isDarkMode, globalSettings, user }) => {
     const currentLang = globalSettings.language;
     const [countrySearch, setCountrySearch] = useState("");
     const [citySearch, setCitySearch] = useState("");
@@ -31,7 +31,7 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
                 startDate: form.startDate,
                 endDate: form.endDate
             };
-            const name = await generateTripName(tripContext);
+            const name = await generateTripName(tripContext, user?.uid);
             onInputChange('name', name);
         } catch (e) {
             console.error(e);

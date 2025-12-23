@@ -128,6 +128,7 @@ export const useNotifications = (user) => {
 
     return {
         notifications,
+        setNotifications,
         sendNotification,
         markNotificationsRead,
         removeNotification

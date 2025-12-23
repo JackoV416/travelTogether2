@@ -52,7 +52,8 @@ const AIGeminiModal = ({
     trip = null,
     weatherData = null,
     mode = 'full',
-    targetDate = null // V1.1.7: Specific date for analysis
+    targetDate = null, // V1.1.7: Specific date for analysis
+    user = null // V1.2.3: For Quota Tracking
 }) => {
     // V0.22: Coming Soon removed - Full functionality restored
     const [loading, setLoading] = useState(false);
@@ -139,10 +140,11 @@ const AIGeminiModal = ({
                         visitedPlaces: logistics.visitedPlaces.split(/[,，\n]/).filter(p => p.trim()),
                         existingItinerary: trip?.itinerary || {},
                         budget: logistics.budget,
-                        travelStyle: 'balanced'
+                        travelStyle: 'balanced',
+                        userId: user?.uid
                     }),
-                    generateShoppingWithGemini(city, []).catch(() => generateShoppingSuggestions(city)),
-                    generatePackingList(trip || { city, itinerary: {} }, weatherData?.[city] || { temp: "24°C", desc: "Sunny" })
+                    generateShoppingWithGemini(city, [], {}, user?.uid).catch(() => generateShoppingSuggestions(city)),
+                    generatePackingList(trip || { city, itinerary: {} }, weatherData?.[city] || { temp: "24°C", desc: "Sunny" }, user?.uid)
                 ]);
 
                 // Transform Gemini result to expected format
@@ -265,7 +267,7 @@ const AIGeminiModal = ({
         setAnalyzingFile(true);
         try {
             const { parseImageDirectly } = await import('../../services/ai-parsing');
-            const results = await parseImageDirectly(file, { city: contextCity });
+            const results = await parseImageDirectly(file, { city: contextCity }, user?.uid);
             setFileResults(results);
 
             // Auto-fill logic from candidates
@@ -345,7 +347,8 @@ const AIGeminiModal = ({
                 city: contextCity || trip?.city,
                 date: targetDate,
                 items: dateItems,
-                weather: weatherData?.[contextCity] || null
+                weather: weatherData?.[contextCity] || null,
+                userId: user?.uid
             });
 
             setResult(prev => ({
@@ -527,7 +530,7 @@ const AIGeminiModal = ({
                                         const cityKey = contextCity || trip?.city || "Tokyo";
                                         // Pass the city-specific weather or a fallback
                                         const cityWeather = weatherData?.[cityKey] || weatherData?.Tokyo || { temp: "24°C", desc: "Sunny" };
-                                        generatePackingList(trip || { city: cityKey, itinerary: {} }, cityWeather)
+                                        generatePackingList(trip || { city: cityKey, itinerary: {} }, cityWeather, user?.uid)
                                             .then(res => {
                                                 if (!res || res.length === 0) {
                                                     console.warn("[AI] Packing list returned empty");

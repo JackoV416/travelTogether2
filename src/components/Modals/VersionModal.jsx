@@ -1,8 +1,10 @@
 import React from 'react';
-import { X, GitCommit, Calendar, Tag } from 'lucide-react';
-import { VERSION_HISTORY, APP_VERSION, APP_AUTHOR } from '../../constants/appData';
+import { X, GitCommit, Calendar, Tag, Bot, Monitor } from 'lucide-react';
+import { VERSION_HISTORY, JARVIS_VERSION_HISTORY, APP_VERSION, JARVIS_VERSION, APP_AUTHOR } from '../../constants/appData';
+import { useState } from 'react';
 
 const VersionModal = ({ isOpen, onClose, isDarkMode, globalSettings }) => {
+    const [activeTab, setActiveTab] = useState('web'); // 'web' or 'jarvis'
     if (!isOpen) return null;
 
     const currentLang = globalSettings?.language || 'zh-TW'; // Use globalSettings.language which matches App.jsx state
@@ -67,26 +69,58 @@ const VersionModal = ({ isOpen, onClose, isDarkMode, globalSettings }) => {
                     </button>
                 </div>
 
+                {/* Tab Switcher */}
+                <div className={`flex border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}>
+                    <button
+                        onClick={() => setActiveTab('web')}
+                        className={`flex-1 py-3 text-xs font-black tracking-widest uppercase flex items-center justify-center gap-2 transition-all border-b-2 ${activeTab === 'web'
+                            ? 'border-indigo-500 text-indigo-500 bg-indigo-500/5'
+                            : 'border-transparent opacity-40 hover:opacity-60'}`}
+                    >
+                        <Monitor className="w-3.5 h-3.5" /> 網站系統
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('jarvis')}
+                        className={`flex-1 py-3 text-xs font-black tracking-widest uppercase flex items-center justify-center gap-2 transition-all border-b-2 ${activeTab === 'jarvis'
+                            ? 'border-purple-500 text-purple-500 bg-purple-500/5'
+                            : 'border-transparent opacity-40 hover:opacity-60'}`}
+                    >
+                        <Bot className="w-3.5 h-3.5" /> Jarvis AI
+                    </button>
+                </div>
+
+                {/* Sub-Header info */}
+                <div className={`px-5 py-2 text-[10px] font-bold opacity-30 uppercase tracking-tighter border-b ${isDarkMode ? 'border-gray-800 bg-black/20' : 'border-gray-50 bg-gray-50/50'}`}>
+                    {activeTab === 'web' ? `Travel Together Stable Build - ${APP_VERSION}` : `Assistant Engine Beta - ${JARVIS_VERSION}`}
+                </div>
+
                 {/* Scrollable Content */}
                 <div className="overflow-y-auto p-5 space-y-8 custom-scrollbar">
-                    {VERSION_HISTORY.map((ver, i) => {
+                    {(activeTab === 'web' ? VERSION_HISTORY : JARVIS_VERSION_HISTORY).map((ver, i) => {
                         const isLatest = i === 0;
+                        const accentColor = activeTab === 'web' ? 'indigo' : 'purple';
+                        const accentClass = activeTab === 'web' ? 'text-indigo-500' : 'text-purple-500';
+                        const borderClass = activeTab === 'web' ? 'border-indigo-500' : 'border-purple-500';
+                        const bgClass = activeTab === 'web'
+                            ? (isDarkMode ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-indigo-50 border-indigo-200')
+                            : (isDarkMode ? 'bg-purple-500/10 border-purple-500/30' : 'bg-purple-50 border-purple-200');
+
                         return (
                             <div key={ver.ver} className="relative pl-6 before:absolute before:left-[7px] before:top-2 before:bottom-[-32px] before:w-[2px] before:bg-gray-500/10 last:before:hidden">
                                 {/* Timeline Dot */}
-                                <div className={`absolute left-0 top-1.5 w-4 h-4 rounded-full border-[3px] z-10 ${isLatest ? 'border-indigo-500 bg-white dark:bg-gray-900' : 'border-gray-400/30 bg-gray-200 dark:bg-gray-700'}`}></div>
+                                <div className={`absolute left-0 top-1.5 w-4 h-4 rounded-full border-[3px] z-10 ${isLatest ? `${borderClass} bg-white dark:bg-gray-900` : 'border-gray-400/30 bg-gray-200 dark:bg-gray-700'}`}></div>
 
                                 {/* Version Card */}
-                                <div className={`p-4 rounded-xl border transition-all ${isLatest ? (isDarkMode ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-indigo-50 border-indigo-200') : (isDarkMode ? 'bg-gray-800/50 border-gray-700/50' : 'bg-gray-50 border-gray-100')}`}>
+                                <div className={`p-4 rounded-xl border transition-all ${isLatest ? bgClass : (isDarkMode ? 'bg-gray-800/50 border-gray-700/50' : 'bg-gray-50 border-gray-100')}`}>
 
                                     <div className="flex justify-between items-start mb-2">
                                         <div>
                                             <div className="flex items-center gap-2">
-                                                <h3 className={`font-bold font-mono text-sm ${isLatest ? 'text-indigo-500' : 'opacity-90'}`}>
+                                                <h3 className={`font-bold font-mono text-sm ${isLatest ? accentClass : 'opacity-90'}`}>
                                                     {ver.ver}
                                                 </h3>
                                                 {ver.tag && (
-                                                    <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${isLatest ? 'bg-indigo-500 text-white' : 'bg-gray-500/10 opacity-70'}`}>
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${isLatest ? (activeTab === 'web' ? 'bg-indigo-500 text-white' : 'bg-purple-500 text-white') : 'bg-gray-500/10 opacity-70'}`}>
                                                         {ver.tag}
                                                     </span>
                                                 )}

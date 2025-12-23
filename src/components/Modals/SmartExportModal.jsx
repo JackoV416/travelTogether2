@@ -203,6 +203,12 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
                     <div className="flex border-b border-white/10 bg-white/5 shrink-0">
                         <button onClick={() => setActiveTab('export')} className={`flex-1 py-3 text-xs font-black tracking-widest transition-all ${activeTab === 'export' ? 'text-indigo-400 bg-indigo-500/10 border-b-2 border-indigo-500' : 'opacity-40 hover:bg-white/5'}`}>📤 匯出</button>
                         <button onClick={() => setActiveTab('share')} className={`flex-1 py-3 text-xs font-black tracking-widest transition-all ${activeTab === 'share' ? 'text-indigo-400 bg-indigo-500/10 border-b-2 border-indigo-500' : 'opacity-40 hover:bg-white/5'}`}>🔗 分享</button>
+                        <div className="relative group flex-1">
+                            <button disabled className="w-full py-3 text-[10px] font-black tracking-widest opacity-20 cursor-not-allowed">🎨 編輯 (V1.2)</button>
+                            <div className="absolute inset-x-0 bottom-full mb-2 p-2 bg-indigo-600 rounded-lg text-[9px] text-white opacity-0 group-hover:opacity-100 transition-opacity z-50 text-center pointer-events-none font-bold">
+                                🚀 Pro Editor (執位器) 即將登場！可自由拖拽 PDF 項目順序。
+                            </div>
+                        </div>
                     </div>
 
                     {/* Options Area */}
@@ -346,9 +352,14 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
                     <div className="flex-1 overflow-hidden p-6 flex flex-col items-center justify-center h-full relative">
                         {activeTab === 'export' ? (
                             <div className="w-full h-full flex flex-col">
-                                <div className="flex items-center gap-2 mb-4 opacity-40">
-                                    <Search className="w-4 h-4" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">{exportType?.label ? `${exportType.label} 預覽` : '請選擇匯出格式'}</span>
+                                <div className="flex items-center gap-2 mb-4">
+                                    <div className="flex items-center gap-2 opacity-40">
+                                        <Search className="w-4 h-4" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">{exportType?.label ? `${exportType.label} 預覽` : '請選擇匯出格式'}</span>
+                                    </div>
+                                    <div className="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-[9px] font-black text-indigo-300 animate-pulse">
+                                        COMING SOON: PRO EDITOR V1.2
+                                    </div>
                                 </div>
 
                                 <div className={`flex-1 rounded-2xl border border-dashed border-white/10 overflow-hidden relative shadow-2xl transition-all duration-500 ${isPreviewLoading ? 'opacity-50 scale-95' : 'opacity-100 scale-100'} ${exportType?.id === 'pdf' ? 'bg-gray-800' : 'bg-black/40'}`}>

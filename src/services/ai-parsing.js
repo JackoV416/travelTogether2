@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { checkUserQuota, incrementUserQuota } from './ai-quota'; // V1.2.3 Centralized Quota
 
 // --- Multi-API Key + Multi-Model Configuration ---
 // Add multiple keys in .env: VITE_GEMINI_API_KEY, VITE_GEMINI_API_KEY_2, etc.
@@ -25,6 +26,11 @@ const ENV_KEYS = [
     import.meta.env.VITE_GEMINI_API_KEY_3,
     import.meta.env.VITE_GEMINI_API_KEY_4,
     import.meta.env.VITE_GEMINI_API_KEY_5,
+    import.meta.env.VITE_GEMINI_API_KEY_6,
+    import.meta.env.VITE_GEMINI_API_KEY_7,
+    import.meta.env.VITE_GEMINI_API_KEY_8,
+    import.meta.env.VITE_GEMINI_API_KEY_9,
+    import.meta.env.VITE_GEMINI_API_KEY_10,
 ].filter(Boolean);
 
 const API_KEYS = [...(getStoredKey() ? [getStoredKey()] : []), ...ENV_KEYS].filter(key =>
@@ -110,8 +116,28 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
  * @param {Object} options - { maxRetries: 2, importance: 'high'|'low', trackUsage: true }
  */
 // Helper: Smart Retry Wrapper with Rotation, Progress & Delay
-const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgress, signal) => {
+const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgress, signal, userId = null) => {
     let lastError = null;
+
+    // V1.2.3: Check "Auto Jarvis" Setting (Skip if importance is 'critical' e.g. manual request)
+    // If importance is 'low' (background tasks) and setting is OFF, block it.
+    try {
+        const settings = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+        if (settings.autoJarvis === false && importance === 'low') {
+            console.log(`[Jarvis] ${fnName} skipped due to Auto-Jarvis disabled.`);
+            throw new Error("AUTO_JARVIS_DISABLED");
+        }
+    } catch (e) {
+        if (e.message === "AUTO_JARVIS_DISABLED") throw e;
+    }
+
+    // V1.2.3: Centralized Quota Check
+    if (userId) {
+        const quotaStatus = await checkUserQuota(userId);
+        if (!quotaStatus.allowed) {
+            throw new Error(AI_ERRORS.QUOTA + ": " + quotaStatus.message);
+        }
+    }
 
     // Try multiple rounds of API keys (Infinite Loop Support)
     // Now with delays, we can safely allow more rounds without hanging
@@ -156,6 +182,12 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
 
             // Success!
             if (onProgress) onProgress("完成！", 100);
+
+            // V1.2.3: Increment Quota on Success
+            if (userId) {
+                await incrementUserQuota(userId);
+            }
+
             return result;
 
         } catch (error) {
@@ -315,7 +347,7 @@ const REAL_WORLD_GROUNDING = {
  * @param {Object} context - Trip context (city, date, currency)
  * @returns {Promise<Array>} Parsed itinerary items
  */
-export async function parseImageDirectly(file, context = {}) {
+export async function parseImageDirectly(file, context = {}, userId = null) {
     if (!file) return [];
 
     try {
@@ -401,7 +433,7 @@ If no travel info is visible, return { "itinerary": [], "accommodation": [] }.`;
         };
 
         // Execute with Smart Retry
-        const parsed = await callWithSmartRetry("GeneralAI", apiTask, 'high');
+        const parsed = await callWithSmartRetry("GeneralAI", apiTask, 'high', null, null, userId);
 
         // Transform to unified format
         const items = [];
@@ -468,7 +500,7 @@ async function fileToBase64(file) {
  * @param {string} rawText OCR 識別出的原始文字
  * @returns {Promise<Array>} 解析後的行程項目列表
  */
-export async function parseItineraryWithAI(rawText, context = {}) {
+export async function parseItineraryWithAI(rawText, context = {}, userId = null) {
     if (!rawText || rawText.length < 10) return [];
 
     const apiTask = async (model) => {
@@ -543,7 +575,7 @@ DO NOT invent items. Only return what you can confidently extract.
     };
 
     try {
-        const parsed = await callWithSmartRetry("GeneralAI", apiTask, 'high');
+        const parsed = await callWithSmartRetry("GeneralAI", apiTask, 'high', null, null, userId);
 
         // Transform to unified format with category tags
         const items = [];
@@ -735,7 +767,9 @@ export async function generateItineraryWithGemini({
     existingItinerary = {},
     visitedPlaces = [],
     budget = 'mid',
-    travelStyle = 'balanced'
+    budget = 'mid',
+    travelStyle = 'balanced',
+    userId = null
 }) {
     const prompt = `你係一個專業嘅香港旅遊領隊 AI。請為 ${city} 生成一個詳細嘅 ${days} 日行程。
         
@@ -850,7 +884,9 @@ export async function suggestTransportBetweenSpots({
     toLocation,
     city,
     time = null,
-    preference = 'public'
+    time = null,
+    preference = 'public',
+    userId = null
 }) {
     const apiTask = async (model) => {
         const prompt = `You are a local transport expert for ${city}. Suggest the best way to travel between two locations.
@@ -904,7 +940,7 @@ Preference: ${preference} (public/taxi/walking)
         throw new Error("Invalid response format");
     };
 
-    return await callWithSmartRetry("Transport", apiTask, 'low');
+    return await callWithSmartRetry("Transport", apiTask, 'low', null, null, userId);
 }
 
 /**
@@ -913,7 +949,7 @@ Preference: ${preference} (public/taxi/walking)
  * @param {string} city - City context
  * @returns {Promise<Object>} Location details with coordinates
  */
-export async function getLocationDetails(placeName, city) {
+export async function getLocationDetails(placeName, city, userId = null) {
     const apiTask = async (model) => {
         const prompt = `Provide location details for "${placeName}" in ${city}.
 
@@ -948,7 +984,7 @@ If the place doesn't exist or you're unsure, set coordinates to null.`;
     };
 
     try {
-        return await callWithSmartRetry("GeneralAI", apiTask, 'high');
+        return await callWithSmartRetry("GeneralAI", apiTask, 'high', null, null, userId);
     } catch (error) {
         console.error("[Gemini AI] Location details error:", error);
         return {
@@ -966,7 +1002,7 @@ If the place doesn't exist or you're unsure, set coordinates to null.`;
  * @param {Object} context - Trip context
  * @returns {Promise<string>} AI response
  */
-export async function askTravelAI(question, context = {}) {
+export async function askTravelAI(question, context = {}, userId = null) {
     const apiTask = async (model) => {
         const prompt = `You are a helpful travel assistant. Answer the following travel question.
 
@@ -990,7 +1026,7 @@ ${question}
     };
 
     try {
-        return await callWithSmartRetry("GeneralAI", apiTask, 'high');
+        return await callWithSmartRetry("GeneralAI", apiTask, 'high', null, null, userId);
     } catch (error) {
         console.error("[Gemini AI] Chat error:", error);
         throw error;
@@ -1004,7 +1040,7 @@ ${question}
  * @param {Object} tripContext - Optional trip context (country, dates)
  * @returns {Promise<Array>} Shopping suggestions
  */
-export async function generateShoppingWithGemini(city, categories = [], tripContext = {}) {
+export async function generateShoppingWithGemini(city, categories = [], tripContext = {}, userId = null) {
     // Get grounding data if available
     const grounding = REAL_WORLD_GROUNDING[city] || {};
     const country = tripContext.country || "";
@@ -1049,7 +1085,7 @@ Categories: ${categories.length > 0 ? categories.join(', ') : 'All categories'}
                 return JSON.parse(jsonMatch[0]);
             }
             throw new Error("Invalid response format");
-        }, 'low');
+        }, 'low', null, null, userId);
     } catch (error) {
         console.error("[Gemini AI] Shopping generation error:", error);
 
@@ -1070,7 +1106,7 @@ Categories: ${categories.length > 0 ? categories.join(', ') : 'All categories'}
  * @param {Object} weather - Weather data
  * @returns {Promise<Array>} Packing suggestions
  */
-export async function generatePackingList(trip, weather = {}) {
+export async function generatePackingList(trip, weather = {}, userId = null) {
     // Extract activities from itinerary
     const activities = [];
     if (trip.itinerary) {
@@ -1120,7 +1156,7 @@ Activities: ${activities.slice(0, 10).join(', ') || 'General sightseeing'}
                 return JSON.parse(jsonMatch[0]);
             }
             return Array.from(new Set(activities));
-        }, 'low');
+        }, 'low', null, null, userId);
     } catch (error) {
         console.error("[Gemini AI] Packing generation error:", error);
 
@@ -1141,7 +1177,7 @@ Activities: ${activities.slice(0, 10).join(', ') || 'General sightseeing'}
  * @param {Object} rawWeatherData - Raw data from Open-Meteo or similar
  * @returns {Promise<Object>} Detailed weather summary
  */
-export async function generateWeatherSummaryWithGemini(city, rawWeatherData = {}) {
+export async function generateWeatherSummaryWithGemini(city, rawWeatherData = {}, userId = null) {
     try {
         const prompt = `你係一個旅遊天氣專家。請根據提供嘅原始數據，為 ${city} 生成一個詳細嘅天氣與穿著建議。
 
@@ -1171,7 +1207,7 @@ ${JSON.stringify(rawWeatherData, null, 2)}
         const response = await callWithSmartRetry("Weather", async (model) => {
             const res = await model.generateContent(prompt);
             return res.response.text();
-        }, 'high');
+        }, 'high', null, null, userId);
         const text = response;
 
         const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -1207,7 +1243,7 @@ ${JSON.stringify(rawWeatherData, null, 2)}
  * @param {Object} trip - Trip object with destination, startDate, cities
  * @returns {Promise<string>} A creative trip name
  */
-export async function generateTripName(trip) {
+export async function generateTripName(trip, userId = null) {
     try {
         const destination = trip.city || trip.cities?.[0] || trip.country || "Unknown";
         const country = trip.country || "";
@@ -1242,7 +1278,7 @@ Return ONLY the trip name, nothing else. No quotes, no explanation.`;
         const text = await callWithSmartRetry("TripName", async (model) => {
             const result = await model.generateContent(prompt);
             return result.response.text().trim();
-        }, 'low');
+        }, 'low', null, null, userId);
 
         // Clean up any quotes or extra formatting
         return text.replace(/['"]/g, '').trim();
@@ -1264,7 +1300,9 @@ export async function generateDailyAnalysis({
     city,
     date,
     items = [],
-    weather = null
+    items = [],
+    weather = null,
+    userId = null
 }) {
     const prompt = `你係一個專業嘅香港旅遊領隊 AI。請分析以下這一天嘅行程，並提供實用建議。
 
@@ -1319,7 +1357,7 @@ ${items.map((i, idx) => `${idx + 1}. [${i.time || '??:??'}] ${i.name} (${i.detai
     };
 
     try {
-        return await callWithSmartRetry("GeneralAI", apiTask, 'high');
+        return await callWithSmartRetry("GeneralAI", apiTask, 'high', null, null, userId);
     } catch (error) {
         console.error("Daily Analysis Error:", error);
         // Fallback mock check
@@ -1332,7 +1370,7 @@ ${items.map((i, idx) => `${idx + 1}. [${i.time || '??:??'}] ${i.name} (${i.detai
 }
 
 // --- 4. Generate Ticket Summary (One-Line Title) ---
-export const generateTicketSummary = async (conversationText, onProgress, signal) => {
+export const generateTicketSummary = async (conversationText, onProgress, signal, userId = null) => {
     return callWithSmartRetry(
         "generateTicketSummary",
         async (model) => {
@@ -1356,6 +1394,7 @@ export const generateTicketSummary = async (conversationText, onProgress, signal
         },
         'high',
         onProgress,
-        signal
+        signal,
+        userId
     );
 };

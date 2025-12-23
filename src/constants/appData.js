@@ -5,13 +5,72 @@ import {
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.1.8";
-export const APP_VERSION_TAG = "Dark Mode & AI Polish";
+export const APP_VERSION = "V1.2.3";
+export const APP_VERSION_TAG = "Social & AI Quota Control";
 export const APP_LAST_UPDATE = '2025-12-23';
+export const JARVIS_VERSION = "V0.0.1-Beta";
+
+export const JARVIS_VERSION_HISTORY = [
+    {
+        ver: "V0.0.1-Beta",
+        date: "2025-12-23",
+        tag: "Inception",
+        desc: {
+            "zh-TW": "Jarvis AI 初始版本發布",
+            "en": "Initial Release of Jarvis AI"
+        },
+        details: {
+            "zh-TW": [
+                "🤖 AI UI: 實裝專屬 Chat View 與毛玻璃 Avatar",
+                "✨ 支援中心: 整合 Smart Hints 快速查問功能",
+                "🚀 視覺動態: 新增 pulse-slow 呼吸燈特效"
+            ],
+            "en": [
+                "🤖 AI UI: Implemented dedicated Chat View with Glassmorphism Avatar",
+                "✨ Support Center: Integrated Smart Hints",
+                "🚀 Visuals: Added pulse-slow animation effects"
+            ]
+        }
+    }
+];
 
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.2.3",
+        date: "2025-12-23",
+        tag: "Per-User AI Quota",
+        changes: [
+            "🔒 用戶級 AI 限額: Firestore 追蹤每位用戶每日 AI 使用量",
+            "💬 友好錯誤訊息: 顯示等待時間或每日限額提示",
+            "📊 幫助與支援: 新增「問 Jarvis AI」按鈕入口",
+            "🧠 Auto Jarvis Toggle: 可在設定中開關自動 AI 功能，節省用量",
+            "🔑 Expanded API Support: 支援多達 10 組 API Keys 輪替",
+            "📝 AI 用量透明化: 設定頁面詳列各項功能 Token 消耗"
+        ]
+    },
+    {
+        ver: "V1.2.2",
+        date: "2025-12-23",
+        tag: "Jarvis AI Support",
+        changes: [
+            "🤖 Jarvis AI 完整聊天: 實裝 AI 即時會話功能，整合 Gemini API 回應",
+            "💬 對話介面升級: 訊息歷史、思考指示器、快捷問題按鈕",
+            "✨ UI 精緻化: 移除快速 PDF 匯出按鈕，優化 Header Toolbar",
+            "🛡️ Coming Soon 標籤更新: 改為「稍後版本會更新」避免過時資訊"
+        ]
+    },
+    {
+        ver: "V1.2.1",
+        date: "2025-12-23",
+        tag: "User Group Chat",
+        changes: [
+            "💬 行程即時群聊: 實裝 Firestore Real-time Sync 聊天功能",
+            "🛡️ 聊天抽屜系統: 左右滑動式玻璃擬態聊天室，支援成員即時互動",
+            "🔔 呼吸燈按鈕: 行程 Header 加入脈衝式紫色 Chat 觸發按鍵"
+        ]
+    },
     {
         ver: "V1.1.8",
         date: "2025-12-23",
@@ -141,27 +200,6 @@ export const VERSION_HISTORY = [
                 "Streamlined Footer: Merged time and sync status with latest sync timestamp",
                 "🛡️ Image Resilience: Full implementation of ImageWithFallback for all assets",
                 "⚠️ Error Handling: Unified 404/500/503 pages with integrated issue reporting"
-            ]
-        }
-    },
-    {
-        ver: "V1.0.5",
-        tag: "Security Update",
-        date: "2025-12-21",
-        desc: {
-            "zh-TW": "V1.0.5: 安全性更新 (Dependencies Upgrade)",
-            "en": "V1.0.5: Security Update (Dependencies Upgrade)"
-        },
-        details: {
-            "zh-TW": [
-                "🛡️ Security Audit: 修復 12 個 npm moderate vulnerabilities",
-                "📦 Dependencies: 升級 Firebase (v11.x) 與 Vite (v6.x) 至最新版",
-                "🔧 Stability: 驗證 Build Process 與 Runtime 兼容性"
-            ],
-            "en": [
-                "🛡️ Security Audit: Fixed 12 moderate npm vulnerabilities",
-                "📦 Dependencies: Upgraded Firebase (v11.x) and Vite (v6.x)",
-                "🔧 Stability: Validated build process and runtime compatibility"
             ]
         }
     },

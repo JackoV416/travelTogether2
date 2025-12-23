@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Send, Image as ImageIcon, Smartphone, Monitor, HelpCircle, ChevronDown, ChevronUp, RefreshCw, Wifi, CloudOff, Database, Smartphone as Phone, Lightbulb, Clock, MessageCircle, Plus, Link as LinkIcon } from 'lucide-react';
+import { X, Send, Image as ImageIcon, Smartphone, Monitor, HelpCircle, ChevronDown, ChevronUp, RefreshCw, Wifi, CloudOff, Database, Smartphone as Phone, Lightbulb, Clock, MessageCircle, Plus, Link as LinkIcon, Sparkles, Bot, Brain } from 'lucide-react';
 import { isMobile, isIOS, isAndroid, isMacOs, isWindows, osName, osVersion, deviceType, browserName, mobileModel } from 'react-device-detect';
 
 import { collection, addDoc, serverTimestamp, onSnapshot, query, where, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from '../../firebase';
-import { APP_VERSION } from '../../constants/appData';
+import { APP_VERSION, JARVIS_VERSION } from '../../constants/appData';
 import { buttonPrimary } from '../../constants/styles';
 import { generateTicketSummary } from '../../services/ai-parsing';
 import { encryptMessage, decryptMessage } from '../../services/encryption';
@@ -44,8 +44,9 @@ const FAQ_DATA = [
     }
 ];
 
-const ReportCenterModal = ({ isOpen, onClose, isDarkMode, user }) => {
+const ReportCenterModal = ({ isOpen, onClose, isDarkMode, user, onOpenJarvis }) => {
     // 1. Navigation State: 'faq', 'form', 'list', 'chat'
+    const VIEWS = ['faq', 'form', 'list'];
     const [view, setView] = useState('faq');
     const [category, setCategory] = useState('bug'); // 'bug', 'suggestion', 'other'
     const [tickets, setTickets] = useState([]);
@@ -181,7 +182,7 @@ const ReportCenterModal = ({ isOpen, onClose, isDarkMode, user }) => {
                 timestamp: serverTimestamp()
             });
 
-            generateTicketSummary(newMessage).then(summary => {
+            generateTicketSummary(newMessage, user.uid).then(summary => {
                 if (summary) updateDoc(doc(db, 'feedback', docRef.id), { subject: `${catLabel}: ${summary}` });
             });
 
@@ -288,22 +289,35 @@ const ReportCenterModal = ({ isOpen, onClose, isDarkMode, user }) => {
                                 ))}
                             </div>
 
-                            <div className="pt-4 flex flex-col gap-4">
+                            {/* Jarvis AI Entry Button */}
+                            {onOpenJarvis && (
                                 <button
-                                    onClick={() => setView('form')}
-                                    className={`w-full py-4 rounded-2xl font-bold bg-indigo-600 text-white shadow-xl shadow-indigo-600/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2`}
+                                    onClick={() => { onClose(); onOpenJarvis(); }}
+                                    className={`w-full py-4 rounded-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-xl shadow-purple-600/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-3 group`}
                                 >
-                                    <MessageCircle className="w-5 h-5" />
-                                    仍然需要幫助？聯繫客服
+                                    <Bot className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                                    <span>問 Jarvis AI 助手</span>
+                                    <span className="text-[9px] bg-white/20 px-2 py-0.5 rounded-full ml-1">即時回覆</span>
                                 </button>
-                                <button
-                                    onClick={() => setView('list')}
-                                    className={`w-full py-3 rounded-2xl font-bold border ${isDarkMode ? 'border-white/5 text-slate-400 hover:bg-white/5' : 'border-gray-200 text-gray-500 hover:bg-gray-50'} transition-all text-sm flex items-center justify-center gap-2`}
-                                >
-                                    <Clock className="w-4 h-4" />
-                                    查看我的對話紀錄 ({tickets.length})
-                                </button>
-                            </div>
+                            )}
+
+                            <button
+                                onClick={() => setView('form')}
+                                className={`w-full py-4 rounded-2xl font-bold ${onOpenJarvis
+                                    ? `border ${isDarkMode ? 'border-white/10 text-slate-300 hover:bg-white/5' : 'border-gray-200 text-gray-700 hover:bg-gray-50'} transition-all flex items-center justify-center gap-3 group`
+                                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-600/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-3 group'
+                                    }`}
+                            >
+                                <MessageCircle className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                                <span>聯繫真人客服</span>
+                            </button>
+                            <button
+                                onClick={() => setView('list')}
+                                className={`w-full py-2.5 rounded-2xl font-bold border ${isDarkMode ? 'border-white/5 text-slate-400 hover:bg-white/5' : 'border-gray-200 text-gray-500 hover:bg-gray-50'} transition-all text-sm flex items-center justify-center gap-2`}
+                            >
+                                <Clock className="w-3.5 h-3.5" />
+                                <span>查看對話紀錄 ({tickets.length})</span>
+                            </button>
                         </div>
                     )}
 
@@ -514,7 +528,7 @@ const ReportCenterModal = ({ isOpen, onClose, isDarkMode, user }) => {
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

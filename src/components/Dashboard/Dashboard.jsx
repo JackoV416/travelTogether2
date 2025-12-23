@@ -464,6 +464,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                 onSubmit={handleCreate}
                 isDarkMode={isDarkMode}
                 globalSettings={globalSettings}
+                user={user}
             />
 
             <SmartImportModal

@@ -534,7 +534,7 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
 
                             {/* V1.0.3: Plaintext Input Mode */}
                             {importType.id === 'plaintext' ? (
-                                <div className="space-y-3">
+                                <div className="space-y-3 px-6">
                                     <textarea
                                         value={plaintextInput}
                                         onChange={(e) => setPlaintextInput(e.target.value)}
@@ -549,49 +549,64 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                                     <p className="text-[10px] opacity-50 text-slate-600 dark:text-white/50">💡 提示: 支援格式 "時間 活動名稱" 或純文字。會自動識別🍴餐廳/🚆交通/⛩️景點等。</p>
                                 </div>
                             ) : (
+                                <div className="px-6 space-y-4">
+                                    <div
+                                        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${files.length > 0 ? 'border-green-500 bg-green-500/10' : 'border-slate-300 dark:border-white/10 hover:border-indigo-500/50 hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                                        onClick={() => fileInputRef.current?.click()}
+                                        onDragOver={(e) => e.preventDefault()}
+                                        onDrop={handleDrop}
+                                    >
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept={getAcceptTypes()}
+                                            multiple={importType.id !== 'json'}
+                                            className="hidden"
+                                            onChange={handleFileChange}
+                                        />
+                                        {files.length > 0 ? (
+                                            <div>
+                                                <Check className="w-10 h-10 mx-auto text-green-500 mb-2" />
+                                                <p className="font-bold text-green-400">{files.length} 個檔案已選擇</p>
+                                                <p className="text-xs opacity-60 mt-1">{files.map(f => f.name).join(', ')}</p>
+                                            </div>
+                                        ) : (
+                                            <div>
+                                                <Upload className="w-10 h-10 mx-auto opacity-30 mb-2" />
+                                                <p className="font-bold">拖放檔案或點擊上傳</p>
+                                                <p className="text-xs opacity-60 mt-1">
+                                                    {importType.id === 'receipt' || importType.id === 'screenshot'
+                                                        ? '支援圖片 (JPG, PNG) - AI 自動識別內容'
+                                                        : '選擇您的檔案'}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
 
-                                <div
-                                    className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${files.length > 0 ? 'border-green-500 bg-green-500/10' : 'border-slate-300 dark:border-white/10 hover:border-indigo-500/50 hover:bg-slate-50 dark:hover:bg-white/5'}`}
-                                    onClick={() => fileInputRef.current?.click()}
-                                    onDragOver={(e) => e.preventDefault()}
-                                    onDrop={handleDrop}
-                                >
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept={getAcceptTypes()}
-                                        multiple={importType.id !== 'json'}
-                                        className="hidden"
-                                        onChange={handleFileChange}
-                                    />
-                                    {files.length > 0 ? (
-                                        <div>
-                                            <Check className="w-10 h-10 mx-auto text-green-500 mb-2" />
-                                            <p className="font-bold text-green-400">{files.length} 個檔案已選擇</p>
-                                            <p className="text-xs opacity-60 mt-1">{files.map(f => f.name).join(', ')}</p>
+                                    <div className="p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10 flex items-center justify-between group cursor-help relative">
+                                        <div className="flex items-center gap-2">
+                                            <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400">
+                                                <Sparkles className="w-4 h-4" />
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black text-indigo-300">本地混合辨識 (BentoPDF) 稍後版本會更新</p>
+                                                <p className="text-[9px] opacity-40">將支持本地 OCR，大幅提升隱私與速度</p>
+                                            </div>
                                         </div>
-                                    ) : (
-                                        <div>
-                                            <Upload className="w-10 h-10 mx-auto opacity-30 mb-2" />
-                                            <p className="font-bold">拖放檔案或點擊上傳</p>
-                                            <p className="text-xs opacity-60 mt-1">
-                                                {importType.id === 'receipt' || importType.id === 'screenshot'
-                                                    ? '支援圖片 (JPG, PNG) - AI 自動識別內容'
-                                                    : '選擇您的檔案'}
-                                            </p>
-                                        </div>
-                                    )}
+                                        <div className="text-[10px] font-bold opacity-30 group-hover:opacity-100 transition-opacity">即將推出</div>
+                                    </div>
                                 </div>
-
                             )}
 
-                            <button
-                                onClick={handleSubmit}
-                                disabled={importType.id === 'plaintext' ? !plaintextInput.trim() : files.length === 0}
-                                className={`w-full mt-4 py-3 rounded-xl font-bold transition-all ${(importType.id === 'plaintext' ? plaintextInput.trim() : files.length > 0) ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700' : 'bg-gray-500/30 text-gray-400 cursor-not-allowed'}`}
-                            >
-                                {importType.id === 'plaintext' ? '解析並預覽' : '開始識別並匯入'}
-                            </button>
+                            <div className="px-6 pb-6">
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={importType.id === 'plaintext' ? !plaintextInput.trim() : files.length === 0}
+                                    className={`w-full mt-4 py-3 rounded-xl font-bold transition-all ${(importType.id === 'plaintext' ? plaintextInput.trim() : files.length > 0) ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700' : 'bg-gray-500/30 text-gray-400 cursor-not-allowed'}`}
+                                >
+                                    {importType.id === 'plaintext' ? '解析並預覽' : '開始識別並匯入'}
+                                </button>
+                            </div>
                         </div>
                     )}
 

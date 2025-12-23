@@ -28,12 +28,14 @@ import VersionGuardModal from './components/Modals/VersionGuardModal'; // V1.1.8
 import ReportCenterModal from './components/Modals/ReportCenterModal'; // V1.1.8
 import AdminFeedbackModal from './components/Modals/AdminFeedbackModal';
 import SettingsView from './components/Views/SettingsView'; // New View
+import GlobalChatFAB from './components/Shared/GlobalChatFAB'; // V1.2.2 Global FAB
+import UniversalChat from './components/Shared/UniversalChat'; // V1.2.1-Globalized
 
 // --- V0.16.2 Refactored Imports ---
 import {
     APP_VERSION, APP_AUTHOR, APP_LAST_UPDATE, ADMIN_EMAILS,
     DEFAULT_BG_IMAGE, CITY_COORDS, COUNTRIES_DATA, INFO_DB,
-    SIMULATION_DATA, CURRENCIES, VERSION_HISTORY, TIMEZONES, LANGUAGE_OPTIONS
+    SIMULATION_DATA, CURRENCIES, VERSION_HISTORY, JARVIS_VERSION, TIMEZONES, LANGUAGE_OPTIONS
 } from './constants/appData';
 import {
     glassCard, getHolidayMap, getLocalizedCountryName,
@@ -81,6 +83,8 @@ const Footer = ({ isDarkMode, onOpenVersion }) => {
         <footer className={`mt-12 pt-6 pb-12 border-t text-center text-xs md:text-sm flex flex-col items-center justify-center gap-1 ${isDarkMode ? 'bg-gray-900 border-gray-800 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-600'} pb-[calc(1.5rem+env(safe-area-inset-bottom))]`}>
             <div className="flex flex-wrap gap-2 items-center justify-center font-bold">
                 <span>Travel Together {APP_VERSION}</span>
+                <span className="opacity-30">|</span>
+                <span className="text-indigo-400">Jarvis {JARVIS_VERSION}</span>
                 <span>•</span>
                 <button
                     onClick={onOpenVersion}
@@ -273,7 +277,7 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
 // --- Files & Attachments Tab ---
 
 // --- Trip Detail Wrapper (handles ALL data loading, TripDetailContent only renders when trip is ready) ---
-const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, globalSettings, exchangeRates, onOpenSmartImport, weatherData, onUpdateSimulationTrip, requestedTab, onTabHandled, requestedItemId, onItemHandled, isBanned, isAdmin }) => {
+const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, globalSettings, exchangeRates, onOpenSmartImport, weatherData, onUpdateSimulationTrip, requestedTab, onTabHandled, requestedItemId, onItemHandled, isBanned, isAdmin, onOpenChat }) => {
 
     // ALL hooks in wrapper - consistent on every render
     const [realTrip, setRealTrip] = useState(null);
@@ -382,6 +386,7 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
                 onItemHandled={onItemHandled}
                 isBanned={isBanned}
                 isAdmin={isAdmin}
+                onOpenChat={onOpenChat}
             />
         </Suspense>
     );
@@ -530,6 +535,9 @@ const App = () => {
             }, 500);
         }
     };
+
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [chatInitialTab, setChatInitialTab] = useState('trip'); // 'trip' or 'jarvis' // Global Chat State
 
     const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
     const [isAdminFeedbackModalOpen, setIsAdminFeedbackModalOpen] = useState(false);
@@ -1002,6 +1010,7 @@ const App = () => {
                                 onItemHandled={() => setRequestedItemId(null)}
                                 isBanned={isBanned}
                                 isAdmin={isAdmin}
+                                onOpenChat={() => setIsChatOpen(true)}
                             />
                         </ErrorBoundary>
                     </div>
@@ -1031,6 +1040,19 @@ const App = () => {
             </div>
             {view !== 'tutorial' && <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} />}
             {/* SettingsModal removed */}
+            <OnboardingModal isOpen={isOnboardingOpen} onClose={handleOnboardingComplete} isDarkMode={isDarkMode} />
+
+            {/* Global Chat / AI FAB */}
+            {user && view !== 'tutorial' && !isChatOpen && (
+                <GlobalChatFAB
+                    isDarkMode={isDarkMode}
+                    context={view === 'detail' ? 'trip' : 'default'}
+                    onClick={() => {
+                        // Priority: Open Trip Chat if in detail view, else Jarvis
+                        setIsChatOpen(true);
+                    }}
+                />
+            )}
             <VersionModal isOpen={isVersionOpen} onClose={() => setIsVersionOpen(false)} isDarkMode={isDarkMode} globalSettings={globalSettings} />
             <VersionGuardModal isOpen={isVersionGuardOpen} latestVersion={latestVersion} currentVersion={APP_VERSION} />
             <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} isDarkMode={isDarkMode} user={user} isBanned={isBanned} />
@@ -1047,6 +1069,7 @@ const App = () => {
                 onClose={() => setIsReportCenterOpen(false)}
                 isDarkMode={isDarkMode}
                 user={user}
+                onOpenJarvis={() => { setIsReportCenterOpen(false); setIsChatOpen(true); }}
             />
             <SmartImportModal
                 isOpen={isSmartImportModalOpen}
@@ -1068,10 +1091,18 @@ const App = () => {
                         `${files?.[0]?.name || '檔案'} 已上傳`,
                         'success'
                     );
-                    // Do NOT close modal here - SmartImportModal will show result and close itself
                 }}
             />
-            <OnboardingModal isOpen={isOnboardingOpen} onClose={handleOnboardingComplete} isDarkMode={isDarkMode} />
+
+            {/* Universal Chat & Jarvis AI System */}
+            <UniversalChat
+                isOpen={isChatOpen}
+                onClose={() => setIsChatOpen(false)}
+                user={user}
+                trip={selectedTrip}
+                isDarkMode={isDarkMode}
+                initialTab={view === 'detail' ? 'trip' : 'jarvis'}
+            />
         </div>
     );
 };

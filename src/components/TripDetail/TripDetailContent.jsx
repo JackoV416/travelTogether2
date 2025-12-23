@@ -23,6 +23,7 @@ import FeedbackModal from '../Modals/FeedbackModal';
 import ImageWithFallback from '../Shared/ImageWithFallback';
 
 
+
 import {
     glassCard, getHolidayMap, getLocalizedCountryName, getLocalizedCityName, getSafeCountryInfo, formatDate,
     getDaysArray, getTripSummary, calculateDebts, getTimeDiff, getWeatherForecast, buildDailyReminder,
@@ -38,7 +39,7 @@ import { useTripHistory } from '../../hooks/useTripHistory'; // V1.1 Phase 7
 
 const TripDetailContent = (props) => {
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-    const { trip, isDarkMode, isAdmin, user, onBack } = props;
+    const { trip, isDarkMode, isAdmin, user, onBack, isChatOpen } = props;
 
     // Internal error handling if trip is missing
     if (!trip) {
@@ -71,7 +72,10 @@ const TripDetailContent = (props) => {
     );
 };
 
-const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, isPreview, globalSettings, exchangeRates, convAmount, setConvAmount, convTo, setConvTo, onOpenSmartImport, weatherData, requestedTab, onTabHandled, requestedItemId, onItemHandled, isBanned, isAdmin, setIsFeedbackOpen, isFeedbackOpen }) => {
+const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, isPreview, globalSettings, exchangeRates, convAmount, setConvAmount, convTo, setConvTo, onOpenSmartImport, weatherData, requestedTab, onTabHandled, requestedItemId, onItemHandled, isBanned, isAdmin, setIsFeedbackOpen, isFeedbackOpen, onOpenChat, isChatOpen }) => {
+    // ... UI STATE HOOKS (isChatOpen removed)
+    // ... (rest of props)
+
     // ============================================
     // UI STATE HOOKS
     // ============================================
@@ -101,6 +105,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
     const [visaForm, setVisaForm] = useState({ status: '', number: '', expiry: '', needsPrint: false });
     const [smartWeather, setSmartWeather] = useState(null);
     const [isGeneratingWeather, setIsGeneratingWeather] = useState(false);
+
     const [autoOpenItemId, setAutoOpenItemId] = useState(null); // Auto-open new/edited item
     // 🚀 Optimistic Update Cache (Persisted in LocalStorage)
     const [pendingItemsCache, setPendingItemsCache] = useState(() => {
@@ -986,7 +991,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
         }
         setIsGeneratingWeather(true);
         try {
-            const result = await generateWeatherSummaryWithGemini(trip.city, realWeather);
+            const result = await generateWeatherSummaryWithGemini(trip.city, realWeather, user?.uid);
             if (result) {
                 setSmartWeather(result);
             }
@@ -1376,40 +1381,55 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                                             {timeDiff !== 0 && <span className={`text-[10px] px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-md ${timeDiff > 0 ? 'bg-orange-500/20 text-orange-200' : 'bg-blue-500/20 text-blue-200'}`}>{timeDiff > 0 ? `+${timeDiff}h` : `${timeDiff}h`}</span>}
                                         </div>
 
-                                        <div className="flex flex-wrap items-center gap-4 mb-2">
-                                            <h1 className="text-3xl md:text-4xl lg:text-5xl font-black leading-tight tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-gray-300 drop-shadow-sm">{trip.name}</h1>
-                                        </div>
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
+                                            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-[1.1] tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-white/60 drop-shadow-xl animate-fade-in-up">
+                                                {trip.name}
+                                            </h1>
 
-                                        {/* Toolbar Row */}
-                                        <div className="flex items-center gap-2 mb-6 text-white/80">
-                                            <div className="flex items-center gap-1.5">
-                                                <button
-                                                    onClick={handleUndo}
-                                                    disabled={!canUndo}
-                                                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all backdrop-blur-md ${canUndo ? 'bg-black/40 hover:bg-black/60 text-white shadow-lg border-white/20' : 'bg-black/20 opacity-30 cursor-not-allowed border-white/5'} border`}
-                                                    title="撤銷 (Undo)"
-                                                >
-                                                    <Undo className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={handleRedo}
-                                                    disabled={!canRedo}
-                                                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all backdrop-blur-md ${canRedo ? 'bg-black/40 hover:bg-black/60 text-white shadow-lg border-white/20' : 'bg-black/20 opacity-30 cursor-not-allowed border-white/5'} border`}
-                                                    title="重做 (Redo)"
-                                                >
-                                                    <Redo className="w-4 h-4" />
-                                                </button>
+                                            {/* Unified Premium Action Bar */}
+                                            <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-black/30 backdrop-blur-2xl border border-white/10 shadow-2xl self-start sm:ml-4 group/toolbar transition-all hover:bg-black/40">
+                                                {/* History Actions */}
+                                                <div className="flex items-center gap-1 px-1 border-r border-white/10 pr-2">
+                                                    <button
+                                                        onClick={handleUndo}
+                                                        disabled={!canUndo}
+                                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${canUndo ? 'hover:bg-white/10 text-white active:scale-90' : 'opacity-20 cursor-not-allowed'}`}
+                                                        title="撤銷 (Undo)"
+                                                    >
+                                                        <Undo className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={handleRedo}
+                                                        disabled={!canRedo}
+                                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${canRedo ? 'hover:bg-white/10 text-white active:scale-90' : 'opacity-20 cursor-not-allowed'}`}
+                                                        title="重做 (Redo)"
+                                                    >
+                                                        <Redo className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+
+                                                {/* Edit/Settings */}
+                                                {isOwner && (
+                                                    <button
+                                                        onClick={() => setIsTripSettingsOpen(true)}
+                                                        className="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:bg-white/10 text-indigo-300 active:scale-90"
+                                                        title="編輯行程設定 (Edit)"
+                                                    >
+                                                        <Edit3 className="w-4 h-4" />
+                                                    </button>
+                                                )}
+
+                                                {/* Chat Toggle */}
+                                                {!isChatOpen && (
+                                                    <button
+                                                        onClick={onOpenChat}
+                                                        className="w-9 h-9 rounded-xl flex items-center justify-center transition-all bg-indigo-500/80 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 active:scale-95"
+                                                        title="打開行程對話 (Chat)"
+                                                    >
+                                                        <MessageCircle className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                             </div>
-
-                                            {isOwner && (
-                                                <button
-                                                    onClick={() => setIsTripSettingsOpen(true)}
-                                                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all bg-black/40 hover:bg-black/60 text-indigo-300 border border-white/20 ml-2 shadow-lg backdrop-blur-md hover:scale-105"
-                                                    title="編輯行程設定 (Edit)"
-                                                >
-                                                    <Edit3 className="w-4 h-4" />
-                                                </button>
-                                            )}
                                         </div>
 
                                         {/* 🚀 Dynamic Header Location & Metadata (Moved Back Inside) */}
@@ -1874,7 +1894,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                     <MemberSettingsModal isOpen={isMemberModalOpen} onClose={() => setIsMemberModalOpen(false)} members={trip.members || []} onUpdateRole={handleUpdateRole} isDarkMode={isDarkMode} />
                     <InviteModal isOpen={isInviteModal} onClose={() => setIsInviteModal(false)} tripId={trip.id} onInvite={handleInvite} isDarkMode={isDarkMode} />
 
-                    <AIGeminiModal isOpen={isAIModal} onClose={() => setIsAIModal(false)} onApply={handleAIApply} isDarkMode={isDarkMode} contextCity={trip.city} existingItems={itineraryItems} mode={aiMode} userPreferences={globalSettings.preferences} trip={trip} weatherData={weatherData} targetDate={selectDate} />
+                    <AIGeminiModal isOpen={isAIModal} onClose={() => setIsAIModal(false)} onApply={handleAIApply} isDarkMode={isDarkMode} contextCity={trip.city} existingItems={itineraryItems} mode={aiMode} userPreferences={globalSettings.preferences} trip={trip} weatherData={weatherData} targetDate={selectDate} user={user} />
 
                     <TripExportImportModal
                         isOpen={Boolean(sectionModalConfig)}
@@ -1934,6 +1954,8 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                         isAdmin={isAdmin}
                         isDarkMode={isDarkMode}
                     />
+
+
                 </div>
             </div>
         </>

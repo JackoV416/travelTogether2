@@ -1,4 +1,4 @@
-import { Plus, Upload, Calendar, ArrowRight } from 'lucide-react';
+import { Plus, Upload, Calendar, ArrowRight, Search } from 'lucide-react';
 import { glassCard } from '../../utils/tripUtils';
 import { DEFAULT_BG_IMAGE } from '../../constants/appData';
 import SmartSummaryCard from './SmartSummaryCard';
@@ -33,13 +33,23 @@ const DashboardHeader = ({
 
                 {/* Top Row: Title & Actions */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <h2 className="text-2xl font-bold flex items-center gap-2">
-                            {hasTrips ? '🔔 重點行程與提醒' : '👋 開始您的第一次旅程'}
-                        </h2>
-                        <p className="opacity-80 text-sm max-w-xl mt-1">
-                            {hasTrips ? '關注即將開始的旅程動態，以及 AI 智能建議。' : '建立行程，讓 AI 為您規劃完美路線。'}
-                        </p>
+                    <div className="flex items-center gap-4">
+                        <div className="relative group cursor-help">
+                            <div className={`p-2.5 rounded-xl border ${isDarkMode ? 'bg-white/5 border-white/10 text-white/20' : 'bg-slate-100 border-slate-200 text-slate-300'}`}>
+                                <Search className="w-5 h-5" />
+                            </div>
+                            <div className="absolute left-0 top-full mt-2 w-48 p-2 bg-black/90 backdrop-blur-md rounded-lg text-[10px] text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none shadow-xl border border-white/10">
+                                🔍 全域搜尋 (Global Search) 稍後版本會更新！一鍵搜尋所有行程、購物及文件。
+                            </div>
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-bold flex items-center gap-2">
+                                {hasTrips ? '🔔 重點行程與提醒' : '👋 開始您的第一次旅程'}
+                            </h2>
+                            <p className="opacity-80 text-sm max-w-xl mt-1">
+                                {hasTrips ? '關注即將開始的旅程動態，以及 AI 智能建議。' : '建立行程，讓 AI 為您規劃完美路線。'}
+                            </p>
+                        </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2">

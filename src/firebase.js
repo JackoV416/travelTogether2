@@ -1,10 +1,15 @@
 // src/firebase.js
-import { initializeApp } from "firebase/app";
+import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getFirestore, setLogLevel } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
-// Firebase configuration - using direct values for Vercel deployment
-// Firebase API keys are public - protected by Firebase security rules
+// Suppress noisy Firestore warnings in development (HMR causes benign lock contention)
+if (import.meta.env.DEV) {
+  setLogLevel('error'); // Only show errors, not warnings
+}
+
+// Unified configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBGlEoflf06E_lBi7FHnU1k2xNRN3_QBes",
   authDomain: "travel-together2-byjamie.firebaseapp.com",
@@ -15,20 +20,35 @@ const firebaseConfig = {
   measurementId: "G-WB5T9XJ42E"
 };
 
-import { getStorage } from "firebase/storage";
+// Singleton App Initialization for HMR
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-import { initializeFirestore, persistentLocalCache } from "firebase/firestore";
-
-const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
-
-// Initialize Firestore with persistent cache (new API)
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentLocalCache.tabManager,
-    cacheSizeBytes: persistentLocalCache.cacheSizeBytes
-  })
-});
-
 export const storage = getStorage(app);
+
+// Initialize Firestore with robust Singleton + Multi-tab support
+// Use globalThis to persist instance across HMR reloads
+let db;
+
+if (globalThis._firestore_db) {
+  // Reuse existing instance (HMR or already initialized)
+  db = globalThis._firestore_db;
+} else {
+  try {
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+      })
+    });
+    globalThis._firestore_db = db;
+    console.log("[Firebase] Firestore initialized (Multi-tab Persistence Enabled)");
+  } catch (error) {
+    // Silently handle known HMR/multi-tab lock scenarios
+    db = getFirestore(app);
+    globalThis._firestore_db = db;
+    // No console warning - this is expected during HMR
+  }
+}
+
+export { db };
