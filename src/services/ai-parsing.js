@@ -767,7 +767,6 @@ export async function generateItineraryWithGemini({
     existingItinerary = {},
     visitedPlaces = [],
     budget = 'mid',
-    budget = 'mid',
     travelStyle = 'balanced',
     userId = null
 }) {
@@ -883,7 +882,6 @@ export async function suggestTransportBetweenSpots({
     fromLocation,
     toLocation,
     city,
-    time = null,
     time = null,
     preference = 'public',
     userId = null
@@ -1299,7 +1297,6 @@ Return ONLY the trip name, nothing else. No quotes, no explanation.`;
 export async function generateDailyAnalysis({
     city,
     date,
-    items = [],
     items = [],
     weather = null,
     userId = null
