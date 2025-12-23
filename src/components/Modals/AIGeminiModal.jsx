@@ -25,7 +25,7 @@ const SHOPPING_CATEGORIES = [
     { id: 'food', label: '🍱 美食伴手禮', types: ['food', 'snack', 'alcohol'] },
     { id: 'cosmetic', label: '💄 藥妝護膚', types: ['cosmetic', 'skincare'] },
     { id: 'fashion', label: '👗 服飾時尚', types: ['clothing', 'fashion', 'accessory'] },
-    { id: 'electronics', label: '⚡ 電器3C', types: ['electronics', 'gadget'] },
+    { id: 'electronics', label: '⚡ 電器 3C', types: ['electronics', 'gadget'] },
     { id: 'souvenir', label: '🎁 特色紀念品', types: ['gift', 'souvenir', 'craft'] },
     { id: 'lifestyle', label: '🏠 生活雜貨', types: ['lifestyle', 'home', 'shopping'] }
 ];
@@ -450,7 +450,7 @@ const AIGeminiModal = ({
                     <div>
                         <h3 className="font-bold flex items-center gap-2 text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">
                             {mode === 'shopping' ? <ShoppingBag className="w-6 h-6 text-purple-500" /> : mode === 'packing' ? <PackageCheck className="w-6 h-6 text-indigo-500" /> : <BrainCircuit className="w-6 h-6 text-indigo-500" />}
-                            {mode === 'shopping' ? 'AI 購物助手' : mode === 'packing' ? 'AI 行李顧問' : 'AI 智能領隊'}
+                            {mode === 'shopping' ? 'Jarvis 購物助手' : mode === 'packing' ? 'Jarvis 行李顧問' : 'Jarvis 智能領隊'}
                         </h3>
                         <p className="text-xs opacity-60 mt-1">針對 {contextCity} 為您生成的深度分析</p>
                     </div>
@@ -461,7 +461,7 @@ const AIGeminiModal = ({
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-6 relative">
                     {loading ? (
                         <AIProgressOverlay
-                            text="AI 正在思考中..."
+                            text="Jarvis 正在思考中..."
                             subtext="正在分析數百萬筆旅遊數據並查找最新資訊"
                             progress={progress}
                         />
@@ -469,7 +469,7 @@ const AIGeminiModal = ({
                         <div className="space-y-6 animate-fade-in">
                             <div className="text-center space-y-2">
                                 <h4 className="text-lg font-bold">{mode === 'packing' ? '準備好出發了嗎？' : '您需要什麼幫助？'}</h4>
-                                <p className="text-sm opacity-60">{mode === 'packing' ? '我可以自動為您準備清單，或分析您的具體需求' : '選擇以下任一方式，讓 AI 為您打造完美行程'}</p>
+                                <p className="text-sm opacity-60">{mode === 'packing' ? '我可以自動為您準備清單，或分析您的具體需求' : '選擇以下任一方式，讓 Jarvis 為您打造完美行程'}</p>
                             </div>
 
                             {/* Visual Option Cards */}
@@ -485,7 +485,7 @@ const AIGeminiModal = ({
                                         <div className="text-center">
                                             <div className="font-bold text-lg">開始分析當日行程</div>
                                             <div className="text-sm opacity-60 mt-2 max-w-xs mx-auto">
-                                                AI 將檢視您當天的安排，提供優化建議、交通提醒以及漏掉的精彩景點。
+                                                Jarvis 將檢視您當天的安排，提供優化建議、交通提醒以及漏掉的精彩景點。
                                             </div>
                                         </div>
                                     </button>
@@ -500,7 +500,7 @@ const AIGeminiModal = ({
                                             </div>
                                             <div className="text-center">
                                                 <div className="font-bold">客製化行程</div>
-                                                <div className="text-[10px] opacity-60 mt-1">深度自選，AI 精準規劃</div>
+                                                <div className="text-[10px] opacity-60 mt-1">深度自選，Jarvis 精準規劃</div>
                                             </div>
                                         </button>
                                     </>
@@ -594,7 +594,7 @@ const AIGeminiModal = ({
                         <div className="space-y-6 animate-fade-in">
                             <div className="text-center space-y-2">
                                 <h4 className="text-lg font-bold">自訂行程風格 (強度矩陣)</h4>
-                                <p className="text-sm opacity-60">調整各項目的比重，讓 AI 了解您的口味</p>
+                                <p className="text-sm opacity-60">調整各項目的比重，讓 Jarvis 了解您的口味</p>
                             </div>
 
                             <div className="space-y-6 bg-gray-500/5 p-4 rounded-2xl border border-gray-500/10">
@@ -660,7 +660,7 @@ const AIGeminiModal = ({
                         <div className="space-y-6 animate-fade-in">
                             <div className="text-center space-y-2">
                                 <h4 className="text-lg font-bold">最後確認物流資訊</h4>
-                                <p className="text-sm opacity-60">提供機票與酒店狀態，AI 能更精準對接行程</p>
+                                <p className="text-sm opacity-60">提供機票與酒店狀態，Jarvis 能更精準對接行程</p>
                             </div>
 
                             <div className="space-y-4">
@@ -674,7 +674,7 @@ const AIGeminiModal = ({
                                     />
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-bold opacity-50 ml-1">📍 曾經去過嘅地方 (AI 會避開呢度)</label>
+                                        <label className="text-[10px] font-bold opacity-50 ml-1">📍 曾經去過嘅地方 (Jarvis 會避開呢度)</label>
                                         <input
                                             type="text"
                                             value={logistics.visitedPlaces}
@@ -789,7 +789,7 @@ const AIGeminiModal = ({
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-xs font-bold opacity-70 ml-1">✨ AI 為您精選的最佳住宿</label>
+                                            <label className="text-xs font-bold opacity-70 ml-1">✨ Jarvis 為您精選的最佳住宿</label>
                                             <div className="space-y-3">
                                                 {(() => {
                                                     const cityName = trip?.city || contextCity || "Tokyo";
@@ -863,7 +863,7 @@ const AIGeminiModal = ({
                         <div className="space-y-6 animate-fade-in">
                             <div className="text-center space-y-2">
                                 <h4 className="text-lg font-bold">SmartImport 文字資料</h4>
-                                <p className="text-sm opacity-60">AI 會根據您提供的內容生成客製化建議</p>
+                                <p className="text-sm opacity-60">Jarvis 會根據您提供的內容生成客製化建議</p>
                             </div>
 
                             <div className="space-y-4">
@@ -873,7 +873,7 @@ const AIGeminiModal = ({
                                     placeholder="例如：貼上機票資訊、飯店地址、或是想去的景點清單..."
                                     className={`w-full h-36 p-4 rounded-xl border resize-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'}`}
                                 />
-                                <p className="text-[10px] opacity-50 px-1">貼上的資料會被 AI 用於優化推薦內容，如班機時間、飯店入住等</p>
+                                <p className="text-[10px] opacity-50 px-1">貼上的資料會被 Jarvis 用於優化推薦內容，如班機時間、飯店入住等</p>
 
                                 <div className="flex gap-3">
                                     <button
@@ -896,7 +896,7 @@ const AIGeminiModal = ({
                         <div className="space-y-6 animate-fade-in">
                             <div className="text-center space-y-2">
                                 <h4 className="text-lg font-bold">你想搵邊類商品？</h4>
-                                <p className="text-sm opacity-60">揀返你有興趣嘅類別，等 AI 幫你精準推薦</p>
+                                <p className="text-sm opacity-60">揀返你有興趣嘅類別，等 Jarvis 幫你精準推薦</p>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {SHOPPING_CATEGORIES.map(cat => (
@@ -1018,7 +1018,7 @@ const AIGeminiModal = ({
                                                                         );
                                                                     })}
                                                                 </div>
-                                                                <div className="text-[9px] opacity-40 italic mt-1">＊AI 已根據您的偏好優先排好首選方式，點擊可更換</div>
+                                                                <div className="text-[9px] opacity-40 italic mt-1">＊Jarvis 已根據您的偏好優先排好首選方式，點擊可更換</div>
                                                             </div>
                                                         )}
                                                     </div>
@@ -1036,7 +1036,7 @@ const AIGeminiModal = ({
                             {activeTab === 'itinerary' && (!Array.isArray(result.itinerary) || result.itinerary.length === 0) && (
                                 <div className="text-center py-12 opacity-60">
                                     <p className="text-lg font-bold">暫時無法生成行程建議</p>
-                                    <p className="text-sm mt-2">AI 限額已用完，請稍後再試。</p>
+                                    <p className="text-sm mt-2">Jarvis 限額已用完，請稍後再試。</p>
                                 </div>
                             )}
 
@@ -1044,7 +1044,7 @@ const AIGeminiModal = ({
                             {(mode === 'daily-summary' || result.tips) && result.tips && result.tips.length > 0 && (
                                 <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 mb-6 animate-fade-in">
                                     <h4 className="font-bold text-sm text-indigo-500 mb-3 flex items-center gap-2">
-                                        <Sparkles className="w-4 h-4" /> AI 貼心提醒
+                                        <Sparkles className="w-4 h-4" /> Jarvis 貼心提醒
                                     </h4>
                                     <ul className="space-y-2">
                                         {result.tips.map((tip, idx) => (
@@ -1076,7 +1076,7 @@ const AIGeminiModal = ({
                                             <div className="flex-1">
                                                 <div className="font-bold flex items-center gap-2">
                                                     {t.name}
-                                                    {t.recommended && <span className="text-[10px] bg-indigo-500 text-white px-2 rounded-full font-black uppercase tracking-tighter">AI 推薦</span>}
+                                                    {t.recommended && <span className="text-[10px] bg-indigo-500 text-white px-2 rounded-full font-black uppercase tracking-tighter">Jarvis 推薦</span>}
                                                     {(t.distance || t.duration) && (
                                                         <span className="text-[9px] text-indigo-400 font-mono opacity-80">
                                                             {t.distance && `${t.distance}`}
@@ -1127,7 +1127,7 @@ const AIGeminiModal = ({
                                     <div className="flex justify-between items-center px-2">
                                         <span className="text-xs font-bold opacity-60 flex items-center gap-2">
                                             <ShoppingBag size={14} className="text-purple-500" />
-                                            AI 精選購物清單 (共 {result.shopping.length} 項)
+                                            Jarvis 精選購物清單 (共 {result.shopping.length} 項)
                                         </span>
                                         <button
                                             onClick={() => toggleSelectAll('shopping', result.shopping.map(i => i.id))}

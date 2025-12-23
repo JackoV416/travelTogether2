@@ -33,7 +33,7 @@ const CurrencyTab = ({
                     <div className="flex items-center gap-2">
                         {isSimulation && (
                             <div className="flex items-center gap-1.5 px-3 py-1 bg-violet-600/30 text-white rounded-full border border-violet-400/50 text-[11px] font-black uppercase tracking-widest mr-2 animate-pulse shadow-lg shadow-violet-500/20">
-                                <Sparkles className="w-3.5 h-3.5" /> AI 推算功能
+                                <Sparkles className="w-3.5 h-3.5" /> Jarvis 推算功能
                             </div>
                         )}
                         <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-400 rounded-full border border-emerald-500/20 text-[10px] font-black uppercase tracking-tighter animate-pulse">
@@ -168,7 +168,7 @@ const CurrencyTab = ({
                                         </div>
                                         {isSimulation && (
                                             <div className="text-[8px] text-fuchsia-400/50 font-black uppercase flex items-center gap-0.5">
-                                                <Sparkles className="w-2 h-2" /> AI 推算
+                                                <Sparkles className="w-2 h-2" /> Jarvis 推算
                                             </div>
                                         )}
                                     </div>

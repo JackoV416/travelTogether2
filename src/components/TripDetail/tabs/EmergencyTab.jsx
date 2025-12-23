@@ -68,7 +68,7 @@ const EmergencyTab = ({
                                 <div className="flex items-start gap-3">
                                     <Siren className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
                                     <div>
-                                        <div className="text-sm opacity-60">24小時急難救助</div>
+                                        <div className="text-sm opacity-60">24 小時急難救助</div>
                                         <a href={`tel:${emergency.consulate.emergencyHotline}`} className="font-bold text-red-400 hover:underline text-lg">{emergency.consulate.emergencyHotline}</a>
                                     </div>
                                 </div>

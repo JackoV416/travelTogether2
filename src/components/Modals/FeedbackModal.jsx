@@ -15,6 +15,18 @@ const FeedbackModal = ({ isOpen, onClose, user, isDarkMode, isBanned }) => {
     const [image, setImage] = useState(null);
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [faqOpen, setFaqOpen] = useState(null); // FAQ Accordion State
+
+    const FAQ_ITEMS = [
+        { q: "Jarvis 是免費的嗎？", a: "是的！每位用戶每日享有 20 次免費 AI 額度。若需要更多，可於設定中輸入您自己的 Gemini API Key 即可無限使用。" },
+        { q: "如何輸入可以無限使用的 API Key？", a: "前往「設定」>「Jarvis AI」>「API Keys」，點擊連結免費獲取 Gemini Key 後貼上即可。" },
+        { q: "智能匯入支援什麼檔案？", a: "目前支援 PDF、JPG、PNG 格式的行程表、機票或酒店確認單。請確保圖片清晰以便 AI 辨識。" },
+        { q: "我的資料會被公開嗎？", a: "不會。您的行程預設為私人，除非您手動分享連結或開啟「公開行程」選項。" }
+    ];
+
+    const toggleFaq = (idx) => {
+        setFaqOpen(faqOpen === idx ? null : idx);
+    };
 
     if (!isOpen) return null;
 
@@ -104,7 +116,39 @@ const FeedbackModal = ({ isOpen, onClose, user, isDarkMode, isBanned }) => {
                         <p className="opacity-70 text-sm">我們會盡快處理您的意見。</p>
                     </div>
                 ) : (
-                    <div className="p-6 space-y-6">
+                    <div className="p-6 space-y-6 overflow-y-auto max-h-[80vh] custom-scrollbar">
+                        {/* FAQ Section (Collapsible) */}
+                        <div className="space-y-2 border-b border-gray-500/10 pb-4">
+                            <h4 className="text-xs font-bold opacity-70 uppercase tracking-wider ml-1 flex items-center gap-1">
+                                <Lightbulb className="w-3 h-3" /> 常見問題 (FAQ)
+                            </h4>
+                            <div className="space-y-1">
+                                {FAQ_ITEMS.map((item, idx) => (
+                                    <div key={idx} className={`rounded-xl border transition-all overflow-hidden ${isDarkMode ? 'border-gray-700 bg-gray-800/30' : 'border-gray-200 bg-gray-50'}`}>
+                                        <button
+                                            onClick={() => toggleFaq(idx)}
+                                            className="w-full flex items-center justify-between p-3 text-left"
+                                        >
+                                            <span className="text-xs font-bold opacity-90">{item.q}</span>
+                                            <span className={`transition-transform duration-300 ${faqOpen === idx ? 'rotate-180' : ''}`}>
+                                                <X className="w-3 h-3 opacity-50 rotate-45 group-hover:opacity-100" />
+                                            </span>
+                                        </button>
+                                        <div
+                                            className={`transition-all duration-300 ease-in-out overflow-hidden ${faqOpen === idx ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0'}`}
+                                        >
+                                            <p className="px-3 pb-3 text-[11px] opacity-70 leading-relaxed border-t border-gray-500/10 pt-2">
+                                                {item.a}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="text-[10px] text-center opacity-40 pt-1">
+                                找不到答案？請在下方填寫您的問題。
+                            </div>
+                        </div>
+
                         {/* Type Selection */}
                         <div className="grid grid-cols-3 gap-2">
                             {[

@@ -3,11 +3,11 @@ import { Footprints, Train, ArrowDown, Plus, Loader2, Sparkles, MapPin, Clock, N
 import { getDirections, getSmartTransportMode } from '../../../services/mapsDirections';
 import { getSmartItemImage } from '../../../utils/tripUtils';
 
-const TransportConnector = ({ fromItem, toItem, isDarkMode, onAdd }) => {
+const TransportConnector = ({ fromItem, toItem, isDarkMode, onAdd, trip }) => {
     const [info, setInfo] = useState(null);
     const [loading, setLoading] = useState(false);
-    // V1.0.6: Use smart image with transport fallback
-    const destinationImage = getSmartItemImage(toItem) || "https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=400";
+    // V1.2.4: Pass trip context for proper image fallback (fixes dead images in tutorial)
+    const destinationImage = getSmartItemImage(toItem, trip) || "https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=400";
 
     const handleFetchAI = async () => {
         const origin = fromItem.details?.location || fromItem.name;
@@ -66,7 +66,7 @@ const TransportConnector = ({ fromItem, toItem, isDarkMode, onAdd }) => {
                         {loading ? (
                             <div className="flex items-center gap-2">
                                 <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
-                                <span className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>AI Processing...</span>
+                                <span className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>Jarvis Processing...</span>
                             </div>
                         ) : info ? (
                             <div>

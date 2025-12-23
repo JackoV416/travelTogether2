@@ -30,6 +30,7 @@ import AdminFeedbackModal from './components/Modals/AdminFeedbackModal';
 import SettingsView from './components/Views/SettingsView'; // New View
 import GlobalChatFAB from './components/Shared/GlobalChatFAB'; // V1.2.2 Global FAB
 import UniversalChat from './components/Shared/UniversalChat'; // V1.2.1-Globalized
+import OnboardingTour from './components/Shared/OnboardingTour'; // V1.2.4 Interactive Tutorial
 
 // --- V0.16.2 Refactored Imports ---
 import {
@@ -82,7 +83,7 @@ const Footer = ({ isDarkMode, onOpenVersion }) => {
     return (
         <footer className={`mt-12 pt-6 pb-12 border-t text-center text-xs md:text-sm flex flex-col items-center justify-center gap-1 ${isDarkMode ? 'bg-gray-900 border-gray-800 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-600'} pb-[calc(1.5rem+env(safe-area-inset-bottom))]`}>
             <div className="flex flex-wrap gap-2 items-center justify-center font-bold">
-                <span>Travel Together {APP_VERSION}</span>
+                <span data-tour="app-version">Travel Together {APP_VERSION}</span>
                 <span className="opacity-30">|</span>
                 <span className="text-indigo-400">Jarvis {JARVIS_VERSION}</span>
                 <span>•</span>
@@ -102,7 +103,9 @@ const Footer = ({ isDarkMode, onOpenVersion }) => {
                     <span className="opacity-50">({Intl.DateTimeFormat().resolvedOptions().timeZone})</span>
                 </div>
                 <span className="opacity-30">|</span>
-                <SyncStatus isDarkMode={isDarkMode} />
+                <span data-tour="sync-status">
+                    <SyncStatus isDarkMode={isDarkMode} />
+                </span>
             </div>
         </footer>
     );
@@ -145,7 +148,16 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                     <h1 className="text-lg font-bold truncate cursor-pointer" onClick={() => onViewChange && onViewChange('dashboard')}>{title}</h1>
                 </div>
                 <div className="flex items-center gap-3">
-                    {onTutorialStart && <button onClick={onTutorialStart} className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 btn-press"><MonitorPlay className="w-4 h-4" /> 教學</button>}
+                    {onTutorialStart && (
+                        <>
+                            <button onClick={() => onViewChange && onViewChange('tutorial')} className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 btn-press">
+                                <MonitorPlay className="w-4 h-4" /> 模擬例子
+                            </button>
+                            <button onClick={onTutorialStart} className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 btn-press">
+                                <Route className="w-4 h-4" /> 教學
+                            </button>
+                        </>
+                    )}
 
                     {/* Notification */}
                     <div className="relative">
@@ -504,6 +516,23 @@ const App = () => {
         }
     }, [user]);
 
+    // Cleanup Logic for Tutorial
+    const cleanupTutorialData = async () => {
+        console.log("Cleaning up tutorial data...");
+        // 1. Mark as complete
+        localStorage.setItem('hasSeenOnboarding', 'true');
+
+        // 2. Remove tutorial-specific params from URL if present
+        if (view === 'tutorial') {
+            setView('dashboard');
+            window.history.replaceState({}, '', '/');
+        }
+
+        // 3. Clear any tutorial-specific session data if exists
+        // (Currently OnboardingTour doesn't create persistent bad data, mainly UI overlay)
+        // Future proofing: If we add temp trips, delete them here.
+    };
+
     // V1.0.3: Auto-show Version Modal when version changes
     useEffect(() => {
         const lastSeenVersion = localStorage.getItem('app_last_seen_version');
@@ -538,6 +567,7 @@ const App = () => {
 
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [chatInitialTab, setChatInitialTab] = useState('trip'); // 'trip' or 'jarvis' // Global Chat State
+    const [showOnboardingTour, setShowOnboardingTour] = useState(false); // V1.2.4 Interactive Tutorial
 
     const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
     const [isAdminFeedbackModalOpen, setIsAdminFeedbackModalOpen] = useState(false);
@@ -603,6 +633,13 @@ const App = () => {
         if (isDarkMode) document.documentElement.classList.add('dark');
         else document.documentElement.classList.remove('dark');
     }, [isDarkMode]);
+
+    // V1.2.4: Listen for onboarding tour trigger from Settings
+    useEffect(() => {
+        const handleStartTour = () => setShowOnboardingTour(true);
+        window.addEventListener('START_ONBOARDING_TOUR', handleStartTour);
+        return () => window.removeEventListener('START_ONBOARDING_TOUR', handleStartTour);
+    }, []);
 
     // --- Notification System Hook ---
     const { notifications, sendNotification, setNotifications, markNotificationsRead, removeNotification } = useNotifications(user);
@@ -959,7 +996,7 @@ const App = () => {
                 alt="Background"
             />
             {/* Fixed Header - Outside content wrapper for proper fixed positioning */}
-            {view !== 'tutorial' && <Header title="✈️ Travel Together" user={user} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} onLogout={() => signOut(auth)} onBack={(view !== 'dashboard' && view !== 'settings') ? () => setView('dashboard') : null} onTutorialStart={() => setView('tutorial')} onViewChange={setView} onOpenUserSettings={() => setView('settings')} onOpenFeedback={() => setIsReportCenterOpen(true)} onOpenAdminFeedback={() => setIsAdminFeedbackModalOpen(true)} isAdmin={isAdmin} adminPendingCount={openFeedbackCount} onOpenVersion={() => setIsVersionOpen(true)} notifications={notifications} onRemoveNotification={removeNotification} onMarkNotificationsRead={markNotificationsRead} onNotificationClick={handleNotificationNavigate} />}
+            {view !== 'tutorial' && <Header title="✈️ Travel Together" user={user} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} onLogout={() => signOut(auth)} onBack={(view !== 'dashboard' && view !== 'settings') ? () => setView('dashboard') : null} onTutorialStart={() => setShowOnboardingTour(true)} onViewChange={setView} onOpenUserSettings={() => setView('settings')} onOpenFeedback={() => setIsReportCenterOpen(true)} onOpenAdminFeedback={() => setIsAdminFeedbackModalOpen(true)} isAdmin={isAdmin} adminPendingCount={openFeedbackCount} onOpenVersion={() => setIsVersionOpen(true)} notifications={notifications} onRemoveNotification={removeNotification} onMarkNotificationsRead={markNotificationsRead} onNotificationClick={handleNotificationNavigate} />}
             <div className={`relative z-10 flex-grow ${view !== 'tutorial' ? 'pt-[76px]' : ''}`}>
                 {view === 'dashboard' && (
                     <div className="animate-fade-in">
@@ -1105,6 +1142,17 @@ const App = () => {
                 isDarkMode={isDarkMode}
                 initialTab={view === 'detail' ? 'trip' : 'jarvis'}
             />
+
+            {/* V1.2.4: Interactive Onboarding Tour */}
+            <OnboardingTour
+                run={showOnboardingTour}
+                onComplete={() => {
+                    setShowOnboardingTour(false);
+                    cleanupTutorialData(); // Ensure cleanup runs
+                }}
+                isDarkMode={isDarkMode}
+            />
+
         </div>
     );
 };
@@ -1142,7 +1190,7 @@ const LandingPage = ({ onLogin }) => (
                 </div>
                 <div className="bg-gray-800 rounded-3xl p-8 text-white flex flex-col justify-between hover:scale-[1.02] transition">
                     <BrainCircuit className="w-12 h-12 text-pink-500 opacity-80" />
-                    <div><h3 className="text-2xl font-bold">AI 領隊</h3><p className="opacity-70">智慧推薦行程與美食。</p></div>
+                    <div><h3 className="text-2xl font-bold">Jarvis 領隊</h3><p className="opacity-70">智慧推薦行程與美食。</p></div>
                 </div>
                 <div className="bg-gray-800 rounded-3xl p-8 text-white flex flex-col justify-between hover:scale-[1.02] transition">
                     <Wallet className="w-12 h-12 text-green-500 opacity-80" />

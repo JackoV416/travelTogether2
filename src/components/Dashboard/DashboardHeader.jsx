@@ -47,7 +47,7 @@ const DashboardHeader = ({
                                 {hasTrips ? '🔔 重點行程與提醒' : '👋 開始您的第一次旅程'}
                             </h2>
                             <p className="opacity-80 text-sm max-w-xl mt-1">
-                                {hasTrips ? '關注即將開始的旅程動態，以及 AI 智能建議。' : '建立行程，讓 AI 為您規劃完美路線。'}
+                                {hasTrips ? '關注即將開始的旅程動態，以及 Jarvis 智能建議。' : '建立行程，讓 Jarvis 為您規劃完美路線。'}
                             </p>
                         </div>
                     </div>
@@ -55,12 +55,14 @@ const DashboardHeader = ({
                     <div className="flex flex-wrap gap-2">
                         <button
                             onClick={() => setIsCreateModalOpen(true)}
+                            data-tour="create-trip"
                             className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold flex items-center gap-2 btn-hover-glow text-sm shadow-lg shadow-indigo-600/20"
                         >
                             <Plus className="w-4 h-4" /> 新增行程
                         </button>
                         <button
                             onClick={() => setIsSmartImportModalOpen(true)}
+                            data-tour="smart-import"
                             className="px-4 py-2 rounded-xl bg-emerald-600/90 text-white font-bold text-sm flex items-center gap-2 shadow-lg shadow-emerald-600/20 hover:bg-emerald-600"
                         >
                             <Upload className="w-4 h-4" /> 智能匯入

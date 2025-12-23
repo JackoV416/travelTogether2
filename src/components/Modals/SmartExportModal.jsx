@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Share2, FileJson, FileText, Calendar, Link as LinkIcon, Copy, Check, Download, Globe, Lock, Loader2, MessageCircle, Maximize2, Minimize2, Search, Instagram } from 'lucide-react';
+import { X, Share2, FileJson, FileText, Calendar, Link as LinkIcon, Copy, Check, Download, Globe, Lock, Loader2, MessageCircle, Maximize2, Minimize2, Search, Instagram, LayoutGrid } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { exportToICS, exportToBeautifulPDF } from '../../services/pdfExport';
@@ -263,6 +263,25 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
                                                         {tmpl.label}
                                                     </button>
                                                 ))}
+                                            </div>
+
+                                            <div className="h-px bg-white/10 my-2"></div>
+
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center">
+                                                    <label className="text-[10px] font-black opacity-40 uppercase tracking-widest flex items-center gap-1.5"><LayoutGrid className="w-3 h-3" /> 版面密度 DENSITY</label>
+                                                    <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-md font-mono">{itemsPerPage} ITEMS/PAGE</span>
+                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min="2"
+                                                    max="6"
+                                                    step="1"
+                                                    value={itemsPerPage}
+                                                    onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                                                    className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400"
+                                                />
+                                                <p className="text-[9px] opacity-30 italic">* 減少每頁項目數可避免內容被切斷 (Intelligent Pagination)</p>
                                             </div>
                                         </div>
                                     </>

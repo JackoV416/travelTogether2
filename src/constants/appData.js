@@ -5,9 +5,9 @@ import {
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.3";
-export const APP_VERSION_TAG = "Social & AI Quota Control";
-export const APP_LAST_UPDATE = '2025-12-23';
+export const APP_VERSION = "V1.2.4";
+export const APP_VERSION_TAG = "Intelligent Onboarding & PWA";
+export const APP_LAST_UPDATE = '2025-12-24';
 export const JARVIS_VERSION = "V0.0.1-Beta";
 
 export const JARVIS_VERSION_HISTORY = [
@@ -37,6 +37,18 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.2.4",
+        date: "2025-12-24",
+        tag: "Intelligent Onboarding & PWA",
+        changes: [
+            "🎓 Interactive Tour: 全新「新手智能導覽」修正，Settings 內可隨時重播",
+            "📱 PWA Enhanced: 優化 manifest.json，提升安裝相容性 (192/512 icons)",
+            "🤖 Jarvis Core: 修正 checkInstantAnswer 引用錯誤，統一品牌用語",
+            "⚡ Daily AI Summary: 行程詳情頁新增「每日智能總覽」按鈕",
+            "📄 Smart PDF: 驗證並優化 PDF 智能分頁邏輯"
+        ]
+    },
     {
         ver: "V1.2.3",
         date: "2025-12-23",
@@ -657,11 +669,11 @@ export const TIMEZONES = {
 };
 
 export const COUNTRIES_DATA = {
-    "Australia (澳洲)": { cities: ["Sydney", "Melbourne", "Brisbane", "Gold Coast"], image: "https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?w=1600", region: "south", emergency: "000", taxRefund: "滿 AUD 300", entryInfo: "需申請 ETA", insuranceInfo: "建議購買涵蓋戶外活動之保險", consulate: "澳洲辦事處", tz: "AU" },
-    "Canada (加拿大)": { cities: ["Vancouver", "Toronto", "Montreal", "Banff"], image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1600", region: "north", emergency: "911", taxRefund: "無退稅", entryInfo: "eTA / Visitor Visa", insuranceInfo: "溫差大，建議含雪地救援", consulate: "駐加拿大代表處", tz: "US_NY" },
-    "France (法國)": { cities: ["Paris", "Nice", "Lyon", "Marseille", "Strasbourg"], image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1600", region: "north", emergency: "112", taxRefund: "滿 100 EUR", entryInfo: "申根免簽", insuranceInfo: "申根區建議投保3萬歐元以上醫療險", consulate: "駐法國代表處", tz: "FR" },
-    "Germany (德國)": { cities: ["Berlin", "Munich", "Frankfurt", "Hamburg"], image: "https://images.unsplash.com/photo-1509395062183-67c5ad6faff9?w=1600", region: "north", emergency: "112", taxRefund: "滿 25 EUR", entryInfo: "申根免簽", insuranceInfo: "申根標準醫療保險", consulate: "駐德國代表處", tz: "FR" },
-    "Italy (義大利)": { cities: ["Rome", "Milan", "Florence", "Venice"], image: "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=1600", region: "north", emergency: "112", taxRefund: "滿 155 EUR", entryInfo: "申根免簽", insuranceInfo: "建議附加租車責任險", consulate: "駐義大利代表處", tz: "FR" },
+    "Australia (澳洲)": { cities: ["Sydney", "Melbourne", "Brisbane", "Gold Coast"], image: "https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?w=1600", region: "south", emergency: "000", taxRefund: "滿 AUD 300", entryInfo: "需申請 ETA", insuranceInfo: "建議購買涵蓋戶外活動之保險", consulate: "澳洲辦事處", tz: "AU", currency: "AUD" },
+    "Canada (加拿大)": { cities: ["Vancouver", "Toronto", "Montreal", "Banff"], image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1600", region: "north", emergency: "911", taxRefund: "無退稅", entryInfo: "eTA / Visitor Visa", insuranceInfo: "溫差大，建議含雪地救援", consulate: "駐加拿大代表處", tz: "US_NY", currency: "CAD" },
+    "France (法國)": { cities: ["Paris", "Nice", "Lyon", "Marseille", "Strasbourg"], image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1600", region: "north", emergency: "112", taxRefund: "滿 100 EUR", entryInfo: "申根免簽", insuranceInfo: "申根區建議投保3萬歐元以上醫療險", consulate: "駐法國代表處", tz: "FR", currency: "EUR" },
+    "Germany (德國)": { cities: ["Berlin", "Munich", "Frankfurt", "Hamburg"], image: "https://images.unsplash.com/photo-1509395062183-67c5ad6faff9?w=1600", region: "north", emergency: "112", taxRefund: "滿 25 EUR", entryInfo: "申根免簽", insuranceInfo: "申根標準醫療保險", consulate: "駐德國代表處", tz: "FR", currency: "EUR" },
+    "Italy (義大利)": { cities: ["Rome", "Milan", "Florence", "Venice"], image: "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=1600", region: "north", emergency: "112", taxRefund: "滿 155 EUR", entryInfo: "申根免簽", insuranceInfo: "建議附加租車責任險", consulate: "駐義大利代表處", tz: "FR", currency: "EUR" },
     "Japan (日本)": {
         cities: ["Tokyo", "Osaka", "Kyoto", "Hokkaido", "Fukuoka", "Okinawa"],
         image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1600",
@@ -671,18 +683,19 @@ export const COUNTRIES_DATA = {
         entryInfo: "HKSAR/BNO 免簽 90 日。必須預先登錄 Visit Japan Web (VJW) 攞齊入境同海關兩個 QR Code，Cap 圖備份最穩陣。",
         insuranceInfo: "日本醫療費閒閒地幾萬蚊港紙起跳，強烈建議買包 100 萬醫療、住院現金同醫療轉運嘅保險 (如 AIG / 藍十字)。",
         consulate: "駐日經濟文化代表處 / 香港駐東京經濟貿易辦事處",
-        tz: "JP"
+        tz: "JP",
+        currency: "JPY"
     },
-    "Korea (韓國)": { cities: ["Seoul", "Busan", "Jeju"], image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600", region: "north", emergency: "112 / 119", taxRefund: "滿 30,000 KRW", entryInfo: "K-ETA", insuranceInfo: "建議涵蓋滑雪運動", consulate: "駐韓國代表處", tz: "KR" },
-    "Malaysia (馬來西亞)": { cities: ["Kuala Lumpur", "Penang", "Kota Kinabalu", "Johor Bahru"], image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1600", region: "hot", emergency: "999 / 994（消防）", taxRefund: "滿 300 MYR", entryInfo: "免簽", insuranceInfo: "建議包含戶外及海島活動", consulate: "駐馬國代表處", tz: "TH" },
-    "Singapore (新加坡)": { cities: ["Singapore"], image: "https://images.unsplash.com/photo-1505765050516-f72dcac9c60e?w=1600", region: "south", emergency: "999 / 995", taxRefund: "滿 100 SGD", entryInfo: "免簽", insuranceInfo: "高醫療費，建議醫療與航班延誤", consulate: "駐新加坡代表處", tz: "TH" },
-    "Spain (西班牙)": { cities: ["Barcelona", "Madrid", "Seville", "Valencia"], image: "https://images.unsplash.com/photo-1464790719320-516ecd75af6c?w=1600", region: "south", emergency: "112", taxRefund: "滿 90 EUR", entryInfo: "申根免簽", insuranceInfo: "炎熱季節注意防曬", consulate: "駐西班牙代表處", tz: "FR" },
-    "Switzerland (瑞士)": { cities: ["Zurich", "Geneva", "Lucerne", "Interlaken"], image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1600", region: "north", emergency: "112 / 117", taxRefund: "滿 300 CHF", entryInfo: "申根免簽", insuranceInfo: "登山戶外必備高額醫療", consulate: "駐瑞士代表處", tz: "FR" },
-    "Taiwan (台灣)": { cities: ["Taipei", "Kaohsiung", "Tainan", "Taichung"], image: "https://images.unsplash.com/photo-1508233620467-f79f1e317a05?w=1600", region: "north", emergency: "110 (警) / 119 (火)", taxRefund: "滿 2000 TWD", entryInfo: "入台證/網簽", insuranceInfo: "健保完善，旅客仍需旅平險", consulate: "-", tz: "TW" },
-    "Thailand (泰國)": { cities: ["Bangkok", "Phuket", "Chiang Mai", "Pattaya"], image: "https://images.unsplash.com/photo-1506665531195-3566af2b4dfa?w=1600", region: "hot", emergency: "191", taxRefund: "滿 2000 THB", entryInfo: "免簽", insuranceInfo: "建議涵蓋機車騎乘意外險", consulate: "駐泰國代表處", tz: "TH" },
-    "United Kingdom (英國)": { cities: ["London", "Edinburgh", "Manchester", "Bath"], image: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1600", region: "north", emergency: "999", taxRefund: "無退稅", entryInfo: "免簽", insuranceInfo: "NHS 對遊客不免費，需醫療險", consulate: "駐英國代表處", tz: "UK" },
-    "United States (美國)": { cities: ["New York", "Los Angeles", "San Francisco", "Las Vegas", "Seattle"], image: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=1600", region: "north", emergency: "911", taxRefund: "部分州", entryInfo: "ESTA", insuranceInfo: "醫療費用極高，強烈建議高額保險", consulate: "駐美代表處", tz: "US_NY" },
-    "Other": { cities: [], image: DEFAULT_BG_IMAGE, region: "north", emergency: "112 (國際通用)", taxRefund: "Check Local", entryInfo: "Check Visa", insuranceInfo: "請查詢當地外交部建議", consulate: "當地領事館", tz: "UK" }
+    "Korea (韓國)": { cities: ["Seoul", "Busan", "Jeju"], image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600", region: "north", emergency: "112 / 119", taxRefund: "滿 30,000 KRW", entryInfo: "K-ETA", insuranceInfo: "建議涵蓋滑雪運動", consulate: "駐韓國代表處", tz: "KR", currency: "KRW" },
+    "Malaysia (馬來西亞)": { cities: ["Kuala Lumpur", "Penang", "Kota Kinabalu", "Johor Bahru"], image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1600", region: "hot", emergency: "999 / 994（消防）", taxRefund: "滿 300 MYR", entryInfo: "免簽", insuranceInfo: "建議包含戶外及海島活動", consulate: "駐馬國代表處", tz: "TH", currency: "MYR" },
+    "Singapore (新加坡)": { cities: ["Singapore"], image: "https://images.unsplash.com/photo-1505765050516-f72dcac9c60e?w=1600", region: "south", emergency: "999 / 995", taxRefund: "滿 100 SGD", entryInfo: "免簽", insuranceInfo: "高醫療費，建議醫療與航班延誤", consulate: "駐新加坡代表處", tz: "TH", currency: "SGD" },
+    "Spain (西班牙)": { cities: ["Barcelona", "Madrid", "Seville", "Valencia"], image: "https://images.unsplash.com/photo-1464790719320-516ecd75af6c?w=1600", region: "south", emergency: "112", taxRefund: "滿 90 EUR", entryInfo: "申根免簽", insuranceInfo: "炎熱季節注意防曬", consulate: "駐西班牙代表處", tz: "FR", currency: "EUR" },
+    "Switzerland (瑞士)": { cities: ["Zurich", "Geneva", "Lucerne", "Interlaken"], image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1600", region: "north", emergency: "112 / 117", taxRefund: "滿 300 CHF", entryInfo: "申根免簽", insuranceInfo: "登山戶外必備高額醫療", consulate: "駐瑞士代表處", tz: "FR", currency: "CHF" },
+    "Taiwan (台灣)": { cities: ["Taipei", "Kaohsiung", "Tainan", "Taichung"], image: "https://images.unsplash.com/photo-1508233620467-f79f1e317a05?w=1600", region: "north", emergency: "110 (警) / 119 (火)", taxRefund: "滿 2000 TWD", entryInfo: "入台證/網簽", insuranceInfo: "健保完善，旅客仍需旅平險", consulate: "-", tz: "TW", currency: "TWD" },
+    "Thailand (泰國)": { cities: ["Bangkok", "Phuket", "Chiang Mai", "Pattaya"], image: "https://images.unsplash.com/photo-1506665531195-3566af2b4dfa?w=1600", region: "hot", emergency: "191", taxRefund: "滿 2000 THB", entryInfo: "免簽", insuranceInfo: "建議涵蓋機車騎乘意外險", consulate: "駐泰國代表處", tz: "TH", currency: "THB" },
+    "United Kingdom (英國)": { cities: ["London", "Edinburgh", "Manchester", "Bath"], image: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1600", region: "north", emergency: "999", taxRefund: "無退稅", entryInfo: "免簽", insuranceInfo: "NHS 對遊客不免費，需醫療險", consulate: "駐英國代表處", tz: "UK", currency: "GBP" },
+    "United States (美國)": { cities: ["New York", "Los Angeles", "San Francisco", "Las Vegas", "Seattle"], image: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=1600", region: "north", emergency: "911", taxRefund: "部分州", entryInfo: "ESTA", insuranceInfo: "醫療費用極高，強烈建議高額保險", consulate: "駐美代表處", tz: "US_NY", currency: "USD" },
+    "Other": { cities: [], image: DEFAULT_BG_IMAGE, region: "north", emergency: "112 (國際通用)", taxRefund: "Check Local", entryInfo: "Check Visa", insuranceInfo: "請查詢當地外交部建議", consulate: "當地領事館", tz: "UK", currency: "HKD" }
 };
 
 // Detailed Emergency Info by Country (for EmergencyTab)
@@ -1000,9 +1013,9 @@ export const SIMULATION_DATA = {
         "2025-12-24": [
             { id: "it-1", time: "09:15", name: "✈️ CX520 (HKG -> NRT)", type: "flight", cost: 4500, currency: "HKD", bundleId: "arrival-bundle-d1", details: { flightNo: "CX520", nameEn: "Cathay Pacific Airways", location: "HKG T1 Gate 62", desc: "國泰長途旗艦機 B-KPY (B777-300ER)", startTime: "09:15", endTime: "14:30", duration: "4hr 15min", image: "https://images.unsplash.com/photo-1570710891163-6d3b5c47248b?w=800", insight: "【百科】B-KPY 配備最新 4K 影音系統。飛行時長約 4hr 15min。Alex 負責管理全體紙本備份。【試玩提示】長按呢張卡片可以拖曳排序！", tags: ["Cathay", "Flagship", "T1-Departure"] } },
             { id: "it-2", time: "14:30", name: "🛂 成田入境清關 & 交通樞紐", type: "immigration", cost: 0, currency: "JPY", bundleId: "arrival-bundle-d1", details: { nameEn: "Narita Immigration", section: "Arrivals", location: "成田 T1 到達大廳", arrival: "B1F 鐵道層 (Rail)", desc: "入境後落 B1F 搵 JR 綠色窗口", startTime: "14:30", endTime: "16:00", duration: "1hr 30min", insight: "【入境百科】1. 入境排隊約 30-90min (視乎航班密度)。2. Visit Japan Web QR 必須準備好。3. 海關申報落 B1F 後轉左。4. 去鐵道層買 N'EX 票。【試玩提示】呢張入境卡同航班係 Bundle，會一齊移動㗎！", tags: ["Immigration", "VJW", "Must-Do"] } },
-            { id: "it-3", time: "16:15", name: "🚆 Narita Express (N'EX)", type: "train", cost: 4070, currency: "JPY", details: { trainNo: "N'EX 34", nameEn: "JR-East Airport Express", location: "成田 T1 -> 新宿站 (Shinjuku)", platform: "Platform 1 (B1F)", desc: "月台 5-6 (地底) | 車型 E259 系", transportType: "train", startTime: "16:15", endTime: "17:35", duration: "80min", image: "https://images.unsplash.com/photo-1490399102053-e82f67bdd1d7?w=800", insight: "【技術百科】130km/h 準時運行。喼架有密碼鎖。", tags: ["JR-East", "Fastest", "Luggage-Space"] } },
+            { id: "it-3", time: "16:15", name: "🚆 Narita Express (N'EX)", type: "train", cost: 4070, currency: "JPY", details: { trainNo: "N'EX 34", nameEn: "JR-East Airport Express", location: "成田 T1 -> 新宿站 (Shinjuku)", platform: "Platform 1 (B1F)", desc: "月台 5-6 (地底) | 車型 E259 系", transportType: "train", startTime: "16:15", endTime: "17:35", duration: "80min", image: "https://images.unsplash.com/photo-1555529733-0e670560f7e1?w=800", insight: "【技術百科】130km/h 準時運行。喼架有密碼鎖。", tags: ["JR-East", "Fastest", "Luggage-Space"] } },
             { id: "it-4", time: "18:00", name: "🏨 格拉斯麗新宿酒店 Check-in", type: "hotel", cost: 0, currency: "JPY", details: { nameEn: "Hotel Gracery Shinjuku, Tokyo", location: "新宿站東口 -> Hotel Gracery Shinjuku 8F Lobby", desc: "經 Studio Alta 旁哥吉拉街步行", startTime: "18:00", endTime: "18:15", duration: "15min", distance: "450m", steps: 1100, insight: "【導航】見到 Studio Alta 大電視直入哥吉拉街。住呢度就係為咗睇哥吉拉！", tags: ["Godzilla", "Kabukicho", "8F-Lobby"] } },
-            { id: "it-5", time: "19:30", name: "🍽️ 敘敘苑燒肉", type: "food", cost: 8000, currency: "JPY", details: { nameEn: "Jojoen Yakiniku (Shinjuku)", location: "新宿 Lumine Est 旁大廈 12F", desc: "窗邊景觀燒肉 (Premium 牛舌)", startTime: "19:30", endTime: "21:00", duration: "90min", image: "https://images.unsplash.com/photo-1514356641322-83950f146449?w=800", insight: "【物流】食飯 90min。經歌舞伎町一番街大門影相最靚。", tags: ["Famous", "Sky-View", "A5-Beef"] } },
+            { id: "it-5", time: "19:30", name: "🍽️ 敘敘苑燒肉", type: "food", cost: 8000, currency: "JPY", details: { nameEn: "Jojoen Yakiniku (Shinjuku)", location: "新宿 Lumine Est 旁大廈 12F", desc: "窗邊景觀燒肉 (Premium 牛舌)", startTime: "19:30", endTime: "21:00", duration: "90min", image: "https://images.unsplash.com/photo-1594052327429-b68194458b68?w=800", insight: "【物流】食飯 90min。經歌舞伎町一番街大門影相最靚。", tags: ["Famous", "Sky-View", "A5-Beef"] } },
             { id: "it-end-1", time: "21:00", name: "🏨 返回酒店 (Return)", type: "walk", cost: 0, currency: "JPY", hasWarning: true, warningMessage: "【教學提示】『返回酒店』標誌一天結束，建議每日行程尾段都加入。", details: { nameEn: "Return to Hotel", location: "敘敘苑 -> Hotel Gracery Shinjuku 8F", desc: "原路返回 8F Lobby", startTime: "21:00", endTime: "21:08", duration: "8min", distance: "300m", steps: 400, insight: "準備聽日嘅熱血行程！", tags: ["Night-Walk", "Security-Check"] } }
         ],
         "2025-12-25": [
@@ -1196,7 +1209,11 @@ export const TYPE_DEFAULT_IMAGES = {
     hotel: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
     transport: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=400&h=300&fit=crop',
     flight: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=300&fit=crop',
-    shopping: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400&h=300&fit=crop'
+    shopping: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400&h=300&fit=crop',
+    // V1.2.4: Added missing types for tutorial images
+    walk: 'https://images.unsplash.com/photo-1495020689067-958852a7765e?w=400&h=300&fit=crop',
+    train: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=400&h=300&fit=crop',
+    immigration: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=300&fit=crop'
 };
 
 export const CITY_IMAGES = {

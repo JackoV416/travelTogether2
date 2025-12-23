@@ -10,7 +10,7 @@ import {
     Undo2, Redo2, History, LogOut, LogIn, Sun, Moon, Shirt
 } from 'lucide-react';
 import { CURRENCIES, COUNTRIES_DATA } from '../../../constants/appData';
-import { suggestTransportBetweenSpots } from '../../../services/ai-parsing';
+import { suggestTransportBetweenSpots, generateDailyAnalysis } from '../../../services/ai-parsing';
 import TransportCard from '../cards/TransportCard';
 import StandardCard from '../cards/StandardCard';
 import TransportConnector from '../cards/TransportConnector';
@@ -199,6 +199,30 @@ const ItineraryTab = ({
     const [transportSuggestions, setTransportSuggestions] = useState({}); // {"itemId-nextItemId": suggestion }
     const [loadingTransport, setLoadingTransport] = useState(null); // Currently loading suggestion key
     const [activeDetailItem, setActiveDetailItem] = useState(null); // Added: Detail Modal State
+
+    // V1.2.4: Jarvis Daily Analysis State
+    const [jarvisTips, setJarvisTips] = useState(null);
+    const [isLoadingJarvisTips, setIsLoadingJarvisTips] = useState(false);
+
+    const handleFetchJarvisTips = async () => {
+        if (isLoadingJarvisTips || !filteredItems.length) return;
+        setIsLoadingJarvisTips(true);
+        try {
+            const result = await generateDailyAnalysis({
+                city: trip?.city || 'Unknown',
+                date: currentDisplayDate,
+                items: filteredItems,
+                weather: dailyWeather,
+                userId: user?.uid
+            });
+            setJarvisTips(result);
+        } catch (err) {
+            console.error('Jarvis Tips error:', err);
+            setJarvisTips({ tips: ['分析失敗，請稍後重試。'], transport: [], warnings: [] });
+        } finally {
+            setIsLoadingJarvisTips(false);
+        }
+    };
 
     // Auto-Open Logic
     useEffect(() => {
@@ -918,6 +942,59 @@ const ItineraryTab = ({
                     </div>
                 )}
 
+                {/* V1.2.4: Jarvis Daily Tips Card */}
+                {filteredItems.length > 0 && (
+                    <div className={`mb-4 p-4 rounded-2xl border transition-all ${isDarkMode ? 'bg-indigo-900/20 border-indigo-500/30' : 'bg-indigo-50 border-indigo-200'}`}>
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                                <BrainCircuit className="w-5 h-5 text-indigo-500" />
+                                <span className="font-bold text-sm">Jarvis 每日分析</span>
+                            </div>
+                            <button
+                                onClick={handleFetchJarvisTips}
+                                disabled={isLoadingJarvisTips}
+                                className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 ${isLoadingJarvisTips ? 'bg-gray-500/20 text-gray-400 cursor-wait' : 'bg-indigo-500 text-white hover:bg-indigo-600'}`}
+                            >
+                                {isLoadingJarvisTips ? <><Loader2 className="w-3 h-3 animate-spin" /> 分析中...</> : <><Sparkles className="w-3 h-3" /> 生成建議</>}
+                            </button>
+                        </div>
+                        {jarvisTips ? (
+                            <div className="space-y-3 text-xs">
+                                {jarvisTips.tips?.length > 0 && (
+                                    <div>
+                                        <div className="font-bold opacity-70 mb-1">💡 貼士</div>
+                                        <ul className="list-disc list-inside space-y-1 opacity-80">
+                                            {jarvisTips.tips.map((t, i) => <li key={i}>{t}</li>)}
+                                        </ul>
+                                    </div>
+                                )}
+                                {jarvisTips.warnings?.length > 0 && (
+                                    <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                                        <div className="font-bold text-amber-500 mb-1">⚠️ 注意</div>
+                                        <ul className="list-disc list-inside space-y-1 text-amber-600 dark:text-amber-400">
+                                            {jarvisTips.warnings.map((w, i) => <li key={i}>{w}</li>)}
+                                        </ul>
+                                    </div>
+                                )}
+                                {jarvisTips.transport?.length > 0 && (
+                                    <div>
+                                        <div className="font-bold opacity-70 mb-1">🚇 交通推介</div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {jarvisTips.transport.map((t, i) => (
+                                                <span key={i} className={`px-2 py-1 rounded-full text-[10px] font-bold ${t.recommended ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-gray-500/10 border border-gray-500/20'}`}>
+                                                    {t.name} {t.price && `(${t.price})`}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <p className="text-xs opacity-50">撳「生成建議」讓 Jarvis 分析今日行程。</p>
+                        )}
+                    </div>
+                )}
+
                 {viewMode === 'list' ? (
                     <>
                         {/* V1.1 Day Summary Block (Moved outside Droppable) */}
@@ -925,22 +1002,11 @@ const ItineraryTab = ({
                             <div className="mb-4 pr-0">
                                 <div className={`p-4 rounded-3xl border border-dashed ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-indigo-50/50 border-indigo-200/50'}`}>
                                     {/* Summary Header */}
-                                    <div className="flex justify-between items-center mb-4">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-xs">
-                                                {filteredItems.length}
-                                            </div>
-                                            <div className="font-bold text-sm opacity-80">📋 每日總覽</div>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-xs">
+                                            {filteredItems.length}
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={() => onOpenAIModal('daily-summary')}
-                                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black border transition-all active:scale-95 ${isDarkMode ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30' : 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'}`}
-                                            >
-                                                <BrainCircuit className="w-3 h-3" />
-                                                <span>AI 分析</span>
-                                            </button>
-                                        </div>
+                                        <div className="font-bold text-sm opacity-80">📋 每日總覽</div>
                                     </div>
 
                                     {/* Metrics Grid - Responsive: 1 col mobile, 3 cols desktop */}
@@ -949,8 +1015,10 @@ const ItineraryTab = ({
                                         <div className={`p-3 rounded-2xl flex flex-col items-center justify-center text-center ${isDarkMode ? 'bg-black/20' : 'bg-white'}`}>
                                             <div className="text-[10px] opacity-50 font-bold mb-1">預算 Budget</div>
                                             {(() => {
-                                                const localCurrency = trip?.currency || "JPY";
-                                                const hkdToLocal = { JPY: 18.5, USD: 0.13, EUR: 0.12, GBP: 0.10, CNY: 0.92, TWD: 4.0, KRW: 166, HKD: 1 };
+                                                // V1.2.4 Fix: Smart currency detection based on country
+                                                const countryCurrencyMap = { '日本': 'JPY', 'Japan': 'JPY', '台灣': 'TWD', 'Taiwan': 'TWD', '韓國': 'KRW', 'Korea': 'KRW', '中國': 'CNY', 'China': 'CNY', '香港': 'HKD', 'Hong Kong': 'HKD', '美國': 'USD', 'USA': 'USD', '英國': 'GBP', 'UK': 'GBP' };
+                                                const localCurrency = trip?.currency || countryCurrencyMap[trip?.country] || 'HKD';
+                                                const hkdToLocal = { JPY: 18.5, USD: 0.13, EUR: 0.12, GBP: 0.10, CNY: 0.92, TWD: 4.0, KRW: 166, HKD: 1, THB: 4.5, SGD: 0.17, MYR: 0.58 };
                                                 let totalLocal = 0;
                                                 filteredItems.forEach(item => totalLocal += (item.cost || 0));
                                                 return (
@@ -1140,10 +1208,10 @@ const ItineraryTab = ({
                                             <EmptyState
                                                 icon={searchValue ? Search : CalendarDays}
                                                 title={searchValue ? "找不到相關行程" : "今日尚未安排行程"}
-                                                description={searchValue ? `找不到與「${searchValue}」相關的項目。` : "開始規劃今天的精彩旅程，或者試試 AI 智能生成。"}
+                                                description={searchValue ? `找不到與「${searchValue}」相關的項目。` : "開始規劃今天的精彩旅程，或者試試 Jarvis 智能生成。"}
                                                 isDarkMode={isDarkMode}
                                                 action={!searchValue ? {
-                                                    label: "AI 智能生成",
+                                                    label: "Jarvis 智能生成",
                                                     onClick: () => onOpenAIModal('full'),
                                                     icon: BrainCircuit
                                                 } : {
@@ -1219,6 +1287,7 @@ const ItineraryTab = ({
                                                                                     toItem={nextItem}
                                                                                     isDarkMode={isDarkMode}
                                                                                     onAdd={(newItem) => onAddItem(newItem)}
+                                                                                    trip={trip}
                                                                                 />
                                                                             );
                                                                             return null;
@@ -1286,6 +1355,7 @@ const ItineraryTab = ({
                                                                                 toItem={nextItem}
                                                                                 isDarkMode={isDarkMode}
                                                                                 onAdd={(newItem) => onAddItem(newItem)}
+                                                                                trip={trip}
                                                                             />
                                                                         );
                                                                         return null;

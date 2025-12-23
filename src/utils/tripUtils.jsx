@@ -31,7 +31,7 @@ export const formatDate = (dateStr) => {
     if (!dateStr) return "";
     const [y, m, d] = dateStr.split('-');
     const pad = (val) => val.toString().padStart(2, '0');
-    return `${pad(d)} /${pad(m)}/${y} `;
+    return `${pad(d)}/${pad(m)}/${y}`;
 };
 
 export const getDaysArray = (start, end) => {

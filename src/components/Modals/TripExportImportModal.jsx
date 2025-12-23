@@ -138,7 +138,7 @@ const TripExportImportModal = ({
             setInputValue(JSON.stringify(results, null, 2));
             setImportMode('json');
         } catch (err) {
-            setErrorMessage("AI 識別失敗: " + err.message);
+            setErrorMessage("Jarvis 識別失敗: " + err.message);
         } finally {
             setScanLoading(false);
             // Reset file input
@@ -177,7 +177,7 @@ const TripExportImportModal = ({
                             {mode === 'import' ? '匯入' : '匯出'} {section ? titleMap[section] : '行程'}
                         </h3>
                         <p className="text-sm opacity-60 mt-2 font-medium ml-1">
-                            {mode === 'import' ? '支援 JSON 格式還原行程資料，或使用 AI 智能識別。' : '選擇匯出格式或複製原始碼備份。'}
+                            {mode === 'import' ? '支援 JSON 格式還原行程資料，或使用 Jarvis 智能識別。' : '選擇匯出格式或複製原始碼備份。'}
                         </p>
                     </div>
                     <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-500/10 transition-colors">
@@ -267,7 +267,7 @@ const TripExportImportModal = ({
                                     {scanLoading ? (
                                         <div className="flex flex-col items-center gap-3 animate-pulse">
                                             <div className="w-10 h-10 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
-                                            <div className="text-pink-500 font-bold">AI 正在分析單據...</div>
+                                            <div className="text-pink-500 font-bold">Jarvis 正在分析單據...</div>
                                             <div className="text-xs opacity-60">正在識別日期、金額與地點</div>
                                         </div>
                                     ) : (
@@ -277,7 +277,7 @@ const TripExportImportModal = ({
                                             </div>
                                             <p className="font-bold text-lg mb-2">上傳單據、截圖或 PDF</p>
                                             <p className="text-sm opacity-60 mb-6 max-w-sm leading-relaxed">
-                                                AI 助手將自動識別內容並補全缺失的時間與地點資訊。
+                                                Jarvis 助手將自動識別內容並補全缺失的時間與地點資訊。
                                                 <br />支援 PNG, JPG, PDF 等格式。
                                             </p>
                                             <input
@@ -308,11 +308,11 @@ const TripExportImportModal = ({
                                 </div>
                             )}
 
-                            {/* AI 識別成功提示 */}
+                            {/* Jarvis 識別成功提示 */}
                             {!scanLoading && inputValue && importMode === 'json' && inputValue.includes("aiSuggested") && (
                                 <div className="text-xs text-green-400 flex items-center gap-2 p-2 bg-green-500/10 rounded border border-green-500/20">
                                     <Sparkles className="w-3 h-3" />
-                                    AI 已成功識別並自動補全了部分缺漏資訊，請檢查上方 JSON。
+                                    Jarvis 已成功識別並自動補全了部分缺漏資訊，請檢查上方 JSON。
                                 </div>
                             )}
                         </div>

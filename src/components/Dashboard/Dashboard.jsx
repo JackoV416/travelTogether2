@@ -179,11 +179,13 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
         if (!form.name || form.countries.length === 0) return alert("請至少選擇一個國家");
         const primaryCountry = form.countries[0];
         const primaryCity = form.cities[0] || COUNTRIES_DATA[primaryCountry]?.cities?.[0] || '';
+        const countryCurrency = COUNTRIES_DATA[primaryCountry]?.currency || 'HKD';
         try {
             await addDoc(collection(db, "trips"), {
                 ...form,
                 country: primaryCountry,
                 city: primaryCity,
+                currency: countryCurrency, // V1.2.4: Auto-set currency
                 members: [{ id: user.uid, name: user.displayName, email: user.email, role: 'owner' }],
                 createdAt: serverTimestamp(),
                 itinerary: {},
@@ -228,10 +230,13 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
             if (normalized.length === 0) throw new Error("無效的行程資料");
 
             await Promise.all(normalized.map(async payload => {
+                const pCountry = payload.countries[0];
+                const pCurrency = COUNTRIES_DATA[pCountry]?.currency || 'HKD';
                 await addDoc(collection(db, "trips"), {
                     ...payload,
-                    country: payload.countries[0],
+                    country: pCountry,
                     city: payload.cities[0],
+                    currency: payload.currency || pCurrency, // V1.2.4: Auto-set currency if missing
                     members: [{ id: user.uid, name: user.displayName, email: user.email, role: 'owner' }],
                     createdAt: serverTimestamp(),
                     itinerary: {},
@@ -387,44 +392,46 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
 
     return (
         <main className="max-w-7xl mx-auto p-4 sm:p-6 space-y-12 animate-fade-in">
-            <DashboardHeader
-                isDarkMode={isDarkMode}
-                selectedCountryImg={selectedCountryImg}
-                setIsCreateModalOpen={setIsCreateModalOpen}
-                setForm={setForm}
-                setSelectedCountryImg={setSelectedCountryImg}
-                setIsSmartImportModalOpen={setIsSmartImportModalOpen}
-                setIsSmartExportOpen={setIsSmartExportOpen}
-                trips={sortedTrips.slice(0, 2)}
-                onSelectTrip={onSelectTrip}
-            />
+            <div data-tour="dashboard-header">
+                <DashboardHeader
+                    isDarkMode={isDarkMode}
+                    selectedCountryImg={selectedCountryImg}
+                    setIsCreateModalOpen={setIsCreateModalOpen}
+                    setForm={setForm}
+                    setSelectedCountryImg={setSelectedCountryImg}
+                    setIsSmartImportModalOpen={setIsSmartImportModalOpen}
+                    setIsSmartExportOpen={setIsSmartExportOpen}
+                    trips={sortedTrips.slice(0, 2)}
+                    onSelectTrip={onSelectTrip}
+                />
+            </div>
 
-
-            <TripsGrid
-                trips={sortedTrips}
-                loadingTrips={loadingTrips}
-                isDarkMode={isDarkMode}
-                currentLang={currentLang}
-                onSelectTrip={onSelectTrip}
-                setGlobalBg={setGlobalBg}
-                weatherData={weatherData}
-                setIsSmartImportModalOpen={setIsSmartImportModalOpen}
-                setIsSmartExportOpen={setIsSmartExportOpen}
-                setIsCreateModalOpen={setIsCreateModalOpen}
-                searchFilter={
-                    <SearchFilterBar
-                        onSearch={setSearchQuery}
-                        onSort={setSortOption}
-                        onFilter={setFilterOption}
-                        currentSort={sortOption}
-                        currentFilter={filterOption}
-                    />
-                }
-            />
-
+            <div data-tour="trip-card">
+                <TripsGrid
+                    trips={sortedTrips}
+                    loadingTrips={loadingTrips}
+                    isDarkMode={isDarkMode}
+                    currentLang={currentLang}
+                    onSelectTrip={onSelectTrip}
+                    setGlobalBg={setGlobalBg}
+                    weatherData={weatherData}
+                    setIsSmartImportModalOpen={setIsSmartImportModalOpen}
+                    setIsSmartExportOpen={setIsSmartExportOpen}
+                    setIsCreateModalOpen={setIsCreateModalOpen}
+                    searchFilter={
+                        <SearchFilterBar
+                            onSearch={setSearchQuery}
+                            onSort={setSortOption}
+                            onFilter={setFilterOption}
+                            currentSort={sortOption}
+                            currentFilter={filterOption}
+                        />
+                    }
+                />
+            </div>
 
             {/* Travel Information Hub */}
-            <div className="pb-10">
+            <div className="pb-10" data-tour="widgets-section">
                 <div className="flex flex-col mb-8 border-l-4 border-indigo-500 pl-4">
                     <div className="flex items-center justify-between gap-4 flex-wrap">
                         <h2 className="text-2xl font-black tracking-tight">旅遊資訊中心</h2>

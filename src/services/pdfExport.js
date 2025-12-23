@@ -321,6 +321,37 @@ export const exportToBeautifulPDF = async (trip, options = { template: 'modern' 
 
     container.innerHTML = renderContent();
 
+    // V1.2.4: Smart Page Break - Insert spacers to prevent content cutting
+    // A4 at 96 DPI = ~1123px height, but html2canvas uses scale:2, so effective page height = ~1123px
+    const A4_HEIGHT_PX = 1123; // Approximate A4 page height at standard DPI
+    const PAGE_MARGIN_PX = 80; // Safe margin from page edge
+    const EFFECTIVE_PAGE_HEIGHT = A4_HEIGHT_PX - PAGE_MARGIN_PX;
+
+    // Find all day blocks and major sections that should not be split
+    const dayBlocks = container.querySelectorAll('[style*="page-break-inside: avoid"]');
+    let cumulativeOffset = 0;
+
+    dayBlocks.forEach((block) => {
+        const blockTop = block.offsetTop + cumulativeOffset;
+        const blockHeight = block.offsetHeight;
+
+        // Calculate which page this block would land on
+        const pageStart = Math.floor(blockTop / EFFECTIVE_PAGE_HEIGHT) * EFFECTIVE_PAGE_HEIGHT;
+        const pageEnd = pageStart + EFFECTIVE_PAGE_HEIGHT;
+
+        // If block would be split across pages, insert spacer to push it to next page
+        if (blockTop + blockHeight > pageEnd && blockTop > pageStart + 100) {
+            const spacerHeight = pageEnd - blockTop + 20; // Push to next page + small margin
+            if (spacerHeight > 0 && spacerHeight < 400) { // Only add reasonable spacers
+                const spacer = document.createElement('div');
+                spacer.style.height = `${spacerHeight}px`;
+                spacer.style.pageBreakAfter = 'always';
+                block.parentNode.insertBefore(spacer, block);
+                cumulativeOffset += spacerHeight;
+            }
+        }
+    });
+
     try {
         // Use html2canvas to capture the content
         const canvas = await html2canvas(container, {

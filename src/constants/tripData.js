@@ -16,7 +16,7 @@ export const CITY_COORDS = {
     "Sydney": { lat: -33.8688, lon: 151.2093 }
 };
 
-export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
+export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2000&auto=format&fit=crop";
 
 export const CURRENCIES = {
     "HKD": { rate: 1, label: "HKD", symbol: "$" },
@@ -442,7 +442,7 @@ const SIMULATION_TRIP_TEMPLATE = {
     members: ["Me", "Alex"],
     currency: "JPY",
     budget: 15000,
-    background: "https://images.unsplash.com/photo-1590559399607-994239433397?w=1600",
+    background: "https://images.unsplash.com/photo-1590559399607-994239433397?q=80&w=2000&auto=format&fit=crop",
     weather: {
         temp: "9°C / 4°C",
         desc: "晴时多云",

@@ -91,7 +91,7 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
                                 onClick={handleAiNameGen}
                                 disabled={generatingName || (form.cities.length === 0 && form.countries.length === 0)}
                                 className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all ${generatingName ? 'text-indigo-400 cursor-wait' : 'text-indigo-500 hover:bg-indigo-500/10 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed'}`}
-                                title="AI 自動命名 (需先選擇目的地)"
+                                title="Jarvis 自動命名 (需先選擇目的地)"
                             >
                                 {generatingName ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                             </button>

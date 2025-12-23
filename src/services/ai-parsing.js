@@ -44,14 +44,15 @@ if (API_KEYS.length === 0) {
     console.warn("[Gemini AI] No valid API keys found. Add VITE_GEMINI_API_KEY to .env");
 }
 
-// Model priority chain: Try these in order when one hits quota (Updated V1.5.1)
+// Model priority chain: Simplified for stability (Updated V1.2.9 - Verified 2.5 Flash)
+// Model priority chain: Simplified for stability (Updated V1.2.9 - Verified 2.5 Flash)
+// Model priority chain: Simplified for stability (Updated V1.2.9 - Verified 2.5 Flash)
 const MODEL_CHAIN = [
     ...(getStoredModel() ? [getStoredModel()] : []), // User's custom model comes first!
-    "gemini-2.0-flash-exp",   // Best quality for experimental
-    "gemini-1.5-flash",       // Stable v1.5 Flash
-    "gemini-1.5-flash-8b",    // Fastest/Cheapest
-    "gemini-1.5-pro",         // Pro fallback
-    "gemini-pro",             // Legacy fallback
+    "gemini-2.5-flash",       // NEW: Confirmed working & fast!
+    "gemini-2.5-flash-lite",  // PROMOTED: Best availability (1/10 RPM)
+    "gemini-flash-latest",    // Backup
+    "gemini-2.0-flash-exp",   // High Performance (Often 429 busy, keep as fallback)
 ];
 
 let currentKeyIndex = 0;
@@ -131,18 +132,18 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
         if (e.message === "AUTO_JARVIS_DISABLED") throw e;
     }
 
-    // V1.2.3: Centralized Quota Check
-    if (userId) {
+    // V1.2.3: Centralized Quota Check (Skipped if Custom Key is active)
+    const hasCustomKey = !!getStoredKey();
+    if (userId && !hasCustomKey) {
         const quotaStatus = await checkUserQuota(userId);
         if (!quotaStatus.allowed) {
             throw new Error(AI_ERRORS.QUOTA + ": " + quotaStatus.message);
         }
     }
 
-    // Try multiple rounds of API keys (Infinite Loop Support)
-    // Now with delays, we can safely allow more rounds without hanging
-    const MAX_KEY_ROUNDS = 5;
-    const maxAttempts = API_KEYS.length * MAX_KEY_ROUNDS;
+    // V1.2.7: Reduced rounds to prevent "Infinite Loop" feeling
+    const MAX_KEY_ROUNDS = 2;
+    const maxAttempts = Math.min(API_KEYS.length * MAX_KEY_ROUNDS, 12); // Hard cap at 12 attempts total
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
         // 0. Abort Check
@@ -153,8 +154,12 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
 
         // 1. Report Progress
         if (onProgress) {
-            const percent = Math.min(10 + Math.floor((attempt / maxAttempts) * 80), 90);
-            const msg = attempt === 0 ? "正在分析..." : `API 繁忙，切換線路 (Key #${currentKeyIndex + 1})...`;
+            // Percent calculation: 10% start, then increment based on attempt, cap at 90%
+            const percent = Math.min(10 + Math.floor((attempt / maxAttempts) * 80), 95);
+            // V1.2.7: Better status messages
+            let msg = attempt === 0 ? "正在分析..." : `切換線路 (Attempt ${attempt + 1}/${maxAttempts})...`;
+            if (attempt > 3) msg = "網絡繁忙，正在尋找可用線路...";
+
             onProgress(msg, percent);
         }
 
@@ -164,8 +169,13 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
 
         if (cooldownExpiry && Date.now() < cooldownExpiry) {
             console.log(`[Gemini AI] ❄️ Skipping cooled down model: ${MODEL_CHAIN[currentModelIndex]} (Key #${currentKeyIndex})`);
-            rotateToNextKey();
-            await new Promise(r => setTimeout(r, 100)); // Tiny yield
+
+            // If we are at the end of the chain on this key, switch key
+            if (!rotateToNextModel()) {
+                rotateToNextKey();
+            }
+
+            await new Promise(r => setTimeout(r, 100)); // Fast yield
             continue;
         }
 
@@ -173,7 +183,7 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
             const modelName = MODEL_CHAIN[currentModelIndex];
             const model = getModel(); // Uses currentKeyIndex
 
-            console.log(`[Gemini AI] 🚀 Attempt ${attempt + 1}/${maxAttempts}: ${fnName} using ${MODEL_CHAIN[currentModelIndex]} (Key #${currentKeyIndex})`);
+            console.log(`[Gemini AI] 🚀 Attempt ${attempt + 1}/${maxAttempts}: ${fnName} using ${modelName} (Key #${currentKeyIndex})`);
 
             // 3. Make the Call
             const result = await makeCall(model);
@@ -193,36 +203,40 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
 
         } catch (error) {
             lastError = error;
-            const isRateLimit = error.message?.includes('429') || error.status === 429 || error.message?.includes('quota');
-            const isQuotaExceeded = error.message?.includes('quota');
+            const errorMsg = error.message || '';
+            const isRateLimit = errorMsg.includes('429') || error.status === 429 || errorMsg.includes('quota') || errorMsg.includes('check your plan');
+            const isNotFound = errorMsg.includes('404') || error.status === 404 || errorMsg.includes('not found');
 
             // Log Error
-            console.warn(`[Gemini AI] ⚠️ Failed on ${MODEL_CHAIN[currentModelIndex]} (Key #${currentKeyIndex}):`, error.message);
+            console.warn(`[Gemini AI] ⚠️ Failed on ${MODEL_CHAIN[currentModelIndex]} (Key #${currentKeyIndex}):`, errorMsg);
 
-            if (isRateLimit || isQuotaExceeded) {
-                // Rate Limit -> Cooldown this specific combo
+            if (isRateLimit) {
+                // Mark this specific model combo as "cooled down" for 1 minute
                 MODEL_COOLDOWNS.set(cooldownKey, Date.now() + COOLDOWN_MS);
-
-                // If it's the last attempt OR it's a quota issue that likely won't resolve with retries on same key
-                // throw a specific error that the UI can catch
-                if (attempt === maxAttempts - 1 || isQuotaExceeded) {
-                    const aiError = new Error(isQuotaExceeded ? "QUOTA_EXCEEDED" : "API_BUSY");
-                    aiError.originalError = error;
-                    throw aiError;
-                }
+            } else if (isNotFound) {
+                // Mark as "cooled down" for much longer if it's 404 (maybe forever for this session)
+                MODEL_COOLDOWNS.set(cooldownKey, Date.now() + 3600000); // 1 hour
             }
 
-            // 4. Rotate & Delay
-            rotateToNextKey();
+            // 4. Smart Rotation Strategy
+
+            // Priority 1: Try next model on SAME key
+            const switchedModel = rotateToNextModel();
+
+            if (!switchedModel) {
+                // Priority 2: If all models on this key failed, switch to NEXT key
+                rotateToNextKey();
+            }
 
             // IMPORTANT: Yield to Main Thread to prevent UI Freeze
-            await new Promise(r => setTimeout(r, 1000));
+            // If we hit rate limits (429), ensure we wait a bit longer to be polite
+            const waitTime = isRateLimit ? 1500 : 500; // V1.2.7: Tuned delays
 
-            // If rapid failures (e.g. every 3 attempts), wait longer
-            if ((attempt + 1) % 3 === 0) {
-                if (onProgress) onProgress("API 繁忙，稍候再試...", 50);
-                await new Promise(r => setTimeout(r, 2000));
+            if (onProgress && attempt < maxAttempts - 1) {
+                onProgress(isRateLimit ? "API 限額已滿，切換備用線路..." : "連線錯誤，重試中...", Math.min(90, 10 + attempt * 5));
             }
+
+            await new Promise(r => setTimeout(r, waitTime));
         }
     }
 
@@ -245,7 +259,7 @@ export const AI_ERRORS = {
 // ============================================
 
 const AI_USAGE_KEY = "travelTogether_aiUsage";
-const DEFAULT_DAILY_LIMIT = 20; // Configurable: Max AI calls per user per day
+const DEFAULT_DAILY_LIMIT = 300; // Configurable: Max AI calls per user per day (V1.3.0: Synced with Server)
 
 /**
  * 📊 Get today's date string (YYYY-MM-DD)
@@ -342,7 +356,7 @@ const REAL_WORLD_GROUNDING = {
 };
 
 /**
- * 🚀 Vision-First Approach: Send image directly to Gemini
+ * 🚀 Vision-First Approach: Send image directly to Jarvis (Gemini)
  * Skips Tesseract OCR for better accuracy
  * @param {File} file - Image file to parse
  * @param {Object} context - Trip context (city, date, currency)
@@ -357,7 +371,7 @@ export async function parseImageDirectly(file, context = {}, userId = null) {
 
         // Define the API call task
         const apiTask = async (model) => {
-            const prompt = `You are an Advanced Travel Document Parser using Vision capabilities. Analyze this image and extract travel information with extreme precision.
+            const prompt = `You are Jarvis, an Advanced Travel Document Parser using Vision capabilities. Analyze this image and extract travel information with extreme precision.
 
 === YOUR TASK ===
 Extract ALL confirmed travel details. This could be:
@@ -434,7 +448,7 @@ If no travel info is visible, return { "itinerary": [], "accommodation": [] }.`;
         };
 
         // Execute with Smart Retry
-        const parsed = await callWithSmartRetry("GeneralAI", apiTask, 'high', null, null, userId);
+        const parsed = await callWithSmartRetry("TicketAnalysis", apiTask, 'high', null, null, userId);
 
         // Transform to unified format
         const items = [];
@@ -497,7 +511,7 @@ async function fileToBase64(file) {
 
 
 /**
- * 使用 Gemini AI 解析 OCR 原始文字並結構化
+ * 使用 Jarvis (Gemini) 解析 OCR 原始文字並結構化
  * @param {string} rawText OCR 識別出的原始文字
  * @returns {Promise<Array>} 解析後的行程項目列表
  */
@@ -576,7 +590,7 @@ DO NOT invent items. Only return what you can confidently extract.
     };
 
     try {
-        const parsed = await callWithSmartRetry("GeneralAI", apiTask, 'high', null, null, userId);
+        const parsed = await callWithSmartRetry("TicketAnalysis", apiTask, 'high', null, null, userId);
 
         // Transform to unified format with category tags
         const items = [];
@@ -753,7 +767,7 @@ export function filterJunkItems(items) {
 }
 
 // ===========================================
-// 🤖 REAL GEMINI AI FUNCTIONS
+// 🤖 REAL JARVIS (GEMINI) AI FUNCTIONS
 // ===========================================
 
 /**
@@ -771,7 +785,7 @@ export async function generateItineraryWithGemini({
     travelStyle = 'balanced',
     userId = null
 }) {
-    const prompt = `你係一個專業嘅香港旅遊領隊 AI。請為 ${city} 生成一個詳細嘅 ${days} 日行程。
+    const prompt = `你係一個專業嘅香港旅遊領隊 Jarvis。請為 ${city} 生成一個詳細嘅 ${days} 日行程。
         
 === 用戶偏好 ===
 預算: ${budget} (budget/mid/luxury)
@@ -847,7 +861,7 @@ ${Object.keys(existingItinerary).length > 0
 
     try {
         // Use smart retry with model rotation
-        return await callWithSmartRetry("GenerateItinerary", async (model) => {
+        return await callWithSmartRetry("Itinerary", async (model) => {
             const result = await model.generateContent(prompt);
             const text = result.response.text();
 
@@ -867,7 +881,7 @@ ${Object.keys(existingItinerary).length > 0
             return {
                 itinerary: [],
                 budget: { total: 0, spending_breakdown: [] },
-                tips: ["AI 限額已用完，請稍後再試。"]
+                tips: ["Jarvis 限額已用完，請稍後再試。"]
             };
         }
         throw error;
@@ -939,7 +953,7 @@ Preference: ${preference} (public/taxi/walking)
         throw new Error("Invalid response format");
     };
 
-    return await callWithSmartRetry("Transport", apiTask, 'low', null, null, userId);
+    return await callWithSmartRetry("TransportSuggest", apiTask, 'low', null, null, userId);
 }
 
 /**
@@ -983,7 +997,7 @@ If the place doesn't exist or you're unsure, set coordinates to null.`;
     };
 
     try {
-        return await callWithSmartRetry("GeneralAI", apiTask, 'high', null, null, userId);
+        return await callWithSmartRetry("Itinerary", apiTask, 'high', null, null, userId);
     } catch (error) {
         console.error("[Gemini AI] Location details error:", error);
         return {
@@ -996,12 +1010,12 @@ If the place doesn't exist or you're unsure, set coordinates to null.`;
 }
 
 /**
- * 🧠 General purpose AI chat for travel questions
+ * 🧠 General purpose Jarvis chat for travel questions
  * @param {string} question - User's question
  * @param {Object} context - Trip context
  * @returns {Promise<string>} AI response
  */
-export async function askTravelAI(question, context = {}, userId = null) {
+export async function askTravelAI(question, context = {}, userId = null, signal = null, onProgress = null) {
     const apiTask = async (model) => {
         const prompt = `You are a helpful travel assistant. Answer the following travel question.
 
@@ -1025,7 +1039,8 @@ ${question}
     };
 
     try {
-        return await callWithSmartRetry("GeneralAI", apiTask, 'high', null, null, userId);
+        // Pass signal and onProgress correctly
+        return await callWithSmartRetry("Chat", apiTask, 'high', onProgress, signal, userId);
     } catch (error) {
         console.error("[Gemini AI] Chat error:", error);
         throw error;
@@ -1075,7 +1090,7 @@ Categories: ${categories.length > 0 ? categories.join(', ') : 'All categories'}
 ]`;
 
     try {
-        return await callWithSmartRetry("Shopping", async (model) => {
+        return await callWithSmartRetry("ShoppingList", async (model) => {
             const result = await model.generateContent(prompt);
             const text = result.response.text();
 
@@ -1092,7 +1107,7 @@ Categories: ${categories.length > 0 ? categories.join(', ') : 'All categories'}
         if (error.message?.includes('429') || error.message?.includes('503') || error.message?.includes('quota')) {
             console.warn("[Gemini AI] All models exhausted. Returning fallback shopping list.");
             return [
-                { name: "API 限額已用完", type: "souvenir", estPrice: "--", desc: "暂時無法生成建議，請稍後再試", whereToBuy: "--", reason: "AI 超出使用量", aiSuggested: false }
+                { name: "API 限額已用完", type: "souvenir", estPrice: "--", desc: "暂時無法生成建議，請稍後再試", whereToBuy: "--", reason: "Jarvis 超出使用量", aiSuggested: false }
             ];
         }
         throw error;
@@ -1146,7 +1161,7 @@ Activities: ${activities.slice(0, 10).join(', ') || 'General sightseeing'}
 ]`;
 
     try {
-        return await callWithSmartRetry("Packing", async (model) => {
+        return await callWithSmartRetry("PackingList", async (model) => {
             const result = await model.generateContent(prompt);
             const text = result.response.text();
 
@@ -1163,7 +1178,7 @@ Activities: ${activities.slice(0, 10).join(', ') || 'General sightseeing'}
         if (error.message?.includes('429') || error.message?.includes('503') || error.message?.includes('quota')) {
             console.warn("[Gemini AI] All models exhausted. Returning fallback packing list.");
             return [
-                { name: "API 暂時無法使用", category: "documents", essential: false, reason: "AI 限額已用完，請稍後再試", aiSuggested: false }
+                { name: "API 暂時無法使用", category: "documents", essential: false, reason: "Jarvis 限額已用完，請稍後再試", aiSuggested: false }
             ];
         }
         throw error;
@@ -1203,7 +1218,7 @@ ${JSON.stringify(rawWeatherData, null, 2)}
     "overallOutfit": "洋蔥式穿法 (Onion Layering)"
 }`;
 
-        const response = await callWithSmartRetry("Weather", async (model) => {
+        const response = await callWithSmartRetry("WeatherSummary", async (model) => {
             const res = await model.generateContent(prompt);
             return res.response.text();
         }, 'high', null, null, userId);
@@ -1225,11 +1240,11 @@ ${JSON.stringify(rawWeatherData, null, 2)}
                 city: city,
                 tempRange: { max: "--", min: "--", unit: "°C" },
                 periods: {
-                    morning: { desc: "系統繁忙", temp: "--", outfit: "AI 暫時休息中，請稍後再試" },
-                    afternoon: { desc: "系統繁忙", temp: "--", outfit: "AI 暫時休息中，請稍後再試" },
-                    night: { desc: "系統繁忙", temp: "--", outfit: "AI 暫時休息中，請稍後再試" }
+                    morning: { desc: "系統繁忙", temp: "--", outfit: "Jarvis 暫時休息中，請稍後再試" },
+                    afternoon: { desc: "系統繁忙", temp: "--", outfit: "Jarvis 暫時休息中，請稍後再試" },
+                    night: { desc: "系統繁忙", temp: "--", outfit: "Jarvis 暫時休息中，請稍後再試" }
                 },
-                summary: "由於使用人數眾多，AI 天氣預報暫時無法使用 (Quota Exceeded)。請過一陣再試。",
+                summary: "由於使用人數眾多，Jarvis 天氣預報暫時無法使用 (Quota Exceeded)。請過一陣再試。",
                 overallOutfit: "暫無建議"
             };
         }
@@ -1355,7 +1370,7 @@ ${items.map((i, idx) => `${idx + 1}. [${i.time || '??:??'}] ${i.name} (${i.detai
     };
 
     try {
-        return await callWithSmartRetry("GeneralAI", apiTask, 'high', null, null, userId);
+        return await callWithSmartRetry("DailyAnalysis", apiTask, 'high', null, null, userId);
     } catch (error) {
         console.error("Daily Analysis Error:", error);
         // Fallback mock check
@@ -1370,7 +1385,7 @@ ${items.map((i, idx) => `${idx + 1}. [${i.time || '??:??'}] ${i.name} (${i.detai
 // --- 4. Generate Ticket Summary (One-Line Title) ---
 export const generateTicketSummary = async (conversationText, onProgress, signal, userId = null) => {
     return callWithSmartRetry(
-        "generateTicketSummary",
+        "ReportSummary",
         async (model) => {
             const prompt = `
             Task: Summarize the following customer support conversation into a single, concise Ticket Subject (Title).

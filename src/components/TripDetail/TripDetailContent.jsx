@@ -855,7 +855,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                     message: `偵測到目的地為「${destCity}」，同現時城市「${currentCity}」唔同。是否需要為你安排新幹線或國內線航班建議？`,
                     type: 'info',
                     onConfirm: async () => {
-                        alert("AI 已為你標記跨城市交通需求，請在 Transport Tab 查看建議。");
+                        alert("Jarvis 已為你標記跨城市交通需求，請在 Transport Tab 查看建議。");
                         setConfirmConfig(null);
                     }
                 });
@@ -1068,13 +1068,13 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
     };
 
     const handleOptimizeSchedule = async () => {
-        if (isSimulation) return setConfirmConfig({ title: "模擬模式", message: "目前處於模擬模式，無法執行 AI 優化。", type: "info" });
+        if (isSimulation) return setConfirmConfig({ title: "模擬模式", message: "目前處於模擬模式，無法執行 Jarvis 優化。", type: "info" });
         const currentItems = trip.itinerary?.[currentDisplayDate] || [];
 
         if (currentItems.length === 0) {
             setConfirmConfig({
                 title: "當日尚未有行程",
-                message: "是否要讓 AI 助手為您建議今日的行程？",
+                message: "是否要讓 Jarvis 為您建議今日的行程？",
                 type: "info",
                 onConfirm: () => {
                     setAIMode('itinerary');
@@ -1086,8 +1086,8 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
         }
 
         setConfirmConfig({
-            title: "AI 智能排程優化",
-            message: "AI 智能排程將會：\n1. 補全缺失的時間\n2. 在景點間插入交通建議\n3. 加入必玩/打卡標籤",
+            title: "Jarvis 智能排程優化",
+            message: "Jarvis 將會：\n1. 補全缺失的時間\n2. 在景點間插入交通建議\n3. 加入必玩/打卡標籤",
             type: "warning",
             onConfirm: async () => {
                 setConfirmConfig(null);
@@ -1096,7 +1096,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                     await updateDoc(doc(db, "trips", trip.id), { [`itinerary.${currentDisplayDate}`]: optimized, lastUpdate: serverTimestamp() });
                     setConfirmConfig({
                         title: "優化成功",
-                        message: "✨ AI 已根據地點與動線為您重新排程並加入建議！",
+                        message: "✨ Jarvis 已根據地點與動線為您重新排程並加入建議！",
                         type: "info"
                     });
                 } catch (e) {
@@ -1131,7 +1131,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                     time: item.time || "09:00",
                     location: item.details?.location || `${trip.city}景點`,
                 },
-                createdBy: { name: "AI Guide" }
+                createdBy: { name: "Jarvis Guide" }
             }));
 
             // Intelligent Merge: Combine and sort by time
@@ -1187,7 +1187,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                     location: t.name,
                     notes: t.desc
                 },
-                createdBy: { name: "AI Guide" }
+                createdBy: { name: "Jarvis Guide" }
             }));
 
             // Add to current day's itinerary
@@ -1210,7 +1210,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
         if (Object.keys(updates).length > 0) {
             await updateDoc(docRef, { ...updates, lastUpdate: serverTimestamp() });
             setConfirmConfig({
-                title: "AI 加入成功",
+                title: "Jarvis 加入成功",
                 message: `已成功加入 ${Object.values(updates).length} 個類別的項目！`,
                 type: "info"
             });
@@ -1302,10 +1302,10 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                 details: {
                     location: suggestion.name,
                     desc: suggestion.steps?.join(' → ') || suggestion.duration,
-                    insight: `AI 建議路線：${suggestion.duration}`,
+                    insight: `Jarvis 建議路線：${suggestion.duration}`,
                     transportType: suggestion.mode
                 },
-                smartTag: "🚀 AI 建議"
+                smartTag: "🚀 Jarvis 建議"
             };
 
             const newItems = [...items];
@@ -1522,6 +1522,12 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                                                 {/* Action Buttons (z-40 so member hover z-60 appears above) */}
                                                 <div className="flex gap-3 items-center relative z-40">
                                                     <button
+                                                        onClick={() => { setAIMode('daily-summary'); setIsAIModal(true); }}
+                                                        className="px-3 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white rounded-xl text-xs font-bold transition-all shadow-lg border border-white/20 flex justify-center items-center gap-2 active:scale-95 whitespace-nowrap backdrop-blur-md"
+                                                    >
+                                                        <Newspaper className="w-4 h-4" /> <span className="hidden sm:inline">Jarvis 日報</span>
+                                                    </button>
+                                                    <button
                                                         onClick={onOpenSmartImport}
                                                         className="px-3 py-2.5 bg-white/15 hover:bg-white/25 text-white rounded-xl text-xs font-bold transition-all shadow-lg border border-white/20 flex justify-center items-center gap-2 active:scale-95 whitespace-nowrap backdrop-blur-md"
                                                     >
@@ -1549,10 +1555,10 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                                                                         <Edit3 className="w-3.5 h-3.5 text-blue-400" /> 手動新增
                                                                     </button>
                                                                     <button onClick={() => { setAIMode('full'); setIsAIModal(true); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 text-left text-xs transition-colors rounded-lg text-white font-medium">
-                                                                        <BrainCircuit className="w-3.5 h-3.5 text-purple-400" /> AI 建議行程
+                                                                        <BrainCircuit className="w-3.5 h-3.5 text-purple-400" /> Jarvis 建議行程
                                                                     </button>
                                                                     <button onClick={() => { handleOptimizeSchedule(); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 text-left text-xs transition-colors rounded-lg text-white font-medium">
-                                                                        <Sparkles className="w-3.5 h-3.5 text-amber-400" /> AI 排程優化
+                                                                        <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Jarvis 排程優化
                                                                     </button>
                                                                 </div>
                                                             </>

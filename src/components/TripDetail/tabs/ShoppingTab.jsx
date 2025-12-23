@@ -105,7 +105,7 @@ const ShoppingTab = ({
                                     onClick={() => onOpenAIModal('shopping')}
                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-purple-400 rounded-lg transition-all text-[10px] font-black uppercase tracking-wider"
                                 >
-                                    <Sparkles className="w-3 h-3" /> AI 靈感
+                                    <Sparkles className="w-3 h-3" /> Jarvis 靈感
                                 </button>
                                 <button
                                     onClick={() => onAddItem('shopping_plan')}

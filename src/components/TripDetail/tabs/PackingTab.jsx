@@ -121,7 +121,7 @@ const PackingTab = ({
                             onClick={onGenerateList}
                             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl shadow-xl hover:shadow-indigo-500/40 transition-all transform hover:-translate-y-1 active:scale-95 text-xs font-black uppercase tracking-wider"
                         >
-                            <Sparkles className="w-3.5 h-3.5" /> AI 推理清單
+                            <Sparkles className="w-3.5 h-3.5" /> Jarvis 推理清單
                         </button>
                         <button
                             onClick={() => onAddItem('packing')}
@@ -202,7 +202,7 @@ const PackingTab = ({
                                                     <div className="flex items-center gap-2">
                                                         {item.aiSuggested && (
                                                             <span className="text-[8px] text-purple-400 font-black uppercase tracking-tighter flex items-center gap-0.5">
-                                                                <Sparkles className="w-2 h-2" /> AI Suggested
+                                                                <Sparkles className="w-2 h-2" /> Jarvis Suggested
                                                             </span>
                                                         )}
                                                         {/* Show Owner if 'All' view */}

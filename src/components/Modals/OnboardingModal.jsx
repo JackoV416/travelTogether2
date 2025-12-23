@@ -39,12 +39,12 @@ const OnboardingModal = ({ isOpen, onClose, isDarkMode }) => {
             image: planeImg
         },
         {
-            title: "AI 魔法助手",
-            description: "不知道去哪？一鍵生成完整行程。機票酒店單據？影張相 AI 自動幫你入帳，完全唔洗手動入。",
+            title: "Jarvis 魔法助手",
+            description: "不知道去哪？一鍵生成完整行程。機票酒店單據？影張相 Jarvis 自動幫你入帳，完全唔洗手動入。",
             icon: BrainCircuit,
             color: "text-purple-500",
             bg: "bg-purple-500/10",
-            mockAction: "AI正在解析您的機票...",
+            mockAction: "Jarvis 正在解析您的機票...",
             mockResult: "成功提取：香港 -> 東京 (JL736)",
             image: aiImg
         },

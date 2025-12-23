@@ -6,7 +6,7 @@ import { doc, getDoc, setDoc, serverTimestamp, increment } from 'firebase/firest
 import { db } from '../firebase';
 
 // Default quota settings
-const DEFAULT_DAILY_LIMIT = 50; // V1.2.3: Increased to 50 for multi-key support
+const DEFAULT_DAILY_LIMIT = 300; // V1.3.0: Increased to 300 (Gemini Free Tier is ~1500/day, 300 is safe per user)
 const QUOTA_COLLECTION = 'users';
 const QUOTA_DOC = 'ai_quota';
 
@@ -63,6 +63,7 @@ export async function getUserQuotaStatus(uid) {
             used,
             total: DEFAULT_DAILY_LIMIT,
             remaining,
+            customUsed: data.customCount || 0,
             allowed: used < DEFAULT_DAILY_LIMIT,
             resetTime: getNextMidnight()
         };
@@ -111,12 +112,25 @@ export async function incrementUserQuota(uid, feature = 'General', keyIndex = -1
         featureBreakdown[feature] = (featureBreakdown[feature] || 0) + 1;
 
         // 1. Update User Quota
-        await setDoc(quotaRef, {
-            date: today,
-            count: newCount,
-            features: featureBreakdown, // Save breakdown
+        const updates = {
             lastUpdated: serverTimestamp()
-        });
+        };
+
+        if (isCustomKey) {
+            // Track custom usage separatedly
+            const newCustomCount = (data.customCount || 0) + 1;
+            updates.customCount = newCustomCount;
+            // distinct breakdown for custom? optionally, but for now we mix features or keep simple
+            // Let's keep a shared feature breakdown for simplicity, or just track total custom calls.
+        } else {
+            // Track System Usage (Quota applies)
+            updates.date = today;
+            updates.count = newCount;
+        }
+
+        updates.features = featureBreakdown; // Keep tracking features regardless of source
+
+        await setDoc(quotaRef, updates, { merge: true });
 
         // 2. Update System Analytics (Fire & Forget for performance)
         // Only if we have a valid keyIndex
@@ -141,11 +155,15 @@ export async function incrementUserQuota(uid, feature = 'General', keyIndex = -1
         console.log(`[AI Quota] User ${uid.slice(0, 8)} used ${newCount}/${DEFAULT_DAILY_LIMIT} (Feature: ${feature})`);
 
         // Broadcast update for real-time UI
+        // Broadcast update for real-time UI
+        const currentCustomCount = quotaSnap.exists() ? (quotaSnap.data().customCount || 0) : 0;
+
         window.dispatchEvent(new CustomEvent('AI_QUOTA_UPDATED', {
             detail: {
-                used: newCount,
+                used: isCustomKey ? currentCount : newCount, // If custom, system count doesn't increase
+                customUsed: isCustomKey ? currentCustomCount + 1 : currentCustomCount,
                 total: DEFAULT_DAILY_LIMIT,
-                remaining: Math.max(0, DEFAULT_DAILY_LIMIT - newCount),
+                remaining: Math.max(0, DEFAULT_DAILY_LIMIT - (isCustomKey ? currentCount : newCount)),
                 breakdown: featureBreakdown
             }
         }));
@@ -175,7 +193,7 @@ export async function checkUserQuota(uid) {
 
     return {
         allowed: false,
-        message: `你今日 AI 限額已用完 (${status.used}/${status.total})。請聯絡真人客服，或等待明天重置。`,
+        message: `你今日 Jarvis 限額已用完 (${status.used}/${status.total})。請聯絡真人客服，或等待明天重置。`,
         retryIn: hoursUntilReset,
         resetTime
     };

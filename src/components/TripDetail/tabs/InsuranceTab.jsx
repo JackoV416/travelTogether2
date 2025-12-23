@@ -47,8 +47,8 @@ const InsuranceTab = ({
                         onClick={onSaveInsurance}
                         disabled={isSimulation}
                         className={`w-full py-3.5 flex items-center justify-center gap-2 mt-4 transition-all shadow-lg active:scale-[0.98] text-sm font-bold border border-white/10 rounded-xl ${isSimulation
-                                ? 'bg-white/5 text-white/30 cursor-not-allowed shadow-none border-dashed'
-                                : 'bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white shadow-indigo-500/20'
+                            ? 'bg-white/5 text-white/30 cursor-not-allowed shadow-none border-dashed'
+                            : 'bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white shadow-indigo-500/20'
                             }`}
                     >
                         <Shield className="w-4 h-4" />
@@ -85,7 +85,7 @@ const InsuranceTab = ({
                         ))}
                 </div>
                 <div className="text-[11px] opacity-60 mt-3">
-                    AI 建議：依所在地先完成 Visit Japan Web 等官方登錄，再補上涵蓋醫療與航班延誤的保單。
+                    Jarvis 建議：依所在地先完成 Visit Japan Web 等官方登錄，再補上涵蓋醫療與航班延誤的保單。
                 </div>
             </div>
         </div>

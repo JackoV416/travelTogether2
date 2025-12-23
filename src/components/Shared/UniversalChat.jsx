@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { X, Send, ImageIcon, Smile, Hash, MessageCircle, Loader2, Bot, Sparkles, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
-import { JARVIS_VERSION } from '../../constants/appData';
+import { JARVIS_VERSION, APP_VERSION } from '../../constants/appData';
 import { askTravelAI } from '../../services/ai-parsing';
 import { checkUserQuota, incrementUserQuota, getUserQuotaStatus } from '../../services/ai-quota';
+import { checkInstantAnswer } from '../../services/jarvis-instant'; // V1.2.5 Instant Answers
 import ImageWithFallback from './ImageWithFallback';
 
 const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = 'trip' }) => {
@@ -21,7 +22,9 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
     const [jarvisMessages, setJarvisMessages] = useState([]);
     const [jarvisInput, setJarvisInput] = useState('');
     const [isJarvisThinking, setIsJarvisThinking] = useState(false);
+    const [jarvisProgress, setJarvisProgress] = useState({ message: '', percent: 0 }); // V1.2.6 Progress
     const jarvisScrollRef = useRef(null);
+    const jarvisAbortRef = useRef(null); // V1.2.6 Abort Controller
 
     // Responsive Detection
     useEffect(() => {
@@ -108,23 +111,62 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
         // Scroll to bottom
         setTimeout(() => jarvisScrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
 
-        try {
-            // V1.2.3: Centralized Quota Check within Service
-            // No manual checks needed here anymore
+        // V1.2.6: AbortController for Cancellation
+        const abortController = new AbortController();
+        const signal = abortController.signal;
 
-            // Make the AI call
+        // Store controller in ref to access it for cancellation
+        jarvisAbortRef.current = abortController;
+
+        try {
+            // --- V1.2.5: Jarvis Instant Answers (Client-side) ---
+            const instantAnswer = checkInstantAnswer(question, {
+                city: trip?.city || trip?.cities?.[0]
+            });
+
+            if (instantAnswer) {
+                // Simulate "thinking" for natural feel (0.6s)
+                await new Promise(resolve => setTimeout(resolve, 600));
+
+                const aiMsg = { id: Date.now() + 1, role: 'jarvis', text: instantAnswer, time: new Date().toISOString() };
+                setJarvisMessages(prev => [...prev, aiMsg]);
+                setIsJarvisThinking(false);
+                setJarvisProgress({ message: '', percent: 0 }); // Reset
+                setTimeout(() => jarvisScrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                return; // SKIP API CALL
+            }
+            // ----------------------------------------------------
+
+            // Define progress callback
+            const onProgress = (msg, percent) => {
+                setJarvisProgress({ message: msg, percent });
+            };
+
+            // Make the AI call with Signal & Progress
             const response = await askTravelAI(question, {
                 city: trip?.city || trip?.cities?.[0] || 'Unknown',
                 startDate: trip?.startDate,
                 endDate: trip?.endDate,
                 budget: 'Mid-range'
-            }, user?.uid); // Pass userId
+            }, user?.uid, signal, onProgress); // Pass userId, signal, onProgress
 
             const aiMsg = { id: Date.now() + 1, role: 'jarvis', text: response, time: new Date().toISOString() };
             setJarvisMessages(prev => [...prev, aiMsg]);
 
         } catch (error) {
             console.error("Jarvis AI error:", error);
+
+            if (error.message === 'Operation aborted') {
+                const abortedMsg = {
+                    id: Date.now() + 1,
+                    role: 'jarvis',
+                    text: '已取消操作。',
+                    isError: true,
+                    time: new Date().toISOString()
+                };
+                setJarvisMessages(prev => [...prev, abortedMsg]);
+                return;
+            }
 
             // Parse error for user-friendly message
             let errorText = '抱歉，我暫時無法回應。請稍後再試，或聯繫客服支援。';
@@ -134,13 +176,12 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
 
             if (errorMsg.includes('QUOTA_EXCEEDED') || errorMsg.includes('quota')) {
                 // Daily quota exceeded (API-level)
-                errorText = '⚠️ 今日 AI 服務限額已用完。\n\n請等待明天重置，或聯繫真人客服處理緊急問題。';
+                errorText = '⚠️ 今日 Jarvis 服務限額已用完。\n\n請等待明天重置，或聯繫真人客服處理緊急問題。';
                 isQuotaError = true;
-            } else if (errorMsg.includes('429')) {
-                // Extract retry time from error if available
-                const retryMatch = errorMsg.match(/retry in (\d+)/i);
-                const retrySeconds = retryMatch ? parseInt(retryMatch[1]) : 30;
-                errorText = `⏳ AI 服務繁忙中，請等待 ${retrySeconds} 秒後再試。\n\n或者點擊下方「聯繫真人客服」獲得即時協助！`;
+            } else if (errorMsg.includes('429') || errorMsg.includes('API_BUSY')) {
+                errorText = `⏳ Jarvis 服務繁忙中 (429)。\n\nGoogle AI 暫時無法回應，請一分鐘後再試，或點擊「聯繫真人客服」。`;
+            } else if (errorMsg.includes('All API attempts failed')) {
+                errorText = `❌ 所有線路嘗試失敗 (404/429)。\n\n請檢查網絡設定或稍後再試。`;
             }
 
             const errMsg = {
@@ -154,9 +195,33 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
             setJarvisMessages(prev => [...prev, errMsg]);
         } finally {
             setIsJarvisThinking(false);
+            setJarvisProgress({ message: '', percent: 0 }); // Reset
+            jarvisAbortRef.current = null;
             setTimeout(() => jarvisScrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
         }
     };
+
+    // V1.2.9: Rotating Loading Messages
+    const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
+    const LOADING_MESSAGES = [
+        "Jarvis 正在思考...",
+        "正在分析您的行程...",
+        "正在搜尋最佳建議...",
+        "正在整理旅遊資訊...",
+        "正在計算預算...",
+        "Jarvis 正在運用 Google Gemini 2.0..."
+    ];
+
+    useEffect(() => {
+        let interval;
+        if (isJarvisThinking) {
+            setLoadingMsgIndex(0);
+            interval = setInterval(() => {
+                setLoadingMsgIndex(prev => (prev + 1) % LOADING_MESSAGES.length);
+            }, 3000); // Change every 3 seconds
+        }
+        return () => clearInterval(interval);
+    }, [isJarvisThinking]);
 
     if (!isOpen) return null;
 
@@ -309,7 +374,7 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
                                             </div>
                                             <h3 className={`text-sm font-black italic tracking-tighter mb-1 ${textMain}`}>HELLO, I'M JARVIS</h3>
                                             <p className="text-[10px] opacity-50 leading-relaxed mb-4 max-w-xs">
-                                                我是您的行程管家 AI。問我任何關於旅遊或 App 操作的問題！
+                                                我是您的行程管家 Jarvis。問我任何關於旅遊或 App 操作的問題！
                                             </p>
                                             <div className="grid grid-cols-2 gap-2 w-full px-2">
                                                 {['如何優化行程？', 'PWA 安裝教學', '匯出 PDF 方法', '行程建議'].map(hint => (
@@ -346,16 +411,39 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
                                             </div>
                                         ))
                                     )}
-                                    {/* Thinking Indicator */}
+                                    {/* Thinking Indicator v2 with Progress & Cancel */}
                                     {isJarvisThinking && (
-                                        <div className="flex justify-start items-end gap-2 animate-fade-in">
+                                        <div className="flex justify-start items-end gap-2 animate-fade-in w-full pr-10">
                                             <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-700 flex items-center justify-center flex-shrink-0 mb-0.5">
                                                 <Bot className="w-3 h-3 text-white" />
                                             </div>
-                                            <div className="px-3 py-2 bg-white/5 border border-white/10 rounded-xl rounded-bl-none flex items-center gap-2">
-                                                <Loader2 className="w-3 h-3 animate-spin text-indigo-400" />
-                                                <span className="text-[10px] opacity-50">Jarvis 正在思考...</span>
+                                            <div className="flex-1 bg-white/5 border border-white/10 rounded-xl rounded-bl-none p-3 space-y-2">
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <Loader2 className="w-3 h-3 animate-spin text-indigo-400" />
+                                                        <span className="text-[10px] opacity-70 font-bold">
+                                                            {jarvisProgress.message || LOADING_MESSAGES[loadingMsgIndex]}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-[9px] opacity-40 font-mono">{jarvisProgress.percent}%</span>
+                                                </div>
                                             </div>
+
+                                            {/* Progress Bar */}
+                                            <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-indigo-500 transition-all duration-300 ease-out"
+                                                    style={{ width: `${Math.max(5, jarvisProgress.percent)}%` }}
+                                                />
+                                            </div>
+
+                                            {/* Cancel Button */}
+                                            <button
+                                                onClick={() => jarvisAbortRef.current?.abort()}
+                                                className="w-full py-1.5 mt-1 border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-300 text-[9px] font-bold rounded-lg transition-colors flex items-center justify-center gap-1"
+                                            >
+                                                <X className="w-3 h-3" /> 取消生成
+                                            </button>
                                         </div>
                                     )}
                                     <div ref={jarvisScrollRef} />
@@ -393,11 +481,11 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
                             <Hash className="w-2.5 h-2.5" />
                             <span className="text-[8px] font-black uppercase tracking-widest italic">SafeChat™ Encrypted</span>
                         </div>
-                        <p className="text-[8px] font-black opacity-20 uppercase tracking-widest">TravelTogether V1.2.2</p>
+                        <p className="text-[8px] font-black opacity-20 uppercase tracking-widest">TravelTogether {APP_VERSION}</p>
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

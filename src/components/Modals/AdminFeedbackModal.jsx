@@ -237,7 +237,7 @@ const AdminFeedbackModal = ({ isOpen, onClose, isDarkMode, adminEmails = [], onU
         const textToAnalyze = feedback.message || (messages.length > 0 ? messages[0].text : "");
 
         if (!textToAnalyze) {
-            if (!isAuto) alert("沒有足夠內容進行 AI 分析");
+            if (!isAuto) alert("沒有足夠內容進行 Jarvis 分析");
             return;
         }
 
@@ -276,7 +276,7 @@ const AdminFeedbackModal = ({ isOpen, onClose, isDarkMode, adminEmails = [], onU
                     updateDoc(doc(db, "feedback", feedback.id), { subject: fallbackTitle });
                 } else {
                     // Manual trigger failed
-                    alert("AI 分析失敗，已轉用訊息內容作為標題");
+                    alert("Jarvis 分析失敗，已轉用訊息內容作為標題");
                     const fallbackTitle = textToAnalyze.slice(0, 20) + (textToAnalyze.length > 20 ? "..." : "");
                     updateDoc(doc(db, "feedback", feedback.id), { subject: fallbackTitle });
                 }
@@ -287,7 +287,7 @@ const AdminFeedbackModal = ({ isOpen, onClose, isDarkMode, adminEmails = [], onU
                 // Optional: Toast "已取消"
             } else {
                 console.error(e);
-                if (!isAuto) alert("AI 分析失敗，請稍後再試");
+                if (!isAuto) alert("Jarvis 分析失敗，請稍後再試");
             }
         } finally {
             setIsGenerating(false);
@@ -544,7 +544,7 @@ const AdminFeedbackModal = ({ isOpen, onClose, isDarkMode, adminEmails = [], onU
                                                                             <button
                                                                                 onClick={(e) => { e.stopPropagation(); handleCancelAI(); }}
                                                                                 className="p-0.5 hover:bg-red-500/20 rounded-full text-gray-400 hover:text-red-500 transition-colors"
-                                                                                title="停止 AI 分析"
+                                                                                title="停止 Jarvis 分析"
                                                                             >
                                                                                 <X className="w-3 h-3" />
                                                                             </button>

@@ -8,7 +8,7 @@ import { getDaysArray, glassCard } from '../../utils/tripUtils';
 
 
 const IMPORT_TYPES = [
-    { id: 'screenshot', label: '行程截圖', icon: Image, desc: '上傳行程圖片，AI 自動識別', color: 'indigo' },
+    { id: 'screenshot', label: '行程截圖', icon: Image, desc: '上傳行程圖片，Jarvis 自動識別', color: 'indigo' },
     { id: 'receipt', label: '預算單據', icon: Receipt, desc: '機票、酒店、收據掃描', color: 'green' },
     { id: 'memory', label: '回憶 / 靈感', icon: Brain, desc: '相片或文件存檔', color: 'purple' },
     { id: 'plaintext', label: '純文字', icon: FileText, desc: '貼上/輸入行程文字', color: 'pink' },
@@ -268,13 +268,13 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
 
             const errMsg = error.message;
             if (errMsg === 'API_BUSY' || errMsg?.includes('429')) {
-                userMessage = "AI 服務目前極度繁忙 (429)，請稍候 30 秒再試。";
+                userMessage = "Jarvis 服務目前極度繁忙 (429)，請稍候 30 秒再試。";
             } else if (errMsg === 'QUOTA_EXCEEDED' || errMsg?.includes('quota')) {
-                userMessage = "今日 AI 使用限額已滿，請明天再試或更換 API Key。";
+                userMessage = "今日 Jarvis 使用限額已滿，請明天再試或更換 API Key。";
             } else if (errMsg === 'EMPTY_RESULT') {
                 userMessage = "未能識別任何有效項目，請嘗試上傳更清晰、光線充足的圖片。";
             } else if (errMsg?.includes('Vision Parsing Failed') || errMsg?.includes('VISION_FAILED')) {
-                userMessage = "AI 識別失敗。原因：流量過大或權限問題，請稍後再試。";
+                userMessage = "Jarvis 識別失敗。原因：流量過大或權限問題，請稍後再試。";
             } else if (errMsg?.includes('PARSE_FAILED')) {
                 userMessage = "解析失敗。可能原因：圖片過於模糊或非旅遊相關文件。";
             }
@@ -373,7 +373,7 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                     cost: item.cost || 0,
                     currency: item.currency || 'HKD',
                     checked: false,
-                    details: { receiptUrl: item.evidenceUrl, desc: 'AI Receipt Import' }
+                    details: { receiptUrl: item.evidenceUrl, desc: 'Jarvis Receipt Import' }
                 }));
                 batchUpdates['shoppingList'] = arrayUnion(...shoppingItems);
                 shoppingItems.forEach(i => newBatchIds.push({ id: i.id, type: 'receipt' }));
@@ -478,10 +478,10 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                 <div className="p-6 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-indigo-500/10 to-purple-500/10 shrink-0">
                     <div>
                         <h2 className="text-2xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
-                            <Upload className="w-6 h-6 text-indigo-500 dark:text-indigo-400" /> 智能匯入中心
+                            <Upload className="w-6 h-6 text-indigo-500 dark:text-indigo-400" /> Jarvis 智能匯入中心
                         </h2>
                         <p className="text-sm text-slate-500 dark:text-white/60 mt-1">
-                            {stage === 1 ? '選擇匯入類型' : stage === 2 ? '上傳檔案' : stage === 3 ? 'AI 識別中...' : stage === 4 ? '確認內容' : '匯入完成'}
+                            {stage === 1 ? '選擇匯入類型' : stage === 2 ? '上傳檔案' : stage === 3 ? 'Jarvis 識別中...' : stage === 4 ? '確認內容' : '匯入完成'}
                         </p>
                     </div>
                     <button onClick={handleClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
@@ -576,7 +576,7 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                                                 <p className="font-bold">拖放檔案或點擊上傳</p>
                                                 <p className="text-xs opacity-60 mt-1">
                                                     {importType.id === 'receipt' || importType.id === 'screenshot'
-                                                        ? '支援圖片 (JPG, PNG) - AI 自動識別內容'
+                                                        ? '支援圖片 (JPG, PNG) - Jarvis 自動識別內容'
                                                         : '選擇您的檔案'}
                                                 </p>
                                             </div>
@@ -614,7 +614,7 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                     {stage === 3 && (
                         <div className="p-12 text-center">
                             <Loader2 className="w-16 h-16 mx-auto animate-spin text-indigo-400 mb-6" />
-                            <p className="font-bold text-lg mb-2">AI 正在分析您的圖片...</p>
+                            <p className="font-bold text-lg mb-2">Jarvis 正在分析您的圖片...</p>
 
                             {/* Progress Display */}
                             {progress.total > 0 && (
@@ -629,7 +629,7 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                                             style={{ width: `${progress.percent}%` }}
                                         />
                                     </div>
-                                    <p className="text-[10px] opacity-40">Gemini 3 Flash Vision API</p>
+                                    <p className="text-[10px] opacity-40">Jarvis Vision API</p>
                                 </div>
                             )}
                         </div>
@@ -639,7 +639,7 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                     {stage === 4 && (
                         <div className="flex flex-col h-[450px]">
                             <div className="p-4 bg-indigo-500/10 border-b border-indigo-500/20 text-xs text-indigo-500 dark:text-indigo-300 flex items-center justify-between font-bold">
-                                <span className="flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI 已識別 {reviewItems.length} 個項目</span>
+                                <span className="flex items-center gap-1"><Sparkles className="w-3 h-3" /> Jarvis 已識別 {reviewItems.length} 個項目</span>
                                 <span>請確認內容後匯入</span>
                             </div>
                             <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -1003,7 +1003,7 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                                                                     setReviewItems(updated);
                                                                 }}
                                                                 className="bg-white/5 border border-white/10 rounded px-2 py-1 text-[10px] flex-1"
-                                                                placeholder="👥 人數 (如: 2大1小)"
+                                                                placeholder="👥 人數 (如: 2 大 1 小)"
                                                             />
                                                         </div>
                                                         <div className="flex flex-wrap gap-2 text-[10px] items-center">
@@ -1016,7 +1016,7 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                                                                     setReviewItems(updated);
                                                                 }}
                                                                 className="bg-white/5 border border-white/10 rounded px-2 py-1 text-[10px] flex-1"
-                                                                placeholder="🍳 早餐 (如: 包含 7F餐廳)"
+                                                                placeholder="🍳 早餐 (如: 包含 7F 餐廳)"
                                                             />
                                                             <input
                                                                 type="text"
@@ -1027,7 +1027,7 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                                                                     setReviewItems(updated);
                                                                 }}
                                                                 className="bg-white/5 border border-white/10 rounded px-2 py-1 text-[10px] flex-1"
-                                                                placeholder="📶 WiFi密碼"
+                                                                placeholder="📶 WiFi 密碼"
                                                             />
                                                         </div>
                                                         {/* Notes Row */}
