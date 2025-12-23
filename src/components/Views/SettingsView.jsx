@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, BrainCircuit, Lock, Sparkles, Eye, EyeOff, RotateCcw, GripVertical } from 'lucide-react';
+import { ArrowLeft, BrainCircuit, Lock, Sparkles, Eye, EyeOff, RotateCcw, GripVertical, Server, ShieldCheck, Activity } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { CURRENCIES, TIMEZONES, LANGUAGE_OPTIONS } from '../../constants/appData';
+import { CURRENCIES, TIMEZONES, LANGUAGE_OPTIONS, APP_VERSION, JARVIS_VERSION } from '../../constants/appData';
 import { inputClasses } from '../../utils/tripUtils';
-import { checkAIUsageLimit } from '../../services/ai-parsing';
+import { getUserQuotaStatus, getSystemAnalytics } from '../../services/ai-quota'; // V1.2.3 Async
+import JarvisLogo from '../Shared/JarvisLogo'; // V1.2.3 Global Logo
 
 // Default Widget Configuration
 const DEFAULT_WIDGETS = [
@@ -16,7 +17,7 @@ const DEFAULT_WIDGETS = [
     { id: 'currency', name: '匯率計算', visible: true },
 ];
 
-const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, initialTab = 'general' }) => {
+const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, initialTab = 'general', user, isAdmin }) => {
     const [activeTab, setActiveTab] = useState(initialTab);
     const [intelTab, setIntelTab] = useState('usage'); // V1.2.3: Intelligence Sub-tabs
 
@@ -56,18 +57,23 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
     };
 
     // V1.4: Track both calls and tokens
-    const [aiUsage, setAiUsage] = useState({ used: 0, total: 20, remaining: 20, tokens: 0 });
+    const [aiUsage, setAiUsage] = useState({ used: 0, total: 50, remaining: 50, breakdown: {} });
     const [timeUntilReset, setTimeUntilReset] = useState("");
 
+    // V1.2.3: Admin Analytics State
+    const [adminAnalytics, setAdminAnalytics] = useState(null);
+
     useEffect(() => {
-        const updateStats = () => {
-            const usage = checkAIUsageLimit();
-            setAiUsage({
-                used: usage.used,
-                total: usage.total,
-                remaining: usage.remaining,
-                tokens: usage.tokens || 0
-            });
+        const updateStats = async () => {
+            if (user?.uid) {
+                const status = await getUserQuotaStatus(user.uid);
+                setAiUsage({
+                    used: status.used,
+                    total: status.total,
+                    remaining: status.remaining,
+                    breakdown: status.features || {}
+                });
+            }
 
             // Calculate time until next reset (Midnight)
             const now = new Date();
@@ -77,6 +83,12 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
             const hours = Math.floor(diffMs / (1000 * 60 * 60));
             const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
             setTimeUntilReset(`${hours}小時 ${minutes}分鐘`);
+
+            // Admin Analytics (If authorized)
+            if (isAdmin) {
+                const analytics = await getSystemAnalytics();
+                setAdminAnalytics(analytics);
+            }
         };
 
         updateStats();
@@ -84,12 +96,23 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
         const interval = setInterval(updateStats, 60000);
 
         // Listen for real-time updates (V1.4)
-        window.addEventListener('AI_USAGE_UPDATED', updateStats);
+        const handleQuotaUpdate = (e) => {
+            const detail = e.detail;
+            setAiUsage(prev => ({
+                ...prev,
+                used: detail.used,
+                total: detail.total,
+                remaining: detail.remaining,
+                breakdown: detail.breakdown || prev.breakdown
+            }));
+        };
+
+        window.addEventListener('AI_QUOTA_UPDATED', handleQuotaUpdate);
         return () => {
-            window.removeEventListener('AI_USAGE_UPDATED', updateStats);
+            window.removeEventListener('AI_QUOTA_UPDATED', handleQuotaUpdate);
             clearInterval(interval);
         };
-    }, [activeTab]);
+    }, [activeTab, user?.uid, isAdmin]);
 
     return (
         <div className="max-w-4xl mx-auto p-4 md:p-8 animate-fade-in pb-36">
@@ -202,13 +225,33 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                             {/* 1. Usage Tab */}
                             {intelTab === 'usage' && (
                                 <div className="space-y-6 animate-fade-in">
+                                    {/* Header with Logo */}
+                                    <div className="flex items-center gap-5 mb-4">
+                                        <JarvisLogo size="lg" showText={false} />
+                                        <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-6">
+                                            <div className="flex flex-col justify-center">
+                                                <h3 className="font-black tracking-[0.2em] uppercase leading-none text-white font-sans text-sm">
+                                                    JARVIS AI
+                                                </h3>
+                                                <p className="font-bold opacity-40 uppercase tracking-tight text-white text-[10px] mt-1">
+                                                    VER {JARVIS_VERSION}
+                                                </p>
+                                            </div>
+                                            <div className="h-8 w-[1px] bg-white/10 hidden md:block"></div>
+                                            <div>
+                                                <h3 className="font-bold text-2xl text-white tracking-tight">Jarvis Intelligence</h3>
+                                                <p className="text-sm opacity-50 text-gray-300">你的私人 AI 旅遊助理</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
                                         <div className="flex justify-between items-end mb-4">
                                             <div>
                                                 <label className="text-sm font-bold opacity-90 flex items-center gap-2">
-                                                    <BrainCircuit className="w-5 h-5 text-indigo-500" />今日 Jarvis AI 使用量
+                                                    <Activity className="w-5 h-5 text-indigo-500" />今日用量統計
                                                 </label>
-                                                <p className="text-[10px] opacity-40 mt-1">累積消耗: <span className="text-indigo-400 font-mono font-bold">{aiUsage.tokens.toLocaleString()} Tokens</span></p>
+                                                <p className="text-[10px] opacity-40 mt-1">累積消耗: <span className="text-indigo-400 font-mono font-bold">{(aiUsage.tokens || 0).toLocaleString()} Tokens</span></p>
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-xl font-black text-indigo-500 font-mono">{aiUsage.used} <span className="text-sm opacity-50 font-normal text-gray-500">/ {aiUsage.total}</span></div>
@@ -222,80 +265,107 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                             ></div>
                                         </div>
                                         <div className="flex justify-between mt-3">
-                                            <p className="text-[10px] opacity-40 uppercase tracking-tighter font-bold">Limit Status: {aiUsage.remaining > 0 ? 'Healthy' : 'Exceeded'}</p>
+                                            <p className="text-[10px] opacity-40 uppercase tracking-tighter font-bold">Status: {aiUsage.remaining > 0 ? 'Active' : 'Limit Reached'}</p>
                                             <div className="text-right">
-                                                <p className="text-[10px] opacity-50">每日限額 {aiUsage.total} 次</p>
-                                                <p className="text-[10px] opacity-40 mt-0.5">將於 {timeUntilReset} 後重置</p>
+                                                <p className="text-[10px] opacity-50">重置倒數: {timeUntilReset}</p>
                                             </div>
                                         </div>
+
+                                        {/* User Quota Warning */}
+                                        {aiUsage.remaining <= 5 && (
+                                            <div className="mt-4 p-3 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-start gap-3 animate-pulse">
+                                                <div className="p-1.5 bg-orange-500/20 rounded-full mt-0.5">
+                                                    <BrainCircuit className="w-4 h-4 text-orange-400" />
+                                                </div>
+                                                <div>
+                                                    <h5 className="text-xs font-bold text-orange-400 mb-1">免費額度即將用盡</h5>
+                                                    <p className="text-[10px] opacity-70 leading-relaxed text-orange-300">
+                                                        您今日的體驗額度剩餘不多。建議前往 <strong>API Keys</strong> 頁面輸入您的 Gemini API Key，即可解除限制無限使用。
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
-                                    {/* V1.0.3: AI Feature Usage Documentation */}
+                                    {/* V1.2.3: Dynamic Feature Usage List */}
                                     <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-gray-800/30 border-gray-700/50' : 'bg-gray-50/50 border-gray-200'}`}>
                                         <h4 className="font-bold text-sm mb-3 flex items-center gap-2">
                                             <Sparkles className="w-4 h-4 text-purple-400" />
-                                            Jarvis 功能使用說明
+                                            功能使用明細 (今日)
                                         </h4>
-                                        <div className="space-y-2 text-xs">
-                                            <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
-                                                <div className="flex justify-between items-center">
-                                                    <span className="font-bold">🧠 Jarvis 行程生成</span>
-                                                    <span className="text-purple-400 font-mono text-[10px]">~500 tokens/次</span>
-                                                </div>
-                                                <p className="opacity-60 mt-1">從文字描述生成結構化行程 (每生成 1 天算 1 次)</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            {[
+                                                { id: 'Chat', label: '💬 全能對話助手', cost: '~100t', desc: '解答天氣、匯率、行程建議等問題 (每次對話算 1 次)' },
+                                                { id: 'Itinerary', label: '🧠 Jarvis 行程生成', cost: '~500t', desc: '從文字描述生成結構化行程 (每生成 1 天算 1 次)' },
+                                                { id: 'WeatherSummary', label: '🌤️ 智能天氣分析', cost: '~150t', desc: '根據天氣預報提供穿搭與活動建議 (每次分析算 1 次)' },
+                                                { id: 'TransportSuggest', label: '🚆 交通路線建議', cost: '~300t', desc: '多城市行程自動計算交通方式 (每次呼叫算 1 次)' },
+                                                { id: 'TripName', label: '🤖 智能命名', cost: '~50t', desc: '新行程建立時自動生成創意名稱 (每次生成算 1 次)' },
+                                                { id: 'TicketAnalysis', label: '📸 智能截圖匯入', cost: '~1.5kt', desc: 'AI 解析行程截圖或 PDF (每次匯入算 1 次)' },
+                                                { id: 'DailyAnalysis', label: '📊 每日行程分析', cost: '~300t', desc: '分析每日行程安排並提供優化建議 (每次日算 1 次)' },
+                                                { id: 'ReportSummary', label: '📝 工單摘要', cost: '~200t', desc: '自動生成客服回報摘要 (每次提交算 1 次)' },
+                                                { id: 'ShoppingList', label: '🛍️ 智能購物清單', cost: '~100t', desc: '根據行程推薦必買手信及購物點 (每次生成算 1 次)' },
+                                                { id: 'PackingList', label: '🎒 智能行李清單', cost: '~100t', desc: '根據天氣及活動建議執拾清單 (每次生成算 1 次)' }
+                                            ].map(feature => {
+                                                const count = aiUsage.breakdown?.[feature.id] || 0;
+                                                return (
+                                                    <div key={feature.id} className={`p-3 rounded-xl flex flex-col gap-2 ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'} ${count > 0 ? 'border border-indigo-500/30 ring-1 ring-indigo-500/20' : 'border border-transparent opacity-70 hover:opacity-100 transition-opacity'}`}>
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <div className="font-bold text-xs flex items-center gap-2">
+                                                                    {feature.label}
+                                                                    {count > 0 && <span className="flex w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>}
+                                                                </div>
+                                                                <div className="text-[10px] opacity-50 font-mono mt-0.5">{feature.cost} / request</div>
+                                                            </div>
+                                                            <div className={`text-xl font-black font-mono ${count > 0 ? 'text-indigo-400' : 'opacity-20'}`}>
+                                                                {count} <span className="text-[10px] font-normal opacity-50">次</span>
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-[10px] opacity-60 leading-relaxed border-t border-gray-500/10 pt-2">
+                                                            {feature.desc}
+                                                        </p>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Admin Monitor Section (Visible only to Admin) */}
+                                    {isAdmin && adminAnalytics && (
+                                        <div className="animate-fade-in mt-8 pt-8 border-t border-gray-500/20">
+                                            <div className="flex items-center gap-2 text-red-400 font-bold mb-4">
+                                                <ShieldCheck className="w-5 h-5" />
+                                                Admin Console: API Monitor
                                             </div>
-                                            <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
-                                                <div className="flex justify-between items-center">
-                                                    <span className="font-bold">🌤️ 智能天氣分析</span>
-                                                    <span className="text-orange-400 font-mono text-[10px]">~150 tokens/次</span>
+                                            <div className={`p-4 rounded-xl border border-red-500/20 ${isDarkMode ? 'bg-red-500/5' : 'bg-red-50'}`}>
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <span className="text-xs font-bold uppercase opacity-70">Global Total</span>
+                                                    <span className="text-xl font-black font-mono text-red-400">{adminAnalytics.total_calls || 0}</span>
                                                 </div>
-                                                <p className="opacity-60 mt-1">根據天氣預報提供穿搭與活動建議 (每次分析算 1 次)</p>
-                                            </div>
-                                            <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
-                                                <div className="flex justify-between items-center">
-                                                    <span className="font-bold">🚆 交通路線建議</span>
-                                                    <span className="text-emerald-400 font-mono text-[10px]">~300 tokens/次</span>
+
+                                                <div className="space-y-2 pt-2 border-t border-gray-500/10">
+                                                    <div className="flex justify-between text-xs">
+                                                        <span className="font-bold opacity-80 flex items-center gap-1">🏢 System Pool</span>
+                                                        <span className="font-mono font-bold text-indigo-400">{adminAnalytics.type_system || 0}</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-xs">
+                                                        <span className="font-bold opacity-80 flex items-center gap-1">👤 User Custom (BYOK)</span>
+                                                        <span className="font-mono font-bold text-emerald-400">{adminAnalytics.type_custom || 0}</span>
+                                                    </div>
                                                 </div>
-                                                <p className="opacity-60 mt-1">多城市行程自動計算交通方式 (每次呼叫算 1 次)</p>
-                                            </div>
-                                            <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
-                                                <div className="flex justify-between items-center">
-                                                    <span className="font-bold">💬 全能對話助手</span>
-                                                    <span className="text-pink-400 font-mono text-[10px]">~100 tokens/次</span>
-                                                </div>
-                                                <p className="opacity-60 mt-1">解答天氣、匯率、行程建議等問題 (每次對話算 1 次)</p>
-                                            </div>
-                                            <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
-                                                <div className="flex justify-between items-center">
-                                                    <span className="font-bold">🤖 智能命名</span>
-                                                    <span className="text-cyan-400 font-mono text-[10px]">~50 tokens/次</span>
-                                                </div>
-                                                <p className="opacity-60 mt-1">新行程建立時自動生成創意名稱 (每次生成算 1 次)</p>
-                                            </div>
-                                            <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
-                                                <div className="flex justify-between items-center">
-                                                    <span className="font-bold">📸 智能截圖匯入</span>
-                                                    <span className="text-blue-400 font-mono text-[10px]">~1500 tokens/次</span>
-                                                </div>
-                                                <p className="opacity-60 mt-1">AI 解析行程截圖或 PDF (每次匯入算 1 次)</p>
-                                            </div>
-                                            <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
-                                                <div className="flex justify-between items-center">
-                                                    <span className="font-bold">📝 客服工單摘要</span>
-                                                    <span className="text-gray-400 font-mono text-[10px]">~200 tokens/次</span>
-                                                </div>
-                                                <p className="opacity-60 mt-1">自動生成客服回報摘要 (每次提交算 1 次)</p>
-                                            </div>
-                                            <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
-                                                <div className="flex justify-between items-center">
-                                                    <span className="font-bold">🛍️ 購物/行李清單</span>
-                                                    <span className="text-indigo-400 font-mono text-[10px]">~100 tokens/次</span>
-                                                </div>
-                                                <p className="opacity-60 mt-1">AI 建議購物或行李清單 (每次生成算 1 次)</p>
+
+                                                {/* Admin Capacity Warning */}
+                                                {(adminAnalytics.type_system > 1000) && ( // Logic threshold
+                                                    <div className="mt-3 p-2 rounded bg-red-500/20 border border-red-500/50 flex items-center gap-2">
+                                                        <Server className="w-3 h-3 text-red-500 animate-bounce" />
+                                                        <span className="text-[10px] font-bold text-red-400">系統負載警告：全局用量即將爆滿，請立即增加 Keys！</span>
+                                                    </div>
+                                                )}
+
+                                                <p className="text-[10px] opacity-40 mt-3 text-right">System Key Breakdown Hidden</p>
                                             </div>
                                         </div>
-                                        <p className="text-[10px] opacity-40 mt-3 text-center">💡 提示：使用自訂 API Key 可無視每日限額</p>
-                                    </div>
+                                    )}
                                 </div>
                             )}
 

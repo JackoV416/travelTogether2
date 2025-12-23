@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Admin Check: Update list as needed or use Custom Claims
+    function isAdmin() {
+      return request.auth.token.email in ['jamiekwok416@gmail.com'];
+    }
+
+    // --- Users Collection ---
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+      
+      // 🔒 AI Quota Tracking (V1.2.3)
+      match /usage/ai_quota {
+        allow read: if isOwner(userId);
+        // User needs to update this to increment usage
+        // Future improvement: Validate 'count' only increases
+        allow write: if isOwner(userId);
+      }
+    }
+
+    // --- System Analytics (V1.2.3) ---
+    match /system/ai_analytics {
+      // Only Admin can view global usage
+      allow read: if isAdmin();
+      
+      // All users need to increment the counters
+      // We allow update but NOT delete/create
+      allow update: if isAuthenticated();
+      allow create, delete: if isAdmin();
+    }
+    
+    // --- Trips Collection ---
+    match /trips/{tripId} {
+       allow read: if resource.data.isPublic == true || (isAuthenticated() && (resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.sharedWith));
+       allow write: if isAuthenticated();
+    }
+    
+    // --- Global Settings ---
+    match /settings/{docId} {
+      allow read: if true; 
+      allow write: if isAdmin();
+    }
+
+    // --- Default Deny ---
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

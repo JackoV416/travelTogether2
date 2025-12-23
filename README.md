@@ -5,6 +5,16 @@
 [![Vite](https://img.shields.io/badge/Vite-6.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-11.x-orange.svg)](https://firebase.google.com/)
 
+## 🚀 V1.2.3: Social & AI Quota Control (2025-12-23)
+**V1.2.3: [Social & AI] 用戶級 AI 配額與隱私監控！**
+本次更新引入了 Granular Quota Tracking，為每位用戶提供獨立的 AI 使用額度，並大幅提升系統整體的 AI 承載能力。
+
+### ✨ V1.2.3 核心更新 (Updates)
+- **🔒 Per-User Quota**: 實裝 Firestore 用戶級計費，精準追蹤每一項 AI 功能的 Token 消耗。
+- **🔑 Enhanced Capacity**: 系統後端架構升級，大幅提升 AI 服務的穩定性與可用額度。
+- **🛡️ Privacy Monitor**: 新增 Admin Console 監控面板，以保護隱私的方式顯示系統健康度 (System Pool Status)。
+- **💬 Auto-Jarvis Control**: 設定頁新增 "Auto Jarvis" 開關，用戶可自由選擇是否啟用 AI 自動化功能。
+
 ## 🚀 V1.2.2: Jarvis AI Support Center (2025-12-23)
 **V1.2.2: [AI Support] Jarvis AI 視覺介面與支援中心先行版！**
 本次更新實裝了 Jarvis AI 的專屬客服入口與高質感視覺介面。

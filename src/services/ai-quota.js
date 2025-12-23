@@ -2,7 +2,7 @@
  * 🔒 Per-User AI Quota Service (V1.2.3)
  * Firestore-based daily quota tracking for each user
  */
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 
 // Default quota settings
@@ -75,48 +75,82 @@ export async function getUserQuotaStatus(uid) {
 }
 
 /**
- * ➕ Increment user's AI usage count
+ * ➕ Increment user's AI usage count with Granular Tracking
  * @param {string} uid - User ID
+ * @param {string} feature - Feature name (e.g., 'Chat', 'Weather')
+ * @param {number} keyIndex - Index of the API key used
+ * @param {boolean} isCustomKey - Whether a custom BYOK key was used
  * @returns {Promise<Object>} Updated quota status
  */
-export async function incrementUserQuota(uid) {
+export async function incrementUserQuota(uid, feature = 'General', keyIndex = -1, isCustomKey = false) {
     if (!uid) return null;
 
     const today = getTodayKey();
     const quotaRef = doc(db, QUOTA_COLLECTION, uid, 'usage', QUOTA_DOC);
 
+    // Admin Analytics Reference
+    const systemRef = doc(db, 'system', 'ai_analytics');
+
     try {
         const quotaSnap = await getDoc(quotaRef);
         let currentCount = 0;
+        let featureBreakdown = {};
 
         if (quotaSnap.exists()) {
             const data = quotaSnap.data();
             // Reset if new day
             if (data.date === today) {
                 currentCount = data.count || 0;
+                featureBreakdown = data.features || {};
             }
         }
 
         const newCount = currentCount + 1;
 
+        // Update feature breakdown
+        featureBreakdown[feature] = (featureBreakdown[feature] || 0) + 1;
+
+        // 1. Update User Quota
         await setDoc(quotaRef, {
             date: today,
             count: newCount,
+            features: featureBreakdown, // Save breakdown
             lastUpdated: serverTimestamp()
         });
 
-        console.log(`[AI Quota] User ${uid.slice(0, 8)} used ${newCount}/${DEFAULT_DAILY_LIMIT} calls today`);
+        // 2. Update System Analytics (Fire & Forget for performance)
+        // Only if we have a valid keyIndex
+        if (keyIndex >= 0) {
+            const updates = {
+                lastUpdated: serverTimestamp(),
+                [`total_calls`]: increment(1)
+            };
+
+            // Track System vs Custom
+            if (isCustomKey) {
+                updates[`type_custom`] = increment(1);
+            } else {
+                updates[`type_system`] = increment(1);
+            }
+            // Optional: Still track raw key index internally if needed, but per user request we focus on aggregates
+            // updates[`keys.raw_key_${keyIndex}`] = increment(1); 
+
+            setDoc(systemRef, updates, { merge: true }).catch(err => console.error("Analytics Error:", err));
+        }
+
+        console.log(`[AI Quota] User ${uid.slice(0, 8)} used ${newCount}/${DEFAULT_DAILY_LIMIT} (Feature: ${feature})`);
 
         // Broadcast update for real-time UI
         window.dispatchEvent(new CustomEvent('AI_QUOTA_UPDATED', {
             detail: {
                 used: newCount,
                 total: DEFAULT_DAILY_LIMIT,
-                remaining: Math.max(0, DEFAULT_DAILY_LIMIT - newCount)
+                remaining: Math.max(0, DEFAULT_DAILY_LIMIT - newCount),
+                breakdown: featureBreakdown
             }
         }));
 
-        return { used: newCount, total: DEFAULT_DAILY_LIMIT };
+        return { used: newCount, total: DEFAULT_DAILY_LIMIT, breakdown: featureBreakdown };
 
     } catch (error) {
         console.error('[AI Quota] Error incrementing quota:', error);
@@ -169,6 +203,7 @@ export async function resetUserQuota(uid) {
         await setDoc(quotaRef, {
             date: getTodayKey(),
             count: 0,
+            features: {},
             lastUpdated: serverTimestamp()
         });
         console.log(`[AI Quota] Reset quota for user ${uid.slice(0, 8)}`);
@@ -176,5 +211,19 @@ export async function resetUserQuota(uid) {
     } catch (error) {
         console.error('[AI Quota] Error resetting quota:', error);
         return false;
+    }
+}
+
+/**
+ * 🕵️‍♂️ Get System Analytics (Admin Only)
+ */
+export async function getSystemAnalytics() {
+    try {
+        const docRef = doc(db, 'system', 'ai_analytics');
+        const snap = await getDoc(docRef);
+        return snap.exists() ? snap.data() : { keys: {}, total_calls: 0 };
+    } catch (error) {
+        console.error("Failed to get analytics", error);
+        return null;
     }
 }

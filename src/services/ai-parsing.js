@@ -101,7 +101,7 @@ function rotateToNextModel() {
 function rotateToNextKey() {
     currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
     currentModelIndex = 0; // Reset to first model for new key
-    console.log(`[Gemini AI] 🔑 Switching to API Key #${currentKeyIndex + 1} (${API_KEYS.length} total)`);
+    console.log(`[Gemini AI] 🔑 Switching to API Key #${currentKeyIndex + 1}`);
     return true;
 }
 
@@ -171,11 +171,9 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
 
         try {
             const modelName = MODEL_CHAIN[currentModelIndex];
-            const apiKey = API_KEYS[currentKeyIndex];
-            const genAI = genAIInstances[currentKeyIndex];
-            const model = genAI.getGenerativeModel({ model: modelName });
+            const model = getModel(); // Uses currentKeyIndex
 
-            console.log(`[Gemini AI] 🚀 Attempt ${attempt + 1}/${maxAttempts}: ${fnName} using ${modelName} (Key #${currentKeyIndex})`);
+            console.log(`[Gemini AI] 🚀 Attempt ${attempt + 1}/${maxAttempts}: ${fnName} using ${MODEL_CHAIN[currentModelIndex]} (Key #${currentKeyIndex})`);
 
             // 3. Make the Call
             const result = await makeCall(model);
@@ -183,9 +181,12 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
             // Success!
             if (onProgress) onProgress("完成！", 100);
 
-            // V1.2.3: Increment Quota on Success
+            // V1.2.3: Increment Quota (Centralized)
             if (userId) {
-                await incrementUserQuota(userId);
+                // Determine if Custom Key
+                const isCustomKey = (currentKeyIndex === 0 && getStoredKey());
+                // Pass feature name, key index, and type for analytics
+                await incrementUserQuota(userId, fnName, currentKeyIndex, isCustomKey);
             }
 
             return result;

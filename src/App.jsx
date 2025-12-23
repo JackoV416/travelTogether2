@@ -1023,6 +1023,8 @@ const App = () => {
                             isDarkMode={isDarkMode}
                             onBack={() => setView('dashboard')}
                             initialTab={settingsInitialTab}
+                            user={user}
+                            isAdmin={isAdmin}
                         />
                     </div>
                 )}

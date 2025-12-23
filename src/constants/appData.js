@@ -46,7 +46,7 @@ export const VERSION_HISTORY = [
             "💬 友好錯誤訊息: 顯示等待時間或每日限額提示",
             "📊 幫助與支援: 新增「問 Jarvis AI」按鈕入口",
             "🧠 Auto Jarvis Toggle: 可在設定中開關自動 AI 功能，節省用量",
-            "🔑 Expanded API Support: 支援多達 10 組 API Keys 輪替",
+            "🔑 Expanded API Support: 大幅提升每位用戶的 AI 使用額度 (System Upgrade)",
             "📝 AI 用量透明化: 設定頁面詳列各項功能 Token 消耗"
         ]
     },
