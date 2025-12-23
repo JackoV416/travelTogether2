@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Share2, FileJson, FileText, Calendar, Link as LinkIcon, Copy, Check, Download, Globe, Lock, Loader2, MessageCircle, Maximize2, Minimize2 } from 'lucide-react';
+import { X, Share2, FileJson, FileText, Calendar, Link as LinkIcon, Copy, Check, Download, Globe, Lock, Loader2, MessageCircle, Maximize2, Minimize2, Search, Instagram } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { exportToICS, exportToBeautifulPDF } from '../../services/pdfExport';
@@ -38,6 +38,7 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
     const [previewUrl, setPreviewUrl] = useState(null);
     const [isPreviewLoading, setIsPreviewLoading] = useState(false);
     const [isFullscreenPreview, setIsFullscreenPreview] = useState(false);
+    const [previewText, setPreviewText] = useState("");
     // V1.1.6: PDF Layout Controls
     const [layoutMode, setLayoutMode] = useState('quick'); // quick | pro
     const [itemsPerPage, setItemsPerPage] = useState(4);
@@ -68,19 +69,19 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
                     if (exportType?.id === 'pdf') {
                         const blobUrl = await exportToBeautifulPDF(selectedTrip, { template: pdfTemplate, scope, itemsPerPage, returnBlob: true });
                         setPreviewUrl(blobUrl);
+                        setPreviewText("");
                     } else if (exportType?.id === 'json') {
                         const jsonStr = JSON.stringify(selectedTrip, null, 2);
-                        const blob = new Blob([jsonStr], { type: 'application/json' });
-                        setPreviewUrl(URL.createObjectURL(blob));
+                        setPreviewText(jsonStr.trim());
+                        setPreviewUrl(null);
                     } else if (exportType?.id === 'text') {
-                        const text = `Trip: ${selectedTrip.name}\nDates: ${selectedTrip.startDate} - ${selectedTrip.endDate}\n\nItinerary:\n${Object.entries(selectedTrip.itinerary || {}).map(([date, items]) => `${date}:\n${items.map(i => `- ${i.time} ${i.name}`).join('\n')}`).join('\n\n')}`;
-                        const blob = new Blob([text], { type: 'text/plain' });
-                        setPreviewUrl(URL.createObjectURL(blob));
+                        const text = `📍 ${selectedTrip.name}\n📅 ${selectedTrip.startDate} - ${selectedTrip.endDate}\n\n[行程概要]\n${Object.entries(selectedTrip.itinerary || {}).sort().map(([date, items]) => `${date}:\n${items.map(i => `  - ${i.time || '--:--'} ${i.name}`).join('\n')}`).join('\n\n')}`;
+                        setPreviewText(text.trim());
+                        setPreviewUrl(null);
                     } else if (exportType?.id === 'ical') {
-                        // Simple iCal preview text
-                        const text = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//TravelTogether//Trip//EN\n... (iCal content for ${selectedTrip.name}) ...\nEND:VCALENDAR`;
-                        const blob = new Blob([text], { type: 'text/plain' });
-                        setPreviewUrl(URL.createObjectURL(blob));
+                        const text = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//TravelTogether//Trip//EN\nSUMMARY:${selectedTrip.name}\n... (iCal content) ...\nEND:VCALENDAR`;
+                        setPreviewText(text.trim());
+                        setPreviewUrl(null);
                     }
                 } catch (e) {
                     console.error("Preview generation failed", e);
@@ -91,6 +92,7 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
             generatePreview();
         } else {
             setPreviewUrl(null);
+            setPreviewText("");
         }
     }, [activeTab, exportType, selectedTrip, pdfTemplate, scope, itemsPerPage]);
 
@@ -175,193 +177,250 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className={`${glassCard(isDarkMode)} w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border border-white/10`}>
-                {/* Header */}
-                <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
-                    <div>
-                        <h2 className="text-xl font-black flex items-center gap-2 tracking-tight">
-                            <Share2 className="w-6 h-6 text-indigo-400" /> 分享與匯出
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in text-white">
+            <div className={`${glassCard(isDarkMode)} w-full max-w-5xl h-[85vh] rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col md:flex-row relative shrink-0`}>
+
+                {/* GLOBAL CLOSE BUTTON */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 z-[60] p-2.5 bg-black/40 hover:bg-red-500/80 backdrop-blur-md rounded-xl text-white/70 hover:text-white transition-all border border-white/10 shadow-xl group/close"
+                    title="關閉視窗 (Close)"
+                >
+                    <X className="w-5 h-5 group-hover/close:rotate-90 transition-transform duration-300" />
+                </button>
+
+                {/* LEFT COLUMN: Sidebar */}
+                <div className="w-full md:w-80 flex-shrink-0 border-b md:border-b-0 md:border-r border-white/10 bg-white/5 flex flex-col h-full overflow-hidden">
+                    {/* Header */}
+                    <div className="p-5 border-b border-white/10 flex flex-col bg-white/5 shrink-0">
+                        <h2 className="text-lg font-black flex items-center gap-2 tracking-tight">
+                            <Share2 className="w-5 h-5 text-indigo-400" /> 分享與匯出
                         </h2>
-                        <p className="text-[10px] opacity-40 uppercase tracking-widest mt-1">{selectedTrip?.name}</p>
+                        <p className="text-[10px] opacity-40 uppercase tracking-widest mt-0.5 truncate max-w-[200px]">{selectedTrip?.name}</p>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                        <X className="w-5 h-5 opacity-50" />
-                    </button>
-                </div>
 
-                {/* Tabs */}
-                <div className="flex border-b border-white/10 bg-white/5">
-                    <button onClick={() => setActiveTab('export')} className={`flex-1 py-4 text-xs font-black tracking-widest transition-all ${activeTab === 'export' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'opacity-40'}`}>📤 匯出</button>
-                    <button onClick={() => setActiveTab('share')} className={`flex-1 py-4 text-xs font-black tracking-widest transition-all ${activeTab === 'share' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'opacity-40'}`}>🔗 分享</button>
-                </div>
+                    {/* Navigation Tabs */}
+                    <div className="flex border-b border-white/10 bg-white/5 shrink-0">
+                        <button onClick={() => setActiveTab('export')} className={`flex-1 py-3 text-xs font-black tracking-widest transition-all ${activeTab === 'export' ? 'text-indigo-400 bg-indigo-500/10 border-b-2 border-indigo-500' : 'opacity-40 hover:bg-white/5'}`}>📤 匯出</button>
+                        <button onClick={() => setActiveTab('share')} className={`flex-1 py-3 text-xs font-black tracking-widest transition-all ${activeTab === 'share' ? 'text-indigo-400 bg-indigo-500/10 border-b-2 border-indigo-500' : 'opacity-40 hover:bg-white/5'}`}>🔗 分享</button>
+                    </div>
 
-                {activeTab === 'export' ? (
-                    <div className="p-6 space-y-5 animate-in fade-in slide-in-from-bottom-2">
-                        {/* Types */}
-                        <div className="grid grid-cols-4 gap-2">
-                            {EXPORT_TYPES.map(t => (
-                                <button key={t.id} onClick={() => setExportType(t)} className={`p-4 rounded-2xl border transition-all text-center ${exportType?.id === t.id ? 'border-indigo-500 bg-indigo-500/10' : 'border-white/5 hover:bg-white/5'}`}>
-                                    <t.icon className={`w-5 h-5 mx-auto mb-1 ${exportType?.id === t.id ? 'text-indigo-400' : 'opacity-40'}`} />
-                                    <div className="text-[10px] font-bold tracking-tighter">{t.label}</div>
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Scope selection */}
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black opacity-30 uppercase tracking-widest">匯出範圍 SCOPE</label>
-                            <div className="grid grid-cols-4 gap-2">
-                                {SCOPE_OPTIONS.map(s => (
-                                    <button
-                                        key={s.id}
-                                        onClick={() => setScope(s.id)}
-                                        className={`py-2 px-1 rounded-xl text-[10px] font-black border transition-all ${scope === s.id ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-white/10 opacity-60 hover:opacity-100 hover:bg-white/5'}`}
-                                    >
-                                        {s.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* PDF Templates */}
-                        {exportType?.id === 'pdf' && (
-                            <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                                <label className="text-[10px] font-black opacity-30 uppercase tracking-widest">選擇風格 TEMPLATE</label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {PDF_TEMPLATES.map(tmpl => (
-                                        <button key={tmpl.id} onClick={() => setPdfTemplate(tmpl.id)} className={`py-2 px-3 rounded-xl text-[10px] font-black border transition-all ${pdfTemplate === tmpl.id ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-white/10 opacity-60'}`}>{tmpl.label}</button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* V1.1.6: PDF Layout Controls */}
-                        {exportType?.id === 'pdf' && (
-                            <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                                {/* Mode Tabs */}
-                                <div className="flex gap-1 p-1 bg-white/5 rounded-xl border border-white/10">
-                                    <button
-                                        onClick={() => setLayoutMode('quick')}
-                                        className={`flex-1 py-2 px-3 rounded-lg text-[10px] font-black transition-all ${layoutMode === 'quick' ? 'bg-indigo-500 text-white shadow-lg' : 'opacity-50 hover:opacity-80'}`}
-                                    >
-                                        ⚡ 簡易
-                                    </button>
-                                    <button
-                                        onClick={() => setLayoutMode('pro')}
-                                        className={`flex-1 py-2 px-3 rounded-lg text-[10px] font-black transition-all ${layoutMode === 'pro' ? 'bg-indigo-500 text-white shadow-lg' : 'opacity-50 hover:opacity-80'}`}
-                                    >
-                                        🎨 專業
-                                    </button>
+                    {/* Options Area */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6">
+                        {activeTab === 'export' ? (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-left-2">
+                                {/* Format Selection */}
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black opacity-40 uppercase tracking-widest flex items-center gap-1.5"><FileJson className="w-3 h-3" /> 格式 FORMAT</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {EXPORT_TYPES.map(t => (
+                                            <button
+                                                key={t.id}
+                                                onClick={() => setExportType(t)}
+                                                className={`p-3 rounded-xl border text-left transition-all relative overflow-hidden group ${exportType?.id === t.id ? 'border-indigo-500 bg-indigo-500/10' : 'border-white/5 hover:bg-white/5'}`}
+                                            >
+                                                <div className="flex items-center gap-2 mb-1 relative z-10">
+                                                    <t.icon className={`w-4 h-4 ${exportType?.id === t.id ? 'text-indigo-400' : 'opacity-40'}`} />
+                                                    <span className={`text-xs font-bold ${exportType?.id === t.id ? 'text-white' : 'opacity-80'}`}>{t.label}</span>
+                                                </div>
+                                                <p className="text-[9px] opacity-40 leading-tight relative z-10">{t.desc}</p>
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
 
-                                {/* Quick Mode: Items per Page */}
-                                {layoutMode === 'quick' && (
-                                    <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10">
-                                        <span className="text-[10px] font-black opacity-60">每頁項目</span>
-                                        <select
-                                            value={itemsPerPage}
-                                            onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                                            className="bg-indigo-500/20 border border-indigo-500/30 rounded-lg px-3 py-1.5 text-[11px] font-black text-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                        >
-                                            <option value={2}>2 項</option>
-                                            <option value={3}>3 項</option>
-                                            <option value={4}>4 項</option>
-                                            <option value={6}>6 項</option>
-                                        </select>
+                                {/* Scope Selection */}
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black opacity-40 uppercase tracking-widest flex items-center gap-1.5"><Check className="w-3 h-3" /> 範圍 SCOPE</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {SCOPE_OPTIONS.map(s => (
+                                            <button
+                                                key={s.id}
+                                                onClick={() => setScope(s.id)}
+                                                className={`py-2 px-3 rounded-lg text-[10px] font-bold border transition-all ${scope === s.id ? 'bg-indigo-500 border-indigo-500 text-white shadow-md' : 'border-white/10 opacity-60 hover:opacity-100 hover:bg-white/5'}`}
+                                            >
+                                                {s.label}
+                                            </button>
+                                        ))}
                                     </div>
-                                )}
+                                </div>
 
-                                {/* Pro Mode: Coming Soon */}
-                                {layoutMode === 'pro' && (
-                                    <div className="p-4 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl border border-purple-500/20 text-center">
-                                        <div className="text-2xl mb-2">🚧</div>
-                                        <p className="text-[10px] font-black opacity-60">拖拉式排版 (開發中)</p>
-                                        <p className="text-[8px] opacity-40 mt-1">V1.2.0 推出</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Preview */}
-                        <div className="text-[10px] font-black opacity-30 uppercase tracking-widest mb-1.5 ml-1">預覽 PREVIEW</div>
-                        <div className="rounded-2xl border border-dashed border-white/20 bg-black/20 h-40 overflow-hidden relative group">
-                            {/* Maximize Button */}
-                            {/* Maximize Button - V1.1.7: Enabled for all types */}
-                            {previewUrl && (
-                                <button
-                                    onClick={() => setIsFullscreenPreview(true)}
-                                    className="absolute top-2 right-2 z-20 p-1.5 bg-indigo-500/80 hover:bg-indigo-600 rounded-lg transition-all opacity-0 group-hover:opacity-100 shadow-lg"
-                                    title="放大預覽"
-                                >
-                                    <Maximize2 className="w-3.5 h-3.5 text-white" />
-                                </button>
-                            )}
-                            <div className="h-full w-full p-4 flex items-center justify-center overflow-auto custom-scrollbar">
-                                {exportType?.id === 'pdf' || previewUrl ? (
+                                {/* PDF Options */}
+                                {exportType?.id === 'pdf' && (
                                     <>
-                                        {isPreviewLoading && <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-20 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-indigo-400" /></div>}
-                                        {previewUrl ? (
-                                            exportType?.id === 'pdf' ? (
-                                                <iframe src={previewUrl} className="w-full h-full border-none scale-90" title="PDF" />
-                                            ) : (
-                                                <iframe src={previewUrl} className="w-full h-full border-none bg-white rounded-lg" title="Preview" />
-                                            )
-                                        ) : <p className="text-[10px] opacity-20">等待生成...</p>}
+                                        <div className="h-px bg-white/10 my-2"></div>
+                                        <div className="space-y-2 animate-in fade-in zoom-in-95">
+                                            <label className="text-[10px] font-black opacity-40 uppercase tracking-widest flex items-center gap-1.5"><Download className="w-3 h-3" /> 風格 STYLE</label>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {PDF_TEMPLATES.map(tmpl => (
+                                                    <button key={tmpl.id} onClick={() => setPdfTemplate(tmpl.id)} className={`py-2 px-3 rounded-lg text-[10px] font-bold border transition-all text-left truncate ${pdfTemplate === tmpl.id ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-white/10 opacity-60 hover:bg-white/5'}`}>
+                                                        {tmpl.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </>
-                                ) : (
-                                    <pre className="text-[10px] opacity-40 font-mono leading-relaxed">請選取匯出格式</pre>
                                 )}
                             </div>
-                        </div>
-
-                        {/* Fullscreen Preview Overlay */}
-                        {isFullscreenPreview && previewUrl && (
-                            <div className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-md flex flex-col animate-fade-in">
-                                <div className="flex justify-between items-center p-4 border-b border-white/10">
-                                    <h3 className="text-sm font-black text-white flex items-center gap-2">
-                                        <Download className="w-4 h-4 text-indigo-400" /> {exportType?.label} 預覽 (Full Screen)
-                                    </h3>
-                                    <button
-                                        onClick={() => setIsFullscreenPreview(false)}
-                                        className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all"
-                                    >
-                                        <Minimize2 className="w-5 h-5 text-white" />
-                                    </button>
+                        ) : (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-right-2">
+                                <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                                    <div className="flex items-center gap-3">
+                                        {isPublic ? <Globe className="w-5 h-5 text-green-400" /> : <Lock className="w-5 h-5 text-indigo-400/50" />}
+                                        <div><p className="text-xs font-black">{isPublic ? '公開行程' : '私人存取'}</p><p className="text-[10px] opacity-40">擁有連結者可查看</p></div>
+                                    </div>
+                                    <button onClick={handleTogglePublic} className={`w-12 h-6 rounded-full transition-all relative ${isPublic ? 'bg-indigo-500' : 'bg-white/10'}`}><div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-all ${isPublic ? 'translate-x-6' : 'translate-x-0'}`} /></button>
                                 </div>
-                                <div className="flex-1 p-4">
-                                    <iframe src={previewUrl} className={`w-full h-full border-none rounded-xl shadow-2xl ${exportType?.id !== 'pdf' ? 'bg-white' : ''}`} title="Fullscreen Preview" />
+
+                                {isPublic && (
+                                    <div className="space-y-4 animate-in fade-in zoom-in-95">
+                                        <div className="flex gap-2">
+                                            <input type="text" readOnly value={shareUrl} className="flex-1 bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-[10px] font-mono opacity-60 outline-none" />
+                                            <button onClick={handleCopyLink} className="aspect-square w-12 flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-lg active:scale-95">{copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}</button>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black opacity-40 uppercase tracking-widest">社群分享 SOCIAL SHARE</label>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                <a
+                                                    href={`https://wa.me/?text=${encodeURIComponent(`我喺 Travel Together 規劃咗個行程「${selectedTrip.name}」，快啲黎睇下啦！\n${shareUrl}`)}`}
+                                                    target="_blank" rel="noopener noreferrer"
+                                                    className="flex flex-col items-center justify-center gap-2 p-3 bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/20 rounded-2xl transition-all group"
+                                                >
+                                                    <MessageCircle className="w-5 h-5 text-[#25D366]" />
+                                                    <span className="text-[9px] font-bold opacity-60 group-hover:opacity-100">WhatsApp</span>
+                                                </a>
+                                                <a
+                                                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
+                                                    target="_blank" rel="noopener noreferrer"
+                                                    className="flex flex-col items-center justify-center gap-2 p-3 bg-[#1877F2]/10 hover:bg-[#1877F2]/20 border border-[#1877F2]/20 rounded-2xl transition-all group"
+                                                >
+                                                    <Globe className="w-5 h-5 text-[#1877F2]" />
+                                                    <span className="text-[9px] font-bold opacity-60 group-hover:opacity-100">Facebook</span>
+                                                </a>
+                                                <button
+                                                    onClick={handleCopyLink}
+                                                    className="flex flex-col items-center justify-center gap-2 p-3 bg-gradient-to-tr from-[#f9ce34]/10 via-[#ee2a7b]/10 to-[#6228d7]/10 border border-purple-500/20 rounded-2xl transition-all group"
+                                                >
+                                                    <Instagram className="w-5 h-5 text-[#ee2a7b]" />
+                                                    <span className="text-[9px] font-bold opacity-60 group-hover:opacity-100">Instagram</span>
+                                                </button>
+                                            </div>
+                                            <p className="text-[9px] opacity-30 text-center italic">* Instagram 請複製連結後貼上至 Story</p>
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
+                                    <p className="text-[10px] text-indigo-300 font-medium leading-relaxed">
+                                        💡 分享功能會產生一個公開連結預覽模式，其他人無需登入即可查看。
+                                    </p>
                                 </div>
                             </div>
                         )}
+                    </div>
 
-                        <button onClick={handleExport} disabled={!exportType || isExporting} className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-30 text-white rounded-2xl font-black text-xs tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 transition-all">
-                            {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                            立即匯出 {exportType?.label}
+                    {/* Footer Action */}
+                    <div className="p-5 border-t border-white/10 bg-white/5 shrink-0 z-20">
+                        {activeTab === 'export' && (
+                            <button onClick={handleExport} disabled={!exportType || isExporting} className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 text-white rounded-xl font-black text-xs tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 transition-all active:scale-95">
+                                {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                                立即匯出 {exportType?.label || ''}
+                            </button>
+                        )}
+                        <button onClick={onClose} className="w-full py-3 mt-3 bg-white/5 hover:bg-white/10 text-white/50 hover:text-white rounded-xl font-bold text-xs transition-all md:hidden">
+                            關閉
                         </button>
                     </div>
-                ) : (
-                    <div className="p-6 space-y-6 animate-in fade-in slide-in-from-bottom-2">
-                        <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
-                            <div className="flex items-center gap-3">
-                                {isPublic ? <Globe className="w-5 h-5 text-green-400" /> : <Lock className="w-5 h-5 text-indigo-400/50" />}
-                                <div><p className="text-xs font-black">{isPublic ? '公開行程' : '私人存取'}</p><p className="text-[10px] opacity-40">擁有連結者可查看</p></div>
-                            </div>
-                            <button onClick={handleTogglePublic} className={`w-12 h-6 rounded-full transition-all relative ${isPublic ? 'bg-indigo-500' : 'bg-white/10'}`}><div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-all ${isPublic ? 'translate-x-6' : 'translate-x-0'}`} /></button>
-                        </div>
+                </div>
 
-                        {isPublic && (
-                            <div className="space-y-4 animate-in fade-in zoom-in-95">
-                                <div className="flex gap-2">
-                                    <input type="text" readOnly value={shareUrl} className="flex-1 bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-[10px] font-mono opacity-60" />
-                                    <button onClick={handleCopyLink} className="aspect-square w-12 flex items-center justify-center bg-indigo-600 rounded-xl">{copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}</button>
+                {/* RIGHT COLUMN: Preview */}
+                <div className="flex-1 bg-black/20 relative flex flex-col min-h-0">
+                    <div className="absolute top-4 left-4 z-20">
+                        {previewUrl && activeTab === 'export' && (
+                            <button onClick={() => setIsFullscreenPreview(true)} className="p-2 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-lg text-white/70 hover:text-white transition-all border border-white/10 shadow-lg" title="全螢幕預覽">
+                                <Maximize2 className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="flex-1 overflow-hidden p-6 flex flex-col items-center justify-center h-full relative">
+                        {activeTab === 'export' ? (
+                            <div className="w-full h-full flex flex-col">
+                                <div className="flex items-center gap-2 mb-4 opacity-40">
+                                    <Search className="w-4 h-4" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">{exportType?.label ? `${exportType.label} 預覽` : '請選擇匯出格式'}</span>
                                 </div>
-                                <div className="flex gap-2 pt-2 border-t border-white/5">
-                                    <button className="flex-1 py-10 bg-green-500/10 border border-green-500/20 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-green-500/20 transition-all"><MessageCircle className="w-6 h-6 text-green-400" /><span className="text-[10px] font-black opacity-60">WhatsApp</span></button>
-                                    <button className="flex-1 py-10 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-blue-500/20 transition-all"><Share2 className="w-6 h-6 text-blue-400" /><span className="text-[10px] font-black opacity-60">Facebook</span></button>
+
+                                <div className={`flex-1 rounded-2xl border border-dashed border-white/10 overflow-hidden relative shadow-2xl transition-all duration-500 ${isPreviewLoading ? 'opacity-50 scale-95' : 'opacity-100 scale-100'} ${exportType?.id === 'pdf' ? 'bg-gray-800' : 'bg-black/40'}`}>
+                                    {exportType?.id === 'pdf' ? (
+                                        previewUrl ? (
+                                            <iframe src={previewUrl} className="w-full h-full border-none" title="PDF Preview" />
+                                        ) : (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center text-white/20">
+                                                <FileText className="w-16 h-16 mb-4 opacity-20" />
+                                                <p className="text-xs font-bold font-mono">PDF PREVIEW GENERATING...</p>
+                                            </div>
+                                        )
+                                    ) : (
+                                        previewText ? (
+                                            <div className="w-full h-full overflow-auto custom-scrollbar font-mono text-[11px] leading-relaxed flex flex-col bg-[#1e1e1e] text-[#d4d4d4]">
+                                                {previewText.split('\n').map((line, i) => (
+                                                    <div key={i} className="flex min-w-full hover:bg-white/5 transition-colors group">
+                                                        <div className="shrink-0 w-12 pr-4 text-right select-none opacity-30 border-r border-white/5 bg-[#1e1e1e]">
+                                                            {i + 1}
+                                                        </div>
+                                                        <div className="px-4 whitespace-pre flex-1">
+                                                            <span className={exportType?.id === 'json' ? (line.includes(':') ? 'text-blue-400' : 'text-emerald-400') : ''}>
+                                                                {line || ' '}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center text-white/20">
+                                                <FileText className="w-16 h-16 mb-4 opacity-20" />
+                                                <p className="text-xs font-bold">預覽將於此處顯示</p>
+                                            </div>
+                                        )
+                                    )}
+                                    {isPreviewLoading && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px] z-10">
+                                            <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
+                                        </div>
+                                    )}
                                 </div>
+                            </div>
+                        ) : (
+                            <div className="text-center opacity-40 max-w-sm">
+                                <Share2 className="w-24 h-24 mx-auto mb-6 opacity-20" />
+                                <h3 className="text-xl font-bold mb-2">準備分享您的行程</h3>
+                                <p className="text-sm">設定公開權限後，您可以複製連結傳送給朋友。</p>
                             </div>
                         )}
+                    </div>
+                </div>
+
+                {/* Fullscreen Overlay */}
+                {isFullscreenPreview && previewUrl && (
+                    <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex flex-col animate-fade-in">
+                        <div className="flex justify-between items-center p-4 border-b border-white/10 bg-black/40">
+                            <h3 className="text-sm font-black text-white flex items-center gap-2">
+                                <Download className="w-4 h-4 text-indigo-400" /> {exportType?.label} 預覽 (Full Screen)
+                            </h3>
+                            <button onClick={() => setIsFullscreenPreview(false)} className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all">
+                                <Minimize2 className="w-5 h-5 text-white" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                            {exportType?.id === 'pdf' ? (
+                                <iframe src={previewUrl} className="w-full h-full border-none" title="Fullscreen Preview" />
+                            ) : (
+                                <div className="w-full h-full overflow-auto font-mono text-sm leading-relaxed bg-[#1e1e1e] text-[#d4d4d4] p-8">
+                                    <pre className="whitespace-pre-wrap">{previewText}</pre>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

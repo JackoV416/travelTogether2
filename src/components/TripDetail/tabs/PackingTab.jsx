@@ -71,7 +71,7 @@ const PackingTab = ({
             <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
                 <button
                     onClick={() => setActiveMemberId('all')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all whitespace-nowrap border ${activeMemberId === 'all' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all whitespace-nowrap border ${activeMemberId === 'all' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/5 border-white/10 hover:bg-white/10 dark:bg-black/30 dark:border-white/5 dark:hover:bg-white/10'}`}
                 >
                     <Users className="w-4 h-4" /> 全部成員
                 </button>
@@ -79,7 +79,7 @@ const PackingTab = ({
                     <button
                         key={m.id}
                         onClick={() => setActiveMemberId(m.id)}
-                        className={`flex items-center gap-2 px-1 py-1 pr-3 rounded-full font-bold transition-all whitespace-nowrap border ${activeMemberId === m.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                        className={`flex items-center gap-2 px-1 py-1 pr-3 rounded-full font-bold transition-all whitespace-nowrap border ${activeMemberId === m.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/5 border-white/10 hover:bg-white/10 dark:bg-black/30 dark:border-white/5 dark:hover:bg-white/10'}`}
                     >
                         <img src={m.photoURL || m.avatar || `https://ui-avatars.com/api/?name=${m.name}`} className="w-6 h-6 rounded-full" alt={m.name} />
                         <span className="text-xs">{m.name}</span>
@@ -125,7 +125,7 @@ const PackingTab = ({
                         </button>
                         <button
                             onClick={() => onAddItem('packing')}
-                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all text-xs font-black uppercase tracking-wider ${isDarkMode ? 'bg-white/5 hover:bg-white/10 border border-white/10' : 'bg-gray-100 hover:bg-gray-200 border border-gray-200'}`}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all text-xs font-black uppercase tracking-wider bg-gray-100 hover:bg-gray-200 border border-gray-200 dark:bg-white/5 dark:hover:bg-white/10 dark:border-white/10"
                         >
                             <Plus className="w-3.5 h-3.5" /> 手動新增
                         </button>
@@ -151,10 +151,10 @@ const PackingTab = ({
                         <div key={cat.id} className={`${glassCard(isDarkMode)} overflow-hidden group/cat transition-all duration-300 ${items.length > 0 && completedInCat === items.length ? 'opacity-80' : ''}`}>
                             <div
                                 onClick={() => toggleCat(cat.id)}
-                                className={`p-4 flex justify-between items-center cursor-pointer transition-colors ${isDarkMode ? 'bg-white/[0.02] hover:bg-white/5' : 'bg-gray-50/50 hover:bg-gray-50'}`}
+                                className="p-4 flex justify-between items-center cursor-pointer transition-colors bg-gray-50/50 hover:bg-gray-50 dark:bg-white/[0.02] dark:hover:bg-white/5"
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white shadow-sm'}`}>
+                                    <div className="p-2 rounded-lg bg-white shadow-sm dark:bg-gray-800">
                                         {cat.icon}
                                     </div>
                                     <h4 className="font-black text-sm tracking-tight flex items-center gap-2">
@@ -186,7 +186,7 @@ const PackingTab = ({
                                     {items.map((item) => (
                                         <div
                                             key={item.id}
-                                            className={`group/item flex items-center justify-between p-3 rounded-xl transition-all border border-transparent ${item.checked ? 'bg-indigo-500/5' : isDarkMode ? 'hover:bg-white/5 hover:border-white/5' : 'hover:bg-gray-50 hover:border-gray-100'}`}
+                                            className={`group/item flex items-center justify-between p-3 rounded-xl transition-all border border-transparent ${item.checked ? 'bg-indigo-500/5' : 'hover:bg-gray-50 hover:border-gray-100 dark:hover:bg-white/5 dark:hover:border-white/5'}`}
                                         >
                                             <div className="flex items-center gap-3 flex-1">
                                                 <button

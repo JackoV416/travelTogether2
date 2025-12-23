@@ -19,7 +19,7 @@ const CustomTooltip = ({ active, payload, isDarkMode }) => {
     return null;
 };
 
-const BudgetCharts = ({ budget = [], currency = 'HKD', isDarkMode, glassCard }) => {
+const BudgetCharts = ({ budget = [], currency = 'HKD', isDarkMode, glassCard, trip, members }) => {
     const CAT_LABELS = {
         'food': '餐飲',
         'transport': '交通',
@@ -41,13 +41,16 @@ const BudgetCharts = ({ budget = [], currency = 'HKD', isDarkMode, glassCard }) 
     const pieData = Object.entries(categoryDataMap).map(([name, value]) => ({ name, value }));
 
     // 2. Process Data for Payer Bar Chart
+    // Use members from props or trip.members as fallback
+    const membersList = members || trip?.members || [];
+
     const payerDataMap = budget.reduce((acc, item) => {
         const payerIdentifier = item.payer || item.payerId || 'Unknown';
 
         // Try to resolve name from trip members if it looks like an ID
         let payerName = payerIdentifier;
-        if (trip?.members) {
-            const member = trip.members.find(m => m.id === payerIdentifier || m.name === payerIdentifier);
+        if (membersList.length > 0) {
+            const member = membersList.find(m => m.id === payerIdentifier || m.name === payerIdentifier);
             if (member) payerName = member.name;
         }
 
@@ -57,6 +60,7 @@ const BudgetCharts = ({ budget = [], currency = 'HKD', isDarkMode, glassCard }) 
     }, {});
 
     const barData = Object.entries(payerDataMap).map(([name, value]) => ({ name, value }));
+
 
     if (pieData.length === 0) return null;
 

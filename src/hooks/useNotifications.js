@@ -43,7 +43,12 @@ export const useNotifications = (user) => {
         // 2. Persistent Storage (Firestore)
         if (user?.uid) {
             try {
-                await addDoc(collection(db, `users/${user.uid}/notifications`), notifData);
+                // Sanitize data for Firestore (remove functions)
+                const firestoreData = { ...notifData };
+                if (typeof firestoreData.context === 'function') {
+                    delete firestoreData.context;
+                }
+                await addDoc(collection(db, `users/${user.uid}/notifications`), firestoreData);
             } catch (e) {
                 console.error("Firestore notification error:", e);
             }

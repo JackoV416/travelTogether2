@@ -54,7 +54,7 @@ const NotificationSystem = ({ notifications, setNotifications, isDarkMode, onNot
                         <h4 className={`text-sm font-bold leading-tight mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{notif.title}</h4>
                         <p className={`text-xs leading-relaxed ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{notif.body}</p>
                         <span className="text-[10px] opacity-40 mt-1 block">
-                            {new Date(notif.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {notif.time || new Date(notif.timestamp?.toDate ? notif.timestamp.toDate() : notif.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                     </div>
                     <button

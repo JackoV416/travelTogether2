@@ -1,6 +1,7 @@
-
 import React from 'react';
-import { Sun, CloudSun, Snowflake } from 'lucide-react';
+import { format, differenceInDays, parseISO, startOfDay } from 'date-fns';
+import { zhHK } from 'date-fns/locale';
+import { Sun, CloudSun, Snowflake, MapPin, Calendar, Shirt, Moon, CheckCircle2, Cloud, FileText, Shield, Backpack, Plane, Hotel, Ticket } from 'lucide-react';
 import {
     HOLIDAYS_BY_REGION,
     COUNTRY_TRANSLATIONS,
@@ -16,7 +17,7 @@ import {
 import { convertCurrency } from '../services/exchangeRate';
 
 // Glassmorphism 2.0 - Premium Effect (Uses CSS Variables in index.css)
-export const glassCard = (isDarkMode) => `glass-card rounded-2xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10 hover:border-indigo-500/30 group relative isolate`;
+export const glassCard = () => `glass-card rounded-2xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10 hover:border-indigo-500/30 group relative isolate`;
 
 export const getHolidayMap = (region) => HOLIDAYS_BY_REGION[region] || HOLIDAYS_BY_REGION.Global;
 
@@ -30,7 +31,7 @@ export const formatDate = (dateStr) => {
     if (!dateStr) return "";
     const [y, m, d] = dateStr.split('-');
     const pad = (val) => val.toString().padStart(2, '0');
-    return `${pad(d)}/${pad(m)}/${y}`;
+    return `${pad(d)} /${pad(m)}/${y} `;
 };
 
 export const getDaysArray = (start, end) => {
@@ -136,7 +137,7 @@ export const getWeatherForecast = (country, currentTempStr, customDesc, customIc
         const dayClothes = getClothesForTemp(maxTemp);
         const nightClothes = getClothesForTemp(minTemp);
         // Always show Day/Night format for clarity - Use standard pipe for regex compatibility
-        const clothes = `日：${dayClothes} | 夜：${nightClothes}`;
+        const clothes = `日：${dayClothes} | 夜：${nightClothes} `;
 
         return {
             temp: currentTempStr,
@@ -199,7 +200,7 @@ export const parseTime = (timeStr) => {
 export const formatTime = (totalMins) => {
     const hours = Math.floor(totalMins / 60) % 24;
     const mins = totalMins % 60;
-    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')} `;
 };
 
 /**
@@ -243,7 +244,7 @@ export const recalculateItineraryTimes = (items = [], changedIndex = 0) => {
     return newItems;
 };
 
-export const inputClasses = (isDarkMode) => `w-full px-4 py-3.5 rounded-xl border transition-all outline-none font-medium tracking-wide ${isDarkMode ? 'bg-gray-800/90 border-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-white placeholder-gray-500' : 'bg-white border-gray-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 text-gray-900 placeholder-gray-400 shadow-sm'}`;
+export const inputClasses = (isDarkMode) => `w-full px-4 py-3.5 rounded-xl border transition-all outline-none font-medium tracking-wide bg-white border-gray-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 text-gray-900 placeholder-gray-400 shadow-sm dark:bg-gray-800/90 dark:border-gray-700 dark:focus:border-indigo-500 dark:focus:ring-indigo-500/20 dark:text-white dark:placeholder-gray-500`;
 
 export const formatDuration = (duration) => {
     if (!duration) return "";
@@ -348,4 +349,120 @@ export const formatFileSize = (bytes) => {
 };
 
 export const isImageFile = (type) => type?.startsWith('image/');
+
+/**
+ * 💡 Get Smart Tips for a Trip
+ * Uses trip data (dates, itinerary completeness) to generate relevant tips.
+ */
+export const getSmartTips = (trip) => {
+    if (!trip) return [];
+
+    const tips = [];
+    const today = new Date();
+    const start = trip.startDate ? parseISO(trip.startDate) : null;
+    const daysUntil = start ? differenceInDays(start, today) : null;
+    const items = Object.values(trip.itinerary || {}).flat();
+
+    // 1. Itinerary Planning Status
+    if (items.length === 0) {
+        tips.push({
+            icon: MapPin,
+            text: "規劃行程",
+            subtext: "尚未有任何安排",
+            color: "text-amber-500",
+            bg: "bg-amber-500/10",
+            action: "itinerary"
+        });
+    } else if (daysUntil !== null && daysUntil > 0 && daysUntil <= 30 && items.length < 5) {
+        tips.push({
+            icon: MapPin,
+            text: "完善細節",
+            subtext: "行程比較空閒",
+            color: "text-indigo-500",
+            bg: "bg-indigo-500/10",
+            action: "itinerary"
+        });
+    }
+
+    // 2. Booking Reminders (Flight/Hotel)
+    const hasFlight = items.some(i => i.type === 'flight');
+    const hasHotel = items.some(i => i.type === 'hotel');
+
+    if (!hasFlight && daysUntil !== null && daysUntil > 30) {
+        tips.push({
+            icon: Plane,
+            text: "預訂機票",
+            subtext: "建議提前預訂",
+            color: "text-sky-500",
+            bg: "bg-sky-500/10",
+            action: "flight" // Could trigger a search or modal
+        });
+    }
+
+    if (!hasHotel && daysUntil !== null && daysUntil > 14) {
+        tips.push({
+            icon: Hotel,
+            text: "預訂住宿",
+            subtext: "查看推薦酒店",
+            color: "text-rose-500",
+            bg: "bg-rose-500/10",
+            action: "hotel"
+        });
+    }
+
+    // 3. Proximity Tips (Insurance, Packing, Weather)
+    if (daysUntil !== null) {
+        if (daysUntil > 14 && daysUntil <= 60) {
+            tips.push({
+                icon: Shield,
+                text: "購買保險",
+                subtext: "保障旅程安全",
+                color: "text-emerald-500",
+                bg: "bg-emerald-500/10"
+            });
+        }
+
+        if (daysUntil > 7 && daysUntil <= 30) {
+            tips.push({
+                icon: Ticket,
+                text: "檢查簽證",
+                subtext: "確認護照有效期",
+                color: "text-purple-500",
+                bg: "bg-purple-500/10"
+            });
+        }
+
+        if (daysUntil <= 3 && daysUntil >= 0) {
+            tips.push({
+                icon: Backpack,
+                text: "收拾行李",
+                subtext: "檢查必帶物品",
+                color: "text-orange-500",
+                bg: "bg-orange-500/10",
+                action: "packing"
+            });
+            tips.push({
+                icon: Sun,
+                text: "查看天氣",
+                subtext: "準備合適衣物",
+                color: "text-blue-500",
+                bg: "bg-blue-500/10",
+                action: "weather"
+            });
+        }
+    }
+
+    // Default Fallback
+    if (tips.length === 0) {
+        tips.push({
+            icon: MapPin,
+            text: "準備出發",
+            subtext: "祝你旅途愉快！",
+            color: "text-indigo-500",
+            bg: "bg-indigo-500/10"
+        });
+    }
+
+    return tips;
+};
 

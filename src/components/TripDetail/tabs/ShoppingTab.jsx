@@ -3,6 +3,7 @@ import { List, CheckSquare, FileUp, Upload, Loader2, Trash2, Sparkles, Plus, Sho
 import SearchFilterBar from '../../Shared/SearchFilterBar';
 import EmptyState from '../../Shared/EmptyState';
 import { Search } from 'lucide-react';
+import { convertCurrency } from '../../../services/exchangeRate';
 
 const ShoppingTab = ({
     trip,
@@ -15,7 +16,8 @@ const ShoppingTab = ({
     receiptPreview,
     glassCard,
     onOpenSmartImport,
-    onOpenSmartExport
+    onOpenSmartExport,
+    exchangeRates
 }) => {
     const [dragActive, setDragActive] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -63,7 +65,7 @@ const ShoppingTab = ({
             <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
                 <button
                     onClick={() => setActiveMemberId('all')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all whitespace-nowrap border ${activeMemberId === 'all' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all whitespace-nowrap border ${activeMemberId === 'all' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/5 border-white/10 hover:bg-white/10 dark:bg-black/30 dark:border-white/5 dark:hover:bg-white/10'}`}
                 >
                     <Users className="w-4 h-4" /> 全部成員
                 </button>
@@ -71,7 +73,7 @@ const ShoppingTab = ({
                     <button
                         key={m.id}
                         onClick={() => setActiveMemberId(m.id)}
-                        className={`flex items-center gap-2 px-1 py-1 pr-3 rounded-full font-bold transition-all whitespace-nowrap border ${activeMemberId === m.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                        className={`flex items-center gap-2 px-1 py-1 pr-3 rounded-full font-bold transition-all whitespace-nowrap border ${activeMemberId === m.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/5 border-white/10 hover:bg-white/10 dark:bg-black/30 dark:border-white/5 dark:hover:bg-white/10'}`}
                     >
                         <img src={m.photoURL || m.avatar || `https://ui-avatars.com/api/?name=${m.name}`} className="w-6 h-6 rounded-full" alt={m.name} />
                         <span className="text-xs">{m.name}</span>
@@ -129,9 +131,9 @@ const ShoppingTab = ({
                                 />
                             )}
                             {filteredShopping.filter(i => !i.bought).map((item, i) => (
-                                <div key={i} className={`group p-4 rounded-xl flex justify-between items-center transition-all border ${isDarkMode ? 'bg-white/[0.03] border-white/5 hover:bg-white/[0.06] hover:border-white/10' : 'bg-gray-50 border-gray-100 hover:bg-white hover:shadow-md'} `}>
+                                <div key={i} className="group p-4 rounded-xl flex justify-between items-center transition-all border bg-gray-50 border-gray-100 hover:bg-white hover:shadow-md dark:bg-white/[0.03] dark:border-white/5 dark:hover:bg-white/[0.06] dark:hover:border-white/10">
                                     <div className="flex items-center gap-4">
-                                        <div className={`w-12 h-12 rounded-xl border flex items-center justify-center overflow-hidden shrink-0 ${isDarkMode ? 'bg-gray-800 border-white/10' : 'bg-white border-gray-200'}`}>
+                                        <div className="w-12 h-12 rounded-xl border flex items-center justify-center overflow-hidden shrink-0 bg-white border-gray-200 dark:bg-gray-800 dark:border-white/10">
                                             {item.image ? (
                                                 <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                                             ) : (
@@ -198,7 +200,7 @@ const ShoppingTab = ({
                                 />
                             )}
                             {filteredBought.map((item, i) => (
-                                <div key={i} className={`p-4 rounded-xl flex justify-between items-center transition-all border ${isDarkMode ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-emerald-50/50 border-emerald-200'} `}>
+                                <div key={i} className="p-4 rounded-xl flex justify-between items-center transition-all border bg-emerald-50/50 border-emerald-200 dark:bg-emerald-500/5 dark:border-emerald-500/20">
                                     <div className="flex items-center gap-4">
                                         {item.details?.receiptUrl ? (
                                             <a href={item.details.receiptUrl} target="_blank" rel="noopener noreferrer" className="block w-12 h-12 rounded-xl overflow-hidden border-2 border-emerald-500/30 hover:scale-105 transition-transform shadow-lg">
@@ -214,8 +216,15 @@ const ShoppingTab = ({
                                             <span className="text-[10px] opacity-50 font-medium">支付人: {item.payer === 'Me' ? '我自己' : item.payer}</span>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <span className="font-mono text-sm font-black text-emerald-500">{item.currency} {item.cost}</span>
+                                    <div className="text-right flex flex-col items-end whitespace-nowrap">
+                                        <span className="font-mono text-sm font-black text-emerald-500">
+                                            {item.currency} {item.cost}
+                                        </span>
+                                        {item.currency !== (trip.baseCurrency || 'HKD') && (
+                                            <div className="text-[9px] text-emerald-600/60 font-bold">
+                                                ≈ {(trip.baseCurrency || 'HKD')} {Math.round(convertCurrency(item.cost, item.currency, trip.baseCurrency || 'HKD', exchangeRates || {}))}
+                                            </div>
+                                        )}
                                         <div className="text-[9px] opacity-40 font-bold uppercase mt-1">Paid & Saved</div>
                                     </div>
                                 </div>

@@ -92,7 +92,7 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
                 <div className="space-y-6">
                     {/* Quick Stats Grid */}
                     <div className="grid grid-cols-2 gap-3">
-                        <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-100'}`}>
+                        <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-gray-50 border-gray-100'}`}>
                             <div className="text-[10px] uppercase font-bold opacity-60 mb-1 flex items-center gap-1">
                                 <Clock className="w-3 h-3" /> Duration
                             </div>
@@ -100,7 +100,7 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
                                 {item.details?.duration ? formatDuration(item.details.duration) : "--"}
                             </div>
                         </div>
-                        <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-100'}`}>
+                        <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-gray-50 border-gray-100'}`}>
                             <div className="text-[10px] uppercase font-bold opacity-60 mb-1 flex items-center gap-1">
                                 <DollarSign className="w-3 h-3" /> Cost
                             </div>
@@ -111,7 +111,7 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
                     </div>
 
                     {/* Transport Path Details */}
-                    <div className={`p-5 rounded-2xl border relative overflow-hidden ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-indigo-50/50 border-indigo-100'}`}>
+                    <div className={`p-5 rounded-2xl border relative overflow-hidden ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-indigo-50/50 border-indigo-100'}`}>
                         {/* Vertical Line */}
                         <div className="absolute left-[30px] top-10 bottom-10 w-[2px] bg-gradient-to-b from-indigo-500/50 to-purple-500/50"></div>
 
@@ -262,7 +262,7 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
                 </div>
 
                 {/* Info List */}
-                <div className={`rounded-xl p-4 border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-100'}`}>
+                <div className={`rounded-xl p-4 border ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-gray-50 border-gray-100'}`}>
                     <div className="space-y-3">
                         <div className="flex items-center gap-3">
                             <Clock className="w-4 h-4 opacity-50" />
@@ -319,7 +319,7 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
 
                 <div className="flex gap-3 pt-2">
                     {/* External Buttons */}
-                    <button className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 border transition-colors ${isDarkMode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-200 hover:bg-gray-50'}`}>
+                    <button className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 border transition-colors ${isDarkMode ? 'border-white/5 hover:bg-gray-800' : 'border-gray-200 hover:bg-gray-50'}`}>
                         <ExternalLink className="w-4 h-4" /> 官方網站
                     </button>
                     <button className="flex-1 py-3 rounded-xl font-bold text-sm bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
@@ -339,7 +339,7 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
             ></div>
 
             {/* Modal Sheet */}
-            <div className={`w-full sm:w-[500px] max-h-[85vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl shadow-2xl transform transition-transform duration-300 pointer-events-auto ${isOpen ? 'translate-y-0' : 'translate-y-full'} ${isDarkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white'}`}>
+            <div className={`w-full sm:w-[500px] max-h-[85vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl shadow-2xl transform transition-transform duration-300 pointer-events-auto ${isOpen ? 'translate-y-0' : 'translate-y-full'} ${isDarkMode ? 'bg-gray-900 border border-white/5' : 'bg-white'}`}>
 
                 {/* Header Image Area */}
                 <div className="h-48 bg-gray-200 relative overflow-hidden group">

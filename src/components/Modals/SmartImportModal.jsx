@@ -166,15 +166,20 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
 
                     } catch (e) {
                         console.error(`[SmartImport] Error processing file ${i}:`, e);
+                        // If persistent AI busy/quota error, stop and re-throw
+                        if (e.message === 'API_BUSY' || e.message === 'QUOTA_EXCEEDED' || e.message?.includes('Vision Parsing Failed')) {
+                            throw e;
+                        }
                     }
                 }
 
                 if (allItems.length === 0) {
-                    throw new Error("未能識別任何有效項目，請嘗試更清晰的圖片。");
+                    throw new Error("EMPTY_RESULT");
                 }
 
                 // 5. Final local junk filter
                 const cleanItems = filterJunkItems(allItems);
+                if (cleanItems.length === 0) throw new Error("EMPTY_RESULT");
 
                 setReviewItems(cleanItems);
                 setStage(4); // Go to Review Stage
@@ -259,7 +264,22 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
 
         } catch (error) {
             console.error(error);
-            setResult({ success: false, message: `處理失敗: ${error.message}` });
+            let userMessage = `處理失敗: ${error.message}`;
+
+            const errMsg = error.message;
+            if (errMsg === 'API_BUSY' || errMsg?.includes('429')) {
+                userMessage = "AI 服務目前極度繁忙 (429)，請稍候 30 秒再試。";
+            } else if (errMsg === 'QUOTA_EXCEEDED' || errMsg?.includes('quota')) {
+                userMessage = "今日 AI 使用限額已滿，請明天再試或更換 API Key。";
+            } else if (errMsg === 'EMPTY_RESULT') {
+                userMessage = "未能識別任何有效項目，請嘗試上傳更清晰、光線充足的圖片。";
+            } else if (errMsg?.includes('Vision Parsing Failed') || errMsg?.includes('VISION_FAILED')) {
+                userMessage = "AI 識別失敗。原因：流量過大或權限問題，請稍後再試。";
+            } else if (errMsg?.includes('PARSE_FAILED')) {
+                userMessage = "解析失敗。可能原因：圖片過於模糊或非旅遊相關文件。";
+            }
+
+            setResult({ success: false, message: userMessage });
             setStage(5);
         } finally {
             setIsProcessing(false);
@@ -457,10 +477,10 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                 {/* Header */}
                 <div className="p-6 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-indigo-500/10 to-purple-500/10 shrink-0">
                     <div>
-                        <h2 className="text-2xl font-bold flex items-center gap-2">
-                            <Upload className="w-6 h-6 text-indigo-400" /> 智能匯入中心
+                        <h2 className="text-2xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+                            <Upload className="w-6 h-6 text-indigo-500 dark:text-indigo-400" /> 智能匯入中心
                         </h2>
-                        <p className="text-sm opacity-60 mt-1">
+                        <p className="text-sm text-slate-500 dark:text-white/60 mt-1">
                             {stage === 1 ? '選擇匯入類型' : stage === 2 ? '上傳檔案' : stage === 3 ? 'AI 識別中...' : stage === 4 ? '確認內容' : '匯入完成'}
                         </p>
                     </div>
@@ -477,9 +497,9 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                             <select
                                 value={selectedTripId}
                                 onChange={(e) => setSelectedTripId(e.target.value)}
-                                className="w-full bg-gray-500/10 border border-gray-500/20 rounded-lg p-2 text-sm"
+                                className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg p-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20"
                             >
-                                {trips.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                {trips.map(t => <option key={t.id} value={t.id} className="dark:bg-slate-900">{t.name}</option>)}
                             </select>
                         </div>
                     )}
@@ -491,11 +511,13 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                                 <button
                                     key={type.id}
                                     onClick={() => handleTypeSelect(type)}
-                                    className={`p-4 rounded-xl border transition-all text-left hover:scale-[1.02] active:scale-[0.98] ${isDarkMode ? `bg-${type.color}-500/10 border-${type.color}-500/30 hover:bg-${type.color}-500/20` : `bg-${type.color}-50 border-${type.color}-200 hover:bg-${type.color}-100`}`}
+                                    className={`p-4 rounded-xl border transition-all text-left group hover:scale-[1.02] active:scale-[0.98] 
+                                        bg-white border-slate-200 hover:bg-slate-50/30 shadow-sm hover:shadow-md
+                                        dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:shadow-none`}
                                 >
-                                    <type.icon className={`w-6 h-6 mb-2 text-${type.color}-400`} />
-                                    <div className="font-bold text-sm">{type.label}</div>
-                                    <div className="text-[10px] opacity-60 mt-1">{type.desc}</div>
+                                    <type.icon className={`w-6 h-6 mb-2 transition-colors text-slate-500 group-hover:text-indigo-600 dark:text-indigo-400 dark:group-hover:text-indigo-300`} />
+                                    <div className="font-bold text-sm text-slate-900 dark:text-white">{type.label}</div>
+                                    <div className="text-[10px] mt-1 text-slate-500 dark:text-white/60">{type.desc}</div>
                                 </button>
                             ))}
                         </div>
@@ -516,7 +538,7 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                                     <textarea
                                         value={plaintextInput}
                                         onChange={(e) => setPlaintextInput(e.target.value)}
-                                        className={`w-full h-48 p-4 rounded-xl border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'} text-sm resize-none`}
+                                        className="w-full h-48 p-4 rounded-xl border transition-all bg-slate-50 border-slate-200 text-slate-900 focus:bg-white dark:bg-white/5 dark:border-white/10 dark:text-white text-sm resize-none outline-none focus:ring-2 focus:ring-indigo-500/20"
                                         placeholder={`貼上或輸入行程 (每行一個項目):
 
 09:00 新宿站出發
@@ -524,12 +546,12 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
 12:00 午餐: 壽司店
 14:00 🚆 JR山手線 往澀谷`}
                                     />
-                                    <p className="text-[10px] opacity-50">💡 提示: 支援格式 "時間 活動名稱" 或純文字。會自動識別🍴餐廳/🚆交通/⛩️景點等。</p>
+                                    <p className="text-[10px] opacity-50 text-slate-600 dark:text-white/50">💡 提示: 支援格式 "時間 活動名稱" 或純文字。會自動識別🍴餐廳/🚆交通/⛩️景點等。</p>
                                 </div>
                             ) : (
 
                                 <div
-                                    className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${files.length > 0 ? 'border-green-500 bg-green-500/10' : (isDarkMode ? 'border-white/20 hover:border-white/40' : 'border-gray-300 hover:border-gray-400')}`}
+                                    className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${files.length > 0 ? 'border-green-500 bg-green-500/10' : 'border-slate-300 dark:border-white/10 hover:border-indigo-500/50 hover:bg-slate-50 dark:hover:bg-white/5'}`}
                                     onClick={() => fileInputRef.current?.click()}
                                     onDragOver={(e) => e.preventDefault()}
                                     onDrop={handleDrop}
@@ -601,7 +623,7 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                     {/* Stage 4: Review */}
                     {stage === 4 && (
                         <div className="flex flex-col h-[450px]">
-                            <div className="p-4 bg-indigo-500/10 border-b border-indigo-500/20 text-xs text-indigo-300 flex items-center justify-between">
+                            <div className="p-4 bg-indigo-500/10 border-b border-indigo-500/20 text-xs text-indigo-500 dark:text-indigo-300 flex items-center justify-between font-bold">
                                 <span className="flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI 已識別 {reviewItems.length} 個項目</span>
                                 <span>請確認內容後匯入</span>
                             </div>
@@ -1028,12 +1050,12 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                                     </div>
                                 )}
                             </div>
-                            <div className="p-4 border-t border-white/10 flex gap-2">
-                                <button onClick={handleReset} className="px-4 py-2 rounded-lg bg-gray-500/20 text-xs font-bold">放棄</button>
+                            <div className="p-4 border-t border-slate-200 dark:border-white/10 flex gap-2 bg-slate-50 dark:bg-black/20">
+                                <button onClick={handleReset} className="px-4 py-2 rounded-lg bg-slate-500/10 dark:bg-gray-500/20 text-xs font-bold text-slate-600 dark:text-white">放棄</button>
                                 <button
                                     onClick={handleConfirmImport}
                                     disabled={reviewItems.length === 0}
-                                    className={`flex-1 px-4 py-2 rounded-lg text-white text-xs font-bold flex items-center justify-center gap-2 ${reviewItems.length === 0 ? 'bg-gray-500/30 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                                    className={`flex-1 px-4 py-2 rounded-lg text-white text-xs font-bold flex items-center justify-center gap-2 transition-all ${reviewItems.length === 0 ? 'bg-slate-300 dark:bg-gray-500/30 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95'}`}
                                 >
                                     <Check className="w-4 h-4" /> 確認並匯入
                                 </button>

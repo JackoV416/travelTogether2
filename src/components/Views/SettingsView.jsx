@@ -56,6 +56,7 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
 
     // V1.4: Track both calls and tokens
     const [aiUsage, setAiUsage] = useState({ used: 0, total: 20, remaining: 20, tokens: 0 });
+    const [timeUntilReset, setTimeUntilReset] = useState("");
 
     useEffect(() => {
         const updateStats = () => {
@@ -66,13 +67,27 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                 remaining: usage.remaining,
                 tokens: usage.tokens || 0
             });
+
+            // Calculate time until next reset (Midnight)
+            const now = new Date();
+            const tomorrow = new Date(now);
+            tomorrow.setHours(24, 0, 0, 0);
+            const diffMs = tomorrow - now;
+            const hours = Math.floor(diffMs / (1000 * 60 * 60));
+            const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            setTimeUntilReset(`${hours}小時 ${minutes}分鐘`);
         };
 
         updateStats();
+        // Update every minute for countdown
+        const interval = setInterval(updateStats, 60000);
 
         // Listen for real-time updates (V1.4)
         window.addEventListener('AI_USAGE_UPDATED', updateStats);
-        return () => window.removeEventListener('AI_USAGE_UPDATED', updateStats);
+        return () => {
+            window.removeEventListener('AI_USAGE_UPDATED', updateStats);
+            clearInterval(interval);
+        };
     }, [activeTab]);
 
     return (
@@ -187,7 +202,10 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                 </div>
                                 <div className="flex justify-between mt-3">
                                     <p className="text-[10px] opacity-40 uppercase tracking-tighter font-bold">Limit Status: {aiUsage.remaining > 0 ? 'Healthy' : 'Exceeded'}</p>
-                                    <p className="text-[10px] opacity-50">每個帳號每日免費限額 {aiUsage.total} 次</p>
+                                    <div className="text-right">
+                                        <p className="text-[10px] opacity-50">每日限額 {aiUsage.total} 次</p>
+                                        <p className="text-[10px] opacity-40 mt-0.5">將於 {timeUntilReset} 後重置</p>
+                                    </div>
                                 </div>
                             </div>
 

@@ -21,7 +21,12 @@ const SearchFilterBar = ({ onSearch, onSort, onFilter, currentSort, currentFilte
                 </div>
                 <input
                     type="text"
-                    className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl leading-5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md"
+                    className="block w-full pl-10 pr-3 py-2.5 rounded-xl leading-5 
+                             bg-white/80 dark:bg-white/5 
+                             border border-gray-200/50 dark:border-transparent 
+                             text-gray-900 dark:text-gray-100 placeholder-gray-400 
+                             focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 
+                             transition-all shadow-sm hover:shadow-md hover:bg-white dark:hover:bg-white/10"
                     placeholder="搜尋行程名稱、地點..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -35,14 +40,19 @@ const SearchFilterBar = ({ onSearch, onSort, onFilter, currentSort, currentFilte
                     <select
                         value={currentSort}
                         onChange={(e) => onSort(e.target.value)}
-                        className="appearance-none pl-9 pr-8 py-2.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
+                        className="appearance-none pl-9 pr-8 py-2.5 rounded-xl 
+                                 bg-white/80 dark:bg-white/5 
+                                 border border-gray-200/50 dark:border-transparent 
+                                 text-sm font-medium text-gray-700 dark:text-gray-200 
+                                 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 
+                                 cursor-pointer hover:bg-white dark:hover:bg-white/10 transition-colors shadow-sm"
                     >
                         <option value="nearest">🕒 最近出發 (默認)</option>
                         <option value="date_asc">📅 日期 (舊→新)</option>
                         <option value="date_desc">📅 日期 (新→舊)</option>
                         <option value="name_asc">🔤 名稱 (A-Z)</option>
                     </select>
-                    <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
 
                 {/* Filter Dropdown */}
@@ -50,14 +60,19 @@ const SearchFilterBar = ({ onSearch, onSort, onFilter, currentSort, currentFilte
                     <select
                         value={currentFilter}
                         onChange={(e) => onFilter(e.target.value)}
-                        className="appearance-none pl-9 pr-8 py-2.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
+                        className="appearance-none pl-9 pr-8 py-2.5 rounded-xl 
+                                 bg-white/80 dark:bg-white/5 
+                                 border border-gray-200/50 dark:border-transparent 
+                                 text-sm font-medium text-gray-700 dark:text-gray-200 
+                                 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 
+                                 cursor-pointer hover:bg-white dark:hover:bg-white/10 transition-colors shadow-sm"
                     >
                         <option value="all">🌐 全部行程</option>
                         <option value="upcoming">🚀 即將開始</option>
                         <option value="active">✈️ 進行中</option>
                         <option value="completed">🏁 已結束</option>
                     </select>
-                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
             </div>
         </div>

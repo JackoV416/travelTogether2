@@ -17,8 +17,18 @@ const firebaseConfig = {
 
 import { getStorage } from "firebase/storage";
 
+import { initializeFirestore, persistentLocalCache } from "firebase/firestore";
+
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
-export const db = getFirestore(app);
+
+// Initialize Firestore with persistent cache (new API)
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentLocalCache.tabManager,
+    cacheSizeBytes: persistentLocalCache.cacheSizeBytes
+  })
+});
+
 export const storage = getStorage(app);

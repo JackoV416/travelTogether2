@@ -106,7 +106,23 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
     const [pendingItemsCache, setPendingItemsCache] = useState(() => {
         try {
             const saved = localStorage.getItem(`pendingItemsCache_${trip.id}`);
-            return saved ? JSON.parse(saved) : {};
+            if (!saved) return {};
+
+            const parsed = JSON.parse(saved);
+
+            // Check legacy format (direct object vs wrapped)
+            const cacheData = parsed.timestamp ? parsed.items : parsed;
+            const cacheTime = parsed.timestamp || 0;
+
+            // Validation: If Firestore data is NEWER than cache, discard cache
+            const tripTime = trip.lastUpdate?.seconds ? trip.lastUpdate.seconds * 1000 : 0;
+
+            if (tripTime > cacheTime + 5000) { // 5s buffer for clock skew
+                console.log(`[Sync] Discarding stale cache. Remote: ${new Date(tripTime).toISOString()} > Local: ${new Date(cacheTime).toISOString()}`);
+                return {};
+            }
+
+            return cacheData || {};
         } catch (e) {
             console.error("Failed to load pending items cache:", e);
             return {};
@@ -117,7 +133,11 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
     useEffect(() => {
         try {
             if (Object.keys(pendingItemsCache).length > 0) {
-                localStorage.setItem(`pendingItemsCache_${trip.id}`, JSON.stringify(pendingItemsCache));
+                const payload = {
+                    items: pendingItemsCache,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(`pendingItemsCache_${trip.id}`, JSON.stringify(payload));
             } else {
                 localStorage.removeItem(`pendingItemsCache_${trip.id}`);
             }
@@ -125,6 +145,25 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
             console.error("Failed to save pending items cache:", e);
         }
     }, [pendingItemsCache, trip.id]);
+
+    // V1.1 Phase 8: Auto-Clear Cache on Remote Update (Cross-Device Sync)
+    useEffect(() => {
+        if (!trip.lastUpdate?.seconds) return;
+
+        const lastSync = localStorage.getItem(`pendingItemsCache_${trip.id}`);
+        if (lastSync) {
+            const parsed = JSON.parse(lastSync);
+            const cacheTime = parsed.timestamp || 0;
+            const tripTime = trip.lastUpdate.seconds * 1000;
+
+            // If we receive a remote update that is significantly newer than our local work
+            // AND we are not currently dragging/editing (hard to track, but cacheTime implies last edit)
+            if (tripTime > cacheTime + 10000) { // 10s margin
+                console.log('[Sync] Remote update detected. Clearing local optimistic cache.');
+                setPendingItemsCache({});
+            }
+        }
+    }, [trip.lastUpdate?.seconds]);
 
     // ============================================
     // SYNC EFFECTS
@@ -455,7 +494,10 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
         }));
 
         if (!isSimulation) {
-            await updateDoc(doc(db, "trips", trip.id), { [`itinerary.${currentDisplayDate}`]: fullList });
+            await updateDoc(doc(db, "trips", trip.id), {
+                [`itinerary.${currentDisplayDate}`]: fullList,
+                lastUpdate: serverTimestamp()
+            });
         }
     };
 
@@ -535,9 +577,9 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
 
             if (exists) {
                 const updatedList = currentList.map(i => String(i.id) === String(itemId) ? newItem : i);
-                await updateDoc(docRef, { shoppingList: updatedList });
+                await updateDoc(docRef, { shoppingList: updatedList, lastUpdate: serverTimestamp() });
             } else {
-                await updateDoc(docRef, { shoppingList: arrayUnion({ ...newItem, bought: false }) });
+                await updateDoc(docRef, { shoppingList: arrayUnion({ ...newItem, bought: false }), lastUpdate: serverTimestamp() });
             }
         } else if (data.type === 'flight' && !data.id && data.details?.arrival) {
             // V1.1 Phase 5: Flight + Immigration Bundle Auto-Generation
@@ -595,9 +637,9 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
 
             if (exists) {
                 const updatedList = currentList.map(i => String(i.id) === String(itemId) ? newItem : i);
-                await updateDoc(docRef, { packingList: updatedList });
+                await updateDoc(docRef, { packingList: updatedList, lastUpdate: serverTimestamp() });
             } else {
-                await updateDoc(docRef, { packingList: arrayUnion({ ...newItem, category: data.category || 'misc', checked: false }) });
+                await updateDoc(docRef, { packingList: arrayUnion({ ...newItem, category: data.category || 'misc', checked: false }), lastUpdate: serverTimestamp() });
             }
         } else {
             // Itinerary Items
@@ -679,11 +721,11 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                     finalItems = recalculateItineraryTimes(sanitizedItems, editedIndex);
                 }
 
-                await updateDoc(docRef, { [`itinerary.${routeDate}`]: finalItems });
+                await updateDoc(docRef, { [`itinerary.${routeDate}`]: finalItems, lastUpdate: serverTimestamp() });
                 console.log('[handleSaveItem] Firebase save SUCCESS (with Ripple)');
             } else {
                 console.log('[handleSaveItem] Adding NEW item via arrayUnion');
-                await updateDoc(docRef, { [`itinerary.${routeDate}`]: arrayUnion(newItem) });
+                await updateDoc(docRef, { [`itinerary.${routeDate}`]: arrayUnion(newItem), lastUpdate: serverTimestamp() });
                 console.log('[handleSaveItem] Firebase add SUCCESS');
             }
 
@@ -775,7 +817,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                 message: `偵測到新機票行程，是否自動加入「入境手續」及「機場交通」建議卡片？`,
                 type: 'info',
                 onConfirm: async () => {
-                    await updateDoc(docRef, { [`itinerary.${routeDate}`]: arrayUnion(immigrationItem, transportItem) });
+                    await updateDoc(docRef, { [`itinerary.${routeDate}`]: arrayUnion(immigrationItem, transportItem), lastUpdate: serverTimestamp() });
                     console.log('[Phase 5] Immigration bundle auto-added');
                     setConfirmConfig(null);
                 }
@@ -791,7 +833,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                 const nextDate = daysArr[currentIdx + 1];
                 if (!trip.locations?.[nextDate]) {
                     const dRef = doc(db, "trips", trip.id);
-                    await updateDoc(dRef, { [`locations.${nextDate}`]: { city: arrivalCity, country: trip.country } });
+                    await updateDoc(dRef, { [`locations.${nextDate}`]: { city: arrivalCity, country: trip.country }, lastUpdate: serverTimestamp() });
                 }
             }
         }
@@ -839,7 +881,8 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                 role,
                 status: 'pending',
                 invitedAt: Date.now()
-            })
+            }),
+            lastUpdate: serverTimestamp()
         });
     };
 
@@ -852,10 +895,10 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
         if (isSimulation) return alert("模擬模式");
         if (newRole === 'remove') {
             const newMembers = trip.members.filter(m => m.id !== memberId);
-            await updateDoc(doc(db, "trips", trip.id), { members: newMembers });
+            await updateDoc(doc(db, "trips", trip.id), { members: newMembers, lastUpdate: serverTimestamp() });
         } else {
             const newMembers = trip.members.map(m => m.id === memberId ? { ...m, role: newRole } : m);
-            await updateDoc(doc(db, "trips", trip.id), { members: newMembers });
+            await updateDoc(doc(db, "trips", trip.id), { members: newMembers, lastUpdate: serverTimestamp() });
         }
     };
 
@@ -925,7 +968,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                         }
 
                         if (newItems.length !== items.length) {
-                            await updateDoc(docRef, { [`itinerary.${routeDate}`]: newItems });
+                            await updateDoc(docRef, { [`itinerary.${routeDate}`]: newItems, lastUpdate: serverTimestamp() });
                         }
                     }
                     setIsAddModal(false);
@@ -967,7 +1010,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                 setConfirmConfig(null);
                 try {
                     const docRef = doc(db, "trips", trip.id);
-                    await updateDoc(docRef, { [`itinerary.${currentDisplayDate}`]: [] });
+                    await updateDoc(docRef, { [`itinerary.${currentDisplayDate}`]: [], lastUpdate: serverTimestamp() });
                 } catch (err) {
                     console.error("Clear daily error:", err);
                     alert("清空失敗：" + err.message);
@@ -979,13 +1022,13 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
 
     const handleSaveInsurance = async () => {
         if (isSimulation) return alert("模擬模式");
-        await updateDoc(doc(db, "trips", trip.id), { [`insurance.private.${user?.uid}`]: myInsurance });
+        await updateDoc(doc(db, "trips", trip.id), { [`insurance.private.${user?.uid}`]: myInsurance, lastUpdate: serverTimestamp() });
         alert("已儲存");
     };
 
     const handleSaveVisa = async () => {
         if (isSimulation) return alert("模擬模式");
-        await updateDoc(doc(db, "trips", trip.id), { [`visa.${user?.uid}`]: visaForm });
+        await updateDoc(doc(db, "trips", trip.id), { [`visa.${user?.uid}`]: visaForm, lastUpdate: serverTimestamp() });
         alert("簽證資訊已更新");
     };
 
@@ -1001,7 +1044,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
             message: "確定要清空所有行李清單項目嗎？此操作無法撤銷。",
             type: "warning",
             onConfirm: async () => {
-                await updateDoc(doc(db, "trips", trip.id), { packingList: [] });
+                await updateDoc(doc(db, "trips", trip.id), { packingList: [], lastUpdate: serverTimestamp() });
                 setConfirmConfig(null);
             }
         });
@@ -1010,13 +1053,13 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
     const handlePackingToggle = async (itemId) => {
         if (isSimulation) return;
         const newList = (trip.packingList || []).map(i => i.id === itemId ? { ...i, checked: !i.checked } : i);
-        await updateDoc(doc(db, "trips", trip.id), { packingList: newList });
+        await updateDoc(doc(db, "trips", trip.id), { packingList: newList, lastUpdate: serverTimestamp() });
     };
 
     const handlePackingDelete = async (itemId) => {
         if (isSimulation) return;
         const newList = (trip.packingList || []).filter(i => i.id !== itemId);
-        await updateDoc(doc(db, "trips", trip.id), { packingList: newList });
+        await updateDoc(doc(db, "trips", trip.id), { packingList: newList, lastUpdate: serverTimestamp() });
     };
 
     const handleOptimizeSchedule = async () => {
@@ -1045,7 +1088,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                 setConfirmConfig(null);
                 try {
                     const optimized = await optimizeSchedule(currentItems);
-                    await updateDoc(doc(db, "trips", trip.id), { [`itinerary.${currentDisplayDate}`]: optimized });
+                    await updateDoc(doc(db, "trips", trip.id), { [`itinerary.${currentDisplayDate}`]: optimized, lastUpdate: serverTimestamp() });
                     setConfirmConfig({
                         title: "優化成功",
                         message: "✨ AI 已根據地點與動線為您重新排程並加入建議！",
@@ -1160,7 +1203,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
         }
 
         if (Object.keys(updates).length > 0) {
-            await updateDoc(docRef, updates);
+            await updateDoc(docRef, { ...updates, lastUpdate: serverTimestamp() });
             setConfirmConfig({
                 title: "AI 加入成功",
                 message: `已成功加入 ${Object.values(updates).length} 個類別的項目！`,
@@ -1206,7 +1249,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                     details: item.details || {},
                     createdBy: { name: user?.displayName, id: user?.uid }
                 }));
-                await Promise.all(normalized.map(val => updateDoc(docRef, { [`itinerary.${currentDisplayDate}`]: arrayUnion(val) })));
+                await updateDoc(docRef, { [`itinerary.${currentDisplayDate}`]: arrayUnion(...normalized), lastUpdate: serverTimestamp() });
             } else if (section === 'shopping') {
                 const normalized = items.map((item, idx) => ({
                     id: item.id || `${Date.now()}-${idx}`,
@@ -1215,7 +1258,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                     bought: Boolean(item.bought),
                     note: item.note || ''
                 }));
-                await updateDoc(docRef, { shoppingList: arrayUnion(...normalized) });
+                await updateDoc(docRef, { shoppingList: arrayUnion(...normalized), lastUpdate: serverTimestamp() });
             } else if (section === 'budget') {
                 const normalized = items.map((item, idx) => ({
                     id: item.id || `${Date.now()}-${idx}`,
@@ -1226,7 +1269,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                     payer: item.payer || user?.displayName,
                     splitType: item.splitType || 'group'
                 }));
-                await updateDoc(docRef, { budget: arrayUnion(...normalized) });
+                await updateDoc(docRef, { budget: arrayUnion(...normalized), lastUpdate: serverTimestamp() });
             }
             alert("匯入成功");
         } catch (err) {
@@ -1263,7 +1306,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
             const newItems = [...items];
             newItems.splice(indexAfter + 1, 0, newItem);
 
-            await updateDoc(docRef, { [`itinerary.${date}`]: newItems });
+            await updateDoc(docRef, { [`itinerary.${date}`]: newItems, lastUpdate: serverTimestamp() });
         } catch (err) {
             console.error("Add transport suggestion error:", err);
             alert("加入失敗：" + err.message);
@@ -1806,8 +1849,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                                             { id: 'journal', label: '足跡', icon: FootprintsIcon, color: 'text-orange-500', bg: 'bg-orange-500/10' },
                                             { id: 'insurance', label: '保險', icon: Shield, color: 'text-purple-500', bg: 'bg-purple-500/10' },
                                             { id: 'emergency', label: '緊急', icon: Siren, color: 'text-red-500', bg: 'bg-red-500/10' },
-                                            { id: 'visa', label: '簽證', icon: FileCheck, color: 'text-teal-500', bg: 'bg-teal-500/10' },
-                                            { id: 'files', label: '檔案', icon: FileText, color: 'text-gray-500', bg: 'bg-gray-500/10' }
+                                            { id: 'visa', label: '簽證', icon: FileCheck, color: 'text-teal-500', bg: 'bg-teal-500/10' }
                                         ].map((t, index) => (
                                             <button
                                                 key={t.id}
@@ -1832,7 +1874,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                     <MemberSettingsModal isOpen={isMemberModalOpen} onClose={() => setIsMemberModalOpen(false)} members={trip.members || []} onUpdateRole={handleUpdateRole} isDarkMode={isDarkMode} />
                     <InviteModal isOpen={isInviteModal} onClose={() => setIsInviteModal(false)} tripId={trip.id} onInvite={handleInvite} isDarkMode={isDarkMode} />
 
-                    <AIGeminiModal isOpen={isAIModal} onClose={() => setIsAIModal(false)} onApply={handleAIApply} isDarkMode={isDarkMode} contextCity={trip.city} existingItems={itineraryItems} mode={aiMode} userPreferences={globalSettings.preferences} trip={trip} weatherData={weatherData} />
+                    <AIGeminiModal isOpen={isAIModal} onClose={() => setIsAIModal(false)} onApply={handleAIApply} isDarkMode={isDarkMode} contextCity={trip.city} existingItems={itineraryItems} mode={aiMode} userPreferences={globalSettings.preferences} trip={trip} weatherData={weatherData} targetDate={selectDate} />
 
                     <TripExportImportModal
                         isOpen={Boolean(sectionModalConfig)}
@@ -1852,7 +1894,6 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                                 onClose={() => setIsSmartExportOpen(false)}
                                 trip={trip}
                                 isDarkMode={isDarkMode}
-                                onExportPdf={handleExportPdf}
                             />
                         )
                     }

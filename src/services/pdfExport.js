@@ -2,170 +2,367 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 /**
- * Export trip to a beautiful PDF
+ * Sanitize value for PDF display - removes null, undefined, 'null', 'undefined', '[object Object]'
+ * @param {any} value The value to sanitize
+ * @param {string} fallback Optional fallback value if empty
+ * @returns {string} Sanitized string
+ */
+const sanitize = (value, fallback = '') => {
+    if (value === null || value === undefined) return fallback;
+    const str = String(value).trim();
+    if (str === 'null' || str === 'undefined' || str === '[object Object]' || str === 'NaN') return fallback;
+    return str;
+};
+
+/**
+ * Conditionally render HTML element only if value exists
+ * @param {any} value The value to check
+ * @param {function} renderFn Function that returns HTML string
+ * @returns {string} HTML string or empty
+ */
+const renderIf = (value, renderFn) => {
+    const clean = sanitize(value);
+    return clean ? renderFn(clean) : '';
+};
+
+/**
+ * Export trip to a beautiful PDF using html2canvas for CJK support
  * @param {Object} trip The trip object
- * @param {Object} options { template: 'modern' | 'classic' | 'family', includeImages: boolean }
+ * @param {Object} options { template: 'modern' | 'classic' | 'compact', returnBlob: boolean }
  */
 export const exportToBeautifulPDF = async (trip, options = { template: 'modern' }) => {
-    const doc = new jsPDF('p', 'mm', 'a4');
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 20;
-    const primaryColor = [79, 70, 229]; // Indigo 600
-    const secondaryColor = [124, 58, 237]; // Violet 600
-    const textColor = [31, 41, 55]; // Gray 800
-    const lightGray = [243, 244, 246]; // Gray 100
+    // Create a hidden container for rendering the PDF content
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    container.style.width = '800px'; // Standard width for A4-like layout
+    container.style.backgroundColor = '#ffffff';
+    container.style.color = '#1f2937';
+    container.style.fontFamily = "'Inter', 'Noto Sans TC', sans-serif";
+    document.body.appendChild(container);
 
-    // Helper: Add title with bottom border
-    const addSectionTitle = (title, x, y) => {
-        doc.setFontSize(16);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(...primaryColor);
-        doc.text(title, x, y);
-        doc.setDrawColor(...primaryColor);
-        doc.setLineWidth(0.5);
-        doc.line(x, y + 2, pageWidth - margin, y + 2);
-        return y + 12;
+    const { template = 'modern' } = options;
+
+    // Helper to generate HTML based on template
+    const renderContent = () => {
+        const { scope = 'full', itemsPerPage = 4 } = options; // V1.1.6: itemsPerPage layout control
+        const sortedDates = (trip.itinerary && (scope === 'full' || scope === 'itinerary')) ? Object.keys(trip.itinerary).sort() : [];
+        const showShopping = (trip.shoppingList?.length > 0 && (scope === 'full' || scope === 'shopping'));
+        const showItinerary = (sortedDates.length > 0 && (scope === 'full' || scope === 'itinerary'));
+        const showPacking = (trip.packingList?.length > 0 && (scope === 'full' || scope === 'packing'));
+        const showEmergency = (scope === 'full' || scope === 'emergency');
+        const showInsurance = (trip.insurance && (scope === 'full' || scope === 'insurance'));
+        const showJournal = (trip.journal?.length > 0 && (scope === 'full' || scope === 'journal'));
+
+        const headerStyles = {
+            modern: 'bg-indigo-700 text-white p-12 shadow-inner',
+            classic: 'bg-slate-900 text-white p-10 border-b-4 border-amber-500',
+            glass: 'bg-[#000a1f] text-white p-12 border-b border-white/10 shadow-2xl relative overflow-hidden',
+            compact: 'bg-gray-50 text-gray-900 py-8 px-6 border-b border-gray-200',
+            retro: 'bg-[#f4ebe0] text-[#4e342e] p-12 border-b-4 border-double border-[#d7ccc8]',
+            vibrant: 'bg-gradient-to-br from-[#ff0080] via-[#7928ca] to-[#ff0080] text-white p-12 shadow-2xl'
+        };
+
+        const itemStyles = {
+            modern: 'flex bg-white rounded-3xl overflow-hidden border border-gray-100 mb-8 shadow-sm h-[180px]',
+            classic: 'bg-white border-2 border-gray-900 p-6 mb-4',
+            glass: 'flex bg-white/5 border border-white/10 rounded-[2rem] overflow-hidden backdrop-blur-3xl mb-10 h-[200px] shadow-2xl',
+            compact: 'py-2 px-1 flex gap-4 border-b border-gray-50',
+            retro: 'flex bg-[#faf3e0] border-2 border-[#e0d5b0] rounded-none mb-8 h-[180px] shadow-[6px_6px_0px_#e0d5b0]',
+            vibrant: 'flex bg-white/10 border-2 border-white/30 rounded-[3rem] overflow-hidden backdrop-blur-2xl mb-12 h-[220px] shadow-2xl'
+        };
+
+        return `
+            <style>
+                .pdf-container { font-family: 'Helvetica', 'Arial', 'Noto Sans TC', sans-serif; }
+                .ticket-card { display: flex; align-items: stretch; border-radius: 24px; overflow: hidden; margin-bottom: 24px; }
+                .glass-text { color: rgba(255,255,255,0.9); }
+                .dark-bg { background-color: #000c24; }
+            </style>
+            <div style="min-height: 100%;" class="pdf-container ${template === 'glass' || template === 'vibrant' ? 'dark-bg glass-text' : (template === 'retro' ? 'bg-[#fdf6e3] text-[#4e342e]' : 'bg-white text-gray-900')}">
+                <div class="${headerStyles[template]} ${template === 'glass' || template === 'vibrant' ? 'rounded-3xl m-6' : ''}">
+                    <h1 style="font-size: 32px; font-weight: 900; margin: 0 0 12px; color: #ffffff;">${trip.name || '我的行程'}</h1>
+                    <p style="font-size: 15px; font-weight: 700; opacity: 0.9; color: #ffffff;">📍 ${trip.city || ''}, ${trip.country || ''} | 📅 ${trip.startDate || ''} - ${trip.endDate || ''}</p>
+                    ${scope !== 'full' ? `<div style="display: inline-block; margin-top: 15px; padding: 6px 15px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 99px; font-size: 11px; font-weight: 900; text-transform: uppercase; color: #ffffff;">${scope} scope</div>` : ''}
+                </div>
+
+                <div style="padding: 40px;">
+                    ${(() => {
+                // Handle notes - could be string, array, or object
+                let notesContent = '';
+                if (trip.notes && scope === 'full') {
+                    if (typeof trip.notes === 'string') {
+                        notesContent = sanitize(trip.notes);
+                    } else if (Array.isArray(trip.notes)) {
+                        notesContent = trip.notes.map(n => sanitize(typeof n === 'object' ? n.text || n.content || '' : n)).filter(Boolean).join('<br/>');
+                    } else if (typeof trip.notes === 'object') {
+                        notesContent = sanitize(trip.notes.text || trip.notes.content || '');
+                    }
+                }
+                return notesContent ? `
+                            <div style="margin-bottom: 40px;">
+                                <h2 style="font-size: 18px; font-weight: 900; color: ${template === 'glass' || template === 'vibrant' ? '#818cf8' : '#4f46e5'}; margin-bottom: 16px;">備忘錄 NOTE</h2>
+                                <p style="font-size: 13px; line-height: 1.6; opacity: 0.8;">${notesContent}</p>
+                            </div>
+                        ` : '';
+            })()}
+
+                    ${showItinerary ? `
+                        <h2 style="font-size: 22px; font-weight: 900; color: ${template === 'glass' || template === 'vibrant' ? '#a5b4fc' : (template === 'retro' ? '#5d4037' : '#1e1b4b')}; margin-bottom: 32px; letter-spacing: -0.025em; text-transform: uppercase;">行程安排 ITINERARY (Desktop Web Style)</h2>
+                        ${sortedDates.map((date, dayIdx) => {
+                const dayItems = trip.itinerary[date] || [];
+                if (dayItems.length === 0) return '';
+
+                // V1.1.7: Chunk items based on itemsPerPage
+                const chunks = [];
+                for (let i = 0; i < dayItems.length; i += itemsPerPage) {
+                    chunks.push(dayItems.slice(i, i + itemsPerPage));
+                }
+
+                return chunks.map((chunk, chunkIdx) => `
+                                <div style="margin-bottom: 48px; position: relative; page-break-inside: avoid;">
+                                    ${chunkIdx === 0 ? `
+                                        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 28px;">
+                                            <div style="background: ${template === 'glass' ? '#4f46e5' : (template === 'vibrant' ? '#ff0080' : '#1e1b4b')}; color: white; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 16px; font-weight: 950; font-size: 24px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); font-family: sans-serif;">${dayIdx + 1}</div>
+                                            <div style="flex: 1;">
+                                                <div style="font-size: 18px; font-weight: 850; color: ${template === 'glass' || template === 'vibrant' ? '#fff' : '#111827'};">DAY ${dayIdx + 1}</div>
+                                                <div style="font-size: 12px; font-weight: 700; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.1em;">${date}</div>
+                                            </div>
+                                            <div style="height: 1px; flex: 1; background: ${template === 'glass' || template === 'vibrant' ? 'rgba(255,255,255,0.1)' : '#f1f5f9'};"></div>
+                                        </div>
+                                    ` : `
+                                        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 28px; opacity: 0.5;">
+                                            <div style="width: 56px; display: flex; justify-content: center;"><div style="width: 2px; height: 20px; background: ${template === 'glass' || template === 'vibrant' ? 'rgba(255,255,255,0.1)' : '#e2e8f0'};"></div></div>
+                                            <div style="font-size: 14px; font-weight: 850; color: ${template === 'glass' || template === 'vibrant' ? '#fff' : '#111827'};">DAY ${dayIdx + 1} (Cont.)</div>
+                                        </div>
+                                    `}
+                                    
+                                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                                        ${chunk.map(item => `
+                                            <div class="${itemStyles[template]}" style="position: relative; height: 200px; display: flex; flex-direction: row; border-radius: 24px; overflow: hidden;">
+                                                <!-- Desktop Image Section (33%) with CSS Gradient Fallback -->
+                                                <div style="width: 33.33%; height: 100%; position: relative; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);">
+                                                    <img src="${item.details?.image || 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600'}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'" />
+                                                    <div style="position: absolute; inset: 0; background: linear-gradient(to right, rgba(0,0,0,0.4), transparent);"></div>
+                                                    <div style="absolute inset-0 border-r border-white/10 z-10"></div>
+                                                </div>
+
+                                                <!-- Ticket Notch Line (Absolute) -->
+                                                <div style="position: absolute; left: 33.33%; top: 0; bottom: 0; width: 2px; border-left: 2px dashed ${template === 'glass' || template === 'vibrant' ? 'rgba(255,255,255,0.2)' : '#cbd5e1'}; z-index: 20;">
+                                                    <div style="position: absolute; top: -12px; left: -11px; width: 22px; height: 22px; background: ${template === 'glass' || template === 'vibrant' ? '#000c24' : (template === 'retro' ? '#fdf6e3' : '#fff')}; border-radius: 50%; border-bottom: 1.5px solid ${template === 'glass' || template === 'vibrant' ? 'rgba(255,255,255,0.1)' : '#cbd5e1'};"></div>
+                                                    <div style="position: absolute; bottom: -12px; left: -11px; width: 22px; height: 22px; background: ${template === 'glass' || template === 'vibrant' ? '#000c24' : (template === 'retro' ? '#fdf6e3' : '#fff')}; border-radius: 50%; border-top: 1.5px solid ${template === 'glass' || template === 'vibrant' ? 'rgba(255,255,255,0.1)' : '#cbd5e1'};"></div>
+                                                </div>
+
+                                                <!-- Desktop Content Section -->
+                                                <div style="flex: 1; padding: 24px; display: flex; flex-direction: column; justify-content: space-between; min-width: 0;">
+                                                    <div style="space-y: 2px;">
+                                                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 2px;">
+                                                            <h3 style="font-weight: 900; font-size: 19px; margin: 0; color: ${template === 'glass' || template === 'vibrant' ? '#fff' : '#111827'}; line-height: 1.1; font-family: sans-serif;">${sanitize(item.name, '未命名項目')}</h3>
+                                                            ${item.cost > 0 ? `<div style="color: #10b981; font-weight: 950; font-size: 14px;">$${item.cost}</div>` : ''}
+                                                        </div>
+                                                        ${sanitize(item.details?.nameEn || item.details?.nameLocal) ? `<p style="font-size: 11px; font-weight: 800; opacity: 0.4; margin: 2px 0 10px; font-family: serif;">${sanitize(item.details?.nameEn || item.details?.nameLocal)}</p>` : ''}
+                                                        
+                                                        <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px;">
+                                                            ${sanitize(item.details?.duration) ? `<div style="display: flex; items-center; gap: 4px; font-size: 10px; font-weight: 900; color: #818cf8;">
+                                                                <span>停留約 ${sanitize(item.details?.duration)} MIN</span>
+                                                                ${item.details?.rating ? `<span style="color: #fbbf24; margin-left: 8px;">★ ${item.details.rating}</span>` : ''}
+                                                            </div>` : ''}
+                                                            ${sanitize(item.details?.location) ? `<div style="display: flex; items-center; gap: 4px; font-size: 10px; font-weight: 700; opacity: 0.6;">
+                                                                📍 ${sanitize(item.details?.location)}
+                                                            </div>` : ''}
+                                                        </div>
+
+                                                        <div style="display: inline-flex; items-center; gap: 8px; font-size: 11px; font-weight: 950; text-transform: uppercase;">
+                                                            <span style="background: ${template === 'glass' || template === 'vibrant' ? 'rgba(255,255,255,0.1)' : '#f1f5f9'}; border: 1px solid ${template === 'glass' || template === 'vibrant' ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}; padding: 4px 12px; border-radius: 8px; color: ${template === 'glass' || template === 'vibrant' ? '#818cf8' : '#4f46e5'};">
+                                                                ${sanitize(item.time, '—')}${sanitize(item.details?.endTime) ? ` — ${sanitize(item.details?.endTime)}` : ''}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 12px;">
+                                                        ${sanitize(item.details?.insight || item.details?.desc) ? `<p style="font-size: 11px; opacity: 0.6; line-clamp: 1; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%;">${sanitize(item.details?.insight || item.details?.desc)}</p>` : '<div></div>'}
+                                                        <div style="font-size: 8px; background: ${template === 'glass' || template === 'vibrant' ? 'rgba(129,140,248,0.2)' : 'rgba(79,70,229,0.1)'}; color: ${template === 'glass' || template === 'vibrant' ? '#818cf8' : '#4f46e5'}; padding: 2px 8px; border-radius: 4px; font-weight: 900;">${sanitize(item.type, 'INFO').toUpperCase()}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+
+                                    ${chunks.length > 1 ? `
+                                        <div style="text-align: right; font-size: 9px; opacity: 0.3; margin-top: 20px; font-family: monospace;">
+                                            Page ${chunkIdx + 1}/${chunks.length} of Day ${dayIdx + 1}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                <div style="display: block; page-break-after: always; height: 1px; width: 100%;"></div>
+                            `).join('');
+            }).join('')}
+                    ` : ''}
+
+                    ${showShopping ? `
+                        <div style="margin-top: 40px;">
+                            <h2 style="font-size: 18px; font-weight: 800; color: #db2777; border-bottom: 2px solid #fce7f3; padding-bottom: 8px; margin-bottom: 16px;">欲購清單</h2>
+                            ${trip.shoppingList.map(item => `
+                                <div style="display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
+                                    <div style="width: 16px; height: 16px; border: 1px solid #d1d5db; border-radius: 4px;"></div>
+                                    <div style="font-size: 13px;">${sanitize(item.name, '未命名商品')} ${sanitize(item.estPrice) ? `<span style="color: #9ca3af; font-size: 11px;">(${sanitize(item.estPrice)})</span>` : ''}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+
+                    ${scope === 'budget' && trip.budget?.length > 0 ? `
+                        <div style="margin-top: 40px;">
+                            <h2 style="font-size: 18px; font-weight: 800; color: #059669; border-bottom: 2px solid #d1fae5; padding-bottom: 8px; margin-bottom: 16px;">預算記錄</h2>
+                            ${trip.budget.map(item => `
+                                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
+                                    <div style="font-size: 13px;">${sanitize(item.name, '未命名支出')} ${sanitize(item.category) ? `<span style="color: #9ca3af; font-size: 10px;">[${sanitize(item.category)}]</span>` : ''}</div>
+                                    <div style="font-weight: 800; color: #059669;">${sanitize(item.currency, 'HKD')} ${sanitize(item.cost, '0')}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+
+                    ${showPacking ? `
+                        <div style="margin-top: 60px;">
+                            <h2 style="font-size: 20px; font-weight: 900; color: #6366f1; border-bottom: 2px solid #e0e7ff; padding-bottom: 12px; margin-bottom: 24px;">行李清單 PACKING LIST</h2>
+                            <div style="display: grid; grid-template-cols: 1fr 1fr; gap: 20px;">
+                                ${['clothes', 'toiletries', 'electronics', 'documents', 'medicine', 'misc'].map(cat => {
+                const items = trip.packingList.filter(i => i.category === cat);
+                if (items.length === 0) return '';
+                const catLabels = { clothes: '服飾', toiletries: '盥洗', electronics: '電子', documents: '證件', medicine: '藥物', misc: '其他' };
+                return `
+                                        <div style="background: rgba(0,0,0,0.02); padding: 16px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05);">
+                                            <h4 style="font-weight: 850; font-size: 13px; margin-bottom: 12px; text-transform: uppercase; color: #4338ca;">${catLabels[cat] || cat}</h4>
+                                            <div style="space-y: 6px;">
+                                                ${items.map(i => `<div style="font-size: 11px; display: flex; items-center; gap: 8px;">
+                                                    <div style="width: 12px; height: 12px; border: 1px solid #ccc; border-radius: 3px;"></div>
+                                                    <span style="opacity: 0.8;">${sanitize(i.name, '未命名')}</span>
+                                                </div>`).join('')}
+                                            </div>
+                                        </div>
+                                    `;
+            }).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${showInsurance ? `
+                        <div style="margin-top: 60px; background: #eff6ff; border: 2px solid #bfdbfe; border-radius: 20px; padding: 30px;">
+                            <h2 style="font-size: 20px; font-weight: 900; color: #1e40af; margin-bottom: 20px;">保險資訊 INSURANCE</h2>
+                            <div style="display: grid; grid-template-cols: 1fr 1fr; gap: 30px;">
+                                <div>
+                                    <div style="font-size: 10px; font-weight: 900; opacity: 0.5; text-transform: uppercase;">Provider</div>
+                                    <div style="font-size: 16px; font-weight: 800;">${trip.insurance?.name || '旅遊綜合保險'}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 10px; font-weight: 900; opacity: 0.5; text-transform: uppercase;">Policy Number</div>
+                                    <div style="font-size: 16px; font-weight: 800; font-family: monospace;">${trip.insurance?.policyNo || '—'}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 10px; font-weight: 900; opacity: 0.5; text-transform: uppercase;">Emergency Contact</div>
+                                    <div style="font-size: 16px; font-weight: 800; color: #2563eb;">${trip.insurance?.phone || '—'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${showEmergency ? `
+                        <div style="margin-top: 60px;">
+                            <h2 style="font-size: 20px; font-weight: 900; color: #dc2626; border-bottom: 2px solid #fee2e2; padding-bottom: 12px; margin-bottom: 24px;">緊急求助 EMERGENCY</h2>
+                            <div style="display: grid; grid-template-cols: 1fr 1fr 1fr; gap: 15px;">
+                                <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 15px; border-radius: 12px; text-align: center;">
+                                    <div style="font-size: 10px; font-weight: 900; color: #991b1b;">報警 POLICE</div>
+                                    <div style="font-size: 24px; font-weight: 950; color: #dc2626;">${trip.emergency?.police || '110'}</div>
+                                </div>
+                                <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 15px; border-radius: 12px; text-align: center;">
+                                    <div style="font-size: 10px; font-weight: 900; color: #9a3412;">火警 FIRE</div>
+                                    <div style="font-size: 24px; font-weight: 950; color: #ea580c;">${trip.emergency?.fire || '119'}</div>
+                                </div>
+                                <div style="background: #f0fdf4; border: 1px solid #dcfce7; padding: 15px; border-radius: 12px; text-align: center;">
+                                    <div style="font-size: 10px; font-weight: 900; color: #166534;">救護 AMBULANCE</div>
+                                    <div style="font-size: 24px; font-weight: 950; color: #16a34a;">${trip.emergency?.ambulance || '119'}</div>
+                                </div>
+                            </div>
+                            <div style="margin-top: 20px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px;">
+                                <h4 style="font-size: 13px; font-weight: 900; margin-bottom: 8px;">當地使領館 / 代表處</h4>
+                                <div style="font-size: 12px; font-weight: 800;">${trip.emergency?.consulate?.name || '請查閱當地官方資訊'}</div>
+                                <div style="font-size: 11px; opacity: 0.6; margin-top: 4px;">📍 ${trip.emergency?.consulate?.address || '—'}</div>
+                                <div style="font-size: 12px; font-weight: 900; color: #4f46e5; margin-top: 4px;">📞 ${trip.emergency?.consulate?.phone || '—'}</div>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${showJournal ? `
+                        <div style="margin-top: 60px;">
+                            <h2 style="font-size: 20px; font-weight: 900; color: ${template === 'glass' || template === 'vibrant' ? '#f472b6' : '#db2777'}; border-bottom: 2px solid ${template === 'glass' || template === 'vibrant' ? 'rgba(244,114,182,0.2)' : '#fce7f3'}; padding-bottom: 12px; margin-bottom: 24px;">旅行日誌 JOURNAL</h2>
+                            <div style="display: flex; flex-direction: column; gap: 15px;">
+                                ${trip.journal.map(entry => `
+                                    <div style="background: rgba(0,0,0,0.02); padding: 20px; border-radius: 12px;">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                            <div style="font-weight: 900; font-size: 14px;">${entry.title || '今日記錄'}</div>
+                                            <div style="font-size: 10px; opacity: 0.5;">${entry.date || ''}</div>
+                                        </div>
+                                        <p style="font-size: 12px; opacity: 0.8; line-height: 1.6;">${entry.content}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <div style="margin-top: 80px; text-align: center; border-top: 1px solid #f3f4f6; padding-top: 30px; color: #9ca3af; font-size: 10px; letter-spacing: 0.1em; font-weight: 700;">
+                        GENERATED BY TRAVEL TOGETHER V1.1.2 | PRESERVING YOUR MEMORIES | ${new Date().toLocaleDateString()}
+                    </div>
+                </div>
+            </div>
+        `;
     };
 
-    // --- HEADER ---
-    // Draw a nice gradient-like background
-    doc.setFillColor(...primaryColor);
-    doc.rect(0, 0, pageWidth, 50, 'F');
-    doc.setFillColor(...secondaryColor);
-    doc.rect(0, 40, pageWidth, 10, 'F');
+    container.innerHTML = renderContent();
 
-    // Trip Name
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(28);
-    doc.text(trip.name || "My Travel Plan", margin, 22);
-
-    // Metadata (Dates & Destination)
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    const dates = trip.startDate && trip.endDate
-        ? `${new Date(trip.startDate).toLocaleDateString('zh-TW')} - ${new Date(trip.endDate).toLocaleDateString('zh-TW')}`
-        : "行程日期未定";
-    doc.text(`📍 ${trip.city || ''}, ${trip.country || ''}  |  📅 ${dates}`, margin, 32);
-
-    let y = 65;
-
-    // --- SUMMARY / NOTES ---
-    if (trip.notes) {
-        y = addSectionTitle("備忘錄與建議", margin, y);
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(...textColor);
-        const splitNotes = doc.splitTextToSize(trip.notes.replace(/###/g, '').replace(/\*/g, ''), pageWidth - margin * 2);
-        doc.text(splitNotes, margin, y);
-        y += splitNotes.length * 5 + 12;
-    }
-
-    // --- ITINERARY ---
-    y = addSectionTitle("詳細行程安排", margin, y);
-
-    if (!trip.itinerary || Object.keys(trip.itinerary).length === 0) {
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "italic");
-        doc.setTextColor(150, 150, 150);
-        doc.text("尚未加入行程項目", margin, y);
-        y += 10;
-    } else {
-        const sortedDates = Object.keys(trip.itinerary).sort();
-
-        sortedDates.forEach((date, dayIdx) => {
-            const items = trip.itinerary[date];
-            if (!items || items.length === 0) return;
-
-            // Day Header Box
-            if (y > pageHeight - 40) { doc.addPage(); y = 20; }
-
-            doc.setFillColor(...lightGray);
-            doc.roundedRect(margin - 2, y - 5, pageWidth - margin * 2 + 4, 10, 2, 2, 'F');
-            doc.setFontSize(12);
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(...primaryColor);
-            doc.text(`DAY ${dayIdx + 1} - ${date}`, margin + 2, y + 1);
-            y += 12;
-
-            items.forEach((item, idx) => {
-                if (y > pageHeight - 30) { doc.addPage(); y = 20; }
-
-                const time = item.time || "--:--";
-                const typeEmoji = { flight: '✈️', hotel: '🏨', food: '🍴', spot: '📍', transport: '🚇', shopping: '🛍️' }[item.type] || '•';
-
-                // Time Indicator
-                doc.setFontSize(10);
-                doc.setFont("helvetica", "bold");
-                doc.setTextColor(...secondaryColor);
-                doc.text(time, margin, y);
-
-                // Vertical Line
-                doc.setDrawColor(220, 220, 220);
-                doc.setLineWidth(0.2);
-                doc.line(margin + 12, y - 4, margin + 12, y + 6);
-
-                // Content
-                doc.setTextColor(...textColor);
-                doc.setFont("helvetica", "bold");
-                doc.text(`${typeEmoji} ${item.name}`, margin + 16, y);
-
-                doc.setFont("helvetica", "normal");
-                doc.setFontSize(9);
-                doc.setTextColor(100, 100, 100);
-                const location = item.details?.location ? `@ ${item.details.location}` : "";
-                doc.text(location, margin + 16, y + 4.5);
-
-                y += 12;
-
-                // Brief Insight if exists
-                if (item.details?.insight || item.details?.desc) {
-                    doc.setFontSize(8);
-                    doc.setFont("helvetica", "italic");
-                    doc.setTextColor(130, 130, 130);
-                    const insight = item.details.insight || item.details.desc;
-                    const splitInsight = doc.splitTextToSize(`「${insight}」`, pageWidth - margin - 40);
-                    doc.text(splitInsight, margin + 20, y - 4);
-                    y += splitInsight.length * 4;
-                }
-            });
-            y += 4;
+    try {
+        // Use html2canvas to capture the content
+        const canvas = await html2canvas(container, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff'
         });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const imgWidth = 210; // A4 width in mm
+        const pageHeight = 297; // A4 height in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        // Add first page
+        doc.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        // Add subsequent pages if content overflows A4
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            doc.addPage();
+            doc.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+        }
+
+        document.body.removeChild(container);
+
+        if (options.returnBlob) {
+            return doc.output('bloburl');
+        }
+
+        doc.save(`${trip.name || 'my_itinerary'}_${template}.pdf`);
+    } catch (err) {
+        console.error("PDF generation failed:", err);
+        document.body.removeChild(container);
+        throw err;
     }
-
-    // --- SHOPPING LIST ---
-    if (trip.shoppingList && trip.shoppingList.length > 0) {
-        if (y > pageHeight - 60) { doc.addPage(); y = 20; }
-        y = addSectionTitle("欲購清單", margin, y + 10);
-
-        trip.shoppingList.forEach(item => {
-            if (y > pageHeight - 20) { doc.addPage(); y = 20; }
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "normal");
-            doc.setTextColor(...textColor);
-            doc.rect(margin, y - 3, 4, 4); // Checkbox
-            doc.text(`${item.name} (${item.estPrice || 'N/A'})`, margin + 8, y);
-            y += 7;
-        });
-    }
-
-    // --- FOOTER ---
-    const pageCount = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(9);
-        doc.setTextColor(150, 150, 150);
-        doc.setDrawColor(230, 230, 230);
-        doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
-        doc.text(`Page ${i} of ${pageCount} | Generated by Travel Together V2`, pageWidth / 2, pageHeight - 10, { align: 'center' });
-    }
-
-    if (options.returnBlob) {
-        return doc.output('bloburl');
-    }
-
-    doc.save(`${trip.name || 'my_itinerary'}.pdf`);
 };
 
 export const exportToJSON = (trip) => {

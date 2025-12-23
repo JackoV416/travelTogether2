@@ -1,9 +1,18 @@
-# Travel Together (智能旅遊規劃) V1.1.7
+# Travel Together (智能旅遊規劃) V1.1.8
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.1.7-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.1.8-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-11.x-orange.svg)](https://firebase.google.com/)
+
+## 🚀 V1.1.8: Dark Mode & AI Polish (2025-12-23)
+**V1.1.8: [Visual & Stability] Dark Mode 全面回歸 + AI 韌性強化！**
+本次更新致力於極致的視覺一致性與系統穩定性。
+
+### ✨ V1.1.8 核心更新 (Updates)
+- **🌙 Dark Mode Consistency**: 統一所有 Modal (Import/Export/Create) 與 TripCard 使用 Tailwind `dark:` 變體，徹底解決深色模式切換時的視覺斷層。
+- **🛡️ AI Resilience**: 針對 Gemini API 流量限制 (429) 與配額用盡情況實裝專屬偵測與用戶提示，提升 AI 功能的可靠性。
+- **🖥️ UI Polish**: 修復匯出預覽區域的關閉按鈕與透明度問題，優化 JSON 預覽的代碼行號顯示。
 
 ## 🚀 V1.1.7: Daily Intelligence (2025-12-23)
 **V1.1.7: [Daily Intelligence] 每日總覽智能化 + 匯出預覽升級！**
@@ -125,7 +134,8 @@ graph TD
 
 | 版本 | 標籤 | 狀態 |
 | :--- | :--- | :--- |
-| **V1.1.7** | **Daily Intelligence** | 🚀 最新版 |
+| **V1.1.8** | **Dark Mode & AI Polish** | 🚀 最新版 |
+| **V1.1.7** | **Daily Intelligence** | ✅ 已發布 |
 | **V1.1.2** | **Audit & Precision** | ✅ 已發布 |
 | **V1.1.1** | **Resilience & Polish** | ✅ 已發布 |
 | **V1.0.5** | **Security Update** | ✅ 已發布 |

@@ -17,7 +17,7 @@ const WeatherWidget = ({ isDarkMode, weatherData, isLoadingWeather, currentLang 
 
     return (
         <div className="break-inside-avoid shadow-xl">
-            <div className={`${glassCard(isDarkMode)} p-6 flex flex-col bg-gradient-to-br from-blue-500/15 via-indigo-500/10 to-white/5 max-h-[500px] overflow-hidden`}>
+            <div className={`${glassCard(isDarkMode)} p-6 flex flex-col bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-transparent max-h-[500px] overflow-hidden`}>
                 <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500/90 rounded-t-2xl"></div>
                 <div className="flex items-center justify-between mb-6 relative z-10">
                     <h4 className="font-bold flex items-center gap-2 text-indigo-400">
@@ -70,7 +70,7 @@ const WeatherWidget = ({ isDarkMode, weatherData, isLoadingWeather, currentLang 
                                     {/* Scrollable Day/Night Weather */}
                                     <div className="flex gap-3 overflow-x-auto custom-scrollbar-hide pb-1">
                                         {/* Day Forecast */}
-                                        <div className={`flex-1 min-w-[120px] p-2.5 rounded-xl border flex flex-col gap-1 ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-gray-100'}`}>
+                                        <div className={`flex-1 min-w-[120px] p-2.5 rounded-xl border flex flex-col gap-1 ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-white border-gray-100'}`}>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-[9px] font-black opacity-40 uppercase tracking-widest text-orange-400">Daytime</span>
                                                 <span className="text-sm">{dayIcon}</span>

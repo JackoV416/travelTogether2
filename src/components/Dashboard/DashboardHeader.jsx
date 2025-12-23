@@ -73,12 +73,12 @@ const DashboardHeader = ({
                         {/* Create New Banner (Bottom of list) */}
                         <button
                             onClick={() => setIsCreateModalOpen(true)}
-                            className={`w-full py-3 rounded-2xl border-2 border-dashed flex items-center justify-center gap-2 transition-all group ${isDarkMode ? 'border-gray-700 hover:border-indigo-500 hover:bg-gray-800' : 'border-gray-300 hover:border-indigo-500 hover:bg-white/50'}`}
+                            className={`w-full py-3 rounded-2xl border border-dashed flex items-center justify-center gap-2 transition-all group ${isDarkMode ? 'border-white/5 hover:border-indigo-500/50 hover:bg-white/5' : 'border-slate-300 hover:border-indigo-500 hover:bg-slate-50'}`}
                         >
-                            <div className="w-6 h-6 rounded-full bg-indigo-500/10 flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-colors text-indigo-500">
+                            <div className="w-6 h-6 rounded-full bg-indigo-500/10 flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-colors text-indigo-600 dark:text-indigo-400">
                                 <Plus className="w-3.5 h-3.5" />
                             </div>
-                            <span className="text-sm font-bold opacity-60 group-hover:opacity-100 transition-opacity">新增行程</span>
+                            <span className="text-sm font-bold opacity-60 group-hover:opacity-100 transition-opacity text-slate-900 dark:text-white">新增行程</span>
                         </button>
                     </div>
                 )}
@@ -88,7 +88,7 @@ const DashboardHeader = ({
                     <div className="flex flex-wrap gap-3 mt-4">
                         <button
                             onClick={() => { setForm({ name: '', countries: [], cities: [], startDate: '', endDate: '' }); setSelectedCountryImg(DEFAULT_BG_IMAGE); }}
-                            className="px-4 py-3 rounded-xl border border-white/30 text-sm hover:bg-white/10 transition-all"
+                            className="px-4 py-3 rounded-xl border border-white/10 text-sm hover:bg-white/5 transition-all text-white/50"
                         >
                             重設預覽
                         </button>

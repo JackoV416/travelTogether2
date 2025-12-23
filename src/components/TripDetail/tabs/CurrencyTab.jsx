@@ -43,7 +43,7 @@ const CurrencyTab = ({
                     </div>
                 </div>
 
-                <div className="w-full max-w-md bg-white/5 rounded-3xl p-6 border border-white/10 shadow-2xl backdrop-blur-sm relative overflow-hidden transition-all duration-500 hover:border-violet-500/30">
+                <div className="w-full max-w-md bg-gray-50 dark:bg-white/5 rounded-3xl p-6 border border-gray-200 dark:border-white/10 shadow-xl dark:shadow-2xl backdrop-blur-sm relative overflow-hidden transition-all duration-500 hover:border-violet-500/30">
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 to-fuchsia-500"></div>
 
                     {/* Input Area */}
@@ -53,15 +53,15 @@ const CurrencyTab = ({
                             <label className="text-[10px] font-black opacity-40 uppercase tracking-[0.2em] pl-1">
                                 本地貨幣 ({homeCurrency})
                             </label>
-                            <div className="flex items-center gap-4 bg-black/30 p-4 rounded-2xl border border-white/5 group-focus-within:border-violet-500/50 transition-colors">
-                                <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center font-bold text-lg shrink-0">
+                            <div className="flex items-center gap-4 bg-white dark:bg-black/30 p-4 rounded-2xl border border-gray-100 dark:border-white/5 group-focus-within:border-violet-500/50 transition-colors shadow-sm dark:shadow-none">
+                                <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-white/10 flex items-center justify-center font-bold text-lg shrink-0">
                                     {currencies[homeCurrency]?.symbol}
                                 </div>
                                 <input
                                     type="number"
                                     value={convAmount}
                                     onChange={e => setConvAmount(Number(e.target.value))}
-                                    className="w-full bg-transparent text-3xl font-black font-mono outline-none placeholder-white/10"
+                                    className="w-full bg-transparent text-3xl font-black font-mono outline-none placeholder-gray-300 dark:placeholder-white/10"
                                     placeholder="1000"
                                 />
                                 <div className="font-black opacity-30 text-xs">{homeCurrency}</div>
@@ -70,7 +70,7 @@ const CurrencyTab = ({
 
                         {/* Divider / Switch */}
                         <div className="flex justify-center -my-3 relative z-20">
-                            <div className="bg-gray-800 rounded-full p-2 border border-gray-600 shadow-xl">
+                            <div className="bg-white dark:bg-gray-800 rounded-full p-2 border border-gray-100 dark:border-gray-600 shadow-lg dark:shadow-xl">
                                 <ArrowUpRight className="w-5 h-5 text-violet-400 rotate-45" />
                             </div>
                         </div>
@@ -81,8 +81,8 @@ const CurrencyTab = ({
                                 當地貨幣 ({convTo})
                                 {isSimulation && <Info className="w-3 h-3 text-violet-400 animate-bounce cursor-help" title="點擊切換不同目的地幣值" />}
                             </label>
-                            <div className="flex items-center gap-4 bg-violet-500/10 p-4 rounded-2xl border border-violet-500/30">
-                                <div className="w-12 h-12 rounded-xl bg-violet-500/20 flex items-center justify-center font-bold text-lg text-violet-400 shrink-0 uppercase">
+                            <div className="flex items-center gap-4 bg-violet-500/5 dark:bg-violet-500/10 p-4 rounded-2xl border border-violet-500/10 dark:border-violet-500/30">
+                                <div className="w-12 h-12 rounded-xl bg-violet-500/10 dark:bg-violet-500/20 flex items-center justify-center font-bold text-lg text-violet-500 dark:text-violet-400 shrink-0 uppercase">
                                     {currencies[convTo]?.symbol || convTo?.charAt(0)}
                                 </div>
                                 <div className={`w-full text-3xl font-black font-mono text-violet-400 truncate ${isSimulation && (convAmount > 0) ? 'animate-pulse' : ''}`}>
@@ -110,7 +110,7 @@ const CurrencyTab = ({
                         <div className="text-xs font-bold opacity-60 font-mono tracking-tight">
                             1 {homeCurrency} ≈ <span className="text-violet-400 font-black">{currentRate.toFixed(4)}</span> {convTo}
                         </div>
-                        <div className="text-[10px] opacity-40 font-bold uppercase tracking-widest mt-2 px-4 py-1.5 bg-white/5 rounded-full inline-block">Real-time Data Synchronized</div>
+                        <div className="text-[10px] opacity-40 font-bold uppercase tracking-widest mt-2 px-4 py-1.5 bg-gray-100 dark:bg-white/5 rounded-full inline-block">Real-time Data Synchronized</div>
                     </div>
                 </div>
             </div>
@@ -162,7 +162,7 @@ const CurrencyTab = ({
                                             {currencies[homeCurrency]?.symbol}{priceInHome.toLocaleString('en-US', { maximumFractionDigits: 1 })}
                                             <span className="ml-1 text-[9px] opacity-70 font-bold uppercase tracking-tighter">本地貨幣 ({homeCurrency})</span>
                                         </div>
-                                        <div className="text-[10px] font-black text-white/40 font-mono tracking-tighter flex items-center gap-1">
+                                        <div className="text-[10px] font-black text-gray-400 dark:text-white/40 font-mono tracking-tighter flex items-center gap-1">
                                             {currencies[convTo]?.symbol}{priceInDest.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                                             <span className="text-[8px] opacity-50 ml-1">當地貨幣 ({convTo})</span>
                                         </div>
@@ -211,7 +211,7 @@ const CurrencyTab = ({
                                             {currencies[homeCurrency]?.symbol}{costHome.toLocaleString('en-US', { maximumFractionDigits: 1 })}
                                             <span className="ml-1 text-[9px] opacity-70 font-bold uppercase tracking-tighter">本地貨幣 ({homeCurrency})</span>
                                         </div>
-                                        <div className="text-[10px] font-black text-white/40 font-mono tracking-tighter flex items-center gap-1">
+                                        <div className="text-[10px] font-black text-gray-400 dark:text-white/40 font-mono tracking-tighter flex items-center gap-1">
                                             {currencies[convTo]?.symbol}{costDest.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                                             <span className="text-[8px] opacity-50 ml-1">當地貨幣 ({convTo})</span>
                                         </div>

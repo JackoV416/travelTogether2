@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Download, Upload, FileText, Image, Copy, FileJson, Check, Sparkles, Loader2 } from 'lucide-react';
 import { exportToBeautifulPDF, exportToJSON, exportToImage } from '../../services/pdfExport';
-import { glassCard, inputClasses } from '../../utils/helpers.jsx';
+import { glassCard, inputClasses } from '../../utils/tripUtils.jsx';
 import { parseTripImage } from '../../services/ai';
 
 /**
@@ -165,7 +165,7 @@ const TripExportImportModal = ({
 
     return (
         <div className="fixed inset-0 bg-black/60 z-[90] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in">
-            <div className={`w-full max-w-3xl rounded-2xl p-8 ${isDarkMode ? 'bg-gray-900 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-200'} shadow-2xl border transition-all transform scale-100 flex flex-col max-h-[90vh]`}>
+            <div className="w-full max-w-3xl rounded-2xl p-8 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 shadow-2xl transition-all transform scale-100 flex flex-col max-h-[90vh]">
 
                 {/* Header */}
                 <div className="flex justify-between items-start mb-8 flex-shrink-0">
@@ -194,11 +194,11 @@ const TripExportImportModal = ({
                         <select
                             value={selectedTripId}
                             onChange={e => setSelectedTripId(e.target.value)}
-                            className={inputClasses(isDarkMode) + " cursor-pointer appearance-none"}
+                            className={inputClasses() + " cursor-pointer appearance-none"}
                         >
-                            <option value="">-- 請選擇 --</option>
-                            {mode === 'import' && <option value="new">🆕 建立新行程 (Create New Trip)</option>}
-                            {trips.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                            <option value="" className="dark:bg-slate-900">-- 請選擇 --</option>
+                            {mode === 'import' && <option value="new" className="dark:bg-slate-900">🆕 建立新行程 (Create New Trip)</option>}
+                            {trips.map(t => <option key={t.id} value={t.id} className="dark:bg-slate-900">{t.name}</option>)}
                         </select>
                     </div>
                 )}
@@ -217,7 +217,7 @@ const TripExportImportModal = ({
                                         <span className="text-xs opacity-60">完整格式 (V14.2)</span>
                                     </button>
 
-                                    <button onClick={handleExportImage} className={`p - 4 rounded - xl border border - pink - 500 / 30 bg - pink - 500 / 10 hover: bg - pink - 500 / 20 flex flex - col items - center gap - 2 transition - all group text - center ${sourceType === 'trip' ? 'opacity-50 cursor-not-allowed' : ''} `}>
+                                    <button onClick={handleExportImage} className={`p-4 rounded-xl border border-pink-500/30 bg-pink-500/10 hover:bg-pink-500/20 flex flex-col items-center gap-2 transition-all group text-center ${sourceType === 'trip' ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                         <Image className="w-8 h-8 text-pink-500 group-hover:scale-110 transition-transform" />
                                         <span className="font-bold text-pink-500">圖片匯出</span>
                                         <span className="text-xs opacity-60">長截圖 (PNG)</span>
@@ -241,7 +241,7 @@ const TripExportImportModal = ({
                                 <textarea
                                     value={sourceType === 'trip' && selectedData ? JSON.stringify(selectedData, null, 2) : inputValue}
                                     readOnly
-                                    className={`w - full h - 48 p - 3 rounded - xl border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'} focus: ring - 2 focus: ring - indigo - 500 outline - none transition - all font - mono text - xs`}
+                                    className="w-full h-48 p-3 rounded-xl border bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono text-xs text-slate-900 dark:text-white"
                                 />
                             </div>
                         </div>
@@ -263,7 +263,7 @@ const TripExportImportModal = ({
                             </div>
 
                             {importMode === 'image' ? (
-                                <div className={`w - full h - 64 border - 2 border - dashed rounded - xl flex flex - col items - center justify - center p - 6 text - center transition - all ${isDarkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-300 bg-gray-50'} `}>
+                                <div className="w-full h-64 border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-6 text-center transition-all border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
                                     {scanLoading ? (
                                         <div className="flex flex-col items-center gap-3 animate-pulse">
                                             <div className="w-10 h-10 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
@@ -297,7 +297,7 @@ const TripExportImportModal = ({
                                 <textarea
                                     value={inputValue}
                                     onChange={e => setInputValue(e.target.value)}
-                                    className={`w - full h - 64 p - 4 rounded - xl border outline - none focus: ring - 2 focus: ring - indigo - 500 transition - all font - mono text - xs ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'} `}
+                                    className="w-full h-64 p-4 rounded-xl border outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-mono text-xs bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                                     placeholder={importMode === 'json' ? '[{"name":"Tokyo Trip", ...}]' : 'name,country,city,startDate,endDate\nTokyo Trip,JP,Tokyo,2025-04-01,2025-04-05'}
                                 />
                             )}

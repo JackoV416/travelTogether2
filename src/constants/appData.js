@@ -5,13 +5,24 @@ import {
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.1.7";
-export const APP_VERSION_TAG = "Daily Intelligence";
+export const APP_VERSION = "V1.1.8";
+export const APP_VERSION_TAG = "Dark Mode & AI Polish";
 export const APP_LAST_UPDATE = '2025-12-23';
 
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.1.8",
+        date: "2025-12-23",
+        tag: "Dark Mode & AI Polish",
+        changes: [
+            "🌙 Dark Mode 全面修復: 統一所有 Modal 與卡片使用 Tailwind dark: variants，確保視覺一致性",
+            "🤖 AI 錯誤處理優化: 針對 Gemini API 429 (Rate Limit) 及 Quota 限制加入友好提示與重試機制",
+            "💅 匯出預覽優化: 修復 JSON/Text 預覽關閉按鈕，並優化代碼編輯器樣式與行號顯示",
+            "🛠️ 代碼清理: 移除 unused isDarkMode props，統一使用 Global Dark Mode 系統"
+        ]
+    },
     {
         ver: "V1.1.7",
         date: "2025-12-23",

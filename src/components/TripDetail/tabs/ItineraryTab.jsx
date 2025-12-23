@@ -930,19 +930,16 @@ const ItineraryTab = ({
                                             <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-xs">
                                                 {filteredItems.length}
                                             </div>
-                                            <div className="font-bold text-sm opacity-80">📋 本頁總覽</div>
+                                            <div className="font-bold text-sm opacity-80">📋 每日總覽</div>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <button
-                                                onClick={() => onOpenAIModal?.('analysis')}
-                                                className="text-[10px] bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded-full border border-white/10 flex items-center gap-1 transition-colors opacity-50 cursor-not-allowed"
-                                                disabled
-                                                title="功能開發中，敬請期待"
+                                                onClick={() => onOpenAIModal('daily-summary')}
+                                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black border transition-all active:scale-95 ${isDarkMode ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30' : 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'}`}
                                             >
-                                                <BrainCircuit className="w-3 h-3 text-gray-400" />
-                                                <span className="font-bold text-gray-400">AI 分析</span>
+                                                <BrainCircuit className="w-3 h-3" />
+                                                <span>AI 分析</span>
                                             </button>
-                                            <span className="text-[8px] font-bold bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full border border-amber-500/20">SOON</span>
                                         </div>
                                     </div>
 
@@ -1382,37 +1379,37 @@ const ItineraryTab = ({
                                         onClick={() => setPreviewLocation(item.details?.location || trip.city)}
                                         className={`mx-0.5 p-2.5 rounded-xl border flex gap-3 transition-all cursor-pointer relative overflow-hidden group 
                                             ${isPreviewing ? `ring-2 shadow-lg scale-[1.02] z-10 ${{
-                                                    flight: 'ring-indigo-500 shadow-indigo-500/20 bg-indigo-500/5 border-indigo-500/30',
-                                                    hotel: 'ring-rose-500 shadow-rose-500/20 bg-rose-500/5 border-rose-500/30',
-                                                    food: 'ring-orange-500 shadow-orange-500/20 bg-orange-500/5 border-orange-500/30',
-                                                    spot: 'ring-cyan-500 shadow-cyan-500/20 bg-cyan-500/5 border-cyan-500/30',
-                                                    transport: 'ring-purple-500 shadow-purple-500/20 bg-purple-500/5 border-purple-500/30',
-                                                    shopping: 'ring-pink-500 shadow-pink-500/20 bg-pink-500/5 border-pink-500/30'
-                                                }[item.type] || 'ring-gray-500'
+                                                flight: 'ring-indigo-500 shadow-indigo-500/20 bg-indigo-500/5 border-indigo-500/30',
+                                                hotel: 'ring-rose-500 shadow-rose-500/20 bg-rose-500/5 border-rose-500/30',
+                                                food: 'ring-orange-500 shadow-orange-500/20 bg-orange-500/5 border-orange-500/30',
+                                                spot: 'ring-cyan-500 shadow-cyan-500/20 bg-cyan-500/5 border-cyan-500/30',
+                                                transport: 'ring-purple-500 shadow-purple-500/20 bg-purple-500/5 border-purple-500/30',
+                                                shopping: 'ring-pink-500 shadow-pink-500/20 bg-pink-500/5 border-pink-500/30'
+                                            }[item.type] || 'ring-gray-500'
                                                 }` : `hover:shadow-md hover:-translate-y-0.5 z-0 ${isDarkMode ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white border-gray-100 hover:border-gray-200'
-                                            }`} shadow-sm`}
+                                                }`} shadow-sm`}
                                     >
                                         {/* Ticket Border Accent - Synced with Tag Palette */}
                                         <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${{
-                                                flight: 'bg-indigo-600',
-                                                hotel: 'bg-rose-600',
-                                                food: 'bg-orange-600',
-                                                spot: 'bg-cyan-600',
-                                                transport: 'bg-purple-600',
-                                                shopping: 'bg-pink-600'
-                                            }[item.type] || 'bg-gray-600'
+                                            flight: 'bg-indigo-600',
+                                            hotel: 'bg-rose-600',
+                                            food: 'bg-orange-600',
+                                            spot: 'bg-cyan-600',
+                                            transport: 'bg-purple-600',
+                                            shopping: 'bg-pink-600'
+                                        }[item.type] || 'bg-gray-600'
                                             }`} />
 
                                         {/* Left Side: Number & Icon - Added pl-1 to avoid accent bar overlap */}
                                         <div className="flex flex-col items-center justify-center min-w-[36px] gap-1 opacity-80 border-r border-dashed border-gray-500/10 pr-2 pl-1.5">
                                             <span className={`text-[10px] font-black font-mono ${{
-                                                    flight: 'text-indigo-500',
-                                                    hotel: 'text-rose-500',
-                                                    food: 'text-orange-500',
-                                                    spot: 'text-cyan-500',
-                                                    transport: 'text-purple-500',
-                                                    shopping: 'text-pink-500'
-                                                }[item.type] || 'text-gray-500'
+                                                flight: 'text-indigo-500',
+                                                hotel: 'text-rose-500',
+                                                food: 'text-orange-500',
+                                                spot: 'text-cyan-500',
+                                                transport: 'text-purple-500',
+                                                shopping: 'text-pink-500'
+                                            }[item.type] || 'text-gray-500'
                                                 }`}>#{idx + 1}</span>
                                             {(() => {
                                                 const Icon = {
@@ -1424,13 +1421,13 @@ const ItineraryTab = ({
                                                     shopping: ShoppingBag
                                                 }[item.type] || MapPin;
                                                 return <Icon className={`w-3.5 h-3.5 ${{
-                                                        flight: 'text-indigo-500',
-                                                        hotel: 'text-rose-500',
-                                                        food: 'text-orange-500',
-                                                        spot: 'text-cyan-500',
-                                                        transport: 'text-purple-500',
-                                                        shopping: 'text-pink-500'
-                                                    }[item.type] || 'text-gray-500'
+                                                    flight: 'text-indigo-500',
+                                                    hotel: 'text-rose-500',
+                                                    food: 'text-orange-500',
+                                                    spot: 'text-cyan-500',
+                                                    transport: 'text-purple-500',
+                                                    shopping: 'text-pink-500'
+                                                }[item.type] || 'text-gray-500'
                                                     }`} />;
                                             })()}
                                         </div>
@@ -1439,13 +1436,13 @@ const ItineraryTab = ({
                                         <div className="flex-1 min-w-0 flex flex-col justify-center">
                                             <div className="flex items-center justify-between gap-2 mb-0.5">
                                                 <span className={`text-[10px] font-black font-mono tracking-tight ${{
-                                                        flight: 'text-indigo-400',
-                                                        hotel: 'text-rose-400',
-                                                        food: 'text-orange-400',
-                                                        spot: 'text-cyan-400',
-                                                        transport: 'text-purple-400',
-                                                        shopping: 'text-pink-400'
-                                                    }[item.type] || 'text-gray-400'
+                                                    flight: 'text-indigo-400',
+                                                    hotel: 'text-rose-400',
+                                                    food: 'text-orange-400',
+                                                    spot: 'text-cyan-400',
+                                                    transport: 'text-purple-400',
+                                                    shopping: 'text-pink-400'
+                                                }[item.type] || 'text-gray-400'
                                                     }`}>{item.details?.time || item.time || "--:--"}</span>
                                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <a

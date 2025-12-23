@@ -24,6 +24,8 @@ import ErrorBoundary from './components/Shared/ErrorBoundary';
 import OnboardingModal from './components/Modals/OnboardingModal';
 import FeedbackModal from './components/Modals/FeedbackModal';
 import VersionModal from './components/Modals/VersionModal'; // Imported
+import VersionGuardModal from './components/Modals/VersionGuardModal'; // V1.1.8
+import ReportCenterModal from './components/Modals/ReportCenterModal'; // V1.1.8
 import AdminFeedbackModal from './components/Modals/AdminFeedbackModal';
 import SettingsView from './components/Views/SettingsView'; // New View
 
@@ -76,7 +78,7 @@ const Footer = ({ isDarkMode, onOpenVersion }) => {
     const [time, setTime] = useState(new Date());
     useEffect(() => { const t = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(t); }, []);
     return (
-        <footer className={`mt-12 py-6 border-t text-center text-xs md:text-sm flex flex-col items-center justify-center gap-1 ${isDarkMode ? 'bg-gray-900 border-gray-800 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-600'} pb-[env(safe-area-inset-bottom)]`}>
+        <footer className={`mt-12 pt-6 pb-12 border-t text-center text-xs md:text-sm flex flex-col items-center justify-center gap-1 ${isDarkMode ? 'bg-gray-900 border-gray-800 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-600'} pb-[calc(1.5rem+env(safe-area-inset-bottom))]`}>
             <div className="flex flex-wrap gap-2 items-center justify-center font-bold">
                 <span>Travel Together {APP_VERSION}</span>
                 <span>•</span>
@@ -132,7 +134,7 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
     });
 
     return (
-        <header className={`sticky top-0 z-50 p-4 transition-all duration-300 ${isDarkMode ? 'bg-gray-900/95 border-b border-gray-800' : 'bg-gray-50/95 border-b border-gray-200'} shadow-sm`}>
+        <header className={`fixed top-0 left-0 right-0 z-[50] p-4 transition-all duration-300 ${isDarkMode ? 'bg-gray-900/80 border-b border-white/5' : 'bg-gray-50/80 border-b border-gray-200/50'} shadow-sm backdrop-blur-xl supports-[backdrop-filter]:bg-gray-900/60`}>
             <div className="flex items-center justify-between max-w-7xl mx-auto">
                 <div className="flex items-center gap-3">
                     {onBack && <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-500/10 btn-press" aria-label="返回"><ChevronLeft /></button>}
@@ -478,6 +480,7 @@ const App = () => {
     // isSettingsOpen state removed
     const [isVersionOpen, setIsVersionOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isReportCenterOpen, setIsReportCenterOpen] = useState(false); // V1.1.8 Report Center
 
     // Import/Export Modals State
     const [isSmartImportModalOpen, setIsSmartImportModalOpen] = useState(false);
@@ -595,6 +598,69 @@ const App = () => {
 
     // --- Notification System Hook ---
     const { notifications, sendNotification, setNotifications, markNotificationsRead, removeNotification } = useNotifications(user);
+
+    // --- Version Guard & Confetti State ---
+    const [latestVersion, setLatestVersion] = useState(APP_VERSION);
+    const [isVersionGuardOpen, setIsVersionGuardOpen] = useState(false);
+
+    // Import Confetti dynamically to avoid heavy bundle
+    const triggerConfetti = async () => {
+        const confetti = (await import('canvas-confetti')).default;
+        confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#6366f1', '#818cf8', '#c7d2fe', '#ffffff'] // Indigo theme
+        });
+    };
+
+    // --- Version Check (Firestore) ---
+    useEffect(() => {
+        // Listen to global settings for latest version
+        const unsub = onSnapshot(doc(db, "settings", "system"), (doc) => {
+            if (doc.exists() && doc.data().latestVersion) {
+                const remoteVer = doc.data().latestVersion;
+                setLatestVersion(remoteVer);
+
+                // Compare versions (Simple string comparison sufficient for V1.x.x format)
+                // In production, use semver-compare if versioning gets complex
+                if (remoteVer > APP_VERSION) {
+                    setIsVersionGuardOpen(true);
+                } else {
+                    setIsVersionGuardOpen(false);
+                }
+            }
+        });
+        return () => unsub();
+    }, []);
+
+    // --- Update Success Logic (Local Cache) ---
+    useEffect(() => {
+        const lastSeenVersion = localStorage.getItem('app_version_cache');
+        if (lastSeenVersion && lastSeenVersion !== APP_VERSION) {
+            const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+            setTimeout(() => {
+                // Success Toast with explicit time to fix "Invalid Date"
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                sendNotification(
+                    `更新成功至 ${APP_VERSION} (Update Success)`,
+                    `${isPWA ? 'App 版本' : '網頁'}已成功升級至 ${APP_VERSION}，享受更佳體驗！`,
+                    "success",
+                    { time: timeStr } // Explicit time string
+                );
+
+                triggerConfetti();
+
+                // Show Version Modal on major updates
+                setIsVersionOpen(true);
+
+            }, 1000);
+        }
+        localStorage.setItem('app_version_cache', APP_VERSION);
+    }, [sendNotification]);
 
     // BYOK State
     const [userGeminiKey, setUserGeminiKey] = useState("");
@@ -874,7 +940,7 @@ const App = () => {
     if (!user && !isPreviewMode && view !== 'tutorial') return <LandingPage onLogin={() => signInWithPopup(auth, googleProvider)} />;
 
     return (
-        <div className={`min-h-screen transition-colors duration-500 font-sans selection:bg-indigo-500/30 ${isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-slate-50 text-gray-900'}`}>
+        <div className={`min-h-screen flex flex-col overflow-x-hidden transition-colors duration-500 font-sans selection:bg-indigo-500/30 ${isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-slate-50 text-gray-900'}`}>
             <NotificationSystem notifications={notifications} setNotifications={setNotifications} isDarkMode={isDarkMode} onNotificationClick={handleNotificationNavigate} />
             <OfflineBanner isDarkMode={isDarkMode} />
             <ReloadPrompt />
@@ -884,11 +950,12 @@ const App = () => {
                 className="fixed inset-0 z-0 opacity-20 pointer-events-none transition-all duration-1000 object-cover w-full h-full"
                 alt="Background"
             />
-            <div className="relative z-10 flex-grow">
-                {view !== 'tutorial' && <Header title="✈️ Travel Together" user={user} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} onLogout={() => signOut(auth)} onBack={(view !== 'dashboard' && view !== 'settings') ? () => setView('dashboard') : null} onTutorialStart={() => setView('tutorial')} onViewChange={setView} onOpenUserSettings={() => setView('settings')} onOpenFeedback={() => setIsFeedbackModalOpen(true)} onOpenAdminFeedback={() => setIsAdminFeedbackModalOpen(true)} isAdmin={isAdmin} adminPendingCount={openFeedbackCount} onOpenVersion={() => setIsVersionOpen(true)} notifications={notifications} onRemoveNotification={removeNotification} onMarkNotificationsRead={markNotificationsRead} onNotificationClick={handleNotificationNavigate} />}
+            {/* Fixed Header - Outside content wrapper for proper fixed positioning */}
+            {view !== 'tutorial' && <Header title="✈️ Travel Together" user={user} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} onLogout={() => signOut(auth)} onBack={(view !== 'dashboard' && view !== 'settings') ? () => setView('dashboard') : null} onTutorialStart={() => setView('tutorial')} onViewChange={setView} onOpenUserSettings={() => setView('settings')} onOpenFeedback={() => setIsReportCenterOpen(true)} onOpenAdminFeedback={() => setIsAdminFeedbackModalOpen(true)} isAdmin={isAdmin} adminPendingCount={openFeedbackCount} onOpenVersion={() => setIsVersionOpen(true)} notifications={notifications} onRemoveNotification={removeNotification} onMarkNotificationsRead={markNotificationsRead} onNotificationClick={handleNotificationNavigate} />}
+            <div className={`relative z-10 flex-grow ${view !== 'tutorial' ? 'pt-[76px]' : ''}`}>
                 {view === 'dashboard' && (
                     <div className="animate-fade-in">
-                        <ErrorBoundary fallbackMessage="儀表板載入失敗，請重新整理" onOpenFeedback={() => setIsFeedbackModalOpen(true)}>
+                        <ErrorBoundary fallbackMessage="儀表板載入失敗，請重新整理" onOpenFeedback={() => setIsReportCenterOpen(true)}>
                             <Dashboard
                                 user={user}
                                 onSelectTrip={(t) => { setSelectedTrip(t); setView('detail'); setIsPreviewMode(false); }}
@@ -907,7 +974,7 @@ const App = () => {
                 )}
                 {view === 'detail' && (
                     <div className="animate-slide-up">
-                        <ErrorBoundary fallbackMessage="行程詳情載入失敗，請重新整理" onOpenFeedback={() => setIsFeedbackModalOpen(true)}>
+                        <ErrorBoundary fallbackMessage="行程詳情載入失敗，請重新整理" onOpenFeedback={() => setIsReportCenterOpen(true)}>
                             <TripDetail
                                 tripData={isPreviewMode ? previewTrip : selectedTrip}
                                 user={user}
@@ -965,6 +1032,7 @@ const App = () => {
             {view !== 'tutorial' && <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} />}
             {/* SettingsModal removed */}
             <VersionModal isOpen={isVersionOpen} onClose={() => setIsVersionOpen(false)} isDarkMode={isDarkMode} globalSettings={globalSettings} />
+            <VersionGuardModal isOpen={isVersionGuardOpen} latestVersion={latestVersion} currentVersion={APP_VERSION} />
             <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} isDarkMode={isDarkMode} user={user} isBanned={isBanned} />
             <AdminFeedbackModal
                 isOpen={isAdminFeedbackModalOpen}
@@ -972,6 +1040,13 @@ const App = () => {
                 isDarkMode={isDarkMode}
                 adminEmails={dynamicAdminEmails}
                 onUpdateAdminList={(newList) => setDoc(doc(db, "settings", "admin_config"), { admin_emails: newList }, { merge: true })}
+            />
+            {/* Report Center (Replaces generic feedback for logged in users eventually, but side-by-side for now) */}
+            <ReportCenterModal
+                isOpen={isReportCenterOpen}
+                onClose={() => setIsReportCenterOpen(false)}
+                isDarkMode={isDarkMode}
+                user={user}
             />
             <SmartImportModal
                 isOpen={isSmartImportModalOpen}
