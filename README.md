@@ -1,21 +1,18 @@
-# Travel Together (智能旅遊規劃) V1.2.9
+# Travel Together (智能旅遊規劃) V1.2.10
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.2.9-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.2.10-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-11.x-orange.svg)](https://firebase.google.com/)
 
-## 🚀 V1.2.9: Final Polish (2026-01-07)
-**V1.2.9: [UX & Stability] 手機版介面優化與最終打磨！**
-針對 Mobile 用戶優化了 View Switcher，並修復了所有遺留的 `console.log`，讓程式碼更乾淨、介面更流暢。
+## 🚀 V1.2.10: Localization Audit & i18n Fixes (2026-01-07)
+**V1.2.10: [i18n] 全站語言審計與修正！**
+深度審計 TripHeader 等組件，移除所有硬編碼中文字串，確保三語 (繁中/廣東話/英文) 完美切換。
 
-### 🌟 V1.2.9 主要更新
-1.  **Mobile View Switcher (手機版視圖切換)**:
-    -   全新 Scrollable Pill 設計，清楚顯示 List / Board / Kanban / Map 文字標籤，不再只靠圖示估估吓。
-2.  **Save to Board (收藏功能)**:
-    -   新增 "Heart" 按鈕，雖然未有 Backend 連結，但前端交互已準備就緒！
-3.  **Codebase Clean-up**:
-    -   **Console Zero**: 移除超過 20 個 Debug 用 `console.log`，提升 Production 專業感。
+### 🌟 V1.2.10 主要更新
+1.  **TripHeader i18n Fix**: 修正 5 處硬編碼中文 (Undo/Redo/Edit/Chat/天行程) 改用 `t()` 函數
+2.  **zh-HK Enhancement**: 新增「復原」「重做」「改行程設定」「傾兩句」等廣東話翻譯
+3.  **Translation Keys**: `i18n.js` 新增 5 個 key (undo, redo, edit_settings, open_chat, days_trip)
 
 ---
 

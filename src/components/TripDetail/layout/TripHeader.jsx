@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Calendar, Clock, MapPin, Globe2, Undo, Redo, Edit3, MessageCircle,
     UserPlus, Newspaper, Upload, Share2, Plus, BrainCircuit, Sparkles,
@@ -49,6 +50,7 @@ const TripHeader = ({
     setViewMode
 }) => {
     // Local menu states derived from original component
+    const { t } = useTranslation();
     const [isPlanMenuOpen, setIsPlanMenuOpen] = useState(false);
     const [isManageMenuOpen, setIsManageMenuOpen] = useState(false);
 
@@ -83,15 +85,15 @@ const TripHeader = ({
                         {/* Left Col: Trip Core Info */}
                         <div className="lg:col-span-2 flex flex-col justify-between min-h-[220px]">
                             <div>
-                                <div className="text-[10px] text-indigo-300 uppercase font-black tracking-widest mb-2">行程概覽</div>
+                                <div className="text-[10px] text-indigo-300 uppercase font-black tracking-widest mb-2">{t('trip.header.overview')}</div>
                                 <div className="flex items-center gap-2 mb-4">
                                     <span className="bg-indigo-500/80 text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur-md uppercase tracking-wider font-bold shadow-lg shadow-indigo-500/20">{displayCountry} {displayCity}</span>
                                     <div className="px-2.5 py-1 bg-white/10 rounded-full backdrop-blur-md border border-white/10 text-[10px] font-black whitespace-nowrap shadow-sm flex items-center gap-1.5">
                                         <span className="text-indigo-300">DAY {getDaysArray(trip.startDate, trip.endDate).findIndex(d => d === currentDisplayDate) + 1 || '-'}</span>
                                         <span className="opacity-30">/</span>
-                                        <span className="text-white/90">{getDaysArray(trip.startDate, trip.endDate).length} DAYS</span>
+                                        <span className="text-white/90">{getDaysArray(trip.startDate, trip.endDate).length} {t('trip.header.days_label')}</span>
                                     </div>
-                                    {trip.isPublic && <span className="bg-emerald-500/80 text-white text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-emerald-500/20"><Globe2 className="w-3 h-3" /> 公開</span>}
+                                    {trip.isPublic && <span className="bg-emerald-500/80 text-white text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-emerald-500/20"><Globe2 className="w-3 h-3" /> {t('trip.header.public')}</span>}
                                     {timeDiff !== 0 && <span className={`text-[10px] px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-md ${timeDiff > 0 ? 'bg-orange-500/20 text-orange-200' : 'bg-blue-500/20 text-blue-200'}`}>{timeDiff > 0 ? `+${timeDiff}h` : `${timeDiff}h`}</span>}
                                 </div>
 
@@ -104,11 +106,11 @@ const TripHeader = ({
                                     {activeTab === 'itinerary' && (
                                         <div className="flex gap-1 p-1 bg-black/20 backdrop-blur-md rounded-xl md:rounded-2xl border border-white/10 self-start lg:self-center mt-2 lg:mt-0 w-full md:w-auto md:max-w-none overflow-x-auto no-scrollbar scroll-smooth">
                                             {[
-                                                { id: 'list', icon: ListIcon, label: { en: 'List', zh: '列表', 'zh-HK': '列表' } },
-                                                { id: 'board', icon: Columns, label: { en: 'Board', zh: '看板', 'zh-HK': '瀑布流' } },
-                                                { id: 'kanban', icon: KanbanSquare, label: { en: 'Kanban', zh: '進度', 'zh-HK': '進度板' } },
-                                                { id: 'timeline', icon: MonitorPlay, label: { en: 'Timeline', zh: '時間軸', 'zh-HK': '時間軸' } },
-                                                { id: 'map', icon: MapIcon, label: { en: 'Map', zh: '地圖', 'zh-HK': '地圖' } }
+                                                { id: 'list', icon: ListIcon, label: 'list' },
+                                                { id: 'board', icon: Columns, label: 'board' },
+                                                { id: 'kanban', icon: KanbanSquare, label: 'kanban' },
+                                                { id: 'timeline', icon: MonitorPlay, label: 'timeline' },
+                                                { id: 'map', icon: MapIcon, label: 'map' }
                                             ].map(view => (
                                                 <button
                                                     key={view.id}
@@ -117,11 +119,11 @@ const TripHeader = ({
                                                         ? 'bg-white text-indigo-600 shadow-lg scale-100 font-bold'
                                                         : 'text-white/60 hover:text-white hover:bg-white/10'
                                                         }`}
-                                                    title={view.label}
+                                                    title={t(`trip.views.${view.label}`)}
                                                 >
                                                     <view.icon className="w-4 h-4" />
                                                     <span className="text-[10px] uppercase tracking-wider font-bold inline whitespace-nowrap">
-                                                        {view.label[currentLang] || view.label['en'] || view.label}
+                                                        {t(`trip.views.${view.label}`)}
                                                     </span>
                                                 </button>
                                             ))}
@@ -135,7 +137,7 @@ const TripHeader = ({
                                                 onClick={handleUndo}
                                                 disabled={!canUndo}
                                                 className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${canUndo ? 'hover:bg-white/10 text-white active:scale-90' : 'opacity-20 cursor-not-allowed'}`}
-                                                title="撤銷 (Undo)"
+                                                title={t('trip.actions.undo')}
                                             >
                                                 <Undo className="w-4 h-4" />
                                             </button>
@@ -143,7 +145,7 @@ const TripHeader = ({
                                                 onClick={handleRedo}
                                                 disabled={!canRedo}
                                                 className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${canRedo ? 'hover:bg-white/10 text-white active:scale-90' : 'opacity-20 cursor-not-allowed'}`}
-                                                title="重做 (Redo)"
+                                                title={t('trip.actions.redo')}
                                             >
                                                 <Redo className="w-4 h-4" />
                                             </button>
@@ -154,7 +156,7 @@ const TripHeader = ({
                                             <button
                                                 onClick={() => setIsTripSettingsOpen(true)}
                                                 className="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:bg-white/10 text-indigo-300 active:scale-90"
-                                                title="編輯行程設定 (Edit)"
+                                                title={t('trip.actions.edit_settings')}
                                             >
                                                 <Edit3 className="w-4 h-4" />
                                             </button>
@@ -165,7 +167,7 @@ const TripHeader = ({
                                             <button
                                                 onClick={onOpenChat}
                                                 className="w-9 h-9 rounded-xl flex items-center justify-center transition-all bg-indigo-500/80 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 active:scale-95"
-                                                title="打開行程對話 (Chat)"
+                                                title={t('trip.actions.open_chat')}
                                             >
                                                 <MessageCircle className="w-4 h-4" />
                                             </button>
@@ -180,7 +182,7 @@ const TripHeader = ({
                                             <span className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md shadow-sm">
                                                 <Calendar className="w-3.5 h-3.5 text-indigo-300" /> {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
                                             </span>
-                                            <span className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md"><Clock className="w-3.5 h-3.5 text-purple-300" /> {getDaysArray(trip.startDate, trip.endDate).length} 天行程</span>
+                                            <span className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md"><Clock className="w-3.5 h-3.5 text-purple-300" /> {getDaysArray(trip.startDate, trip.endDate).length} {t('trip.header.days_trip')}</span>
                                             {/* Dynamic Multi-City Badge - Shows Route A→B→C or A→B→A */}
                                             {(() => {
                                                 // Helper: Extract clean city name (handles "Osaka -> Kyoto" format)
@@ -253,7 +255,7 @@ const TripHeader = ({
                                                         </div>
                                                     )}
                                                 </div>
-                                                <button onClick={() => setIsMemberModalOpen(true)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all border border-white/10 hover:border-white/30 shadow-lg" title="成員管理">
+                                                <button onClick={() => setIsMemberModalOpen(true)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all border border-white/10 hover:border-white/30 shadow-lg" title={t('trip.actions.manage_members')}>
                                                     <UserPlus className="w-4 h-4 text-white" />
                                                 </button>
                                             </div>
@@ -266,19 +268,19 @@ const TripHeader = ({
                                                 onClick={() => { setAIMode('daily-summary'); setIsAIModal(true); }}
                                                 className="px-3 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white rounded-xl text-xs font-bold transition-all shadow-lg border border-white/20 flex justify-center items-center gap-2 active:scale-95 whitespace-nowrap backdrop-blur-md"
                                             >
-                                                <Newspaper className="w-4 h-4" /> <span className="hidden sm:inline">Jarvis 日報</span>
+                                                <Newspaper className="w-4 h-4" /> <span className="hidden sm:inline">{t('trip.actions.jarvis_daily')}</span>
                                             </button>
                                             <button
                                                 onClick={onOpenSmartImport}
                                                 className="px-3 py-2.5 bg-white/15 hover:bg-white/25 text-white rounded-xl text-xs font-bold transition-all shadow-lg border border-white/20 flex justify-center items-center gap-2 active:scale-95 whitespace-nowrap backdrop-blur-md"
                                             >
-                                                <Upload className="w-4 h-4" /> <span className="hidden sm:inline">智能匯入</span>
+                                                <Upload className="w-4 h-4" /> <span className="hidden sm:inline">{t('trip.actions.smart_import')}</span>
                                             </button>
                                             <button
                                                 onClick={() => setIsSmartExportOpen(true)}
                                                 className="px-3 py-2.5 bg-white/15 hover:bg-white/25 text-white rounded-xl text-xs font-bold transition-all shadow-lg border border-white/20 flex justify-center items-center gap-2 active:scale-95 whitespace-nowrap backdrop-blur-md"
                                             >
-                                                <Share2 className="w-4 h-4" /> <span className="hidden sm:inline">分享</span>
+                                                <Share2 className="w-4 h-4" /> <span className="hidden sm:inline">{t('trip.actions.share')}</span>
                                             </button>
 
                                             <div className="relative">
@@ -286,20 +288,20 @@ const TripHeader = ({
                                                     onClick={() => { setIsPlanMenuOpen(!isPlanMenuOpen); setIsManageMenuOpen(false); }}
                                                     className="px-3 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl flex justify-center items-center gap-2 font-bold text-xs transition-all shadow-lg shadow-indigo-900/40 active:scale-95 whitespace-nowrap border border-indigo-400/30 backdrop-blur-md"
                                                 >
-                                                    <Plus className="w-4 h-4" /> 行程規劃 <ChevronDown className={`w-3.5 h-3.5 text-indigo-200 transition-transform ${isPlanMenuOpen ? 'rotate-180' : ''}`} />
+                                                    <Plus className="w-4 h-4" /> {t('trip.actions.plan_trip')} <ChevronDown className={`w-3.5 h-3.5 text-indigo-200 transition-transform ${isPlanMenuOpen ? 'rotate-180' : ''}`} />
                                                 </button>
                                                 {isPlanMenuOpen && (
                                                     <>
                                                         <div className="fixed inset-0 z-[90]" onClick={() => setIsPlanMenuOpen(false)}></div>
                                                         <div className="absolute right-0 top-full mt-2 w-48 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[100] transform origin-top-right animate-scale-in p-1">
                                                             <button onClick={() => { setAddType('spot'); setIsAddModal(true); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 text-left text-xs transition-colors rounded-lg text-white font-medium">
-                                                                <Edit3 className="w-3.5 h-3.5 text-blue-400" /> 手動新增
+                                                                <Edit3 className="w-3.5 h-3.5 text-blue-400" /> {t('trip.actions.manual_add')}
                                                             </button>
                                                             <button onClick={() => { setAIMode('full'); setIsAIModal(true); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 text-left text-xs transition-colors rounded-lg text-white font-medium">
-                                                                <BrainCircuit className="w-3.5 h-3.5 text-purple-400" /> Jarvis 建議行程
+                                                                <BrainCircuit className="w-3.5 h-3.5 text-purple-400" /> {t('trip.actions.jarvis_suggest')}
                                                             </button>
                                                             <button onClick={() => { onOptimize(); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 text-left text-xs transition-colors rounded-lg text-white font-medium">
-                                                                <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Jarvis 排程優化
+                                                                <Sparkles className="w-3.5 h-3.5 text-amber-400" /> {t('trip.actions.jarvis_optimize')}
                                                             </button>
                                                         </div>
                                                     </>
@@ -320,17 +322,17 @@ const TripHeader = ({
                                                             {isOwner && (
                                                                 <>
                                                                     <button onClick={() => { setIsMemberModalOpen(true); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-left text-sm transition-colors border-b border-white/10 text-gray-200">
-                                                                        <Users className="w-4 h-4 text-blue-400" /> 成員管理
+                                                                        <Users className="w-4 h-4 text-blue-400" /> {t('trip.actions.manage_members')}
                                                                     </button>
                                                                     <button onClick={() => { setIsInviteModal(true); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-left text-sm transition-colors border-b border-white/10 text-gray-200">
-                                                                        <UserPlus className="w-4 h-4 text-green-400" /> 邀請朋友
+                                                                        <UserPlus className="w-4 h-4 text-green-400" /> {t('trip.actions.invite_friends')}
                                                                     </button>
                                                                     <button onClick={() => { onDeleteTrip(); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 text-left text-sm text-red-400 transition-colors">
-                                                                        <Trash2 className="w-4 h-4" /> 刪除行程
+                                                                        <Trash2 className="w-4 h-4" /> {t('trip.actions.delete_trip')}
                                                                     </button>
                                                                 </>
                                                             )}
-                                                            {!isOwner && <div className="px-4 py-3 text-xs opacity-50 text-center text-gray-400">僅擁有者可操作</div>}
+                                                            {!isOwner && <div className="px-4 py-3 text-xs opacity-50 text-center text-gray-400">{t('trip.actions.owner_only')}</div>}
                                                         </div>
                                                     </>
                                                 )}
@@ -343,7 +345,7 @@ const TripHeader = ({
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

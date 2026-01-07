@@ -5,18 +5,55 @@ import {
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.9";
-export const APP_VERSION_TAG = "Mobile Polish & Localization";
+export const APP_VERSION = "V1.2.10";
+export const APP_VERSION_TAG = "Localization Audit & i18n Fixes";
 export const APP_LAST_UPDATE = '2026-01-07';
-export const JARVIS_VERSION = "V0.0.3-Beta";
+export const JARVIS_VERSION = "V0.0.4-Beta";
 
 export const JARVIS_VERSION_HISTORY = [
+    {
+        ver: "V0.0.4-Beta",
+        date: "2026-01-07",
+        tag: "Localization Patch",
+        desc: {
+            "zh-TW": "全站語言審計與修正",
+            "zh-HK": "全站語言審計與修正",
+            "en": "Global Localization Audit & Fixes"
+        },
+        details: {
+            "zh-TW": [
+                "🌍 i18n: 修復 TripHeader 多處硬編碼中文",
+                "🇭🇰 Locale: 確保廣東話 (zh-HK) 與繁體中文 (zh-TW) 區隔",
+                "🐛 Bug Fix: 修復 View Switcher 語言顯示錯誤",
+                "🤖 BYOK: 實裝自訂 API 金鑰系統，支援 OpenAI/Claude/Gemini 輪換",
+                "🛡️ Usage: 新增 AI Provider 用量追蹤與提示功能",
+                "🎨 UI: 優化 Tag 語義化顏色顯示"
+            ],
+            "zh-HK": [
+                "🌍 i18n: 修復 TripHeader 多處硬編碼中文",
+                "🇭🇰 Locale: 確保廣東話 (zh-HK) 同繁體中文 (zh-TW) 分開",
+                "🐛 Bug Fix: 修復 View Switcher 語言顯示錯誤",
+                "🤖 BYOK: 實裝自訂 API Key 系統，支援 OpenAI/Claude/Gemini 輪換",
+                "🛡️ Usage: 新增 AI Provider 用量追蹤同提示功能",
+                "🎨 UI: 優化 Tag 語義化顏色顯示"
+            ],
+            "en": [
+                "🌍 i18n: Fixed hardcoded Chinese strings in TripHeader",
+                "🇭🇰 Locale: Ensured distinct zh-HK and zh-TW localizations",
+                "🐛 Bug Fix: Resolved View Switcher language display issues",
+                "🤖 BYOK: Implemented Custom API Key System (OpenAI/Claude/Gemini)",
+                "🛡️ Usage: Added usage tracking and alerts for AI Providers",
+                "🎨 UI: Semantic coloring for tags"
+            ]
+        }
+    },
     {
         ver: "V0.0.3-Beta",
         date: "2026-01-07",
         tag: "UI Consistency",
         desc: {
             "zh-TW": "統一版本顯示風格與效能優化",
+            "zh-HK": "統一版本顯示風格與效能優化",
             "en": "Unified version display and performance tuning"
         },
         details: {
@@ -27,6 +64,10 @@ export const JARVIS_VERSION_HISTORY = [
             "en": [
                 "🎨 UI: Unified Jarvis version display color and style across the site",
                 "🛠️ Fix: Resolved duplicated version history entries"
+            ],
+            "zh-HK": [
+                "🎨 UI: 統一 Jarvis 喺全站嘅版本顯示顏色同風格",
+                "🛠️ Fix: 修復版本資訊重複顯示問題"
             ]
         }
     },
@@ -36,6 +77,7 @@ export const JARVIS_VERSION_HISTORY = [
         tag: "Stability Patch",
         desc: {
             "zh-TW": "穩定性更新與小錯誤修復",
+            "zh-HK": "穩定性更新同埋小錯誤修復",
             "en": "Stability improvements and minor bug fixes"
         },
         details: {
@@ -48,6 +90,11 @@ export const JARVIS_VERSION_HISTORY = [
                 "🔧 Stability: Fixed minor UI display issues",
                 "⚡ Performance: Optimized AI response loading",
                 "🐛 Bug Fix: Resolved edge case errors"
+            ],
+            "zh-HK": [
+                "🔧 穩定性: 修正咗一啲 UI 顯示問題",
+                "⚡ 效能: 優化咗 AI 回應嘅加載效能",
+                "🐛 Bug Fix: 修復咗部分邊緣情況嘅錯誤"
             ]
         }
     },
@@ -57,6 +104,7 @@ export const JARVIS_VERSION_HISTORY = [
         tag: "Inception",
         desc: {
             "zh-TW": "Jarvis AI 初始版本發布",
+            "zh-HK": "Jarvis AI 初始版本發布",
             "en": "Initial Release of Jarvis AI"
         },
         details: {
@@ -69,6 +117,11 @@ export const JARVIS_VERSION_HISTORY = [
                 "🤖 AI UI: Implemented dedicated Chat View with Glassmorphism Avatar",
                 "✨ Support Center: Integrated Smart Hints",
                 "🚀 Visuals: Added pulse-slow animation effects"
+            ],
+            "zh-HK": [
+                "🤖 AI UI: 實裝專屬 Chat View 同埋毛玻璃 Avatar",
+                "✨ 支援中心: 整合 Smart Hints 快速查問功能",
+                "🚀 視覺動態: 新增 pulse-slow 呼吸燈特效"
             ]
         }
     }
