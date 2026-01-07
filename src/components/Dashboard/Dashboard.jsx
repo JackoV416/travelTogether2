@@ -48,7 +48,7 @@ const DEFAULT_WIDGETS = [
     { id: 'currency', name: '匯率計算', visible: true },
 ];
 
-const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSettings, setGlobalBg, globalSettings, exchangeRates, weatherData, isLoadingWeather, isBanned }) => {
+const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSettings, setGlobalBg, globalSettings, exchangeRates, weatherData, isLoadingWeather, isBanned, onOpenCommandPalette }) => {
     const {
         trips, loadingTrips, newsData, loadingNews,
         hotels, loadingHotels, flights, loadingFlights,
@@ -403,6 +403,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                     setIsSmartExportOpen={setIsSmartExportOpen}
                     trips={sortedTrips.slice(0, 2)}
                     onSelectTrip={onSelectTrip}
+                    onOpenCommandPalette={onOpenCommandPalette}
                 />
             </div>
 

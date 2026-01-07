@@ -2,7 +2,7 @@
 // 集中管理所有常量
 
 export const AUTHOR_NAME = "Jamie Kwok";
-export const APP_VERSION = "V0.15.0-RC";
+export const APP_VERSION = "V1.2.9";
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const CURRENCIES = {
@@ -26,6 +26,7 @@ export const TIMEZONES = {
 
 export const LANGUAGE_OPTIONS = {
     "zh-TW": { label: "繁體中文" },
+    "zh-HK": { label: "廣東話" },
     "en": { label: "English" }
 };
 

@@ -130,7 +130,7 @@ const AIGeminiModal = ({
         // Try real Gemini API first
         if (useRealAI) {
             try {
-                console.log("[AI] 🚀 Using REAL Gemini API for all features...");
+                // Using REAL Gemini API
 
                 const [geminiResult, shoppingData, packingData] = await Promise.all([
                     generateItineraryWithGemini({
@@ -178,7 +178,7 @@ const AIGeminiModal = ({
         }
 
         // Fallback to mock data
-        console.log("[AI] Using mock data...");
+        // Using mock data
         const [_, shoppingData, packingData] = await Promise.all([
             new Promise(r => setTimeout(r, 1500)),
             generateShoppingSuggestions(city),
@@ -465,7 +465,7 @@ const AIGeminiModal = ({
                             subtext="正在分析數百萬筆旅遊數據並查找最新資訊"
                             progress={progress}
                         />
-                    ) : ((mode === 'itinerary' || mode === 'full' || mode === 'packing') && (itineraryStep === 'selection' && activeTab === 'itinerary')) ? (
+                    ) : ((mode === 'itinerary' || mode === 'full' || mode === 'packing' || mode === 'daily-summary') && (itineraryStep === 'selection' && activeTab === 'itinerary')) ? (
                         <div className="space-y-6 animate-fade-in">
                             <div className="text-center space-y-2">
                                 <h4 className="text-lg font-bold">{mode === 'packing' ? '準備好出發了嗎？' : '您需要什麼幫助？'}</h4>

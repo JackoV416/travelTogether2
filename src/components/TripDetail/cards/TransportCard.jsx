@@ -20,10 +20,10 @@ const TransportCard = ({ item, isDarkMode, dayHotel, onEdit, language = 'zh-TW' 
 
         if (type === 'flight' || name.includes('flight') || name.includes('航空')) {
             return {
-                bg: isDarkMode ? 'bg-blue-900/40' : 'bg-blue-50/80',
-                border: 'border-blue-500/20',
-                accent: 'text-blue-500',
-                iconBg: 'bg-blue-500',
+                bg: isDarkMode ? 'bg-indigo-900/40' : 'bg-indigo-50/80',
+                border: 'border-indigo-500/20',
+                accent: 'text-indigo-500',
+                iconBg: 'bg-indigo-500',
                 label: 'Flight',
                 // Dynamic Rotation: Check if it's a Return flight (回程/歸航) -> -135deg (Leftward/Home), else 45deg (Top-Right/Departure)
                 icon: <Plane className={`w-4 h-4 text-white ${name.includes('return') || name.includes('回程') || name.includes('歸航') ? '-rotate-[135deg]' : 'rotate-45'}`} />
@@ -41,20 +41,20 @@ const TransportCard = ({ item, isDarkMode, dayHotel, onEdit, language = 'zh-TW' 
         }
         if (type === 'metro' || type === 'subway' || name.includes('metro') || name.includes('subway') || name.includes('地鐵') || name.includes('捷運') || name.includes('都營') || name.includes('MTR')) {
             return {
-                bg: isDarkMode ? 'bg-teal-900/40' : 'bg-teal-50/80',
-                border: 'border-teal-500/20',
-                accent: 'text-teal-500',
-                iconBg: 'bg-teal-500',
+                bg: isDarkMode ? 'bg-purple-900/40' : 'bg-purple-50/80',
+                border: 'border-purple-500/20',
+                accent: 'text-purple-500',
+                iconBg: 'bg-purple-500',
                 label: 'Metro',
                 icon: <Train className="w-4 h-4 text-white" />
             };
         }
         if (type === 'train' || type === 'shinkansen' || name.includes('jr') || name.includes('鐵') || name.includes('rail') || name.includes('express')) {
             return {
-                bg: isDarkMode ? 'bg-emerald-900/40' : 'bg-emerald-50/80',
-                border: 'border-emerald-500/20',
-                accent: 'text-emerald-500',
-                iconBg: 'bg-emerald-500',
+                bg: isDarkMode ? 'bg-purple-900/40' : 'bg-purple-50/80',
+                border: 'border-purple-500/20',
+                accent: 'text-purple-500',
+                iconBg: 'bg-purple-500',
                 label: 'Rail',
                 icon: <Train className="w-4 h-4 text-white" />
             };
@@ -70,10 +70,10 @@ const TransportCard = ({ item, isDarkMode, dayHotel, onEdit, language = 'zh-TW' 
             };
         }
         return {
-            bg: isDarkMode ? 'bg-indigo-900/40' : 'bg-indigo-50/80',
-            border: 'border-indigo-500/20',
-            accent: 'text-indigo-500',
-            iconBg: 'bg-indigo-500',
+            bg: isDarkMode ? 'bg-purple-900/40' : 'bg-purple-50/80',
+            border: 'border-purple-500/20',
+            accent: 'text-purple-500',
+            iconBg: 'bg-purple-500',
             label: 'Transport',
             icon: <Car className="w-4 h-4 text-white" />
         };
@@ -244,7 +244,7 @@ const TransportCard = ({ item, isDarkMode, dayHotel, onEdit, language = 'zh-TW' 
                 {/* Line 7: Tags - MOVED OUTSIDE space-y-1 to correctly respect mt-auto */}
                 <div className="flex items-center gap-1.5 mt-auto pt-2 overflow-hidden">
                     {((item.details?.tags?.length > 0 ? item.details.tags : [theme.label])).slice(0, 3).map((tag, i) => (
-                        <span key={i} className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter ${isDarkMode ? 'bg-white/5 text-gray-400 border border-white/5' : 'bg-gray-100 text-gray-500'}`}>
+                        <span key={i} className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter ${theme.accent} ${theme.bg} border ${theme.border}`}>
                             #{tag}
                         </span>
                     ))}

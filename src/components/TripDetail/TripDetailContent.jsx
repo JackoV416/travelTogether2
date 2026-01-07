@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { doc, updateDoc, arrayUnion, deleteDoc, collection, addDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { Upload, Plus, Edit3, Trash2, MapPin, Calendar, Clock, DollarSign, User, Users, Sun, Cloud, CheckCircle, AlertCircle, Search, Filter, Camera, Download, AlertTriangle, Info, Loader2, Sparkles, LayoutGrid, List as ListIcon, Maximize2, Minimize2, MoveRight, ChevronLeft, Map as MapIcon, BrainCircuit, Wallet, Plane, Bus, Train, Car, ShoppingBag, BedDouble, Receipt, Newspaper, Siren, Star, UserCircle, UserPlus, FileUp, Lock, RefreshCw, Route, MonitorPlay, Save, CheckSquare, FileCheck, History, PlaneTakeoff, Hotel, GripVertical, Printer, ArrowUpRight, Navigation, Phone, Globe2, Link as LinkIcon, Wifi, Utensils, Image, QrCode, Copy, Instagram, MapPinned, NotebookPen, Home, PiggyBank, Moon, ChevronRight, ChevronDown, Share2, Brain, Wand2, X, MessageCircle, Undo, Redo, Footprints as FootprintsIcon, Image as ImageIcon, Shield, FileText } from 'lucide-react';
+import { Upload, Plus, Edit3, Trash2, MapPin, Calendar, Clock, DollarSign, User, Users, Sun, Cloud, CheckCircle, AlertCircle, Search, Filter, Camera, Download, AlertTriangle, Info, Loader2, Sparkles, LayoutGrid, List as ListIcon, Maximize2, Minimize2, MoveRight, ChevronLeft, Map as MapIcon, BrainCircuit, Wallet, Plane, Bus, Train, Car, ShoppingBag, BedDouble, Receipt, Newspaper, Siren, Star, UserCircle, UserPlus, FileUp, Lock, RefreshCw, Route, MonitorPlay, Save, CheckSquare, FileCheck, History, PlaneTakeoff, Hotel, GripVertical, Printer, ArrowUpRight, Navigation, Phone, Globe2, Link as LinkIcon, Wifi, Utensils, Image, QrCode, Copy, Instagram, MapPinned, NotebookPen, Home, PiggyBank, Moon, ChevronRight, ChevronDown, Share2, Brain, Wand2, X, MessageCircle, Undo, Redo, Footprints as FootprintsIcon, Image as ImageIcon, Shield, FileText, Columns, KanbanSquare } from 'lucide-react';
 import MobileBottomNav from '../Shared/MobileBottomNav';
 import ActiveUsersList from './ActiveUsersList';
 import {
@@ -90,7 +90,22 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
     const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
     const [selectDate, setSelectDate] = useState(null);
     const [addType, setAddType] = useState('spot');
-    const [viewMode, setViewMode] = useState('list');
+    const [viewMode, setViewMode] = useState(() => {
+        return localStorage.getItem(`tripViewMode_${trip.id}`) || 'list';
+    });
+
+    useEffect(() => {
+        localStorage.setItem(`tripViewMode_${trip.id}`, viewMode);
+    }, [viewMode, trip.id]);
+
+    useEffect(() => {
+        const handleRefresh = () => {
+            const saved = localStorage.getItem(`tripViewMode_${trip.id}`);
+            if (saved && saved !== viewMode) setViewMode(saved);
+        };
+        window.addEventListener('refreshTripView', handleRefresh);
+        return () => window.removeEventListener('refreshTripView', handleRefresh);
+    }, [viewMode, trip.id]);
     const [noteEdit, setNoteEdit] = useState(false);
     const [tempNote, setTempNote] = useState(trip.notes || '');
     const [myInsurance, setMyInsurance] = useState(trip.insurance?.private?.[isSimulation ? 'sim' : user?.uid] || { provider: '', policyNo: '', phone: '', notes: '' });
@@ -123,7 +138,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
             const tripTime = trip.lastUpdate?.seconds ? trip.lastUpdate.seconds * 1000 : 0;
 
             if (tripTime > cacheTime + 5000) { // 5s buffer for clock skew
-                console.log(`[Sync] Discarding stale cache. Remote: ${new Date(tripTime).toISOString()} > Local: ${new Date(cacheTime).toISOString()}`);
+
                 return {};
             }
 
@@ -164,7 +179,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
             // If we receive a remote update that is significantly newer than our local work
             // AND we are not currently dragging/editing (hard to track, but cacheTime implies last edit)
             if (tripTime > cacheTime + 10000) { // 10s margin
-                console.log('[Sync] Remote update detected. Clearing local optimistic cache.');
+
                 setPendingItemsCache({});
             }
         }
@@ -454,7 +469,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
             );
 
             if (otherBundleItems.length > 0) {
-                console.log(`[Bundle Move] Detected bundle ${bundleId} with ${otherBundleItems.length + 1} items`);
+
                 // Collect all bundle items and their current indices
                 itemsToMove = fullList.filter(item => (item.details?.bundleId || item.bundleId) === bundleId);
                 originalIndices = itemsToMove.map(item => fullList.findIndex(i => i.id === item.id)).sort((a, b) => a - b);
@@ -484,7 +499,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
             const { adjustedItems, changesNeeded, offset } = await calculateSmartRipple(fullList, actualDestIndex);
 
             if (changesNeeded) {
-                console.log(`[Smart Ripple] Shifting ${fullList.length - actualDestIndex} items by ${offset} minutes (Phase 3 Async Enabled)`);
+
                 fullList = adjustedItems;
             }
         }
@@ -503,6 +518,57 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                 [`itinerary.${currentDisplayDate}`]: fullList,
                 lastUpdate: serverTimestamp()
             });
+        }
+    };
+
+    /**
+     * V1.2.6: Handle Cross-Day Item Movement (Kanban)
+     * Moves an item from one date to another.
+     */
+    const handleMoveItem = async (itemId, sourceDate, targetDate, newIndex = -1) => {
+        if (!itemId || !sourceDate || !targetDate || !canEdit) return;
+
+        const sourceList = [...(trip.itinerary?.[sourceDate] || [])];
+        const targetList = sourceDate === targetDate ? sourceList : [...(trip.itinerary?.[targetDate] || [])];
+
+        const itemIndex = sourceList.findIndex(i => i.id === itemId);
+        if (itemIndex === -1) return;
+
+        if (sourceDate === targetDate) {
+            // Reordering
+            if (newIndex !== -1 && newIndex !== itemIndex) {
+                const [movedItem] = sourceList.splice(itemIndex, 1);
+                sourceList.splice(newIndex, 0, movedItem);
+            }
+        } else {
+            // Moving Dates
+            const [item] = sourceList.splice(itemIndex, 1);
+            item.date = targetDate;
+
+            if (newIndex !== -1) {
+                targetList.splice(newIndex, 0, item);
+            } else {
+                targetList.push(item);
+            }
+        }
+
+        // Optimistic Update
+        setPendingItemsCache(prev => ({
+            ...prev,
+            [sourceDate]: sourceList,
+            [targetDate]: targetList
+        }));
+
+        if (!isSimulation) {
+            try {
+                await updateDoc(doc(db, "trips", trip.id), {
+                    [`itinerary.${sourceDate}`]: sourceList,
+                    [`itinerary.${targetDate}`]: targetList,
+                    lastUpdate: serverTimestamp()
+                });
+            } catch (error) {
+                console.error("Error moving item:", error);
+            }
         }
     };
 
@@ -535,9 +601,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
     };
 
     const handleSaveItem = async (data) => {
-        console.log('[handleSaveItem] =====================');
-        console.log('[handleSaveItem] Incoming data:', JSON.stringify(data, null, 2));
-        console.log('[handleSaveItem] canEdit:', canEdit, '| isSimulation:', isSimulation);
+
 
         if (!canEdit) return alert("權限不足");
         if (isSimulation) return alert("模擬模式");
@@ -554,7 +618,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
 
         // Prepare new item object
         const itemId = data.id || Date.now().toString();
-        console.log('[handleSaveItem] Using itemId:', itemId, '| isNewItem:', !data.id);
+
 
         // CRITICAL: Spread data FIRST, then set id AFTER to prevent undefined overwrite
         let newItem = {
@@ -568,7 +632,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
         delete newItem._index;
         newItem = JSON.parse(JSON.stringify(newItem));
 
-        console.log('[handleSaveItem] Prepared newItem:', JSON.stringify(newItem, null, 2));
+
 
         const docRef = doc(db, "trips", trip.id);
         const docSnap = await import('firebase/firestore').then(m => m.getDoc(docRef));
@@ -653,15 +717,11 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
             const isEdit = !!data.id || (itemIndex !== undefined && itemIndex !== null);
             const routeDate = currentDisplayDate; // Capture current date for safety
 
-            console.log('[handleSaveItem] Itinerary Mode');
-            console.log('[handleSaveItem] isEdit:', isEdit, '| data.id:', data.id, '| itemIndex:', itemIndex);
-            console.log('[handleSaveItem] routeDate:', routeDate);
+
 
             if (isEdit) {
                 const items = docSnap.data().itinerary?.[routeDate] || [];
-                console.log('[handleSaveItem] Current items count:', items.length);
-                console.log('[handleSaveItem] Looking for ID:', data.id, 'type:', typeof data.id);
-                console.log('[handleSaveItem] Firebase item IDs:', items.map(i => ({ id: i.id, type: typeof i.id, name: i.name })));
+
 
                 let updatedItems;
                 let updateMethod = 'unknown';
@@ -671,9 +731,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                     updateMethod = 'BY_ID';
                     updatedItems = items.map(item => {
                         if (String(item.id) === String(data.id)) {
-                            console.log('[handleSaveItem] Found matching item by ID, merging...');
-                            console.log('[handleSaveItem] Original item.details:', JSON.stringify(item.details));
-                            console.log('[handleSaveItem] New item.details:', JSON.stringify(newItem.details));
+
                             return { ...item, ...newItem };
                         }
                         return item;
@@ -683,7 +741,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                 else if (itemIndex !== undefined && itemIndex !== null && items[itemIndex]) {
                     updateMethod = 'BY_INDEX';
                     updatedItems = [...items];
-                    console.log('[handleSaveItem] Updating by index:', itemIndex);
+
                     // HEAL: Assign new ID to the legacy item!
                     updatedItems[itemIndex] = { ...items[itemIndex], ...newItem, id: newItem.id };
                 }
@@ -694,7 +752,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                     updatedItems = [...items, newItem];
                 }
 
-                console.log('[handleSaveItem] Update method:', updateMethod);
+
 
                 // CRITICAL: Sanitize to remove undefined values (Firebase doesn't accept them)
                 const sanitizeForFirebase = (obj) => {
@@ -714,24 +772,24 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
 
                 // Sanitize each item in the array
                 const sanitizedItems = updatedItems.map(item => sanitizeForFirebase(item));
-                console.log('[handleSaveItem] Sanitized items count:', sanitizedItems.length);
 
-                console.log('[handleSaveItem] Saving to Firebase...');
+
+
 
                 // V1.1 Phase 2: Apply Smart Ripple if duration exists
                 let finalItems = sanitizedItems;
                 const editedIndex = updatedItems.findIndex(i => String(i.id) === String(data.id));
                 if (editedIndex !== -1 && (newItem.details?.duration || newItem.time)) {
-                    console.log('[handleSaveItem] Triggering Smart Ripple from index:', editedIndex);
+
                     finalItems = recalculateItineraryTimes(sanitizedItems, editedIndex);
                 }
 
                 await updateDoc(docRef, { [`itinerary.${routeDate}`]: finalItems, lastUpdate: serverTimestamp() });
-                console.log('[handleSaveItem] Firebase save SUCCESS (with Ripple)');
+
             } else {
-                console.log('[handleSaveItem] Adding NEW item via arrayUnion');
+
                 await updateDoc(docRef, { [`itinerary.${routeDate}`]: arrayUnion(newItem), lastUpdate: serverTimestamp() });
-                console.log('[handleSaveItem] Firebase add SUCCESS');
+
             }
 
             // V1.1 Phase 5: Hotel-Transport Smart Binding
@@ -757,7 +815,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                     });
 
                     if (syncCount > 0) {
-                        console.log(`[Smart Binding] Syncing ${syncCount} transport items to new hotel name: ${newHotelName}`);
+
                         await updateDoc(docRef, { itinerary: fullItinerary });
                         setPendingItemsCache(prev => ({ ...prev, ...fullItinerary }));
                     }
@@ -773,7 +831,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
             const walkDuration = walkMatch ? parseInt(walkMatch[1]) : 15;
             const walkLocation = data.details?.location || data.name;
 
-            console.log(`[Phase 5] Detected '步行' in description. Suggesting Walk Card (${walkDuration} mins) to ${walkLocation}`);
+
 
             const walkItem = {
                 id: `walk_${Date.now()}`,
@@ -793,7 +851,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                 type: 'info',
                 onConfirm: async () => {
                     await updateDoc(docRef, { [`itinerary.${routeDate}`]: arrayUnion(walkItem) });
-                    console.log('[Phase 5] Walk card auto-added');
+
                     setConfirmConfig(null);
                 }
             });
@@ -823,7 +881,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                 type: 'info',
                 onConfirm: async () => {
                     await updateDoc(docRef, { [`itinerary.${routeDate}`]: arrayUnion(immigrationItem, transportItem), lastUpdate: serverTimestamp() });
-                    console.log('[Phase 5] Immigration bundle auto-added');
+
                     setConfirmConfig(null);
                 }
             });
@@ -849,7 +907,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
             const currentCity = trip.locations?.[routeDate]?.city;
 
             if (destCity && currentCity && destCity !== currentCity && !destCity.includes(currentCity)) {
-                console.log(`[Phase 5] City change detected: ${currentCity} -> ${destCity}`);
+
                 setConfirmConfig({
                     title: '🚅 跨城市交通建議',
                     message: `偵測到目的地為「${destCity}」，同現時城市「${currentCity}」唔同。是否需要為你安排新幹線或國內線航班建議？`,
@@ -873,7 +931,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                     { ...newItem, id: itemId }
                 ]
             }));
-            console.log('[handleSaveItem] Added to pendingItemsCache:', itemId);
+
         }
     };
 
@@ -912,19 +970,17 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
         if (confirm("確定刪除？")) { await deleteDoc(doc(db, "trips", trip.id)); onBack(); }
     };
 
-    const handleDeleteItineraryItem = (itemOrId) => {
-        console.log('[handleDeleteItem] =====================');
-        console.log('[handleDeleteItem] Received:', typeof itemOrId, itemOrId);
 
+    const handleDeleteItineraryItem = (itemOrId) => {
         if (!canEdit) return setConfirmConfig({ title: "權限不足", message: "您沒有權限執行此操作", type: "warning" });
         if (isSimulation) return setConfirmConfig({ title: "模擬模式", message: "模擬模式僅供預覽", type: "warning" });
 
         const itemId = typeof itemOrId === 'object' ? itemOrId?.id : itemOrId;
         const itemIndex = typeof itemOrId === 'object' ? itemOrId?._index : undefined;
 
-        console.log('[handleDeleteItem] itemId:', itemId, '| itemIndex:', itemIndex);
 
-        if (!itemId && (itemIndex === undefined || itemIndex === null)) return console.error("Missing Item ID or Index for delete");
+
+        if (!itemId && (itemIndex === undefined || itemIndex === null)) return;
 
         setConfirmConfig({
             title: "刪除確認",
@@ -1386,6 +1442,34 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                                                 {trip.name}
                                             </h1>
 
+                                            {/* V1.2.6 View Switcher */}
+                                            {activeTab === 'itinerary' && (
+                                                <div className="flex gap-1 p-1 bg-black/20 backdrop-blur-md rounded-xl md:rounded-2xl border border-white/10 self-start lg:self-center mt-2 lg:mt-0 w-full md:w-auto md:max-w-none overflow-x-auto no-scrollbar scroll-smooth">
+                                                    {[
+                                                        { id: 'list', icon: ListIcon, label: { en: 'List', zh: '列表', 'zh-HK': '列表' } },
+                                                        { id: 'board', icon: Columns, label: { en: 'Board', zh: '看板', 'zh-HK': '瀑布流' } },
+                                                        { id: 'kanban', icon: KanbanSquare, label: { en: 'Kanban', zh: '進度', 'zh-HK': '進度板' } },
+                                                        { id: 'timeline', icon: MonitorPlay, label: { en: 'Timeline', zh: '時間軸', 'zh-HK': '時間軸' } },
+                                                        { id: 'map', icon: MapIcon, label: { en: 'Map', zh: '地圖', 'zh-HK': '地圖' } }
+                                                    ].map(view => (
+                                                        <button
+                                                            key={view.id}
+                                                            onClick={() => setViewMode(view.id)}
+                                                            className={`px-3 py-2 md:px-3 md:py-2 rounded-lg md:rounded-xl flex items-center gap-1.5 transition-all outline-none focus:ring-2 focus:ring-white/20 select-none whitespace-nowrap flex-shrink-0 ${viewMode === view.id
+                                                                ? 'bg-white text-indigo-600 shadow-lg scale-100 font-bold'
+                                                                : 'text-white/60 hover:text-white hover:bg-white/10'
+                                                                }`}
+                                                            title={view.label[globalSettings.language] || view.label['en']}
+                                                        >
+                                                            <view.icon className="w-4 h-4" />
+                                                            <span className="text-[10px] uppercase tracking-wider font-bold inline whitespace-nowrap">
+                                                                {view.label[globalSettings.language] || view.label['en']}
+                                                            </span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+
                                             {/* Unified Premium Action Bar */}
                                             <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-black/30 backdrop-blur-2xl border border-white/10 shadow-2xl self-start sm:ml-4 group/toolbar transition-all hover:bg-black/40">
                                                 {/* History Actions */}
@@ -1516,7 +1600,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                                                             <UserPlus className="w-4 h-4 text-white" />
                                                         </button>
                                                     </div>
-                                                    <ActiveUsersList tripId={trip.id} user={user} activeTab={activeTab} language={globalSettings.language} />
+                                                    <ActiveUsersList tripId={trip.id} user={user} activeTab={activeTab} language={globalSettings.language} onUserClick={setViewingMember} />
                                                 </div>
 
                                                 {/* Action Buttons (z-40 so member hover z-60 appears above) */}
@@ -1606,27 +1690,32 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
 
                 {/* Static Tabs Navigation - Wrapped in Container */}
                 <div className="max-w-7xl mx-auto">
-                    <div className="hidden md:flex gap-2 overflow-x-auto py-4 mb-4 scrollbar-hide px-1" style={{ scrollbarWidth: 'none' }}>
-                        {[
-                            { id: 'itinerary', label: '行程', icon: Calendar },
-                            { id: 'packing', label: '行李', icon: ShoppingBag },
-                            { id: 'shopping', label: '購物', icon: ShoppingBag },
-                            { id: 'budget', label: '預算', icon: Wallet },
-                            { id: 'gallery', label: '相簿', icon: Image },
-                            { id: 'currency', label: '匯率', icon: DollarSign },
-                            { id: 'journal', label: '足跡', icon: FootprintsIcon },
-                            { id: 'insurance', label: '保險', icon: Shield },
-                            { id: 'emergency', label: '緊急', icon: Siren },
-                            { id: 'visa', label: '簽證', icon: FileCheck }
-                        ].map(t => (
-                            <button
-                                key={t.id}
-                                onClick={() => setActiveTab(t.id)}
-                                className={`flex items-center px-4 py-2 rounded-full font-bold transition-all duration-300 whitespace-nowrap transform hover:scale-105 ${activeTab === t.id ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl scale-105' : (isDarkMode ? 'bg-gray-800/60 text-gray-300 hover:bg-gray-700' : 'bg-gray-100/80 text-gray-600 hover:bg-gray-100')}`}
-                            >
-                                <t.icon className="w-4 h-4 mr-2" />{t.label}
-                            </button>
-                        ))}
+                    <div className="flex items-center justify-between gap-4 mb-4">
+                        {/* Functional Tabs (Scrollable) */}
+                        <div className="flex-1 overflow-x-auto scrollbar-hide flex gap-2 py-1 px-1" style={{ scrollbarWidth: 'none' }}>
+                            {[
+                                { id: 'itinerary', label: '行程', icon: Calendar },
+                                { id: 'packing', label: '行李', icon: ShoppingBag },
+                                { id: 'shopping', label: '購物', icon: ShoppingBag },
+                                { id: 'budget', label: '預算', icon: Wallet },
+                                { id: 'gallery', label: '相簿', icon: Image },
+                                { id: 'currency', label: '匯率', icon: DollarSign },
+                                { id: 'journal', label: '足跡', icon: FootprintsIcon },
+                                { id: 'insurance', label: '保險', icon: Shield },
+                                { id: 'emergency', label: '緊急', icon: Siren },
+                                { id: 'visa', label: '簽證', icon: FileCheck }
+                            ].map(t => (
+                                <button
+                                    key={t.id}
+                                    onClick={() => setActiveTab(t.id)}
+                                    className={`flex items-center px-4 py-2 rounded-full font-bold transition-all duration-300 whitespace-nowrap transform hover:scale-105 active:scale-95 ${activeTab === t.id ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl scale-105' : (isDarkMode ? 'bg-gray-800/60 text-gray-300 hover:bg-gray-700' : 'bg-gray-100/80 text-gray-600 hover:bg-gray-100')}`}
+                                >
+                                    <t.icon className="w-4 h-4 mr-2" />{t.label}
+                                </button>
+                            ))}
+
+                        </div>
+
                     </div>
 
                     {/* Itinerary Tab */}
@@ -1676,6 +1765,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                                 onItemHandled={onItemHandled}
                                 pendingItemsCache={pendingItemsCache} // Optimistic Update Cache
                                 onDragEnd={onDragEnd}
+                                onMoveItem={handleMoveItem} // V1.2.6: Kanban Cross-Day Drag
                                 openSectionModal={openSectionModal}
                                 userMapsKey={globalSettings?.userMapsKey}
                                 onOptimize={handleOptimizeSchedule}
@@ -1846,6 +1936,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
                         activeTab={activeTab === 'shopping' || activeTab === 'packing' || activeTab === 'budget' || activeTab === 'itinerary' ? activeTab : 'more'}
                         onTabChange={(tab) => { setActiveTab(tab); setIsMobileMoreOpen(false); }}
                         onMoreClick={() => setIsMobileMoreOpen(!isMobileMoreOpen)}
+                        onChatClick={() => onOpenChat && onOpenChat()}
                         isDarkMode={isDarkMode}
                     />
 
@@ -1963,7 +2054,7 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
 
 
                 </div>
-            </div>
+            </div >
         </>
     );
 };

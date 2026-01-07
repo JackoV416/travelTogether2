@@ -283,7 +283,7 @@ const AdminFeedbackModal = ({ isOpen, onClose, isDarkMode, adminEmails = [], onU
             }
         } catch (e) {
             if (e.message === 'Operation aborted' || e.name === 'AbortError') {
-                console.log("AI Generation Cancelled by User");
+                // AI Generation Cancelled
                 // Optional: Toast "已取消"
             } else {
                 console.error(e);

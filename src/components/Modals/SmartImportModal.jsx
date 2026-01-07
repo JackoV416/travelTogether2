@@ -162,7 +162,7 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                         }));
 
                         allItems = [...allItems, ...itemsWithEvidence];
-                        console.log(`[SmartImport] File ${i + 1}: ${itemsWithEvidence.length} items`);
+                        // SmartImport progress debug
 
                     } catch (e) {
                         console.error(`[SmartImport] Error processing file ${i}:`, e);

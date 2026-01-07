@@ -21,7 +21,7 @@ const SearchFilterBar = ({ onSearch, onSort, onFilter, currentSort, currentFilte
                 </div>
                 <input
                     type="text"
-                    className="block w-full pl-10 pr-3 py-2.5 rounded-xl leading-5 
+                    className="block w-full pl-10 pr-12 py-2.5 rounded-xl leading-5 
                              bg-white/80 dark:bg-white/5 
                              border border-gray-200/50 dark:border-transparent 
                              text-gray-900 dark:text-gray-100 placeholder-gray-400 
@@ -31,6 +31,9 @@ const SearchFilterBar = ({ onSearch, onSort, onFilter, currentSort, currentFilte
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none opacity-40">
+                    <span className="text-[10px] font-black border border-current px-1 rounded-md">⌘ K</span>
+                </div>
             </div>
 
             {/* Actions */}

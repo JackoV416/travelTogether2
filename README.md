@@ -1,9 +1,58 @@
-# Travel Together (智能旅遊規劃) V1.2.5
+# Travel Together (智能旅遊規劃) V1.2.9
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.2.5-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.2.9-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-11.x-orange.svg)](https://firebase.google.com/)
+
+## 🚀 V1.2.9: Final Polish (2026-01-07)
+**V1.2.9: [UX & Stability] 手機版介面優化與最終打磨！**
+針對 Mobile 用戶優化了 View Switcher，並修復了所有遺留的 `console.log`，讓程式碼更乾淨、介面更流暢。
+
+### 🌟 V1.2.9 主要更新
+1.  **Mobile View Switcher (手機版視圖切換)**:
+    -   全新 Scrollable Pill 設計，清楚顯示 List / Board / Kanban / Map 文字標籤，不再只靠圖示估估吓。
+2.  **Save to Board (收藏功能)**:
+    -   新增 "Heart" 按鈕，雖然未有 Backend 連結，但前端交互已準備就緒！
+3.  **Codebase Clean-up**:
+    -   **Console Zero**: 移除超過 20 個 Debug 用 `console.log`，提升 Production 專業感。
+
+---
+
+## 🚀 V1.2.8: Jarvis Keys & i18n Expansion (2026-01-07)
+**V1.2.8: [AI & i18n] 自訂金鑰管理與廣東話 (Cantonese) 支援！**
+引入了強大的 Jarvis Keys 管理系統，支援多金鑰輪換，並擴展語系至廣東話。
+
+### ✨ V1.2.8 核心更新 (Updates)
+- **🤖 Jarvis Keys (BYOK)**: 實裝自訂 API 金鑰系統，支援 OpenAI, Gemini, Claude 等多供應商管理。
+- **🔄 Multi-Key Support**: 每個供應商可新增多把金鑰，支援 Primary 標記與自動輪換邏輯。
+- **🇭🇰 廣東話 (zh-HK)**: 新增廣東話語系支援，體驗「兩文三語」完整在地化。
+- **📱 Mobile UX**: 優化手機版選單，新增「模擬例子」快捷入口。
+- **🎨 Tag UI**: 全面翻新行程分類 Tag 視覺，根據各類別主題色自動渲染，提升視覺層次感。
+
+## 🚀 V1.2.7: Global UI Overhaul & Localization (2026-01-07)
+**V1.2.7: [UI/UX] 跨視境全域搜尋與多國語系版本正式上線！**
+強化了應用的全球化能力，引入 Command+K 全域搜尋與多引擎 AI 支援。
+
+### ✨ V1.2.7 核心更新 (Updates)
+- **🌍 多國語系**: 實裝 i18next，支援中英雙語 (zh-TW / en) 切換與自動偵測。
+- **🔎 Command+K**: 全域智慧搜尋與操作麵盤，實現「一鍵達」跨行程操作。
+- **🤖 AI Multi-Provider**: 支持 OpenAI (GPT), Claude, DeepSeek, Groq, Perplexity 與本地 LLM。
+- **🎨 語義色系 2.0**: 重新設計的分類色彩系統，確保跨 6 大視圖的一致視覺體驗。
+- **🗺️ 統計數據**: 地圖面板新增總距離與站點分析，掌握行程規模。
+
+## 🚀 V1.2.6: The Ultimate View (2026-01-07)
+**V1.2.6: [Multi-View] 多維視界與 Pinterest 瀑布流！**
+引入 "6-in-1" 多維度行程檢視模式，支援 Kanban (Trello)、Timeline (Notion) 與 Map Playback (Mapbox) 視角。
+
+### ✨ V1.2.6 核心更新 (Updates)
+- **👁️ 多維視界**: 全新 6-in-1 多視圖系統 (List | Board | Kanban | Timeline | Map)。
+- **📌 Pinterest 視圖**: 瀑布流佈局呈現行程項目 (Social Ready)。
+- **📊 Kanban 視圖**: 看板式拖放管理所有日程。
+- **🔍 全域搜尋**: Search & Filter 現支援所有視圖模式。
+- **📅 Compact Header**: 日期+視圖切換+操作按鈕合併為單行。
+- **👀 可視度提升**: List/Map 視圖加入背景模糊與對比度優化。
+- **🧹 程式碼精簡**: 移除 160+ 行冗餘代碼。
 
 ## 🚀 V1.2.5: Architecture & Stability (2026-01-07)
 **V1.2.5: [Tech] 架構重構與用戶體驗優化！**
@@ -166,9 +215,9 @@ graph TD
 
 ## 📋 版本紀錄 (History)
 
-| 版本 | 標籤 | 狀態 |
-| :--- | :--- | :--- |
-| **V1.2.4** | **Intelligent Onboarding & PWA** | 🚀 最新版 |
+| **V1.2.8** | **Jarvis Keys & zh-HK** | 🚀 最新版 |
+| **V1.2.7** | **Global UI & Local** | ✅ 已發布 |
+| **V1.2.6** | **The Ultimate View** | ✅ 已發布 |
 | **V1.2.3** | **Jarvis AI Quota & Sub-tabs** | ✅ 已發布 |
 | **V1.2.2** | **Jarvis AI Support Center** | ✅ 已發布 |
 | **V1.2.1** | **User Group Chat** | ✅ 已發布 |
@@ -198,4 +247,4 @@ graph TD
 ---
 
 **Author**: [Jamie Kwok](https://github.com/JackoV416)
-**Last Updated**: 2025-12-24
+**Last Updated**: 2026-01-07

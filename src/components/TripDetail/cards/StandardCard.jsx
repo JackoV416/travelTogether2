@@ -1,5 +1,5 @@
-import React from 'react';
-import { MapPin, Utensils, ShoppingBag, Hotel, Star, Clock, Pencil, DollarSign } from 'lucide-react';
+import React, { useState } from 'react';
+import { MapPin, Utensils, ShoppingBag, Hotel, Star, Clock, Pencil, DollarSign, Heart } from 'lucide-react';
 import { getSmartItemImage, formatDuration } from '../../../utils/tripUtils';
 
 const StandardCard = ({ item, isDarkMode, onEdit }) => {
@@ -16,18 +16,32 @@ const StandardCard = ({ item, isDarkMode, onEdit }) => {
                 label: 'Accommodation'
             };
             case 'food': return {
-                bg: isDarkMode ? 'bg-orange-900/40' : 'bg-orange-50/80',
-                border: 'border-orange-500/20',
-                accent: 'text-orange-500',
-                iconBg: 'bg-orange-500',
+                bg: isDarkMode ? 'bg-amber-900/40' : 'bg-amber-50/80',
+                border: 'border-amber-500/20',
+                accent: 'text-amber-500',
+                iconBg: 'bg-amber-500',
                 label: 'Dining'
             };
             case 'shopping': return {
-                bg: isDarkMode ? 'bg-pink-900/40' : 'bg-pink-50/80',
-                border: 'border-pink-500/20',
-                accent: 'text-pink-500',
-                iconBg: 'bg-pink-500',
+                bg: isDarkMode ? 'bg-fuchsia-900/40' : 'bg-fuchsia-50/80',
+                border: 'border-fuchsia-500/20',
+                accent: 'text-fuchsia-500',
+                iconBg: 'bg-fuchsia-500',
                 label: 'Shopping'
+            };
+            case 'flight': return {
+                bg: isDarkMode ? 'bg-indigo-900/40' : 'bg-indigo-50/80',
+                border: 'border-indigo-500/20',
+                accent: 'text-indigo-500',
+                iconBg: 'bg-indigo-500',
+                label: 'Flight'
+            };
+            case 'transport': return {
+                bg: isDarkMode ? 'bg-purple-900/40' : 'bg-purple-50/80',
+                border: 'border-purple-500/20',
+                accent: 'text-purple-500',
+                iconBg: 'bg-purple-500',
+                label: 'Transport'
             };
             default: return {
                 bg: isDarkMode ? 'bg-cyan-900/40' : 'bg-cyan-50/80',
@@ -49,6 +63,27 @@ const StandardCard = ({ item, isDarkMode, onEdit }) => {
 
     return (
         <div className={`relative w-full rounded-2xl overflow-hidden border ${theme.border} ${theme.bg} backdrop-blur-md transition-all duration-300 hover:shadow-xl group flex flex-col md:flex-row h-auto md:h-[200px]`}>
+            {/* Save Button (Absolute Top Right of Card/Image) */}
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    // Toggle fake save state
+                    const btn = e.currentTarget;
+                    const icon = btn.querySelector('svg');
+                    const isLiked = icon.classList.contains('fill-rose-500');
+                    if (isLiked) {
+                        icon.classList.remove('fill-rose-500', 'text-rose-500');
+                        icon.classList.add('text-white');
+                    } else {
+                        icon.classList.add('fill-rose-500', 'text-rose-500');
+                        icon.classList.remove('text-white');
+                    }
+                }}
+                className="absolute top-2 right-2 z-30 p-2 rounded-full bg-black/20 backdrop-blur-md hover:bg-white/20 transition-all active:scale-90 group-hover:opacity-100 md:opacity-0 opacity-100"
+                title="Save to Board"
+            >
+                <Heart className="w-5 h-5 text-white transition-colors" />
+            </button>
 
             {/* Left Section: Image (Top on Mobile, Left on Desktop) */}
             <div className="relative w-full h-32 md:w-1/3 md:h-full overflow-hidden shrink-0">
@@ -141,7 +176,7 @@ const StandardCard = ({ item, isDarkMode, onEdit }) => {
                 <div className="flex items-center gap-1.5 mt-auto pt-2 overflow-hidden">
                     {item.details?.tags?.length > 0 ? (
                         item.details.tags.slice(0, 3).map((tag, i) => (
-                            <span key={i} className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter ${isDarkMode ? 'bg-white/5 text-gray-400 border border-white/5' : 'bg-gray-100 text-gray-500'}`}>
+                            <span key={i} className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter ${theme.accent} ${theme.bg} border ${theme.border}`}>
                                 #{tag}
                             </span>
                         ))

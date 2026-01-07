@@ -1,11 +1,62 @@
 import React from 'react';
-import { X, User, Mail, Shield, Calendar } from 'lucide-react';
+import { X, User, Mail, Shield, Calendar, Camera, Loader2, Upload } from 'lucide-react';
 import { formatDate } from '../../utils/tripUtils';
+import { updateProfile } from 'firebase/auth';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { auth, storage } from '../../firebase';
 
 const UserProfileModal = ({ isOpen, onClose, user, isAdmin, isDarkMode }) => {
     if (!isOpen || !user) return null;
 
+    const [isUploading, setIsUploading] = React.useState(false);
     const displayEmail = user.email || (user.id && user.id.includes('@') ? user.id : null) || 'No Email';
+    const currentUid = auth.currentUser?.uid;
+    const targetUid = user.id || user.uid;
+    const isMe = currentUid && (currentUid == targetUid);
+    console.log('UserProfileModal Check:', { currentUid, targetUid, isMe, user });
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validation
+        if (file.size > 2 * 1024 * 1024) return alert("圖片太大 (Max 2MB)");
+        if (!file.type.startsWith('image/')) return alert("只支援圖片格式");
+
+        setIsUploading(true);
+        try {
+            const storageRef = ref(storage, `avatars/${user.uid || user.id}_${Date.now()}`);
+            await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(storageRef);
+
+            // Update Auth Profile
+            if (auth.currentUser) {
+                await updateProfile(auth.currentUser, { photoURL: downloadURL });
+                // Force reload or just let the real-time listener update
+                // The user object passed in props might need time to sync, but Auth is immediate source of truth for self.
+                window.location.reload(); // Simplest way to sync all states for now or trigger parent update?
+                alert("頭像更新成功！");
+            }
+        } catch (error) {
+            console.error("Upload failed", error);
+            alert("上傳失敗，請重試");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleResetAvatar = async () => {
+        if (!window.confirm("確定要還原預設頭像 (Google/Initial)？")) return;
+        try {
+            if (auth.currentUser) {
+                await updateProfile(auth.currentUser, { photoURL: "" });
+                window.location.reload();
+            }
+        } catch (error) {
+            console.error("Reset failed", error);
+            alert("還原失敗");
+        }
+    };
 
     return (
         <div className="fixed inset-0 bg-black/60 z-[90] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in" onClick={onClose}>
@@ -32,7 +83,43 @@ const UserProfileModal = ({ isOpen, onClose, user, isAdmin, isDarkMode }) => {
                                 <Shield className="w-4 h-4" />
                             </div>
                         )}
+                        {/* Upload Overlay (Only for Me) */}
+                        {isMe && (
+                            <>
+                                <input
+                                    type="file"
+                                    id="avatar-upload"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    disabled={isUploading}
+                                />
+                                <label
+                                    htmlFor="avatar-upload"
+                                    className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-full cursor-pointer backdrop-blur-[1px] transition-all hover:bg-black/50"
+                                >
+                                    {isUploading ? <Loader2 className="w-8 h-8 text-white animate-spin" /> : <Camera className="w-6 h-6 text-white/90 drop-shadow-md" />}
+                                </label>
+                            </>
+                        )}
                     </div>
+
+                    {/* V1.2.9: Explicit Actions for Avatar */}
+                    {isMe && (
+                        <div className="flex gap-3 mb-6">
+                            <label htmlFor="avatar-upload" className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-full cursor-pointer transition-colors shadow-sm flex items-center gap-1.5">
+                                <Camera className="w-3 h-3" /> 更換頭像
+                            </label>
+                            {user.photoURL && (
+                                <button
+                                    onClick={handleResetAvatar}
+                                    className="px-3 py-1.5 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold rounded-full transition-colors shadow-sm flex items-center gap-1.5"
+                                >
+                                    <RotateCcw className="w-3 h-3" /> 還原預設
+                                </button>
+                            )}
+                        </div>
+                    )}
 
                     {/* Name & Basic Info */}
                     <h3 className="text-xl font-bold mb-1">{user.name || 'Unknown User'}</h3>

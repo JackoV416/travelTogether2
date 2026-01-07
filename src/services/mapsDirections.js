@@ -22,11 +22,11 @@ export const getDirections = async (origin, destination, mode = 'transit') => {
     const cacheKey = `${origin}-${destination}-${googleMode}`;
 
     if (travelTimeCache.has(cacheKey)) {
-        console.log(`[DirectionsAPI] Cache hit for ${cacheKey}`);
+        // Cache hit
         return travelTimeCache.get(cacheKey);
     }
 
-    console.log(`[DirectionsAPI] Querying ${googleMode} from ${origin} to ${destination}`);
+    // Querying Google Maps
 
     // If no API Key, return smart mock data base
     if (!GOOGLE_MAPS_API_KEY) {

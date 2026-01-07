@@ -84,7 +84,7 @@ export async function getUserQuotaStatus(uid) {
  * @param {boolean} isCustomKey - Whether a custom BYOK key was used
  * @returns {Promise<Object>} Updated quota status
  */
-export async function incrementUserQuota(uid, feature = 'General', keyIndex = -1, isCustomKey = false) {
+export async function incrementUserQuota(uid, feature = 'General', keyIndex = -1, isCustomKey = false, provider = 'gemini') {
     if (!uid) return null;
 
     const today = getTodayKey();
@@ -97,13 +97,16 @@ export async function incrementUserQuota(uid, feature = 'General', keyIndex = -1
         const quotaSnap = await getDoc(quotaRef);
         let currentCount = 0;
         let featureBreakdown = {};
+        let providerBreakdown = {}; // V1.2.8
+        let data = {}; // Define data scope
 
         if (quotaSnap.exists()) {
-            const data = quotaSnap.data();
+            data = quotaSnap.data();
             // Reset if new day
             if (data.date === today) {
                 currentCount = data.count || 0;
                 featureBreakdown = data.features || {};
+                providerBreakdown = data.providers || {};
             }
         }
 
@@ -111,6 +114,9 @@ export async function incrementUserQuota(uid, feature = 'General', keyIndex = -1
 
         // Update feature breakdown
         featureBreakdown[feature] = (featureBreakdown[feature] || 0) + 1;
+
+        // Update provider breakdown (V1.2.8)
+        providerBreakdown[provider] = (providerBreakdown[provider] || 0) + 1;
 
         // 1. Update User Quota
         const updates = {
@@ -130,6 +136,7 @@ export async function incrementUserQuota(uid, feature = 'General', keyIndex = -1
         }
 
         updates.features = featureBreakdown; // Keep tracking features regardless of source
+        updates.providers = providerBreakdown; // Track which provider is being used (V1.2.8)
 
         await setDoc(quotaRef, updates, { merge: true });
 
@@ -147,13 +154,15 @@ export async function incrementUserQuota(uid, feature = 'General', keyIndex = -1
             } else {
                 updates[`type_system`] = increment(1);
             }
+            // Track Provider (V1.2.8)
+            updates[`provider_${provider}`] = increment(1);
             // Optional: Still track raw key index internally if needed, but per user request we focus on aggregates
             // updates[`keys.raw_key_${keyIndex}`] = increment(1); 
 
             setDoc(systemRef, updates, { merge: true }).catch(err => console.error("Analytics Error:", err));
         }
 
-        console.log(`[AI Quota] User ${uid.slice(0, 8)} used ${newCount}/${DEFAULT_DAILY_LIMIT} (Feature: ${feature})`);
+        // Usage logged
 
         // Broadcast update for real-time UI
         // Broadcast update for real-time UI
@@ -225,7 +234,7 @@ export async function resetUserQuota(uid) {
             features: {},
             lastUpdated: serverTimestamp()
         });
-        console.log(`[AI Quota] Reset quota for user ${uid.slice(0, 8)}`);
+        // Reset quota for user
         return true;
     } catch (error) {
         console.error('[AI Quota] Error resetting quota:', error);

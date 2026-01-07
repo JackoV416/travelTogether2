@@ -5,10 +5,11 @@ import { db } from '../../firebase';
 import { getUserInitial } from '../../utils/tripUtils';
 import { TAB_LABELS } from '../../constants/appData';
 
-const ActiveUsersList = ({ tripId, user, activeTab, language = "zh-TW" }) => {
+const ActiveUsersList = ({ tripId, user, activeTab, language = "zh-TW", onUserClick }) => {
     const [activeUsers, setActiveUsers] = useState([]);
     const [hoveredUser, setHoveredUser] = useState(null);
     const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
+    const [imgErrors, setImgErrors] = useState({}); // Track broken images
 
     useEffect(() => {
         if (!tripId || !user?.uid) return;
@@ -78,14 +79,19 @@ const ActiveUsersList = ({ tripId, user, activeTab, language = "zh-TW" }) => {
                     return (
                         <div
                             key={u.user.uid}
-                            className="relative cursor-help"
+                            className="relative cursor-pointer" // Changed from cursor-help to cursor-pointer
                             style={{ zIndex: 10 - i }}
                             onMouseEnter={(e) => handleMouseEnter(e, u)}
                             onMouseLeave={handleMouseLeave}
+                            onClick={() => onUserClick && onUserClick(u.user)}
                         >
-                            {u.user.photo ? (
-                                <img src={u.user.photo} alt={u.user.name}
-                                    className={`w-8 h-8 rounded-full border-2 object-cover transition-transform hover:scale-110 ${isMe ? 'border-green-400 ring-2 ring-green-400/30' : 'border-white dark:border-gray-800'}`} />
+                            {u.user.photo && !imgErrors[u.user.uid] ? (
+                                <img
+                                    src={u.user.photo}
+                                    alt={u.user.name}
+                                    className={`w-8 h-8 rounded-full border-2 object-cover transition-transform hover:scale-110 ${isMe ? 'border-green-400 ring-2 ring-green-400/30' : 'border-white dark:border-gray-800'}`}
+                                    onError={() => setImgErrors(prev => ({ ...prev, [u.user.uid]: true }))}
+                                />
                             ) : (
                                 <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs text-white font-bold transition-transform hover:scale-110 ${isMe ? 'bg-green-500 border-green-400 ring-2 ring-green-400/30' : 'bg-indigo-500 border-white dark:border-gray-800'}`}>
                                     {getUserInitial(u.user.name)}

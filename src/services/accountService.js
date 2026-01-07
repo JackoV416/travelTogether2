@@ -2,9 +2,9 @@
  * 👤 Account Service (V1.2.5)
  * User profile management and account deletion
  */
-import { doc, setDoc, deleteDoc, getDoc, collection, getDocs, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { deleteUser, reauthenticateWithCredential, EmailAuthProvider, updateProfile } from 'firebase/auth';
-import { auth, db } from '../firebase';
+import { auth, db, storage } from '../firebase';
 
 /**
  * 📝 Update user profile (display name, avatar)
@@ -30,6 +30,29 @@ export async function updateUserProfile(user, data) {
     }, { merge: true });
 
     return { success: true };
+}
+
+/**
+ * 📤 Upload user avatar to Firebase Storage
+ * @param {Object} user - Firebase auth user
+ * @param {File} file - File object to upload
+ * @returns {Promise<string>} Download URL
+ */
+export async function uploadUserAvatar(user, file) {
+    if (!user) throw new Error('User not authenticated');
+
+    // Create reference: users/{uid}/avatar_{timestamp}
+    // We add timestamp to avoid caching issues
+    const fileExt = file.name.split('.').pop();
+    const fileName = `avatar_${Date.now()}.${fileExt}`;
+    const storageRef = ref(storage, `users/${user.uid}/${fileName}`);
+
+    // Upload
+    await uploadBytes(storageRef, file);
+
+    // Get URL
+    const url = await getDownloadURL(storageRef);
+    return url;
 }
 
 /**

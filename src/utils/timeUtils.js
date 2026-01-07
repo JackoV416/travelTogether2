@@ -191,7 +191,7 @@ export const calculateSmartRipple = async (items, movedIndex, bufferMins = 10) =
                     const mode = movedItem.details?.transportType || 'transit';
                     const duration = await getTransitDuration(origin, destination, mode);
                     travelTime = Math.max(duration, bufferMins);
-                    console.log(`[Smart Ripple] Calculated travel time: ${travelTime} mins from ${origin} to ${destination}`);
+                    // Smart Ripple calculated time
                 } catch (e) {
                     console.warn('[Smart Ripple] Directions API failed, using buffer:', e);
                 }

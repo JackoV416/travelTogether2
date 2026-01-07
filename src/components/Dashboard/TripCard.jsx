@@ -62,7 +62,7 @@ const TripCard = ({ trip, currentLang, onSelect, setGlobalBg, cardWeather }) => 
                 {/* Header: Tag & Reminders & Date */}
                 <div className="flex justify-between items-start mb-auto relative z-10 w-full">
                     {/* Left: Status Tag */}
-                    <div className="bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm backdrop-blur-md">
+                    <div className={`${badgeClass} text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm backdrop-blur-md border`}>
                         {statusLabel}
                     </div>
 

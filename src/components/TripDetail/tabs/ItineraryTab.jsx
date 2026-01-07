@@ -7,10 +7,13 @@ import {
     Map as MapIcon, MapPinned, List, Navigation, PlaneTakeoff, Hotel, Utensils, Plane,
     Bus, ShoppingBag, Clock, CalendarDays, GripVertical, MapPin, Car, Route, Train, Wand2,
     Plus, Sparkles, BrainCircuit, Edit3, Info, AlertTriangle, Quote, CheckSquare, Trash2, ExternalLink, FileText, Loader2, ArrowRight,
-    Undo2, Redo2, History, LogOut, LogIn, Sun, Moon, Shirt
+    Undo2, Redo2, History, LogOut, LogIn, Sun, Moon, Shirt, Columns, KanbanSquare, MonitorPlay
 } from 'lucide-react';
+import BoardView from '../views/BoardView';
+import MapView2 from '../views/MapView2';
 import { CURRENCIES, COUNTRIES_DATA } from '../../../constants/appData';
-import { suggestTransportBetweenSpots, generateDailyAnalysis } from '../../../services/ai-parsing';
+import KanbanView from '../views/KanbanView';
+import TimelineView from '../views/TimelineView';
 import TransportCard from '../cards/TransportCard';
 import StandardCard from '../cards/StandardCard';
 import TransportConnector from '../cards/TransportConnector';
@@ -76,6 +79,7 @@ const ItineraryTab = ({
     onDragStart,
     onDrop,
     onDragEnd, // V1.1: Integration with TripDetailContent drag handler
+    onMoveItem, // V1.2.6: Kanban Cross-Day Drag
     openSectionModal,
     onOptimize,
     onOpenAIModal,
@@ -93,6 +97,7 @@ const ItineraryTab = ({
     autoOpenItemId, // Prop for auto-opening
     onAutoOpenHandled, // Callback to clear auto-open
     pendingItemsCache = {}, // Optimistic Update Cache
+    currentLang = 'en', // Added currentLang with default
     // V1.1 Phase 7: History System
     onUndo,
     onRedo,
@@ -156,7 +161,7 @@ const ItineraryTab = ({
             }
 
             if (target) {
-                console.log('[ItineraryTab] Auto-opening item:', target.id, target.name);
+
                 // Ensure DOM is ready
                 setTimeout(() => setActiveDetailItem(target), 100);
                 onAutoOpenHandled?.();
@@ -669,541 +674,488 @@ const ItineraryTab = ({
                 </div>
             )}
 
-            <div className="flex gap-3 overflow-x-auto py-6 px-1 relative z-10 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                {days.map((d) => {
-                    const dateKey = d.slice(5); // MM-DD
-                    const dName = destHolidays?.[dateKey];
-                    const hName = homeHolidays?.[dateKey];
-                    return (
-                        <button key={d} onClick={() => setSelectDate(d)} className={`flex-shrink-0 px-4 py-3 rounded-xl border transition text-center min-w-[130px] relative overflow-hidden group ${currentDisplayDate === d ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg scale-105' : (isDarkMode ? 'bg-gray-800/60 border-gray-700' : 'bg-gray-100/80 border-gray-200')}`}>
-                            <div className="text-xs opacity-70 uppercase mb-1">{getWeekday(d)}</div>
-                            <div className="font-bold text-sm">{formatDate(d)}</div>
-                            <div className="absolute top-0 right-0 flex flex-col items-end">
-                                {dName && <div className="bg-red-500 text-white text-[9px] px-1 rounded-bl shadow-sm mb-[1px]">{dName}</div>}
-                                {hName && hName !== dName && <div className="bg-blue-500 text-white text-[9px] px-1 rounded-bl shadow-sm">{hName}</div>}
-                            </div>
-                        </button>
-                    );
-                })}
-            </div>
-
-            {/* Search Bar - Unified Placement */}
-            {viewMode === 'list' && (
-                <div className="mb-2">
-                    <SearchFilterBar
-                        searchValue={searchValue}
-                        onSearchChange={setSearchValue}
-                        placeholder="搜尋行程名稱、地點..."
-                        filters={filters}
-                        activeFilters={activeFilters}
-                        isDarkMode={isDarkMode}
-                        onFilterChange={(key, val) => setActiveFilters(prev => ({ ...prev, [key]: val }))}
-                        onClearFilters={() => { setSearchValue(""); setActiveFilters({ type: 'all' }); }}
-                    />
-                </div>
-            )}
-
-            {/* Daily Summary Card */}
-            <div className={`rounded-3xl p-6 min-h-[400px] border relative overflow-hidden backdrop-blur-2xl transition-colors
-                ${isDarkMode ? 'bg-gray-900/40 border-white/10' : 'bg-white/60 border-white/20 shadow-xl'}`}>
-
-                {/* Decorative Background Blur */}
-                <div className={`absolute top-0 right-0 w-[400px] h-[400px] rounded-full blur-[100px] pointer-events-none opacity-20 -z-10 ${isDarkMode ? 'bg-indigo-500/30' : 'bg-indigo-300/40'}`} />
-
-                <div className="flex justify-between items-center mb-6 flex-wrap gap-2 relative z-10">
-                    <div className="flex items-center gap-3">
-                        <div className="font-bold text-lg">{formatDate(currentDisplayDate)}</div>
-                        {/* 🚀 Dynamic Daily Location: Morning/Afternoon Split */}
-                        {(() => {
-                            // V2.16: Cross-city detection via trip.locations comparison (same as Day Summary)
-                            // Helper: Extract clean city name (handles "Osaka -> Kyoto" format)
-                            const extractCityName = (city) => {
-                                if (!city) return null;
-                                // If city contains "->", extract last part (destination)
-                                if (city.includes('->')) {
-                                    return city.split('->').pop().trim();
-                                }
-                                // If city contains " → " (unicode arrow), extract last part
-                                if (city.includes(' → ')) {
-                                    return city.split(' → ').pop().trim();
-                                }
-                                return city.trim();
-                            };
-
-                            const rawCurrentCity = trip.locations?.[currentDisplayDate]?.city || trip.city;
-                            const currentCity = extractCityName(rawCurrentCity);
-                            const prevDateIdx = days.indexOf(currentDisplayDate) - 1;
-                            const prevDate = prevDateIdx >= 0 ? days[prevDateIdx] : null;
-                            const rawPrevCity = prevDate ? trip.locations?.[prevDate]?.city : null;
-                            const prevCity = extractCityName(rawPrevCity);
-
-                            // Normalize to same language for comparison (prevents "Kyoto" !== "京都")
-                            const normalizedCurrent = getLocalizedCityName(currentCity, 'zh-TW');
-                            const normalizedPrev = getLocalizedCityName(prevCity, 'zh-TW');
-                            const isCrossCity = normalizedCurrent && normalizedPrev && normalizedCurrent !== normalizedPrev;
-
-                            // Find cross-city transport for time/type display
-                            const crossCityTransport = isCrossCity ? filteredItems.find(i =>
-                                (i.type === 'train' || i.type === 'transport' || i.type === 'flight') &&
-                                (i.details?.duration?.includes('hr') || parseInt(i.details?.duration) > 60 || i.arrival)
-                            ) : null;
-
-                            // Get transport type label
-                            const getTransportIcon = () => {
-                                if (!crossCityTransport) return '🚅';
-                                const name = (crossCityTransport.name || '').toLowerCase();
-                                if (name.includes('新幹線') || name.includes('shinkansen')) return '🚅';
-                                if (name.includes('express') || name.includes('特急')) return '🚄';
-                                if (name.includes('bus') || name.includes('巴士')) return '🚌';
-                                if (name.includes('flight') || name.includes('航') || crossCityTransport.type === 'flight') return '✈️';
-                                return '🚅';
-                            };
-
-                            // Scenario A: Cross-City Day (detected via trip.locations)
-                            if (isCrossCity) {
-                                const hasTransport = !!crossCityTransport;
-                                const timeDisplay = hasTransport
-                                    ? `${crossCityTransport.time || '??:??'} - ${crossCityTransport.details?.endTime || '??:??'}`
-                                    : '';
-
-                                // Normalize city names using localization (default to zh-TW)
-                                const prevCityDisplay = getLocalizedCityName(prevCity, 'zh-TW');
-                                const currentCityDisplay = getLocalizedCityName(currentCity, 'zh-TW');
+            {/* Desktop Layout Wrapper */}
+            <div className="lg:flex lg:gap-8 items-start relative">
+                {/* Desktop Sidebar (Sticky) - HIDE in Kanban View */}
+                {viewMode !== 'kanban' && (
+                    <div className="hidden lg:block w-64 shrink-0 sticky top-24 space-y-2 z-30">
+                        <div className="text-[10px] font-black opacity-40 px-3 uppercase tracking-widest mb-2">J Day Plan</div>
+                        <div className="space-y-2 max-h-[80vh] overflow-y-auto scrollbar-hide pr-2">
+                            {days.map((d) => {
+                                const dateKey = d.slice(5);
+                                const dName = destHolidays?.[dateKey];
+                                const hName = homeHolidays?.[dateKey];
+                                const isActive = currentDisplayDate === d;
+                                // Check for itinerary items on this day for a dot indicator
+                                const hasItems = trip.itinerary?.[d]?.length > 0;
 
                                 return (
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <button
-                                            onClick={handleOpenLocationModal}
-                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-all group ${isDarkMode ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20' : 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'}`}
-                                        >
-                                            <span className="opacity-90">{prevCityDisplay}</span>
-                                            <span className="opacity-50">→</span>
-                                            <span>{hasTransport ? getTransportIcon() : '❓'}</span>
-                                            <span className="opacity-50">→</span>
-                                            <span className="font-black">{currentCityDisplay}</span>
-                                        </button>
-                                        {hasTransport && timeDisplay && (
-                                            <span className={`text-[10px] font-mono px-2 py-1 rounded-full ${isDarkMode ? 'bg-white/5 text-white/60' : 'bg-gray-100 text-gray-500'}`}>
-                                                {timeDisplay}
-                                            </span>
-                                        )}
-                                        {!hasTransport && (
-                                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 ${isDarkMode ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-rose-50 text-rose-600 border border-rose-200'}`}>
-                                                ⚠️ 未輸入交通
-                                            </span>
-                                        )}
-                                    </div>
-                                );
-                            }
-
-                            // Scenario B: Same-day transport with arrival (Legacy fallback)
-                            const transportItem = filteredItems.find(i => (i.type === 'transport' || i.type === 'flight') && i.arrival);
-                            if (transportItem) {
-                                const startCity = transportItem.details?.location?.split(/->/)?.[0]?.trim() || currentCity || 'Origin';
-                                const endCity = transportItem.arrival;
-                                const time = transportItem.time || '??:??';
-                                let timeDisplay = time;
-                                if (transportItem.details?.duration) {
-                                    const [h, m] = time.split(':').map(Number);
-                                    const duration = Number(transportItem.details.duration);
-                                    const endMins = h * 60 + m + duration;
-                                    const endH = Math.floor(endMins / 60) % 24;
-                                    const endM = endMins % 60;
-                                    timeDisplay = `${time} - ${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
-                                }
-
-                                return (
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={handleOpenLocationModal}
-                                            className={`flex items-center gap-3 px-4 py-2 rounded-full text-xs font-bold border transition-all group ${isDarkMode ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/20' : 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'}`}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <span className="opacity-90">{startCity}</span>
-                                                <ArrowRight className="w-3.5 h-3.5 opacity-50" />
-                                                <span className="opacity-90">{endCity}</span>
-                                            </div>
-                                            <div className="h-3 w-[1px] bg-current opacity-20 mx-1"></div>
-                                            <div className="flex items-center gap-1.5 opacity-80 font-mono tracking-tight">
-                                                <Clock className="w-3 h-3" />
-                                                <span>{timeDisplay}</span>
-                                            </div>
-                                        </button>
-                                        <span className="text-[10px] opacity-40 font-bold hidden md:inline-block px-2 py-1 bg-white/5 rounded-lg border border-white/5">跨城移動</span>
-                                    </div>
-                                );
-                            }
-
-                            // Scenario C: Single City (Standard)
-                            const isMissingTransport = isMultiCity && !filteredItems.some(i => (i.type === 'transport' || i.type === 'flight') && i.arrival);
-
-                            return (
-                                <div className="flex items-center gap-2">
                                     <button
-                                        onClick={handleOpenLocationModal}
-                                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 hover:bg-gray-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                                        key={d}
+                                        onClick={() => setSelectDate(d)}
+                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all text-left group relative overflow-hidden ${isActive
+                                            ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-500/30 scale-100 ring-2 ring-indigo-400/30'
+                                            : (isDarkMode ? 'bg-gray-800/40 border-transparent hover:bg-gray-800 text-gray-400 hover:text-gray-200' : 'bg-white/60 border-transparent hover:bg-white text-gray-500 hover:text-gray-800')
+                                            }`}
                                     >
-                                        <MapPin className="w-3 h-3 text-indigo-500" />
-                                        {currentCity || "Location"}
+                                        <div>
+                                            <div className={`text-[10px] font-bold uppercase mb-0.5 ${isActive ? 'opacity-80' : 'opacity-50'}`}>{getWeekday(d)}</div>
+                                            <div className="font-black text-sm">{formatDate(d)}</div>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-1">
+                                            {(dName || hName) && (
+                                                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold truncate max-w-[80px] ${isActive ? 'bg-white/20 text-white' : 'bg-red-500/10 text-red-500'}`}>
+                                                    {dName || hName}
+                                                </span>
+                                            )}
+                                            {hasItems && !isActive && <div className={`w-1.5 h-1.5 rounded-full ${isDarkMode ? 'bg-indigo-400' : 'bg-indigo-500'}`} />}
+                                        </div>
+
+                                        {/* Decoration for active state */}
+                                        {isActive && <div className="absolute right-0 top-0 bottom-0 w-1 bg-white/20"></div>}
                                     </button>
-                                    {isMissingTransport && (
-                                        <div className="flex items-center gap-1 text-[10px] text-amber-500 font-bold bg-amber-500/10 px-2 py-1 rounded-full animate-pulse border border-amber-500/20">
-                                            ⚠️ 缺少城市間交通
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {/* Main Content Column */}
+                <div className="flex-1 min-w-0 space-y-6">
+
+                    {/* Mobile Date Scroll (Sticky Glassmorphic Ribbon) - HIDE in Kanban View */}
+
+
+                    {/* Search Bar - Unified Placement (Global) */}
+                    <div className="mb-2">
+                        <SearchFilterBar
+                            searchValue={searchValue}
+                            onSearchChange={setSearchValue}
+                            placeholder="搜尋行程名稱、地點..."
+                            filters={filters}
+                            activeFilters={activeFilters}
+                            isDarkMode={isDarkMode}
+                            onFilterChange={(key, val) => setActiveFilters(prev => ({ ...prev, [key]: val }))}
+                            onClearFilters={() => { setSearchValue(""); setActiveFilters({ type: 'all' }); }}
+                        />
+                    </div>
+
+                    {/* Unified Header: Date + View Switcher + Actions */}
+                    <div className="flex gap-2 flex-wrap justify-between items-center w-full mb-4 relative z-30">
+                        {/* Left: Date Badge + View Switcher */}
+                        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                            {/* Date Badge */}
+                            <button
+                                onClick={handleOpenLocationModal}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all text-sm font-bold ${isDarkMode ? 'bg-gray-800/80 border-gray-700 hover:bg-gray-700' : 'bg-white/80 border-gray-200 hover:bg-gray-50'} backdrop-blur-xl`}
+                            >
+                                <span className="text-indigo-500">📅</span>
+                                <span>{formatDate(currentDisplayDate)}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${isDarkMode ? 'bg-indigo-500/20 text-indigo-300' : 'bg-indigo-100 text-indigo-600'}`}>
+                                    {trip.locations?.[currentDisplayDate]?.city || trip.city}
+                                </span>
+                            </button>
+
+                            {/* V1.2.6 View Switcher (Mobile Polished) */}
+                            <div className="flex items-center gap-1 p-1 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-x-auto scrollbar-hide w-full sm:w-auto max-w-full">
+                                {[
+                                    { id: 'list', icon: List, label: { en: 'List', zh: '列表', 'zh-HK': '列表' } },
+                                    { id: 'board', icon: Columns, label: { en: 'Board', zh: '看板', 'zh-HK': '瀑布流' } },
+                                    { id: 'kanban', icon: KanbanSquare, label: { en: 'Kanban', zh: '進度', 'zh-HK': '進度板' } },
+                                    { id: 'timeline', icon: MonitorPlay, label: { en: 'Timeline', zh: '時間軸', 'zh-HK': '時間軸' } },
+                                    { id: 'map', icon: MapIcon, label: { en: 'Map', zh: '地圖', 'zh-HK': '地圖' } }
+                                ].map(view => (
+                                    <button
+                                        key={view.id}
+                                        onClick={() => !isEditMode && setViewMode(view.id)}
+                                        className={`px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all outline-none relative whitespace-nowrap flex-shrink-0 ${viewMode === view.id
+                                            ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm z-10 font-bold'
+                                            : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5'
+                                            } ${isEditMode && viewMode !== view.id ? 'opacity-40 cursor-not-allowed grayscale' : ''}`}
+                                        title={isEditMode ? "請先完成編輯" : (view.label[currentLang] || view.label['en'])}
+                                    >
+                                        <view.icon className="w-4 h-4" />
+                                        <span className="text-[10px] uppercase font-bold inline">{view.label[currentLang] || view.label['en']}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setIsEditMode(!isEditMode)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-bold ${isEditMode ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg' : (isDarkMode ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50')}`}
+                            >
+                                {isEditMode ? <CheckSquare className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
+                                {isEditMode ? '完成編輯' : '編輯行程'}
+                            </button>
+
+                            {canEdit && onClearDaily && filteredItems.length > 0 && (
+                                <button
+                                    onClick={onClearDaily}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-bold ${isDarkMode ? 'border-red-500/50 text-red-400 hover:bg-red-500/10' : 'border-red-300 text-red-500 hover:bg-red-50'}`}
+                                    title="清空當日行程"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    清空當日
+                                </button>
+                            )}
+
+                            {canEdit && <button onClick={() => onAddItem(currentDisplayDate, 'spot')} className="text-xs bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-3 py-1.5 rounded-lg font-bold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 active:scale-95">+ 新增</button>}
+                        </div>
+
+                        {/* Mobile Date Scroll (Sticky Glassmorphic Ribbon) - Moved Here & Sticky */}
+                        {viewMode !== 'kanban' && (
+                            <div className="lg:hidden flex gap-2 overflow-x-auto py-2 px-1 sticky top-0 z-40 bg-white/80 dark:bg-[#0B0F19]/80 backdrop-blur-md border-b border-gray-200/50 dark:border-white/5 scrollbar-hide mb-4 -mx-2 shadow-sm" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                {days.map((d) => {
+                                    const dateKey = d.slice(5); // MM-DD
+                                    const dName = destHolidays?.[dateKey];
+                                    const hName = homeHolidays?.[dateKey];
+                                    return (
+                                        <button key={d} onClick={() => setSelectDate(d)} className={`flex-shrink-0 px-3 py-2 rounded-lg border transition text-center min-w-[100px] relative overflow-hidden group ${currentDisplayDate === d ? 'bg-indigo-500 text-white border-indigo-500 shadow-md' : (isDarkMode ? 'bg-gray-800/60 border-gray-700' : 'bg-white border-gray-200')}`}>
+                                            <div className="text-[10px] opacity-70 uppercase">{getWeekday(d)}</div>
+                                            <div className="font-bold text-xs">{formatDate(d)}</div>
+                                            {(dName || hName) && (
+                                                <div className="absolute top-0 right-0 flex flex-col items-end">
+                                                    {dName && <div className="bg-red-500 text-white text-[8px] px-1 rounded-bl shadow-sm mb-[1px] max-w-[60px] truncate">{dName}</div>}
+                                                    {hName && hName !== dName && <div className="bg-blue-500 text-white text-[8px] px-1 rounded-bl shadow-sm max-w-[60px] truncate">{hName}</div>}
+                                                </div>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                    </div>
+
+                    {/* Old Date Card removed - Date now in header */}
+
+                    {/* V1.1: Edit Mode Indicator Banner */}
+                    {isEditMode && (
+                        <div className="animate-fade-in mb-4">
+                            <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 p-4 rounded-2xl border border-indigo-500/30">
+                                <div className="flex items-center justify-between gap-4 mb-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-indigo-500/20 rounded-xl">
+                                            <GripVertical className="w-5 h-5 text-indigo-400" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-sm text-indigo-600 dark:text-indigo-400">🎛️ 編輯模式已啟用</h4>
+                                            <p className="text-xs opacity-70">拖曳卡片以重新排序。變更會自動儲存。</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        {/* V1.1 Phase 7: Undo/Redo Buttons */}
+                                        <button
+                                            onClick={onUndo}
+                                            disabled={!canUndo}
+                                            className={`p-2 rounded-lg transition-all ${canUndo ? 'bg-gray-500/20 hover:bg-gray-500/30 text-gray-300' : 'bg-gray-500/10 text-gray-600 cursor-not-allowed'}`}
+                                            title="撤銷 (Undo)"
+                                        >
+                                            <Undo2 className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={onRedo}
+                                            disabled={!canRedo}
+                                            className={`p-2 rounded-lg transition-all ${canRedo ? 'bg-gray-500/20 hover:bg-gray-500/30 text-gray-300' : 'bg-gray-500/10 text-gray-600 cursor-not-allowed'}`}
+                                            title="重做 (Redo)"
+                                        >
+                                            <Redo2 className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => setIsEditMode(false)}
+                                            className="px-3 py-1.5 bg-indigo-500 text-white text-xs font-bold rounded-lg hover:bg-indigo-600 transition-all flex items-center gap-1"
+                                        >
+                                            <CheckSquare className="w-3 h-3" /> 完成
+                                        </button>
+                                    </div>
+                                </div>
+                                {/* V1.1 Phase 2: Auto-Shift Toggle */}
+                                {viewMode !== 'kanban' && (
+                                    <div className={`flex items-center justify-between p-3 rounded-xl border ${autoShiftEnabled ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-gray-500/20 bg-gray-500/5'}`}>
+                                        <div className="flex items-center gap-2">
+                                            <Clock className="w-4 h-4 text-emerald-500" />
+                                            <div>
+                                                <span className="text-xs font-bold">智能時間調整 (Smart Ripple)</span>
+                                                <p className="text-[10px] opacity-60">拖拉時自動調整後續行程時間</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={toggleAutoShift}
+                                            className={`w-10 h-6 rounded-full transition-colors relative ${autoShiftEnabled ? 'bg-emerald-500' : 'bg-gray-400'}`}
+                                        >
+                                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${autoShiftEnabled ? 'left-5' : 'left-1'}`}></div>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* V1.2.4: Jarvis Daily Tips Card - HIDE in Kanban */}
+                    {viewMode !== 'kanban' && filteredItems.length > 0 && (
+                        <div className={`mb-4 p-4 rounded-2xl border transition-all ${isDarkMode ? 'bg-indigo-900/20 border-indigo-500/30' : 'bg-indigo-50 border-indigo-200'}`}>
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <BrainCircuit className="w-5 h-5 text-indigo-500" />
+                                    <span className="font-bold text-sm">Jarvis 每日分析</span>
+                                </div>
+                                <button
+                                    onClick={handleFetchJarvisTips}
+                                    disabled={isLoadingJarvisTips}
+                                    className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 ${isLoadingJarvisTips ? 'bg-gray-500/20 text-gray-400 cursor-wait' : 'bg-indigo-500 text-white hover:bg-indigo-600'}`}
+                                >
+                                    {isLoadingJarvisTips ? <><Loader2 className="w-3 h-3 animate-spin" /> 分析中...</> : <><Sparkles className="w-3 h-3" /> 生成建議</>}
+                                </button>
+                            </div>
+                            {jarvisTips ? (
+                                <div className="space-y-3 text-xs">
+                                    {jarvisTips.tips?.length > 0 && (
+                                        <div>
+                                            <div className="font-bold opacity-70 mb-1">💡 貼士</div>
+                                            <ul className="list-disc list-inside space-y-1 opacity-80">
+                                                {jarvisTips.tips.map((t, i) => <li key={i}>{t}</li>)}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    {jarvisTips.warnings?.length > 0 && (
+                                        <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                                            <div className="font-bold text-amber-500 mb-1">⚠️ 注意</div>
+                                            <ul className="list-disc list-inside space-y-1 text-amber-600 dark:text-amber-400">
+                                                {jarvisTips.warnings.map((w, i) => <li key={i}>{w}</li>)}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    {jarvisTips.transport?.length > 0 && (
+                                        <div>
+                                            <div className="font-bold opacity-70 mb-1">🚇 交通推介</div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {jarvisTips.transport.map((t, i) => (
+                                                    <span key={i} className={`px-2 py-1 rounded-full text-[10px] font-bold ${t.recommended ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-gray-500/10 border border-gray-500/20'}`}>
+                                                        {t.name} {t.price && `(${t.price})`}
+                                                    </span>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
-                            );
-                        })()}
-                    </div>
-
-                    <div className="flex gap-2 flex-wrap justify-end items-center">
-                        <button
-                            onClick={() => setIsEditMode(!isEditMode)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-bold ${isEditMode ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg' : (isDarkMode ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50')}`}
-                        >
-                            {isEditMode ? <CheckSquare className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
-                            {isEditMode ? '完成編輯' : '編輯行程'}
-                        </button>
-
-                        {canEdit && onClearDaily && filteredItems.length > 0 && (
-                            <button
-                                onClick={onClearDaily}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-bold ${isDarkMode ? 'border-red-500/50 text-red-400 hover:bg-red-500/10' : 'border-red-300 text-red-500 hover:bg-red-50'}`}
-                                title="清空當日行程"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                                清空當日
-                            </button>
-                        )}
-
-                        <button onClick={() => setViewMode(viewMode === 'list' ? 'map' : 'list')} className={`p-2 rounded-lg border transition-all ${isDarkMode ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100'}`} title="切換地圖/列表">{viewMode === 'list' ? <MapIcon className="w-5 h-5" /> : <List className="w-5 h-5" />}</button>
-                        {/* {canEdit && <button onClick={onOptimize} className={`p-2 rounded-lg border transition-all ${isDarkMode ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/30' : 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'}`} title="AI 智能排程優化"><Wand2 className="w-5 h-5" /></button> */}
-                        {canEdit && <button onClick={() => onAddItem(currentDisplayDate, 'spot')} className="text-xs bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-3 py-1.5 rounded-lg font-bold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 active:scale-95">+ 新增</button>}
-                    </div>
-                </div>
-
-                {/* V1.1: Edit Mode Indicator Banner */}
-                {isEditMode && (
-                    <div className="animate-fade-in mb-4">
-                        <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 p-4 rounded-2xl border border-indigo-500/30">
-                            <div className="flex items-center justify-between gap-4 mb-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-indigo-500/20 rounded-xl">
-                                        <GripVertical className="w-5 h-5 text-indigo-400" />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-sm text-indigo-600 dark:text-indigo-400">🎛️ 編輯模式已啟用</h4>
-                                        <p className="text-xs opacity-70">拖曳卡片以重新排序。變更會自動儲存。</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    {/* V1.1 Phase 7: Undo/Redo Buttons */}
-                                    <button
-                                        onClick={onUndo}
-                                        disabled={!canUndo}
-                                        className={`p-2 rounded-lg transition-all ${canUndo ? 'bg-gray-500/20 hover:bg-gray-500/30 text-gray-300' : 'bg-gray-500/10 text-gray-600 cursor-not-allowed'}`}
-                                        title="撤銷 (Undo)"
-                                    >
-                                        <Undo2 className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={onRedo}
-                                        disabled={!canRedo}
-                                        className={`p-2 rounded-lg transition-all ${canRedo ? 'bg-gray-500/20 hover:bg-gray-500/30 text-gray-300' : 'bg-gray-500/10 text-gray-600 cursor-not-allowed'}`}
-                                        title="重做 (Redo)"
-                                    >
-                                        <Redo2 className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => setIsEditMode(false)}
-                                        className="px-3 py-1.5 bg-indigo-500 text-white text-xs font-bold rounded-lg hover:bg-indigo-600 transition-all flex items-center gap-1"
-                                    >
-                                        <CheckSquare className="w-3 h-3" /> 完成
-                                    </button>
-                                </div>
-                            </div>
-                            {/* V1.1 Phase 2: Auto-Shift Toggle */}
-                            <div className={`flex items-center justify-between p-3 rounded-xl border ${autoShiftEnabled ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-gray-500/20 bg-gray-500/5'}`}>
-                                <div className="flex items-center gap-2">
-                                    <Clock className="w-4 h-4 text-emerald-500" />
-                                    <div>
-                                        <span className="text-xs font-bold">智能時間調整 (Smart Ripple)</span>
-                                        <p className="text-[10px] opacity-60">拖拉時自動調整後續行程時間</p>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={toggleAutoShift}
-                                    className={`w-10 h-6 rounded-full transition-colors relative ${autoShiftEnabled ? 'bg-emerald-500' : 'bg-gray-400'}`}
-                                >
-                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${autoShiftEnabled ? 'left-5' : 'left-1'}`}></div>
-                                </button>
-                            </div>
+                            ) : (
+                                <p className="text-xs opacity-50">撳「生成建議」讓 Jarvis 分析今日行程。</p>
+                            )}
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* V1.2.4: Jarvis Daily Tips Card */}
-                {filteredItems.length > 0 && (
-                    <div className={`mb-4 p-4 rounded-2xl border transition-all ${isDarkMode ? 'bg-indigo-900/20 border-indigo-500/30' : 'bg-indigo-50 border-indigo-200'}`}>
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                                <BrainCircuit className="w-5 h-5 text-indigo-500" />
-                                <span className="font-bold text-sm">Jarvis 每日分析</span>
-                            </div>
-                            <button
-                                onClick={handleFetchJarvisTips}
-                                disabled={isLoadingJarvisTips}
-                                className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 ${isLoadingJarvisTips ? 'bg-gray-500/20 text-gray-400 cursor-wait' : 'bg-indigo-500 text-white hover:bg-indigo-600'}`}
-                            >
-                                {isLoadingJarvisTips ? <><Loader2 className="w-3 h-3 animate-spin" /> 分析中...</> : <><Sparkles className="w-3 h-3" /> 生成建議</>}
-                            </button>
-                        </div>
-                        {jarvisTips ? (
-                            <div className="space-y-3 text-xs">
-                                {jarvisTips.tips?.length > 0 && (
-                                    <div>
-                                        <div className="font-bold opacity-70 mb-1">💡 貼士</div>
-                                        <ul className="list-disc list-inside space-y-1 opacity-80">
-                                            {jarvisTips.tips.map((t, i) => <li key={i}>{t}</li>)}
-                                        </ul>
+                    {/* V1.1 Day Summary Block (Global - Hidden in Kanban & Search) */}
+                    {viewMode !== 'kanban' && !searchValue && filteredItems.length > 0 && (
+                        <div className="mb-4 pr-0">
+                            <div className={`p-4 rounded-3xl border border-dashed ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-indigo-50/50 border-indigo-200/50'}`}>
+                                {/* Summary Header */}
+                                <div className="flex items-center gap-2 mb-4">
+                                    <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-xs">
+                                        {filteredItems.length}
                                     </div>
-                                )}
-                                {jarvisTips.warnings?.length > 0 && (
-                                    <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30">
-                                        <div className="font-bold text-amber-500 mb-1">⚠️ 注意</div>
-                                        <ul className="list-disc list-inside space-y-1 text-amber-600 dark:text-amber-400">
-                                            {jarvisTips.warnings.map((w, i) => <li key={i}>{w}</li>)}
-                                        </ul>
-                                    </div>
-                                )}
-                                {jarvisTips.transport?.length > 0 && (
-                                    <div>
-                                        <div className="font-bold opacity-70 mb-1">🚇 交通推介</div>
-                                        <div className="flex flex-wrap gap-2">
-                                            {jarvisTips.transport.map((t, i) => (
-                                                <span key={i} className={`px-2 py-1 rounded-full text-[10px] font-bold ${t.recommended ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-gray-500/10 border border-gray-500/20'}`}>
-                                                    {t.name} {t.price && `(${t.price})`}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            <p className="text-xs opacity-50">撳「生成建議」讓 Jarvis 分析今日行程。</p>
-                        )}
-                    </div>
-                )}
+                                    <div className="font-bold text-sm opacity-80">📋 每日總覽</div>
+                                </div>
 
-                {viewMode === 'list' ? (
-                    <>
-                        {/* V1.1 Day Summary Block (Moved outside Droppable) */}
-                        {!searchValue && filteredItems.length > 0 && (
-                            <div className="mb-4 pr-0">
-                                <div className={`p-4 rounded-3xl border border-dashed ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-indigo-50/50 border-indigo-200/50'}`}>
-                                    {/* Summary Header */}
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-xs">
-                                            {filteredItems.length}
-                                        </div>
-                                        <div className="font-bold text-sm opacity-80">📋 每日總覽</div>
-                                    </div>
-
-                                    {/* Metrics Grid - Responsive: 1 col mobile, 3 cols desktop */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                                        {/* Total Expenses */}
-                                        <div className={`p-3 rounded-2xl flex flex-col items-center justify-center text-center ${isDarkMode ? 'bg-black/20' : 'bg-white'}`}>
-                                            <div className="text-[10px] opacity-50 font-bold mb-1">預算 Budget</div>
-                                            {(() => {
-                                                // V1.2.4 Fix: Smart currency detection based on country
-                                                const countryCurrencyMap = { '日本': 'JPY', 'Japan': 'JPY', '台灣': 'TWD', 'Taiwan': 'TWD', '韓國': 'KRW', 'Korea': 'KRW', '中國': 'CNY', 'China': 'CNY', '香港': 'HKD', 'Hong Kong': 'HKD', '美國': 'USD', 'USA': 'USD', '英國': 'GBP', 'UK': 'GBP' };
-                                                const localCurrency = trip?.currency || countryCurrencyMap[trip?.country] || 'HKD';
-                                                const hkdToLocal = { JPY: 18.5, USD: 0.13, EUR: 0.12, GBP: 0.10, CNY: 0.92, TWD: 4.0, KRW: 166, HKD: 1, THB: 4.5, SGD: 0.17, MYR: 0.58 };
-                                                let totalLocal = 0;
-                                                filteredItems.forEach(item => totalLocal += (item.cost || 0));
-                                                return (
-                                                    <div>
-                                                        <div className="text-sm font-black text-indigo-500">{localCurrency} {Math.round(totalLocal).toLocaleString()}</div>
-                                                        <div className="text-[10px] opacity-40">≈ HKD {Math.round(totalLocal / (hkdToLocal[localCurrency] || 18.5)).toLocaleString()}</div>
-                                                    </div>
-                                                );
-                                            })()}
-                                        </div>
-
-                                        {/* Hotel Info (Always show, with optional cross-city badge) */}
+                                {/* Metrics Grid - Responsive: 1 col mobile, 3 cols desktop */}
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                                    {/* Total Expenses */}
+                                    <div className={`p-3 rounded-2xl flex flex-col items-center justify-center text-center ${isDarkMode ? 'bg-black/20' : 'bg-white'}`}>
+                                        <div className="text-[10px] opacity-50 font-bold mb-1">預算 Budget</div>
                                         {(() => {
-                                            // V2.15: Use persistentHotel for continuous display
-                                            // Prioritize details.nameEn or details.name to avoid showing action names like "Check-in"
-                                            const hotelName = persistentHotel?.details?.nameEn || persistentHotel?.details?.name || persistentHotel?.name || '未預訂';
-
-                                            // V2.15: Cross-city detection via trip.locations comparison
-                                            const currentCity = trip.locations?.[currentDisplayDate]?.city;
-                                            const prevDateIdx = days.indexOf(currentDisplayDate) - 1;
-                                            const prevDate = prevDateIdx >= 0 ? days[prevDateIdx] : null;
-                                            const prevCity = prevDate ? trip.locations?.[prevDate]?.city : null;
-                                            const isCrossCity = currentCity && prevCity && currentCity !== prevCity;
-
-                                            // Find cross-city transport for time display
-                                            const crossCityTransport = isCrossCity ? filteredItems.find(i =>
-                                                (i.type === 'train' || i.type === 'transport') &&
-                                                (i.details?.duration?.includes('hr') || parseInt(i.details?.duration) > 60)
-                                            ) : null;
-
-                                            // Get transport type label
-                                            const getTransportLabel = () => {
-                                                if (!crossCityTransport) return '🚅';
-                                                const name = (crossCityTransport.name || '').toLowerCase();
-                                                if (name.includes('新幹線') || name.includes('shinkansen')) return '🚅 新幹線';
-                                                if (name.includes('express') || name.includes('特急')) return '🚄 特急';
-                                                if (name.includes('bus') || name.includes('巴士')) return '🚌 高速巴士';
-                                                if (name.includes('flight') || name.includes('航')) return '✈️ 航班';
-                                                return '🚅 鐵道';
-                                            };
-
-                                            // Find previous day's hotel for transition display (search backwards)
-                                            const getPrevHotel = () => {
-                                                if (!prevDate) return null;
-                                                // Search backwards for any hotel record
-                                                for (let i = prevDateIdx; i >= 0; i--) {
-                                                    const checkDate = days[i];
-                                                    const items = trip.itinerary?.[checkDate] || [];
-                                                    const hotel = items.find(it => it.type === 'hotel');
-                                                    if (hotel) {
-                                                        // Make sure it's a different hotel (not same as current)
-                                                        const prevName = hotel?.details?.nameEn || hotel?.details?.name || hotel?.name;
-                                                        if (prevName && prevName !== hotelName) {
-                                                            return prevName;
-                                                        }
-                                                    }
-                                                }
-                                                // Fallback: If no hotel found, try using previous city name
-                                                if (prevCity && prevCity !== currentCity) {
-                                                    return `${prevCity} 酒店`;
-                                                }
-                                                return null;
-                                            };
-                                            const prevHotelName = isCrossCity ? getPrevHotel() : null;
-
+                                            // V1.2.4 Fix: Smart currency detection based on country
+                                            const countryCurrencyMap = { '日本': 'JPY', 'Japan': 'JPY', '台灣': 'TWD', 'Taiwan': 'TWD', '韓國': 'KRW', 'Korea': 'KRW', '中國': 'CNY', 'China': 'CNY', '香港': 'HKD', 'Hong Kong': 'HKD', '美國': 'USD', 'USA': 'USD', '英國': 'GBP', 'UK': 'GBP' };
+                                            const localCurrency = trip?.currency || countryCurrencyMap[trip?.country] || 'HKD';
+                                            const hkdToLocal = { JPY: 18.5, USD: 0.13, EUR: 0.12, GBP: 0.10, CNY: 0.92, TWD: 4.0, KRW: 166, HKD: 1, THB: 4.5, SGD: 0.17, MYR: 0.58 };
+                                            let totalLocal = 0;
+                                            filteredItems.forEach(item => totalLocal += (item.cost || 0));
                                             return (
-                                                <div className={`p-3 rounded-2xl flex flex-col items-center justify-center text-center ${isDarkMode ? 'bg-black/20' : 'bg-white'}`}>
-                                                    <div className="text-[10px] opacity-50 font-bold mb-1 flex items-center gap-1">
-                                                        🏨 住宿
-                                                    </div>
-                                                    {isCrossCity && prevHotelName ? (
-                                                        <>
-                                                            <div className="text-[9px] text-gray-400 line-clamp-1 mb-0.5">{prevHotelName}</div>
-                                                            <div className="text-[8px] opacity-40 my-0.5">↓</div>
-                                                            <div className="text-xs font-bold text-emerald-500 line-clamp-1">{hotelName}</div>
-                                                        </>
-                                                    ) : (
-                                                        <div className="text-xs font-bold line-clamp-2">{hotelName}</div>
-                                                    )}
+                                                <div>
+                                                    <div className="text-sm font-black text-indigo-500">{localCurrency} {Math.round(totalLocal).toLocaleString()}</div>
+                                                    <div className="text-[10px] opacity-40">≈ HKD {Math.round(totalLocal / (hkdToLocal[localCurrency] || 18.5)).toLocaleString()}</div>
                                                 </div>
                                             );
                                         })()}
+                                    </div>
 
-                                        {/* Weather Info (Split Day/Night) */}
-                                        <div className={`rounded-2xl overflow-hidden flex flex-col justify-between border ${isDarkMode ? 'bg-black/20 border-white/5' : 'bg-white border-gray-100'}`}>
-                                            {/* Top Row: Temp & Weather */}
-                                            <div className={`flex items-center justify-between px-3 py-3 border-b ${isDarkMode ? 'border-white/10' : 'border-gray-100'}`}>
-                                                <div className={`flex items-center gap-2 w-1/2 justify-center border-r pr-2 ${isDarkMode ? 'border-white/10' : 'border-gray-100'}`}>
-                                                    <Sun className="w-4 h-4 text-amber-500" />
-                                                    <span className="text-xl font-black opacity-90">{dailyWeather?.temp ? dailyWeather.temp.split('/')[0]?.trim() || '--' : '--'}</span>
-                                                    <div className="scale-75 opacity-50">{dailyWeather?.icon}</div>
+                                    {/* Hotel Info (Always show, with optional cross-city badge) */}
+                                    {(() => {
+                                        // V2.15: Use persistentHotel for continuous display
+                                        // Prioritize details.nameEn or details.name to avoid showing action names like "Check-in"
+                                        const hotelName = persistentHotel?.details?.nameEn || persistentHotel?.details?.name || persistentHotel?.name || '未預訂';
+
+                                        // V2.15: Cross-city detection via trip.locations comparison
+                                        const currentCity = trip.locations?.[currentDisplayDate]?.city;
+                                        const prevDateIdx = days.indexOf(currentDisplayDate) - 1;
+                                        const prevDate = prevDateIdx >= 0 ? days[prevDateIdx] : null;
+                                        const prevCity = prevDate ? trip.locations?.[prevDate]?.city : null;
+                                        const isCrossCity = currentCity && prevCity && currentCity !== prevCity;
+
+                                        // Find cross-city transport for time display
+                                        const crossCityTransport = isCrossCity ? filteredItems.find(i =>
+                                            (i.type === 'train' || i.type === 'transport') &&
+                                            (i.details?.duration?.includes('hr') || parseInt(i.details?.duration) > 60)
+                                        ) : null;
+
+                                        // Get transport type label
+                                        const getTransportLabel = () => {
+                                            if (!crossCityTransport) return '🚅';
+                                            const name = (crossCityTransport.name || '').toLowerCase();
+                                            if (name.includes('新幹線') || name.includes('shinkansen')) return '🚅 新幹線';
+                                            if (name.includes('express') || name.includes('特急')) return '🚄 特急';
+                                            if (name.includes('bus') || name.includes('巴士')) return '🚌 高速巴士';
+                                            if (name.includes('flight') || name.includes('航')) return '✈️ 航班';
+                                            return '🚅 鐵道';
+                                        };
+
+                                        // Find previous day's hotel for transition display (search backwards)
+                                        const getPrevHotel = () => {
+                                            if (!prevDate) return null;
+                                            // Search backwards for any hotel record
+                                            for (let i = prevDateIdx; i >= 0; i--) {
+                                                const checkDate = days[i];
+                                                const items = trip.itinerary?.[checkDate] || [];
+                                                const hotel = items.find(it => it.type === 'hotel');
+                                                if (hotel) {
+                                                    // Make sure it's a different hotel (not same as current)
+                                                    const prevName = hotel?.details?.nameEn || hotel?.details?.name || hotel?.name;
+                                                    if (prevName && prevName !== hotelName) {
+                                                        return prevName;
+                                                    }
+                                                }
+                                            }
+                                            // Fallback: If no hotel found, try using previous city name
+                                            if (prevCity && prevCity !== currentCity) {
+                                                return `${prevCity} 酒店`;
+                                            }
+                                            return null;
+                                        };
+                                        const prevHotelName = isCrossCity ? getPrevHotel() : null;
+
+                                        return (
+                                            <div className={`p-3 rounded-2xl flex flex-col items-center justify-center text-center ${isDarkMode ? 'bg-black/20' : 'bg-white'}`}>
+                                                <div className="text-[10px] opacity-50 font-bold mb-1 flex items-center gap-1">
+                                                    🏨 住宿
                                                 </div>
-                                                <div className="flex items-center gap-2 w-1/2 justify-center pl-2">
-                                                    <Moon className="w-4 h-4 text-indigo-500" />
-                                                    <span className="text-xl font-black opacity-90">{dailyWeather?.temp ? (dailyWeather.temp.split('/')[1]?.trim() || dailyWeather.temp) : '--'}</span>
-                                                    <div className="scale-75 opacity-50">{dailyWeather?.icon}</div>
-                                                </div>
+                                                {isCrossCity && prevHotelName ? (
+                                                    <>
+                                                        <div className="text-[9px] text-gray-400 line-clamp-1 mb-0.5">{prevHotelName}</div>
+                                                        <div className="text-[8px] opacity-40 my-0.5">↓</div>
+                                                        <div className="text-xs font-bold text-emerald-500 line-clamp-1">{hotelName}</div>
+                                                    </>
+                                                ) : (
+                                                    <div className="text-xs font-bold line-clamp-2">{hotelName}</div>
+                                                )}
                                             </div>
+                                        );
+                                    })()}
 
-                                            {/* Bottom Row: Clothing */}
-                                            <div className={`flex items-center justify-between px-3 py-2 ${isDarkMode ? 'bg-black/20' : 'bg-gray-50'}`}>
-                                                <div className={`flex items-center gap-2 w-1/2 justify-center border-r pr-2 overflow-hidden ${isDarkMode ? 'border-white/10' : 'border-gray-200'}`}>
-                                                    <Shirt className={`w-3.5 h-3.5 flex-shrink-0 ${isDarkMode ? 'text-amber-200/50' : 'text-amber-600/50'}`} />
-                                                    <span className={`text-[10px] font-medium truncate ${isDarkMode ? 'text-amber-100/80' : 'text-amber-800/80'}`}>
-                                                        {dailyWeather?.dayClothes || (dailyWeather?.clothes ? (dailyWeather.clothes.split(/[|/]/)[0]?.replace('日：', '').trim() || dailyWeather.clothes) : "暫無")}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-2 w-1/2 justify-center pl-2 overflow-hidden">
-                                                    <Shirt className={`w-3.5 h-3.5 flex-shrink-0 ${isDarkMode ? 'text-indigo-200/50' : 'text-indigo-600/50'}`} />
-                                                    <span className={`text-[10px] font-medium truncate ${isDarkMode ? 'text-indigo-100/80' : 'text-indigo-800/80'}`}>
-                                                        {dailyWeather?.nightClothes || (dailyWeather?.clothes ? (dailyWeather.clothes.split(/[|/]/)[1]?.replace('夜：', '').trim() || dailyWeather.clothes.split(/[|/]/)[0]?.replace('日：', '').trim()) : "暫無")}
-                                                    </span>
-                                                </div>
+                                    {/* Weather Info (Split Day/Night) */}
+                                    <div className={`rounded-2xl overflow-hidden flex flex-col justify-between border ${isDarkMode ? 'bg-black/20 border-white/5' : 'bg-white border-gray-100'}`}>
+                                        {/* Top Row: Temp & Weather */}
+                                        <div className={`flex items-center justify-between px-3 py-3 border-b ${isDarkMode ? 'border-white/10' : 'border-gray-100'}`}>
+                                            <div className={`flex items-center gap-2 w-1/2 justify-center border-r pr-2 ${isDarkMode ? 'border-white/10' : 'border-gray-100'}`}>
+                                                <Sun className="w-4 h-4 text-amber-500" />
+                                                <span className="text-xl font-black opacity-90">{dailyWeather?.temp ? dailyWeather.temp.split('/')[0]?.trim() || '--' : '--'}</span>
+                                                <div className="scale-75 opacity-50">{dailyWeather?.icon}</div>
+                                            </div>
+                                            <div className="flex items-center gap-2 w-1/2 justify-center pl-2">
+                                                <Moon className="w-4 h-4 text-indigo-500" />
+                                                <span className="text-xl font-black opacity-90">{dailyWeather?.temp ? (dailyWeather.temp.split('/')[1]?.trim() || dailyWeather.temp) : '--'}</span>
+                                                <div className="scale-75 opacity-50">{dailyWeather?.icon}</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Bottom Row: Clothing */}
+                                        <div className={`flex items-center justify-between px-3 py-2 ${isDarkMode ? 'bg-black/20' : 'bg-gray-50'}`}>
+                                            <div className={`flex items-center gap-2 w-1/2 justify-center border-r pr-2 overflow-hidden ${isDarkMode ? 'border-white/10' : 'border-gray-200'}`}>
+                                                <Shirt className={`w-3.5 h-3.5 flex-shrink-0 ${isDarkMode ? 'text-amber-200/50' : 'text-amber-600/50'}`} />
+                                                <span className={`text-[10px] font-medium truncate ${isDarkMode ? 'text-amber-100/80' : 'text-amber-800/80'}`}>
+                                                    {dailyWeather?.dayClothes || (dailyWeather?.clothes ? (dailyWeather.clothes.split(/[|/]/)[0]?.replace('日：', '').trim() || dailyWeather.clothes) : "暫無")}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 w-1/2 justify-center pl-2 overflow-hidden">
+                                                <Shirt className={`w-3.5 h-3.5 flex-shrink-0 ${isDarkMode ? 'text-indigo-200/50' : 'text-indigo-600/50'}`} />
+                                                <span className={`text-[10px] font-medium truncate ${isDarkMode ? 'text-indigo-100/80' : 'text-indigo-800/80'}`}>
+                                                    {dailyWeather?.nightClothes || (dailyWeather?.clothes ? (dailyWeather.clothes.split(/[|/]/)[1]?.replace('夜：', '').trim() || dailyWeather.clothes.split(/[|/]/)[0]?.replace('日：', '').trim()) : "暫無")}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
+                                </div>
 
-                                    {/* V1.1 Phase 5: Hotel Transport Shortcuts UI */}
-                                    {currentHotel && (!hasMorningDeparture || !hasEveningReturn) && (
-                                        <div className="flex gap-2 mb-4">
-                                            {!hasMorningDeparture && (
-                                                <button
-                                                    onClick={() => handleHotelShortcut('departure')}
-                                                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl text-[11px] font-bold border transition-all ${isDarkMode ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/20' : 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'}`}
-                                                >
-                                                    <LogOut className="w-3.5 h-3.5 rotate-[-90deg]" /> 從酒店出發
-                                                </button>
-                                            )}
-                                            {!hasEveningReturn && (
-                                                <button
-                                                    onClick={() => handleHotelShortcut('return')}
-                                                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl text-[11px] font-bold border transition-all ${isDarkMode ? 'bg-purple-500/10 border-purple-500/30 text-purple-300 hover:bg-purple-500/20' : 'bg-purple-50 border-purple-200 text-purple-600 hover:bg-purple-100'}`}
-                                                >
-                                                    <LogIn className="w-3.5 h-3.5 rotate-[90deg]" /> 返回酒店
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
+                                {/* V1.1 Phase 5: Hotel Transport Shortcuts UI */}
+                                {currentHotel && (!hasMorningDeparture || !hasEveningReturn) && (
+                                    <div className="flex gap-2 mb-4">
+                                        {!hasMorningDeparture && (
+                                            <button
+                                                onClick={() => handleHotelShortcut('departure')}
+                                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl text-[11px] font-bold border transition-all ${isDarkMode ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/20' : 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'}`}
+                                            >
+                                                <LogOut className="w-3.5 h-3.5 rotate-[-90deg]" /> 從酒店出發
+                                            </button>
+                                        )}
+                                        {!hasEveningReturn && (
+                                            <button
+                                                onClick={() => handleHotelShortcut('return')}
+                                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl text-[11px] font-bold border transition-all ${isDarkMode ? 'bg-purple-500/10 border-purple-500/30 text-purple-300 hover:bg-purple-500/20' : 'bg-purple-50 border-purple-200 text-purple-600 hover:bg-purple-100'}`}
+                                            >
+                                                <LogIn className="w-3.5 h-3.5 rotate-[90deg]" /> 返回酒店
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
 
-                                    {/* Pro Tip Banner - Only show in Edit Mode */}
-                                    {isEditMode && (
-                                        <div className="flex items-start gap-2 text-[10px] opacity-60 bg-indigo-500/5 p-2 rounded-lg">
-                                            <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                                            <span className="hidden md:inline"><span className="font-bold">Pro Tip:</span> 拖曳卡片即可排序；點擊進入編輯。所有變更自動儲存。</span>
-                                            <span className="md:hidden"><span className="font-bold">Pro Tip:</span> 長按卡片拖曳排序；點擊進入編輯。所有變更自動儲存。</span>
-                                        </div>
-                                    )}
+                                {/* Pro Tip Banner - Only show in Edit Mode */}
+                                {isEditMode && (
+                                    <div className="flex items-start gap-2 text-[10px] opacity-60 bg-indigo-500/5 p-2 rounded-lg">
+                                        <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                        <span className="hidden md:inline"><span className="font-bold">Pro Tip:</span> 拖曳卡片即可排序；點擊進入編輯。所有變更自動儲存。</span>
+                                        <span className="md:hidden"><span className="font-bold">Pro Tip:</span> 長按卡片拖曳排序；點擊進入編輯。所有變更自動儲存。</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* V1.1 Phase 4: Time Conflict Warnings */}
+                    {(() => {
+                        const conflicts = detectTimeConflicts(filteredItems);
+                        if (conflicts.length === 0) return null;
+
+                        return (
+                            <div className="mb-4 pr-0 animate-fade-in relative z-10">
+                                <div className={`p-4 rounded-3xl border-2 border-dashed ${isDarkMode ? 'bg-amber-500/5 border-amber-500/30' : 'bg-amber-50 border-amber-200'}`}>
+                                    <div className="flex items-center gap-2 mb-2 text-amber-600 dark:text-amber-400 font-bold text-sm">
+                                        <AlertTriangle className="w-5 h-5 text-amber-500" />
+                                        <span>行程注意 (Schedule Alerts)</span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {conflicts.map((c, idx) => (
+                                            <div key={idx} className={`text-xs p-2 rounded-xl flex items-center gap-2 ${c.type === 'overlap' ? (isDarkMode ? 'bg-red-500/10 text-red-400' : 'bg-red-50 text-red-600') : (isDarkMode ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600')}`}>
+                                                <div className={`w-1.5 h-1.5 rounded-full ${c.type === 'overlap' ? 'bg-red-500' : 'bg-amber-500'}`} />
+                                                {c.message}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
-                        )}
+                        );
+                    })()}
 
-                        {/* V1.1 Phase 4: Time Conflict Warnings */}
-                        {(() => {
-                            const conflicts = detectTimeConflicts(filteredItems);
-                            if (conflicts.length === 0) return null;
-
-                            return (
-                                <div className="mb-4 pr-0 animate-fade-in relative z-10">
-                                    <div className={`p-4 rounded-3xl border-2 border-dashed ${isDarkMode ? 'bg-amber-500/5 border-amber-500/30' : 'bg-amber-50 border-amber-200'}`}>
-                                        <div className="flex items-center gap-2 mb-2 text-amber-600 dark:text-amber-400 font-bold text-sm">
-                                            <AlertTriangle className="w-5 h-5 text-amber-500" />
-                                            <span>行程注意 (Schedule Alerts)</span>
-                                        </div>
-                                        <div className="space-y-2">
-                                            {conflicts.map((c, idx) => (
-                                                <div key={idx} className={`text-xs p-2 rounded-xl flex items-center gap-2 ${c.type === 'overlap' ? (isDarkMode ? 'bg-red-500/10 text-red-400' : 'bg-red-50 text-red-600') : (isDarkMode ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600')}`}>
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${c.type === 'overlap' ? 'bg-red-500' : 'bg-amber-500'}`} />
-                                                    {c.message}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })()}
-
+                    {/* List View - Drag & Drop Items */}
+                    {viewMode === 'list' && (
                         <DragDropContext onDragEnd={(result) => onDragEnd(result, autoShiftEnabled)}>
                             <Droppable droppableId="itinerary-list" isDropDisabled={!canEdit || !isEditMode}>
                                 {(droppableProvided) => (
                                     <div
                                         ref={droppableProvided.innerRef}
                                         {...droppableProvided.droppableProps}
-                                        className="relative space-y-6 pt-2 pb-6 pl-0 md:pl-4"
+                                        className={`relative space-y-4 pt-4 pb-6 pl-0 md:pl-4 rounded-2xl ${isDarkMode ? 'bg-gray-900/30' : 'bg-white/40'} backdrop-blur-sm p-4 border ${isDarkMode ? 'border-white/5' : 'border-gray-100'}`}
                                     >
-                                        <div className="absolute left-[17px] md:left-[31px] top-4 bottom-4 w-[2px] bg-gradient-to-b from-indigo-500/20 via-indigo-500/10 to-transparent"></div>
+                                        {/* Timeline connector line */}
+                                        <div className={`absolute left-[25px] md:left-[39px] top-8 bottom-8 w-[3px] rounded-full ${isDarkMode ? 'bg-gradient-to-b from-indigo-500/40 via-indigo-500/20 to-transparent' : 'bg-gradient-to-b from-indigo-400/50 via-indigo-300/30 to-transparent'}`}></div>
                                         {filteredItems.length === 0 ? (
                                             <EmptyState
                                                 icon={searchValue ? Search : CalendarDays}
@@ -1328,10 +1280,12 @@ const ItineraryTab = ({
                                                                     <div className="absolute left-0 top-0 flex flex-col items-center w-[36px] md:w-[60px]">
                                                                         <div className={`mt-0 px-2 py-1 rounded-full text-[10px] font-bold tracking-tight z-20 shadow-sm border
                                                         ${item.type === 'hotel' ? 'bg-rose-600 text-white border-rose-400/30' :
-                                                                                item.type === 'food' ? 'bg-orange-600 text-white border-orange-400/30' :
-                                                                                    item.type === 'shopping' ? 'bg-pink-600 text-white border-pink-400/30' :
+                                                                                item.type === 'food' ? 'bg-amber-600 text-white border-amber-400/30' :
+                                                                                    item.type === 'shopping' ? 'bg-fuchsia-600 text-white border-fuchsia-400/30' :
                                                                                         (item.type === 'activity' || item.type === 'spot') ? 'bg-cyan-600 text-white border-cyan-400/30' :
-                                                                                            'bg-gray-600 text-white border-gray-400/30'} 
+                                                                                            item.type === 'flight' ? 'bg-indigo-600 text-white border-indigo-400/30' :
+                                                                                                item.type === 'transport' ? 'bg-purple-600 text-white border-purple-400/30' :
+                                                                                                    'bg-gray-600 text-white border-gray-400/30'} 
                                                         ${isDarkMode ? 'shadow-lg shadow-black/20' : ''}`}>
                                                                             {item.details?.time || item.time || "--:--"}
                                                                         </div>
@@ -1372,175 +1326,86 @@ const ItineraryTab = ({
                                 )}
                             </Droppable>
                         </DragDropContext>
-                    </>
-                ) : (
-                    <div className="h-[450px] grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Map Embed - Using Google Maps Embed */}
-                        <div className="md:col-span-2 w-full h-full rounded-2xl overflow-hidden border border-white/10 relative">
-                            <iframe
-                                title="trip-map"
-                                width="100%"
-                                height="100%"
-                                frameBorder="0"
-                                loading="lazy"
-                                referrerPolicy="no-referrer-when-downgrade"
-                                src={`https://www.google.com/maps/embed/v1/search?key=${userMapsKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(
-                                    previewLocation
-                                        ? previewLocation
-                                        : (allLocations.length > 0 ? allLocations.map(item => item.details?.location || trip.city).join('|') : trip.city + ', ' + trip.country)
-                                )}&zoom=${previewLocation ? 16 : 13}`}
-                                style={{ border: 0 }}
+                    )}
+
+                    {viewMode === 'map' && (
+                        <div className="h-[500px] w-full rounded-2xl overflow-hidden border border-white/10 shadow-2xl relative animate-in fade-in zoom-in-95 duration-500">
+                            <MapView2
+                                items={allLocations}
+                                trip={trip}
+                                isDarkMode={isDarkMode}
+                                onItemClick={(item) => setActiveDetailItem(item)}
                             />
+                        </div>
+                    )}
 
-                            <div className="absolute bottom-3 right-3 flex gap-2">
-                                {previewLocation && (
-                                    <button
-                                        onClick={() => setPreviewLocation(null)}
-                                        className="px-3 py-2 bg-gray-800/80 backdrop-blur text-white text-xs font-bold rounded-lg shadow-lg hover:bg-gray-700 transition-all flex items-center gap-2"
-                                    >
-                                        <MapIcon className="w-4 h-4" /> 顯示全景
-                                    </button>
-                                )}
-                                <a
-                                    href={`https://www.google.com/maps/dir/${allLocations.map(item => encodeURIComponent(item.details?.location || trip.city)).join('/')}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="px-3 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg shadow-lg hover:bg-indigo-700 transition-all flex items-center gap-2"
-                                >
-                                    <Navigation className="w-4 h-4" /> Google Maps 路線
-                                </a>
+                    {/* V1.2.6 Board View (Pinterest Masonry) */}
+                    {viewMode === 'board' && (
+                        <BoardView
+                            items={searchValue || activeFilters.length > 0 ? filteredItems : mergedItems}
+                            days={days}
+                            isDarkMode={isDarkMode}
+                            isEditMode={isEditMode}
+                            onItemClick={(item) => {
+                                setEditingItem(item);
+                                setSelectDate(item.date);
+                                setAddType(item.type);
+                                setIsItemDetailModalOpen(true);
+                            }}
+                        />
+                    )}
+
+                    {/* V1.2.6 Kanban View (Column per Day) */}
+                    {viewMode === 'kanban' && (() => {
+                        // Compute Full Trip Items for Kanban (All Days)
+                        const fullTripItems = (searchValue || activeFilters.length > 0)
+                            ? filteredItems
+                            : days.flatMap(d => {
+                                // Priority: Use cache if it exists for this day, otherwise Firestore
+                                const dailyItems = pendingItemsCache[d] || trip.itinerary?.[d] || [];
+                                return dailyItems.map(item => ({ ...item, date: d }));
+                            });
+
+                        return (
+                            <KanbanView
+                                items={fullTripItems}
+                                days={days}
+                                isDarkMode={isDarkMode}
+                                onItemClick={(item) => setActiveDetailItem(item)}
+                                onAddItem={onAddItem}
+                                onMoveItem={onMoveItem}
+                                isEditMode={isEditMode}
+                            />
+                        );
+                    })()}
+
+                    {/* V1.2.6 Timeline View (24h Grid) */}
+                    {viewMode === 'timeline' && (
+                        <TimelineView
+                            items={filteredItems}
+                            isDarkMode={isDarkMode}
+                            isEditMode={isEditMode}
+                            onItemClick={(item) => setActiveDetailItem(item)}
+                            homeOffset={8} // HK
+                            destOffset={9} // Japan
+                        />
+                    )}
+
+                    {/* Placeholder for Future Views (remaining modes if any) */}
+                    {viewMode !== 'list' && viewMode !== 'map' && viewMode !== 'board' && viewMode !== 'kanban' && viewMode !== 'timeline' && (
+                        <div className="flex flex-col items-center justify-center py-20 opacity-50 space-y-4 animate-fade-in">
+                            <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-800">
+                                <MonitorPlay className="w-8 h-8 text-indigo-400" />
+                            </div>
+                            <div className="text-center">
+                                <h3 className="font-bold text-xl capitalize">{viewMode} View</h3>
+                                <p className="text-sm opacity-60">這個檢視模式正在開發中... 🚧</p>
                             </div>
                         </div>
-                        {/* Location List - Added padding to prevent scale/ring clipping */}
-                        <div className="space-y-2.5 overflow-y-auto custom-scrollbar p-1.5 max-h-[450px]">
-                            {/* Scope Toggle */}
-                            <div className="flex items-center justify-between mb-3 px-1">
-                                <div className="text-xs font-bold opacity-50">行程地點 ({allLocations.length})</div>
-                                <div className="flex gap-1">
-                                    <button
-                                        onClick={() => { setMapScope('daily'); setPreviewLocation(null); }}
-                                        className={`px-2 py-1 text-[10px] rounded font-bold transition-all ${mapScope === 'daily' ? 'bg-indigo-500 text-white' : 'bg-gray-500/20 opacity-60 hover:opacity-100'}`}
-                                    >
-                                        當日
-                                    </button>
-                                    <button
-                                        onClick={() => { setMapScope('full'); setPreviewLocation(null); }}
-                                        className={`px-2 py-1 text-[10px] rounded font-bold transition-all ${mapScope === 'full' ? 'bg-indigo-500 text-white' : 'bg-gray-500/20 opacity-60 hover:opacity-100'}`}
-                                    >
-                                        全程
-                                    </button>
-                                </div>
-                            </div>
-                            {allLocations.length === 0 ? <div className="text-sm opacity-60 p-3">{mapScope === 'daily' ? '當日尚未有地點資訊。' : '尚未有地點資訊。'}</div> : allLocations.map((item, idx) => {
-                                const typeStyle = {
-                                    flight: 'border-blue-500/30 bg-blue-500/10',
-                                    hotel: 'border-amber-500/30 bg-amber-500/10',
-                                    food: 'border-rose-500/30 bg-rose-500/10',
-                                    spot: 'border-emerald-500/30 bg-emerald-500/10',
-                                    transport: 'border-purple-500/30 bg-purple-500/10',
-                                    shopping: 'border-pink-500/30 bg-pink-500/10'
-                                }[item.type] || 'border-gray-500/30 bg-gray-500/10';
-
-                                const isPreviewing = previewLocation === (item.details?.location || trip.city);
-
-                                return (
-                                    <div
-                                        key={`${item.id}-${idx}`}
-                                        onClick={() => setPreviewLocation(item.details?.location || trip.city)}
-                                        className={`mx-0.5 p-2.5 rounded-xl border flex gap-3 transition-all cursor-pointer relative overflow-hidden group 
-                                            ${isPreviewing ? `ring-2 shadow-lg scale-[1.02] z-10 ${{
-                                                flight: 'ring-indigo-500 shadow-indigo-500/20 bg-indigo-500/5 border-indigo-500/30',
-                                                hotel: 'ring-rose-500 shadow-rose-500/20 bg-rose-500/5 border-rose-500/30',
-                                                food: 'ring-orange-500 shadow-orange-500/20 bg-orange-500/5 border-orange-500/30',
-                                                spot: 'ring-cyan-500 shadow-cyan-500/20 bg-cyan-500/5 border-cyan-500/30',
-                                                transport: 'ring-purple-500 shadow-purple-500/20 bg-purple-500/5 border-purple-500/30',
-                                                shopping: 'ring-pink-500 shadow-pink-500/20 bg-pink-500/5 border-pink-500/30'
-                                            }[item.type] || 'ring-gray-500'
-                                                }` : `hover:shadow-md hover:-translate-y-0.5 z-0 ${isDarkMode ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white border-gray-100 hover:border-gray-200'
-                                                }`} shadow-sm`}
-                                    >
-                                        {/* Ticket Border Accent - Synced with Tag Palette */}
-                                        <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${{
-                                            flight: 'bg-indigo-600',
-                                            hotel: 'bg-rose-600',
-                                            food: 'bg-orange-600',
-                                            spot: 'bg-cyan-600',
-                                            transport: 'bg-purple-600',
-                                            shopping: 'bg-pink-600'
-                                        }[item.type] || 'bg-gray-600'
-                                            }`} />
-
-                                        {/* Left Side: Number & Icon - Added pl-1 to avoid accent bar overlap */}
-                                        <div className="flex flex-col items-center justify-center min-w-[36px] gap-1 opacity-80 border-r border-dashed border-gray-500/10 pr-2 pl-1.5">
-                                            <span className={`text-[10px] font-black font-mono ${{
-                                                flight: 'text-indigo-500',
-                                                hotel: 'text-rose-500',
-                                                food: 'text-orange-500',
-                                                spot: 'text-cyan-500',
-                                                transport: 'text-purple-500',
-                                                shopping: 'text-pink-500'
-                                            }[item.type] || 'text-gray-500'
-                                                }`}>#{idx + 1}</span>
-                                            {(() => {
-                                                const Icon = {
-                                                    flight: Plane,
-                                                    hotel: Hotel,
-                                                    food: Utensils,
-                                                    spot: MapPin,
-                                                    transport: Car,
-                                                    shopping: ShoppingBag
-                                                }[item.type] || MapPin;
-                                                return <Icon className={`w-3.5 h-3.5 ${{
-                                                    flight: 'text-indigo-500',
-                                                    hotel: 'text-rose-500',
-                                                    food: 'text-orange-500',
-                                                    spot: 'text-cyan-500',
-                                                    transport: 'text-purple-500',
-                                                    shopping: 'text-pink-500'
-                                                }[item.type] || 'text-gray-500'
-                                                    }`} />;
-                                            })()}
-                                        </div>
-
-                                        {/* Right Side: Content */}
-                                        <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                            <div className="flex items-center justify-between gap-2 mb-0.5">
-                                                <span className={`text-[10px] font-black font-mono tracking-tight ${{
-                                                    flight: 'text-indigo-400',
-                                                    hotel: 'text-rose-400',
-                                                    food: 'text-orange-400',
-                                                    spot: 'text-cyan-400',
-                                                    transport: 'text-purple-400',
-                                                    shopping: 'text-pink-400'
-                                                }[item.type] || 'text-gray-400'
-                                                    }`}>{item.details?.time || item.time || "--:--"}</span>
-                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <a
-                                                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.details?.location || trip.city)}`}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        className="p-1 hover:bg-black/10 rounded transition-colors"
-                                                    >
-                                                        <ExternalLink className="w-3 h-3 text-indigo-400" />
-                                                    </a>
-                                                </div>
-                                            </div>
-                                            <div className={`font-bold text-xs leading-tight truncate pr-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{item.name.replace(/^[✈️🏨🚆🍽️⛩️🛍️🎢🛂]+ /, '')}</div>
-                                            <div className="text-[9px] opacity-50 truncate flex items-center gap-1 mt-0.5">
-                                                <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
-                                                {item.details?.location}
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-            </div>
-
-        </div >
+                    )}
+                </div> {/* End Main Content Column */}
+            </div> {/* End Layout Wrapper */}
+        </div>
     );
 };
 

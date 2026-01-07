@@ -8,6 +8,11 @@ import {
     ItineraryTab, InsuranceTab, VisaTab, EmergencyTab,
     BudgetTab, CurrencyTab, FilesTab, JournalTab, ShoppingTab, PackingTab, GalleryTab
 } from '../tabs';
+import ErrorBoundary from '../../Shared/ErrorBoundary';
+import BoardView from '../views/BoardView';
+import KanbanView from '../views/KanbanView';
+import TimelineView from '../views/TimelineView';
+import MapboxView from '../views/MapboxView';
 
 const TripTabs = ({
     activeTab,
@@ -114,45 +119,54 @@ const TripTabs = ({
             {/* Itinerary Tab */}
             {
                 activeTab === 'itinerary' && (
-                    <ItineraryTab
-                        trip={trip}
-                        days={days}
-                        currentDisplayDate={currentDisplayDate}
-                        setSelectDate={setSelectDate}
-                        itineraryItems={itineraryItems}
-                        destHolidays={destHolidays}
-                        homeHolidays={homeHolidays}
-                        isDarkMode={isDarkMode}
-                        dailyWeather={dailyWeather}
-                        dailyReminder={dailyReminder}
-                        viewMode={viewMode}
-                        setViewMode={setViewMode}
-                        canEdit={canEdit}
-                        onAddItem={onAddItem}
-                        onEditItem={onEditItem}
-                        // onDragStart removed
-                        requestedItemId={requestedItemId} // Deep Link Item ID
-                        autoOpenItemId={autoOpenItemId} // Auto Open New/Edited Item
-                        onAutoOpenHandled={onAutoOpenHandled}
-                        onItemHandled={onItemHandled}
-                        pendingItemsCache={pendingItemsCache} // Optimistic Update Cache
-                        onDragEnd={onDragEnd}
-                        openSectionModal={openSectionModal}
-                        userMapsKey={userMapsKey}
-                        onOptimize={onOptimize}
-                        onOpenAIModal={onOpenAIModal}
-                        onOpenSmartImport={onOpenSmartImport}
-                        onOpenSmartExport={() => setIsSmartExportOpen(true)}
-                        onClearDaily={handleClearDailyItinerary}
-                        onAddTransportSuggestion={handleAddTransportSuggestion}
-                        onUpdateLocation={onUpdateLocation}
-                        onDeleteItem={handleDeleteItineraryItem}
-                        // V1.1 Phase 7: History System
-                        onUndo={handleUndo}
-                        onRedo={handleRedo}
-                        canUndo={canUndo}
-                        canRedo={canRedo}
-                    />
+                    <ErrorBoundary fallbackMessage="行程載入失敗，請嘗試重新整理。">
+                        {(!viewMode || viewMode === 'list') && (
+                            <ItineraryTab
+                                trip={trip}
+                                days={days}
+                                currentDisplayDate={currentDisplayDate}
+                                setSelectDate={setSelectDate}
+                                itineraryItems={itineraryItems}
+                                destHolidays={destHolidays}
+                                homeHolidays={homeHolidays}
+                                isDarkMode={isDarkMode}
+                                dailyWeather={dailyWeather}
+                                dailyReminder={dailyReminder}
+                                viewMode={viewMode}
+                                setViewMode={setViewMode}
+                                canEdit={canEdit}
+                                onAddItem={onAddItem}
+                                onEditItem={onEditItem}
+                                // onDragStart removed
+                                requestedItemId={requestedItemId} // Deep Link Item ID
+                                autoOpenItemId={autoOpenItemId} // Auto Open New/Edited Item
+                                onAutoOpenHandled={onAutoOpenHandled}
+                                onItemHandled={onItemHandled}
+                                pendingItemsCache={pendingItemsCache} // Optimistic Update Cache
+                                onDragEnd={onDragEnd}
+                                openSectionModal={openSectionModal}
+                                userMapsKey={userMapsKey}
+                                onOptimize={onOptimize}
+                                onOpenAIModal={onOpenAIModal}
+                                onOpenSmartImport={onOpenSmartImport}
+                                onOpenSmartExport={() => setIsSmartExportOpen(true)}
+                                onClearDaily={handleClearDailyItinerary}
+                                onAddTransportSuggestion={handleAddTransportSuggestion}
+                                onUpdateLocation={onUpdateLocation}
+                                onDeleteItem={handleDeleteItineraryItem}
+                                // V1.1 Phase 7: History System
+                                onUndo={handleUndo}
+                                onRedo={handleRedo}
+                                canUndo={canUndo}
+                                canRedo={canRedo}
+                                currentLang={currentLang} // Pass currentLang
+                            />
+                        )}
+                        {viewMode === 'board' && <BoardView items={itineraryItems} />}
+                        {viewMode === 'kanban' && <KanbanView items={itineraryItems} />}
+                        {viewMode === 'timeline' && <TimelineView items={itineraryItems} />}
+                        {viewMode === 'map' && <MapboxView items={itineraryItems} />}
+                    </ErrorBoundary>
                 )
             }
 
@@ -210,17 +224,19 @@ const TripTabs = ({
 
             {
                 activeTab === 'budget' && (
-                    <BudgetTab
-                        trip={trip}
-                        isDarkMode={isDarkMode}
-                        debtInfo={debtInfo}
-                        onOpenSectionModal={openSectionModal}
-                        onExportPdf={handleExportPdf}
-                        handleReceiptUpload={handleReceiptUpload}
-                        glassCard={glassCard}
-                        onOpenSmartImport={onOpenSmartImport}
-                        onOpenSmartExport={() => setIsSmartExportOpen(true)}
-                    />
+                    <ErrorBoundary fallbackMessage="預算表載入失敗，請嘗試重新整理。">
+                        <BudgetTab
+                            trip={trip}
+                            isDarkMode={isDarkMode}
+                            debtInfo={debtInfo}
+                            onOpenSectionModal={openSectionModal}
+                            onExportPdf={handleExportPdf}
+                            handleReceiptUpload={handleReceiptUpload}
+                            glassCard={glassCard}
+                            onOpenSmartImport={onOpenSmartImport}
+                            onOpenSmartExport={() => setIsSmartExportOpen(true)}
+                        />
+                    </ErrorBoundary>
                 )
             }
 
@@ -303,6 +319,7 @@ const TripTabs = ({
                 activeTab={activeTab === 'shopping' || activeTab === 'packing' || activeTab === 'budget' || activeTab === 'itinerary' ? activeTab : 'more'}
                 onTabChange={(tab) => { setActiveTab(tab); setIsMobileMoreOpen(false); }}
                 onMoreClick={() => setIsMobileMoreOpen(!isMobileMoreOpen)}
+                onChatClick={() => onOpenAIModal && onOpenAIModal()}
                 isDarkMode={isDarkMode}
             />
 

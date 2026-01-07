@@ -28,14 +28,14 @@ export async function getExchangeRates(baseCurrency = 'HKD') {
             const { data, timestamp, base } = JSON.parse(cached);
             // 如果緩存有效且基礎貨幣相同，直接返回
             if (Date.now() - timestamp < CACHE_DURATION && base === baseCurrency) {
-                console.log('Using cached exchange rates');
+                // Using cached exchange rates
                 return data;
             }
         }
 
         // 2. 調用 API (ExchangeRate-API 免費版)
         // 註：免費版支援標準 HTTP 請求，無須 API Key (v4版)
-        console.log('Fetching new exchange rates...');
+        // Fetching new exchange rates...
         const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${baseCurrency}`);
 
         if (!response.ok) {

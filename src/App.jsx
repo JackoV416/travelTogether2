@@ -31,6 +31,7 @@ import SettingsView from './components/Views/SettingsView'; // New View
 import GlobalChatFAB from './components/Shared/GlobalChatFAB'; // V1.2.2 Global FAB
 import UniversalChat from './components/Shared/UniversalChat'; // V1.2.1-Globalized
 import OnboardingTour from './components/Shared/OnboardingTour'; // V1.2.4 Interactive Tutorial
+import CommandPalette from './components/Shared/CommandPalette'; // V1.2.7 Global Search
 
 // --- V0.16.2 Refactored Imports ---
 import {
@@ -85,7 +86,7 @@ const Footer = ({ isDarkMode, onOpenVersion }) => {
             <div className="flex flex-wrap gap-2 items-center justify-center font-bold">
                 <span data-tour="app-version">Travel Together {APP_VERSION}</span>
                 <span className="opacity-30">|</span>
-                <span className="text-indigo-400">Jarvis {JARVIS_VERSION}</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500 font-bold">Jarvis {JARVIS_VERSION}</span>
                 <span>•</span>
                 <button
                     onClick={onOpenVersion}
@@ -96,13 +97,13 @@ const Footer = ({ isDarkMode, onOpenVersion }) => {
                 <span className="hidden sm:inline">•</span>
                 <span className="hidden sm:inline">Design with ❤️</span>
             </div>
-            <div className="font-mono flex items-center gap-3 opacity-60">
+            <div className="font-mono flex flex-col md:flex-row items-center gap-1 md:gap-3 opacity-60 mt-1">
                 <div className="flex items-center gap-2">
                     <Clock className="w-3 h-3" />
                     <span>{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-                    <span className="opacity-50">({Intl.DateTimeFormat().resolvedOptions().timeZone})</span>
+                    <span className="opacity-50 text-[10px] hidden sm:inline">({Intl.DateTimeFormat().resolvedOptions().timeZone})</span>
                 </div>
-                <span className="opacity-30">|</span>
+                <span className="hidden md:inline">|</span>
                 <span data-tour="sync-status">
                     <SyncStatus isDarkMode={isDarkMode} />
                 </span>
@@ -222,6 +223,7 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                                         className="w-8 h-8 rounded-full object-cover"
                                         alt="user"
                                         type="avatar"
+                                        referrerPolicy="no-referrer"
                                     />
                                 ) : (
                                     <div className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">
@@ -239,7 +241,8 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                                 </div>
                                 <div className="p-2 flex flex-col gap-1">
                                     <button onClick={() => { setHoverMenu(false); onViewChange('dashboard'); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><Home className="w-4 h-4" /> 我的行程</button>
-                                    <button onClick={() => { setHoverMenu(false); onTutorialStart(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} md:hidden`}><MonitorPlay className="w-4 h-4" /> 教學模式</button>
+                                    <button onClick={() => { setHoverMenu(false); onViewChange('tutorial'); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} md:hidden`}><MonitorPlay className="w-4 h-4 text-indigo-500" /> 模擬例子</button>
+                                    <button onClick={() => { setHoverMenu(false); onTutorialStart(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} md:hidden`}><Route className="w-4 h-4 text-emerald-500" /> 引導教學</button>
                                     <button onClick={() => { setHoverMenu(false); onOpenUserSettings(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><Edit3 className="w-4 h-4" /> 個人設定</button>
                                     <button onClick={() => { setHoverMenu(false); onOpenFeedback(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><MessageCircle className="w-4 h-4" /> 意見回饋</button>
                                     {isAdmin && (
@@ -420,12 +423,25 @@ const App = () => {
         currency: 'HKD',
         region: 'HK', // Default to Hong Kong
         language: 'zh-TW', // Default to Traditional Chinese
-        preferences: [] // Default preferences
+        preferences: [], // Default preferences
+        useCustomKeys: false, // V1.2.8
+        aiKeys: {} // V1.2.8
     });
     const [previewTrip, setPreviewTrip] = useState(null);
     const [isPreviewMode, setIsPreviewMode] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [settingsInitialTab, setSettingsInitialTab] = useState('general'); // V1.0.3: Support direct navigation to specific settings tab
+    const [trips, setTrips] = useState([]);
+    const [loadingTrips, setLoadingTrips] = useState(true);
+    const [isVersionOpen, setIsVersionOpen] = useState(false);
+    // Version Check
+    useEffect(() => {
+        const storedVersion = localStorage.getItem('app_version');
+        if (storedVersion !== APP_VERSION) {
+            setIsVersionOpen(true);
+            localStorage.setItem('app_version', APP_VERSION);
+        }
+    }, [setIsVersionOpen]);
 
     // --- URL Routing for Sharing ---
     useEffect(() => {
@@ -443,7 +459,7 @@ const App = () => {
                             setView('detail');
                             if (tripData.sharePermission === 'edit' && !user?.uid) {
                                 // Optional: You might want to show a toast or message that they need to login to edit
-                                console.log("Can edit if logged in");
+                                // Can edit if logged in
                             }
                         } else {
                             setView('404');
@@ -472,6 +488,27 @@ const App = () => {
         }
     }, []);
 
+    // Fetch Global Trips for Search (V1.2.7)
+    useEffect(() => {
+        if (!user) {
+            setTrips([]);
+            setLoadingTrips(false);
+            return;
+        }
+        const q = query(collection(db, "trips"));
+        const unsub = onSnapshot(q, s => {
+            const userTrips = s.docs
+                .map(d => ({ id: d.id, ...d.data() }))
+                .filter(t => t.members?.some(m => m.id === user.uid || m.id === user.email));
+            setTrips(userTrips);
+            setLoadingTrips(false);
+        }, (err) => {
+            console.error("Firestore error:", err);
+            setLoadingTrips(false);
+        });
+        return () => unsub();
+    }, [user]);
+
     // Load User Settings from Firebase
     useEffect(() => {
         if (user?.uid) {
@@ -495,7 +532,6 @@ const App = () => {
 
     // Modals State
     // isSettingsOpen state removed
-    const [isVersionOpen, setIsVersionOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isReportCenterOpen, setIsReportCenterOpen] = useState(false); // V1.1.8 Report Center
 
@@ -518,7 +554,7 @@ const App = () => {
 
     // Cleanup Logic for Tutorial
     const cleanupTutorialData = async () => {
-        console.log("Cleaning up tutorial data...");
+        // Cleaning up tutorial data...
         // 1. Mark as complete
         localStorage.setItem('hasSeenOnboarding', 'true');
 
@@ -580,6 +616,7 @@ const App = () => {
 
     const [dynamicAdminEmails, setDynamicAdminEmails] = useState([]);
     const [isBanned, setIsBanned] = useState(false);
+    const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
     // Dynamic Admin List from Firestore
     useEffect(() => {
@@ -592,6 +629,18 @@ const App = () => {
     }, []);
 
     const isAdmin = user && (ADMIN_EMAILS.includes(user.email) || dynamicAdminEmails.includes(user.email));
+
+    // V1.2.7 Global Search listener
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                setIsCommandPaletteOpen(prev => !prev);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     // Admin: Listen for open feedbacks
     useEffect(() => {
@@ -1018,6 +1067,7 @@ const App = () => {
                                 onViewChange={setView}
                                 onOpenSettings={(tab) => { setSettingsInitialTab(tab || 'general'); setView('settings'); }}
                                 isBanned={isBanned}
+                                onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
                             />
                         </ErrorBoundary>
                     </div>
@@ -1148,6 +1198,35 @@ const App = () => {
                 initialTab={view === 'detail' ? 'trip' : 'jarvis'}
             />
 
+            <CommandPalette
+                isOpen={isCommandPaletteOpen}
+                onClose={() => setIsCommandPaletteOpen(false)}
+                trips={trips}
+                activeTrip={selectedTrip}
+                isDarkMode={isDarkMode}
+                onAction={(item) => {
+                    if (item.type === 'trip') {
+                        setSelectedTrip(item.data);
+                        setView('detail');
+                    } else if (item.type === 'action') {
+                        if (item.action === 'view-map') {
+                            // If in trip, trigger view change
+                            localStorage.setItem(`tripViewMode_${selectedTrip?.id || 'global'}`, 'map');
+                            window.dispatchEvent(new CustomEvent('refreshTripView'));
+                        } else if (item.action === 'ask-jarvis') {
+                            setIsChatOpen(true);
+                        } else if (item.action === 'view-kanban') {
+                            localStorage.setItem(`tripViewMode_${selectedTrip?.id || 'global'}`, 'kanban');
+                            window.dispatchEvent(new CustomEvent('refreshTripView'));
+                        }
+                    } else if (item.type === 'itinerary' || item.type === 'budget') {
+                        // For itinerary/budget items, we stay in detail and maybe scroll
+                        // For now just ensure we are in detail
+                        if (view !== 'detail') setView('detail');
+                    }
+                }}
+            />
+
             {/* V1.2.4: Interactive Onboarding Tour */}
             <OnboardingTour
                 run={showOnboardingTour}
@@ -1165,30 +1244,30 @@ const App = () => {
 // --- Other Components (LandingPage) ---
 const LandingPage = ({ onLogin }) => (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-        <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-3 gap-6 h-[85vh]">
-            <div className="col-span-1 md:col-span-2 relative rounded-3xl overflow-hidden group">
+        <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-[85vh]">
+            <div className="col-span-1 md:col-span-2 relative rounded-3xl overflow-hidden group min-h-[500px] md:min-h-0">
                 <ImageWithFallback
                     src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1600"
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     alt="Travel Together Destination"
                 />
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-all" />
-                <div className="absolute bottom-10 left-10 text-white">
-                    <h1 className="text-6xl font-bold mb-4">Travel Together</h1>
-                    <p className="text-2xl opacity-90 mb-8">下一站，與你同行。</p>
-                    <div className="flex flex-col gap-3">
-                        <button onClick={onLogin} className="bg-white text-black px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition flex flex-col items-center gap-1 w-full">
+                <div className="absolute bottom-6 left-6 md:bottom-10 md:left-10 text-white z-10 pr-6">
+                    <h1 className="text-4xl md:text-6xl font-bold mb-2 md:mb-4">Travel Together</h1>
+                    <p className="text-lg md:text-2xl opacity-90 mb-6 md:mb-8">下一站，與你同行。</p>
+                    <div className="flex flex-col gap-3 max-w-sm">
+                        <button onClick={onLogin} className="bg-white text-black px-8 py-3 md:py-4 rounded-full font-bold text-base md:text-lg hover:scale-105 transition flex flex-col items-center gap-1 w-full shadow-lg">
                             <div className="flex items-center gap-2"><LogIn className="w-5 h-5" /> Google 登入</div>
-                            <span className="text-[10px] opacity-50 font-normal">支援 Google 帳戶註冊並安裝為 PWA 使用</span>
+                            <span className="text-[10px] opacity-50 font-normal hidden sm:inline">支援 Google 帳戶註冊並安裝為 PWA 使用</span>
                         </button>
-                        <button onClick={() => window.location.href = '/?view=tutorial'} className="bg-white/10 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/20 transition flex items-center justify-center gap-2 w-full border border-white/10 group/demo">
+                        <button onClick={() => window.location.href = '/?view=tutorial'} className="bg-white/10 text-white px-8 py-3 md:py-4 rounded-full font-bold text-base md:text-lg hover:bg-white/20 transition flex items-center justify-center gap-2 w-full border border-white/10 group/demo backdrop-blur-sm">
                             <MonitorPlay className="w-5 h-5 text-indigo-400 group-hover/demo:animate-pulse" />
                             試用模擬模式 (免登入)
                         </button>
                     </div>
                 </div>
             </div>
-            <div className="grid grid-rows-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-rows-3 gap-4 md:gap-6">
                 <div className="bg-indigo-600 rounded-3xl p-8 text-white flex flex-col justify-between hover:scale-[1.02] transition">
                     <Users className="w-12 h-12 opacity-50" />
                     <div><h3 className="text-2xl font-bold">多人協作</h3><p className="opacity-70">實時同步，共同規劃。</p></div>

@@ -59,7 +59,9 @@ const VersionModal = ({ isOpen, onClose, isDarkMode, globalSettings }) => {
                             <GitCommit className="w-5 h-5 text-indigo-500" />
                             版本紀錄
                         </h2>
-                        <div className="text-xs opacity-50 mt-1 font-mono">Current: {APP_VERSION}</div>
+                        <div className="text-xs opacity-50 mt-1 font-mono">
+                            Current: {activeTab === 'web' ? APP_VERSION : JARVIS_VERSION}
+                        </div>
                     </div>
                     <button
                         onClick={onClose}
@@ -90,8 +92,12 @@ const VersionModal = ({ isOpen, onClose, isDarkMode, globalSettings }) => {
                 </div>
 
                 {/* Sub-Header info */}
-                <div className={`px-5 py-2 text-[10px] font-bold opacity-30 uppercase tracking-tighter border-b ${isDarkMode ? 'border-gray-800 bg-black/20' : 'border-gray-50 bg-gray-50/50'}`}>
-                    {activeTab === 'web' ? `Travel Together Stable Build - ${APP_VERSION}` : `Assistant Engine Beta - ${JARVIS_VERSION}`}
+                <div className={`px-5 py-2 text-[10px] font-bold uppercase tracking-tighter border-b ${isDarkMode ? 'border-gray-800 bg-black/20' : 'border-gray-50 bg-gray-50/50'}`}>
+                    {activeTab === 'web' ? (
+                        <span className="opacity-30">Travel Together Stable Build - {APP_VERSION}</span>
+                    ) : (
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500 font-black">Assistant Engine Beta - {JARVIS_VERSION}</span>
+                    )}
                 </div>
 
                 {/* Scrollable Content */}

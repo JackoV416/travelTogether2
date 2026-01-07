@@ -29,7 +29,7 @@ const OfflineBanner = ({ isDarkMode }) => {
 
     return (
         <div
-            className={`fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 z-[200] animate-slide-in-right ${isDarkMode ? 'bg-amber-900/90' : 'bg-amber-500'} text-white rounded-xl shadow-2xl p-4 flex items-center gap-3`}
+            className={`fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 z-[200] animate-slide-in-right ${isDarkMode ? 'bg-amber-900/80' : 'bg-amber-500/90'} backdrop-blur-md text-white rounded-xl shadow-2xl p-4 flex items-center gap-3`}
             role="alert"
             aria-live="polite"
         >

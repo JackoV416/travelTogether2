@@ -257,7 +257,9 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
                             </div>
                             <div>
                                 <h3 className="font-black text-xs tracking-widest uppercase leading-none">{activeTab === 'jarvis' ? 'Jarvis AI' : '群聊客棧'}</h3>
-                                <p className="text-[9px] opacity-40 font-bold tracking-tight mt-1">{activeTab === 'jarvis' ? `VER ${JARVIS_VERSION}` : trip?.name || 'UNIVERSAL HUB'}</p>
+                                <p className={`text-[9px] font-bold tracking-tight mt-1 ${activeTab === 'jarvis' ? 'bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400' : 'opacity-40'}`}>
+                                    {activeTab === 'jarvis' ? `VER ${JARVIS_VERSION}` : trip?.name || 'UNIVERSAL HUB'}
+                                </p>
                             </div>
                         </div>
                         <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
@@ -481,7 +483,9 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
                             <Hash className="w-2.5 h-2.5" />
                             <span className="text-[8px] font-black uppercase tracking-widest italic">SafeChat™ Encrypted</span>
                         </div>
-                        <p className="text-[8px] font-black opacity-20 uppercase tracking-widest">TravelTogether {APP_VERSION}</p>
+                        <p className="text-[8px] font-black opacity-20 uppercase tracking-widest">
+                            {activeTab === 'jarvis' ? `Jarvis ${JARVIS_VERSION}` : `TravelTogether ${APP_VERSION}`}
+                        </p>
                     </div>
                 )}
             </div>

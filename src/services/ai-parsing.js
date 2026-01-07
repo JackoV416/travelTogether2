@@ -5,10 +5,32 @@ import { checkUserQuota, incrementUserQuota } from './ai-quota'; // V1.2.3 Centr
 // Add multiple keys in .env: VITE_GEMINI_API_KEY, VITE_GEMINI_API_KEY_2, etc.
 // --- Multi-API Key + Multi-Model Configuration ---
 // Add multiple keys in .env: VITE_GEMINI_API_KEY, VITE_GEMINI_API_KEY_2, etc.
-const getStoredKey = () => {
+const getStoredKey = (provider = 'gemini') => {
     try {
         const settings = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
-        return settings.userGeminiKey;
+
+        // V1.2.8: Support for aiKeys object (Multi-key arrays)
+        if (settings.aiKeys && settings.aiKeys[provider] && Array.isArray(settings.aiKeys[provider]) && settings.aiKeys[provider].length > 0) {
+            // Simple Rotation: Pick random or sequential? 
+            // For now, let's just pick the first one as "Primary" unless we implement real rotation state here.
+            // Actually, let's implement a rudimentary rotation based on minute or random to distribute load.
+            const keys = settings.aiKeys[provider].filter(k => k && k.length > 5);
+            if (keys.length > 0) {
+                return keys[Math.floor(Math.random() * keys.length)];
+            }
+        }
+
+        // Fallback to legacy single key fields
+        switch (provider) {
+            case 'gemini': return settings.userGeminiKey;
+            case 'openai': return settings.userOpenAIKey;
+            case 'claude': return settings.userClaudeKey;
+            case 'deepseek': return settings.userDeepSeekKey;
+            case 'groq': return settings.userGroqKey;
+            case 'perplexity': return settings.userPerplexityKey;
+            case 'ollama': return settings.userLocalEndpoint;
+            default: return settings.userGeminiKey;
+        }
     } catch { return null; }
 };
 
@@ -73,10 +95,96 @@ function getGenAI() {
 }
 
 /**
- * 🔄 Get model with automatic fallback on quota errors
+ * 🔄 Get model with provider-aware logic
  */
 function getModel() {
-    return getGenAI().getGenerativeModel({ model: MODEL_CHAIN[currentModelIndex] });
+    const settings = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+    const provider = settings.aiProvider || 'gemini';
+
+    if (provider === 'gemini') {
+        return getGenAI().getGenerativeModel({ model: MODEL_CHAIN[currentModelIndex] });
+    }
+
+    // For other providers, return a shim that mimics the Gemini interface
+    return {
+        provider,
+        generateContent: async (content) => {
+            const prompt = typeof content === 'string' ? content : (Array.isArray(content) ? content.map(c => c.text || JSON.stringify(c)).join('\n') : JSON.stringify(content));
+            const key = getStoredKey(provider);
+
+            // Unified Provider Dispatching
+            switch (provider) {
+                case 'openai': return await callOpenAI(prompt, key, settings.userOpenAIModel || 'gpt-4o');
+                case 'claude': return await callClaude(prompt, key, settings.userClaudeModel || 'claude-3-5-sonnet-20240620');
+                case 'deepseek': return await callDeepSeek(prompt, key);
+                case 'groq': return await callGroq(prompt, key);
+                case 'perplexity': return await callPerplexity(prompt, key);
+                case 'ollama': return await callLocalLLM(prompt, settings.userLocalEndpoint);
+                default: throw new Error(`Provider ${provider} not implemented`);
+            }
+        }
+    };
+}
+
+// --- Provider Implementations (Simulated/Basic for now) ---
+async function callOpenAI(prompt, key, model) {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+        body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }] })
+    });
+    const json = await res.json();
+    return { response: { text: () => json.choices[0].message.content } };
+}
+
+async function callClaude(prompt, key, model) {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+        body: JSON.stringify({ model, max_tokens: 4096, messages: [{ role: "user", content: prompt }] })
+    });
+    const json = await res.json();
+    return { response: { text: () => json.content[0].text } };
+}
+
+async function callDeepSeek(prompt, key) {
+    const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+        body: JSON.stringify({ model: "deepseek-chat", messages: [{ role: "user", content: prompt }] })
+    });
+    const json = await res.json();
+    return { response: { text: () => json.choices[0].message.content } };
+}
+
+async function callGroq(prompt, key) {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+        body: JSON.stringify({ model: "llama3-70b-8192", messages: [{ role: "user", content: prompt }] })
+    });
+    const json = await res.json();
+    return { response: { text: () => json.choices[0].message.content } };
+}
+
+async function callPerplexity(prompt, key) {
+    const res = await fetch("https://api.perplexity.ai/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+        body: JSON.stringify({ model: "llama-3-sonar-large-32k-online", messages: [{ role: "user", content: prompt }] })
+    });
+    const json = await res.json();
+    return { response: { text: () => json.choices[0].message.content } };
+}
+
+async function callLocalLLM(prompt, endpoint) {
+    const res = await fetch(endpoint || "http://localhost:11434/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "llama3", messages: [{ role: "user", content: prompt }] })
+    });
+    const json = await res.json();
+    return { response: { text: () => json.choices[0].message.content } };
 }
 
 /**
@@ -89,7 +197,7 @@ function rotateToNextModel() {
 
     if (currentModelIndex < MODEL_CHAIN.length - 1) {
         currentModelIndex++;
-        console.log(`[Gemini AI] 🔄 Rotating to: ${MODEL_CHAIN[currentModelIndex]}`);
+
         return true;
     }
     return false;
@@ -102,7 +210,7 @@ function rotateToNextModel() {
 function rotateToNextKey() {
     currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
     currentModelIndex = 0; // Reset to first model for new key
-    console.log(`[Gemini AI] 🔑 Switching to API Key #${currentKeyIndex + 1}`);
+
     return true;
 }
 
@@ -125,15 +233,17 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
     try {
         const settings = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
         if (settings.autoJarvis === false && importance === 'low') {
-            console.log(`[Jarvis] ${fnName} skipped due to Auto-Jarvis disabled.`);
+
             throw new Error("AUTO_JARVIS_DISABLED");
         }
     } catch (e) {
         if (e.message === "AUTO_JARVIS_DISABLED") throw e;
     }
 
-    // V1.2.3: Centralized Quota Check (Skipped if Custom Key is active)
-    const hasCustomKey = !!getStoredKey();
+    // V1.2.8: Provider-Aware Quota Check
+    const settings = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+    const activeProvider = settings.aiProvider || 'gemini';
+    const hasCustomKey = !!getStoredKey(activeProvider);
     if (userId && !hasCustomKey) {
         const quotaStatus = await checkUserQuota(userId);
         if (!quotaStatus.allowed) {
@@ -148,7 +258,7 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
         // 0. Abort Check
         if (signal?.aborted) {
-            console.log("[Gemini AI] 🚫 Operation aborted by user.");
+
             throw new Error("Operation aborted");
         }
 
@@ -168,7 +278,7 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
         const cooldownExpiry = MODEL_COOLDOWNS.get(cooldownKey);
 
         if (cooldownExpiry && Date.now() < cooldownExpiry) {
-            console.log(`[Gemini AI] ❄️ Skipping cooled down model: ${MODEL_CHAIN[currentModelIndex]} (Key #${currentKeyIndex})`);
+
 
             // If we are at the end of the chain on this key, switch key
             if (!rotateToNextModel()) {
@@ -183,7 +293,7 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
             const modelName = MODEL_CHAIN[currentModelIndex];
             const model = getModel(); // Uses currentKeyIndex
 
-            console.log(`[Gemini AI] 🚀 Attempt ${attempt + 1}/${maxAttempts}: ${fnName} using ${modelName} (Key #${currentKeyIndex})`);
+
 
             // 3. Make the Call
             const result = await makeCall(model);
@@ -193,10 +303,13 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
 
             // V1.2.3: Increment Quota (Centralized)
             if (userId) {
-                // Determine if Custom Key
-                const isCustomKey = (currentKeyIndex === 0 && getStoredKey());
-                // Pass feature name, key index, and type for analytics
-                await incrementUserQuota(userId, fnName, currentKeyIndex, isCustomKey);
+                // Determine if Custom Key & Provider
+                const settings = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+                const activeProvider = settings.aiProvider || 'gemini';
+                const isCustomKey = (currentKeyIndex === 0 && getStoredKey(activeProvider));
+
+                // Pass feature name, key index, type, and provider for analytics
+                await incrementUserQuota(userId, fnName, currentKeyIndex, isCustomKey, activeProvider);
             }
 
             return result;
@@ -300,7 +413,7 @@ function incrementUsage(tokens = 0) {
     // Broadcast update for real-time UI
     window.dispatchEvent(new CustomEvent('AI_USAGE_UPDATED', { detail: usage }));
 
-    console.log(`[AI Limiter] Usage: ${usage.count} calls, ${usage.tokens} tokens today`);
+    // Usage tracked
     return usage;
 }
 
@@ -329,7 +442,7 @@ export function checkAIUsageLimit() {
  */
 export function resetAIUsage() {
     localStorage.removeItem(AI_USAGE_KEY);
-    console.log("[AI Limiter] Usage reset");
+    // Usage reset
 }
 
 
@@ -478,7 +591,7 @@ If no travel info is visible, return { "itinerary": [], "accommodation": [] }.`;
             });
         }
 
-        console.log("[Gemini Vision] Parsed items:", items);
+
         return items;
 
     } catch (error) {

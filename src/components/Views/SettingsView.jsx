@@ -1,27 +1,41 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, BrainCircuit, Lock, Sparkles, Eye, EyeOff, RotateCcw, GripVertical, Server, ShieldCheck, Activity, User, Trash2, WifiOff, Save, AlertTriangle, Settings, LayoutGrid } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, BrainCircuit, Lock, Sparkles, Eye, EyeOff, RotateCcw, GripVertical, Server, ShieldCheck, Activity, User, Trash2, WifiOff, Save, AlertTriangle, Settings, LayoutGrid, ChevronRight, AlertCircle, RefreshCw } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { CURRENCIES, TIMEZONES, LANGUAGE_OPTIONS, APP_VERSION, JARVIS_VERSION } from '../../constants/appData';
 import { inputClasses } from '../../utils/tripUtils';
 import { getUserQuotaStatus, getSystemAnalytics } from '../../services/ai-quota';
-import { updateUserProfile, deleteUserAccount, saveUserSettings, loadUserSettings } from '../../services/accountService';
+import { updateUserProfile, deleteUserAccount, saveUserSettings, loadUserSettings, uploadUserAvatar } from '../../services/accountService';
 import { isOnline, subscribeNetworkStatus } from '../../utils/networkUtils';
 import JarvisLogo from '../Shared/JarvisLogo';
 
-// Default Widget Configuration
+// Widget Labels for Localization
+const WIDGET_LABELS = {
+    weather: { zh: '天氣預報', 'zh-HK': '天氣預報', en: 'Weather Forecast' },
+    news: { zh: '旅遊新聞', 'zh-HK': '旅遊新聞', en: 'Travel News' },
+    hotels: { zh: '酒店推介', 'zh-HK': '酒店推介', en: 'Hotel Deals' },
+    flights: { zh: '機票優惠', 'zh-HK': '機票優惠', en: 'Flight Deals' },
+    transport: { zh: '交通資訊', 'zh-HK': '交通資訊', en: 'Transport Info' },
+    connectivity: { zh: '網絡方案', 'zh-HK': '上網卡/WiFi', en: 'Connectivity' },
+    currency: { zh: '匯率計算', 'zh-HK': '匯率計算', en: 'Currency Converter' }
+};
+
+// Default Widget Configuration (IDs only, names resolved dynamically)
 const DEFAULT_WIDGETS = [
-    { id: 'weather', name: '天氣預報', visible: true },
-    { id: 'news', name: '旅遊新聞', visible: true },
-    { id: 'hotels', name: '酒店推介', visible: true },
-    { id: 'flights', name: '機票優惠', visible: true },
-    { id: 'transport', name: '交通資訊', visible: true },
-    { id: 'connectivity', name: '網絡方案', visible: true },
-    { id: 'currency', name: '匯率計算', visible: true },
+    { id: 'weather', visible: true },
+    { id: 'news', visible: true },
+    { id: 'hotels', visible: true },
+    { id: 'flights', visible: true },
+    { id: 'transport', visible: true },
+    { id: 'connectivity', visible: true },
+    { id: 'currency', visible: true },
 ];
 
 const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, initialTab = 'general', user, isAdmin }) => {
     const [activeTab, setActiveTab] = useState(initialTab);
     const [intelTab, setIntelTab] = useState('usage'); // V1.2.3: Intelligence Sub-tabs
+    const [expandedProvider, setExpandedProvider] = useState(null); // V1.2.8
+
+
 
     // Widget Customization State
     const [widgetConfig, setWidgetConfig] = useState(() => {
@@ -117,6 +131,31 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
         };
     }, [activeTab, user?.uid, isAdmin]);
 
+    // V1.2.8: Migration Effect for AI Keys
+    useEffect(() => {
+        if (!globalSettings.aiKeys || Object.keys(globalSettings.aiKeys).length === 0) {
+            const keys = {};
+            if (globalSettings.userGeminiKey) keys.gemini = [globalSettings.userGeminiKey];
+            if (globalSettings.userOpenAIKey) keys.openai = [globalSettings.userOpenAIKey];
+            if (globalSettings.userClaudeKey) keys.claude = [globalSettings.userClaudeKey];
+            if (globalSettings.userDeepSeekKey) keys.deepseek = [globalSettings.userDeepSeekKey];
+            if (globalSettings.userGroqKey) keys.groq = [globalSettings.userGroqKey];
+            if (globalSettings.userPerplexityKey) keys.perplexity = [globalSettings.userPerplexityKey];
+
+            if (Object.keys(keys).length > 0) {
+                setGlobalSettings(prev => ({ ...prev, aiKeys: keys, useCustomKeys: true }));
+            }
+        }
+    }, []);
+
+    // Helper to update AI Keys
+    const updateAIKeys = (provider, newKeys) => {
+        const updated = { ...globalSettings.aiKeys, [provider]: newKeys };
+        setGlobalSettings({ ...globalSettings, aiKeys: updated });
+        const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+        localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, aiKeys: updated }));
+    };
+
     return (
         <div className="max-w-4xl mx-auto p-4 md:p-8 animate-fade-in pb-36">
             {/* Header */}
@@ -140,7 +179,7 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                 <div className="md:col-span-1 space-y-2">
                     <button
                         onClick={() => setActiveTab('general')}
-                        className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'general' ? (isDarkMode ? 'bg-gray-800 text-white shadow-lg' : 'bg-white text-gray-900 shadow-lg') : 'opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
+                        className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'general' ? (isDarkMode ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30' : 'bg-indigo-50 text-indigo-600 border border-indigo-100') : 'opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
                     >
                         <Settings className="w-4 h-4" /> 一般設定
                     </button>
@@ -152,13 +191,13 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                     </button>
                     <button
                         onClick={() => setActiveTab('info')}
-                        className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'info' ? (isDarkMode ? 'bg-gray-800 text-white shadow-lg' : 'bg-white text-gray-900 shadow-lg') : 'opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
+                        className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'info' ? (isDarkMode ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30' : 'bg-indigo-50 text-indigo-600 border border-indigo-100') : 'opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
                     >
                         <LayoutGrid className="w-4 h-4" /> 資訊中心設定
                     </button>
                     <button
                         onClick={() => setActiveTab('account')}
-                        className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'account' ? (isDarkMode ? 'bg-red-600/20 text-red-400 border border-red-500/30' : 'bg-red-50 text-red-600 border border-red-100') : 'opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
+                        className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'account' ? (isDarkMode ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30' : 'bg-indigo-50 text-indigo-600 border border-indigo-100') : 'opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
                     >
                         <User className="w-4 h-4" /> 帳戶管理
                     </button>
@@ -229,6 +268,36 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                         className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all flex items-center gap-2"
                                     >
                                         <RotateCcw className="w-3 h-3" /> 開始導覽
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* V1.2.9: Update & PWA Check */}
+                            <div className="max-w-lg p-4 rounded-xl border border-blue-500/20 bg-blue-500/5">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <div className="font-bold text-sm flex items-center gap-2">
+                                            <span>🔄</span> 檢查與更新
+                                        </div>
+                                        <div className="text-xs opacity-60 mt-0.5">版本: {APP_VERSION}. 如遇顯示問題，請嘗試強制重載。</div>
+                                        <details className="mt-1 group">
+                                            <summary className="text-[10px] text-blue-500 cursor-pointer hover:underline list-none flex items-center gap-1 select-none">
+                                                <AlertCircle className="w-3 h-3" /> 如何強制重載？ (How?)
+                                            </summary>
+                                            <div className="mt-2 p-2 bg-white/50 dark:bg-black/20 rounded border border-blue-500/10 text-[10px] opacity-80 leading-relaxed">
+                                                <ul className="list-disc pl-3 space-y-1">
+                                                    <li><strong>Mac (Chrome/Safari):</strong> <kbd className="font-mono bg-gray-200 dark:bg-gray-700 px-1 rounded">Cmd</kbd> + <kbd className="font-mono bg-gray-200 dark:bg-gray-700 px-1 rounded">Shift</kbd> + <kbd className="font-mono bg-gray-200 dark:bg-gray-700 px-1 rounded">R</kbd></li>
+                                                    <li><strong>Windows:</strong> <kbd className="font-mono bg-gray-200 dark:bg-gray-700 px-1 rounded">Ctrl</kbd> + <kbd className="font-mono bg-gray-200 dark:bg-gray-700 px-1 rounded">F5</kbd></li>
+                                                    <li><strong>Mobile:</strong> 關閉分頁或 App 再重開 (Reopen App)</li>
+                                                </ul>
+                                            </div>
+                                        </details>
+                                    </div>
+                                    <button
+                                        onClick={() => window.location.reload(true)}
+                                        className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold transition-all flex items-center gap-2 shadow-sm"
+                                    >
+                                        <RefreshCw className="w-3 h-3" /> 強制刷新
                                     </button>
                                 </div>
                             </div>
@@ -414,135 +483,176 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                 </div>
                             )}
 
-                            {/* 2. API Keys Tab (Beta) */}
+                            {/* 2. API Keys Tab - Jarvis Key Master (V1.2.8) */}
                             {intelTab === 'api' && (
                                 <div className="space-y-6 animate-fade-in">
                                     <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 p-5 rounded-2xl border border-emerald-500/20">
-                                        <h4 className="font-bold flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-2 text-lg">
-                                            <Lock className="w-5 h-5" /> 自訂 Jarvis Keys (BYOK)
-                                        </h4>
-                                        <p className="text-sm opacity-70 leading-relaxed">您的 API Key 只會儲存在本地瀏覽器 (localStorage)，不會上傳至我們的伺服器，安全無虞。</p>
+                                        <div className="flex justify-between items-start gap-4">
+                                            <div>
+                                                <h4 className="font-bold flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-2 text-lg">
+                                                    <Lock className="w-5 h-5" /> 自訂 Jarvis Keys (BYOK)
+                                                </h4>
+                                                <p className="text-sm opacity-70 leading-relaxed">切換至自訂金鑰模式以解除每日限額。API Key 只會儲存在本地瀏覽器。</p>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    const newVal = !globalSettings.useCustomKeys;
+                                                    setGlobalSettings({ ...globalSettings, useCustomKeys: newVal });
+                                                    const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+                                                    localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, useCustomKeys: newVal }));
+                                                }}
+                                                className={`flex-shrink-0 w-14 h-8 rounded-full transition-all relative ${globalSettings.useCustomKeys ? 'bg-emerald-500 shadow-lg shadow-emerald-500/20' : 'bg-gray-300 dark:bg-gray-700'}`}
+                                            >
+                                                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-sm transition-transform ${globalSettings.useCustomKeys ? 'left-7' : 'left-1'}`}></div>
+                                            </button>
+                                        </div>
                                     </div>
 
-                                    {/* Development Notice */}
-                                    <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold flex items-center gap-2">
-                                        <span>🚧 多供應商功能 (OpenAI, Claude) 開發中 - Coming V1.2.5</span>
-                                    </div>
+                                    {/* Categorized Keys Section */}
+                                    {globalSettings.useCustomKeys ? (
+                                        <div className="space-y-4">
+                                            {/* Warning if no keys */}
+                                            {Object.keys(globalSettings.aiKeys || {}).length === 0 && (
+                                                <div className="flex items-center gap-3 p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-600 dark:text-orange-400">
+                                                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                                                    <div className="text-sm font-bold">尚未設定任何金鑰，請選擇供應商並輸入 API Key。</div>
+                                                </div>
+                                            )}
+                                            <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">AI 供應商分類 (BYOK Categories)</label>
+                                            <div className="grid grid-cols-1 gap-3">
+                                                {[
+                                                    { id: 'gemini', label: 'Google Gemini', icon: '✨', desc: '最佳速度與性價比', url: 'https://aistudio.google.com/app/apikey' },
+                                                    { id: 'openai', label: 'OpenAI (GPT)', icon: '🧠', desc: '最強邏輯分析', url: 'https://platform.openai.com/api-keys' },
+                                                    { id: 'claude', label: 'Anthropic Claude', icon: '📝', desc: '自然語言處理首選', url: 'https://console.anthropic.com/' },
+                                                    { id: 'deepseek', label: 'DeepSeek', icon: '🐋', desc: '性能強勁的高性價比選擇', url: 'https://platform.deepseek.com/' },
+                                                    { id: 'groq', label: 'Groq (Llama)', icon: '⚡', desc: '極速推理體驗', url: 'https://console.groq.com/keys' },
+                                                    { id: 'perplexity', label: 'Perplexity', icon: '🌐', desc: '聯網搜尋整合', url: 'https://www.perplexity.ai/settings/api' },
+                                                    { id: 'ollama', label: 'Local LLM', icon: '🏠', desc: '本地運作 (OpenAI 兼容端點)', url: 'http://localhost:11434' }
+                                                ].map(p => {
+                                                    const keys = globalSettings.aiKeys?.[p.id] || [];
+                                                    const isExpanded = expandedProvider === p.id;
 
-                                    {/* Custom Key Stats Panel (V1.2.4) */}
-                                    {globalSettings.userGeminiKey && (
-                                        <div className={`p-5 rounded-2xl border ${isDarkMode ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-emerald-50 border-emerald-200'}`}>
-                                            <div className="flex justify-between items-start mb-3">
-                                                <div>
-                                                    <h4 className="font-bold flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                                                        <Sparkles className="w-5 h-5" /> Unlimited Access Active
-                                                    </h4>
-                                                    <p className="text-xs opacity-60 mt-1">您正在使用自訂 API Key，享受無限制 Jarvis 服務。</p>
-                                                </div>
-                                                <div className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider">
-                                                    Pro Mode
-                                                </div>
+                                                    return (
+                                                        <div key={p.id} className={`rounded-2xl border transition-all ${isExpanded ? 'bg-gray-500/5 border-indigo-500/50' : 'border-gray-500/10 hover:bg-gray-500/5'}`}>
+                                                            <button
+                                                                onClick={() => setExpandedProvider(isExpanded ? null : p.id)}
+                                                                className="w-full p-4 flex items-center justify-between"
+                                                            >
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-10 h-10 rounded-xl bg-gray-500/10 flex items-center justify-center text-xl">
+                                                                        {p.icon}
+                                                                    </div>
+                                                                    <div className="text-left">
+                                                                        <div className="font-bold text-sm flex items-center gap-2">
+                                                                            {p.label}
+                                                                            {keys.length > 0 && (
+                                                                                <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 text-[10px] font-bold">
+                                                                                    {keys.length} Keys
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                        <p className="text-[10px] opacity-50">{p.desc}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className={`transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`}>
+                                                                    <ChevronRight className="w-5 h-5 opacity-30" />
+                                                                </div>
+                                                            </button>
+
+                                                            {isExpanded && (
+                                                                <div className="px-4 pb-4 space-y-4 animate-slide-down">
+                                                                    <div className="space-y-2">
+                                                                        {keys.map((key, idx) => (
+                                                                            <div key={idx} className="flex gap-2">
+                                                                                <div className="relative flex-grow">
+                                                                                    <input
+                                                                                        type="password"
+                                                                                        value={key}
+                                                                                        onChange={e => {
+                                                                                            const newKeys = [...keys];
+                                                                                            newKeys[idx] = e.target.value;
+                                                                                            updateAIKeys(p.id, newKeys);
+                                                                                        }}
+                                                                                        placeholder={`${p.label} API Key`}
+                                                                                        className={inputClasses(isDarkMode)}
+                                                                                    />
+                                                                                    {idx === 0 && (
+                                                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-500 text-[8px] font-bold uppercase">
+                                                                                            Primary
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        const newKeys = keys.filter((_, i) => i !== idx);
+                                                                                        updateAIKeys(p.id, newKeys);
+                                                                                    }}
+                                                                                    className="p-3 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+                                                                                >
+                                                                                    <Trash2 className="w-4 h-4" />
+                                                                                </button>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+
+                                                                    <div className="flex gap-2">
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                updateAIKeys(p.id, [...keys, '']);
+                                                                            }}
+                                                                            className="flex-grow py-3 rounded-xl border border-dashed border-gray-500/30 text-xs font-bold opacity-60 hover:opacity-100 hover:border-indigo-500/50 flex items-center justify-center gap-2 transition-all"
+                                                                        >
+                                                                            <Activity className="w-3 h-3" /> 新增金鑰
+                                                                        </button>
+                                                                        <a
+                                                                            href={p.url}
+                                                                            target="_blank"
+                                                                            rel="noreferrer"
+                                                                            className="px-4 py-3 rounded-xl bg-indigo-500/10 text-indigo-500 text-xs font-bold hover:bg-indigo-500/20 transition-all flex items-center gap-2"
+                                                                        >
+                                                                            獲取 Key
+                                                                        </a>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-emerald-500/20">
-                                                <div>
-                                                    <div className="text-[10px] opacity-60 uppercase font-bold tracking-wider">Your Usage (Today)</div>
-                                                    <div className="text-2xl font-black font-mono text-emerald-500 mt-1">
-                                                        {aiUsage.customUsed || 0} <span className="text-sm opacity-50 font-normal text-gray-500">calls</span>
-                                                    </div>
+                                            {/* Model Selector Footer */}
+                                            <div className="mt-8 pt-6 border-t border-gray-500/10">
+                                                <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-3 ml-1">啟用的服務 (Active Provider)</label>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {['gemini', 'openai', 'claude', 'deepseek', 'groq', 'perplexity', 'ollama'].map(id => (
+                                                        <button
+                                                            key={id}
+                                                            onClick={() => {
+                                                                setGlobalSettings({ ...globalSettings, aiProvider: id });
+                                                                const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+                                                                localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, aiProvider: id }));
+                                                            }}
+                                                            className={`px-4 py-2 rounded-xl border text-xs font-bold transition-all ${globalSettings.aiProvider === id || (!globalSettings.aiProvider && id === 'gemini')
+                                                                ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg'
+                                                                : 'border-gray-500/10 opacity-50 hover:opacity-100 bg-gray-500/5'}`}
+                                                        >
+                                                            {id.toUpperCase()}
+                                                        </button>
+                                                    ))}
                                                 </div>
-                                                <div>
-                                                    <div className="text-[10px] opacity-60 uppercase font-bold tracking-wider">Est. Cost</div>
-                                                    <div className="text-sm font-bold opacity-80 mt-2">
-                                                        ~${((aiUsage.customUsed || 0) * 0.0001).toFixed(4)} USD
-                                                    </div>
-                                                    <p className="text-[9px] opacity-40">Based on Gemini Flash pricing</p>
-                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="py-20 flex flex-col items-center justify-center text-center space-y-4 opacity-40">
+                                            <div className="p-6 rounded-full bg-gray-500/10">
+                                                <BrainCircuit className="w-12 h-12" />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold">目前處於標準模式</h4>
+                                                <p className="text-sm max-w-xs mx-auto mt-2">啟動「自訂 Jarvis Keys」以使用您自己的 API 額度並解锁進階模型。</p>
                                             </div>
                                         </div>
                                     )}
-
-                                    <div className="grid grid-cols-1 gap-6">
-                                        <div>
-                                            <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">Jarvis API Key (Gemini)</label>
-                                            <input
-                                                type="password"
-                                                placeholder="AIzA..."
-                                                value={globalSettings.userGeminiKey || ''}
-                                                onChange={e => {
-                                                    setGlobalSettings({ ...globalSettings, userGeminiKey: e.target.value });
-                                                    const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
-                                                    localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, userGeminiKey: e.target.value }));
-                                                }}
-                                                className={inputClasses(isDarkMode)}
-                                            />
-                                            <div className="mt-2 text-xs opacity-60 leading-relaxed flex justify-between items-center">
-                                                <span>輸入外部 Provider 的 API Key 以啟用 Jarvis 進階功能。</span>
-                                                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-indigo-500 hover:text-indigo-400 font-bold flex items-center gap-1">
-                                                    👉 免費獲取 Key
-                                                </a>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div>
-                                                <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">自訂 Model ID (選填)</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="e.g. gemini-2.0-flash-exp"
-                                                    value={globalSettings.userGeminiModel || ''}
-                                                    onChange={e => {
-                                                        setGlobalSettings({ ...globalSettings, userGeminiModel: e.target.value });
-                                                        const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
-                                                        localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, userGeminiModel: e.target.value }));
-                                                    }}
-                                                    className={inputClasses(isDarkMode)}
-                                                />
-                                                <div className="mt-2 text-[10px] opacity-60">
-                                                    預設使用 <code className="bg-gray-500/20 px-1 rounded">gemini-2.0-flash-exp</code>
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">自訂每日限額 (選填)</label>
-                                                <input
-                                                    type="number"
-                                                    placeholder="Default: 20"
-                                                    value={globalSettings.userGeminiLimit || ''}
-                                                    onChange={e => {
-                                                        setGlobalSettings({ ...globalSettings, userGeminiLimit: e.target.value });
-                                                        const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
-                                                        localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, userGeminiLimit: e.target.value }));
-                                                    }}
-                                                    className={inputClasses(isDarkMode)}
-                                                />
-                                                <div className="mt-2 text-[10px] opacity-60">
-                                                    建議設為 100+ 以獲得最佳體驗
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">Google Maps API Key</label>
-                                            <input
-                                                type="password"
-                                                placeholder="AIzA..."
-                                                value={globalSettings.userMapsKey || ''}
-                                                onChange={e => {
-                                                    setGlobalSettings({ ...globalSettings, userMapsKey: e.target.value });
-                                                    const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
-                                                    localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, userMapsKey: e.target.value }));
-                                                }}
-                                                className={inputClasses(isDarkMode)}
-                                            />
-                                            <div className="mt-2 text-xs opacity-60 leading-relaxed flex justify-between items-center">
-                                                <span>用於地圖顯示及地點搜尋。</span>
-                                                <a href="https://console.cloud.google.com/google/maps-apis/credentials" target="_blank" rel="noreferrer" className="text-indigo-500 hover:text-indigo-400 font-bold flex items-center gap-1">
-                                                    👉 Google Cloud Console
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                             )}
 
@@ -550,8 +660,10 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                             {intelTab === 'prefs' && (
                                 <div className="space-y-6 animate-fade-in">
                                     <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 p-5 rounded-2xl border border-indigo-500/20">
-                                        <h4 className="font-bold flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-2 text-lg"><Sparkles className="w-5 h-5" /> Jarvis 偏好</h4>
-                                        <p className="text-sm opacity-70">勾選您的興趣，讓 Jarvis 建議更懂你。</p>
+                                        <h4 className="font-bold flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-2 text-lg">
+                                            <Sparkles className="w-5 h-5" /> Jarvis 偏好
+                                        </h4>
+                                        <p className="text-sm opacity-70">勾選您的興趣，讓 Jarvis 建議更懂您。</p>
                                     </div>
 
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -653,120 +765,131 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                 </div>
                             )}
                         </div>
-                    )}
+                    )
+                    }
 
-                    {activeTab === 'info' && (
-                        <div className="space-y-6 animate-fade-in">
-                            <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 p-5 rounded-2xl border border-emerald-500/20">
-                                <h4 className="font-bold flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-2 text-lg">🎛️ 資訊中心自訂</h4>
-                                <p className="text-sm opacity-70">拖曳以重新排序。眼睛圖示控制顯示/隱藏。設定會自動儲存。</p>
-                            </div>
+                    {
+                        activeTab === 'info' && (
+                            <div className="space-y-6 animate-fade-in">
+                                <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 p-5 rounded-2xl border border-emerald-500/20">
+                                    <h4 className="font-bold flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-2 text-lg">🎛️ 資訊中心自訂</h4>
+                                    <p className="text-sm opacity-70">拖曳以重新排序。眼睛圖示控制顯示/隱藏。設定會自動儲存。</p>
+                                </div>
 
-                            {/* Action Buttons */}
-                            <div className="flex gap-2 flex-wrap">
-                                <button
-                                    onClick={() => {
-                                        const newWidgets = widgetConfig.map(w => ({ ...w, visible: true }));
-                                        setWidgetConfig(newWidgets);
-                                        localStorage.setItem('dashboardWidgets', JSON.stringify(newWidgets));
-                                    }}
-                                    className="px-3 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-500 text-xs font-bold transition-all flex items-center gap-1"
-                                >
-                                    <Eye className="w-3 h-3" /> 全部顯示
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        const newWidgets = widgetConfig.map(w => ({ ...w, visible: false }));
-                                        setWidgetConfig(newWidgets);
-                                        localStorage.setItem('dashboardWidgets', JSON.stringify(newWidgets));
-                                    }}
-                                    className="px-3 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-500 text-xs font-bold transition-all flex items-center gap-1"
-                                >
-                                    <EyeOff className="w-3 h-3" /> 全部隱藏
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setWidgetConfig(DEFAULT_WIDGETS);
-                                        localStorage.removeItem('dashboardWidgets');
-                                    }}
-                                    className="px-3 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-500 text-xs font-bold transition-all flex items-center gap-1"
-                                >
-                                    <RotateCcw className="w-3 h-3" /> 重設預設
-                                </button>
-                            </div>
+                                {/* Action Buttons */}
+                                <div className="flex gap-2 flex-wrap">
+                                    <button
+                                        onClick={() => {
+                                            const newWidgets = widgetConfig.map(w => ({ ...w, visible: true }));
+                                            setWidgetConfig(newWidgets);
+                                            localStorage.setItem('dashboardWidgets', JSON.stringify(newWidgets));
+                                        }}
+                                        className="px-3 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-500 text-xs font-bold transition-all flex items-center gap-1"
+                                    >
+                                        <Eye className="w-3 h-3" /> 全部顯示
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const newWidgets = widgetConfig.map(w => ({ ...w, visible: false }));
+                                            setWidgetConfig(newWidgets);
+                                            localStorage.setItem('dashboardWidgets', JSON.stringify(newWidgets));
+                                        }}
+                                        className="px-3 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-500 text-xs font-bold transition-all flex items-center gap-1"
+                                    >
+                                        <EyeOff className="w-3 h-3" /> 全部隱藏
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setWidgetConfig(DEFAULT_WIDGETS);
+                                            localStorage.removeItem('dashboardWidgets');
+                                        }}
+                                        className="px-3 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-500 text-xs font-bold transition-all flex items-center gap-1"
+                                    >
+                                        <RotateCcw className="w-3 h-3" /> 重設預設
+                                    </button>
+                                </div>
 
-                            {/* Widget List with Drag & Drop */}
-                            <DragDropContext onDragEnd={handleWidgetDragEnd}>
-                                <Droppable droppableId="widget-settings">
-                                    {(provided) => (
-                                        <div
-                                            {...provided.droppableProps}
-                                            ref={provided.innerRef}
-                                            className="space-y-2"
-                                        >
-                                            {widgetConfig.map((widget, index) => (
-                                                <Draggable key={widget.id} draggableId={widget.id} index={index}>
-                                                    {(provided, snapshot) => (
-                                                        <div
-                                                            ref={provided.innerRef}
-                                                            {...provided.draggableProps}
-                                                            className={`flex items-center justify-between p-4 rounded-xl border transition-all ${snapshot.isDragging ? 'ring-2 ring-indigo-500 shadow-lg' : ''} ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
-                                                        >
-                                                            <div className="flex items-center gap-3">
-                                                                <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 rounded hover:bg-gray-500/10">
-                                                                    <GripVertical className="w-5 h-5 opacity-50" />
-                                                                </div>
-                                                                <span className={`font-bold ${!widget.visible ? 'opacity-40 line-through' : ''}`}>{widget.name}</span>
-                                                            </div>
-                                                            <button
-                                                                onClick={() => {
-                                                                    const newWidgets = widgetConfig.map(w =>
-                                                                        w.id === widget.id ? { ...w, visible: !w.visible } : w
-                                                                    );
-                                                                    setWidgetConfig(newWidgets);
-                                                                    localStorage.setItem('dashboardWidgets', JSON.stringify(newWidgets));
-                                                                }}
-                                                                className={`p-2 rounded-full transition-all ${widget.visible ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}
+                                {/* Widget List with Drag & Drop */}
+                                <DragDropContext onDragEnd={handleWidgetDragEnd}>
+                                    <Droppable droppableId="widget-settings">
+                                        {(provided) => (
+                                            <div
+                                                {...provided.droppableProps}
+                                                ref={provided.innerRef}
+                                                className="space-y-2"
+                                            >
+                                                {widgetConfig.map((widget, index) => (
+                                                    <Draggable key={widget.id} draggableId={widget.id} index={index}>
+                                                        {(provided, snapshot) => (
+                                                            <div
+                                                                ref={provided.innerRef}
+                                                                {...provided.draggableProps}
+                                                                className={`flex items-center justify-between p-4 rounded-xl border transition-all ${snapshot.isDragging ? 'ring-2 ring-indigo-500 shadow-lg' : ''} ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
                                                             >
-                                                                {widget.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </Draggable>
-                                            ))}
-                                            {provided.placeholder}
-                                        </div>
-                                    )}
-                                </Droppable>
-                            </DragDropContext>
+                                                                <div className="flex items-center gap-3">
+                                                                    <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 rounded hover:bg-gray-500/10">
+                                                                        <GripVertical className="w-5 h-5 opacity-50" />
+                                                                    </div>
+                                                                    <span className={`font-bold ${!widget.visible ? 'opacity-40 line-through' : ''}`}>
+                                                                        {WIDGET_LABELS[widget.id]?.[globalSettings.language] || WIDGET_LABELS[widget.id]?.['en'] || widget.name}
+                                                                    </span>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        const newWidgets = widgetConfig.map(w =>
+                                                                            w.id === widget.id ? { ...w, visible: !w.visible } : w
+                                                                        );
+                                                                        setWidgetConfig(newWidgets);
+                                                                        localStorage.setItem('dashboardWidgets', JSON.stringify(newWidgets));
+                                                                    }}
+                                                                    className={`p-2 rounded-full transition-all ${widget.visible ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}
+                                                                >
+                                                                    {widget.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </Draggable>
+                                                ))}
+                                                {provided.placeholder}
+                                            </div>
+                                        )}
+                                    </Droppable>
+                                </DragDropContext>
 
-                            <p className="text-xs opacity-50 text-center">設定會自動儲存到瀏覽器，下次開啟即生效。</p>
-                        </div>
-                    )}
+                                <p className="text-xs opacity-50 text-center">設定會自動儲存到瀏覽器，下次開啟即生效。</p>
+                            </div>
+                        )
+                    }
 
                     {/* V1.2.5: Account Management Tab */}
-                    {activeTab === 'account' && (
-                        <AccountTab
-                            user={user}
-                            isDarkMode={isDarkMode}
-                            globalSettings={globalSettings}
-                            setGlobalSettings={setGlobalSettings}
-                        />
-                    )}
+                    {
+                        activeTab === 'account' && (
+                            <AccountTab
+                                user={user}
+                                isDarkMode={isDarkMode}
+                                globalSettings={globalSettings}
+                                setGlobalSettings={setGlobalSettings}
+                            />
+                        )
+                    }
 
                     <div className="mt-8 pt-8 border-t border-gray-500/10 flex justify-end">
                         <button onClick={() => window.location.reload()} className="px-6 py-3 rounded-xl bg-gray-500/10 hover:bg-gray-500/20 text-sm font-bold text-gray-600 dark:text-gray-300 transition-all flex items-center gap-2">
                             <span className="text-xs">🔄</span> 儲存設定並重新載入 App
                         </button>
                     </div>
-                </div>
-            </div>
-        </div>
+                </div >
+            </div >
+        </div >
     );
 };
 
 // V1.2.5: Account Management Tab Component
 const AccountTab = ({ user, isDarkMode, globalSettings, setGlobalSettings }) => {
+    // Avatar Upload State
+    const fileInputRef = useRef(null);
+    const [isUploading, setIsUploading] = useState(false);
+
     const [displayName, setDisplayName] = useState(user?.displayName || '');
     const [photoURL, setPhotoURL] = useState(user?.photoURL || '');
     const [deletePassword, setDeletePassword] = useState('');
@@ -776,6 +899,35 @@ const AccountTab = ({ user, isDarkMode, globalSettings, setGlobalSettings }) => 
     const [isDeleting, setIsDeleting] = useState(false);
     const [networkStatus, setNetworkStatus] = useState(isOnline());
     const [message, setMessage] = useState(null);
+
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Basic validation
+        if (!file.type.startsWith('image/')) {
+            setMessage({ type: 'error', text: '請上傳圖片檔案 (JPG/PNG)' });
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            setMessage({ type: 'error', text: '圖片大小不能超過 5MB' });
+            return;
+        }
+
+        setIsUploading(true);
+        try {
+            const url = await uploadUserAvatar(user, file);
+            setPhotoURL(url); // Update local state preview
+            setMessage({ type: 'success', text: '圖片上傳成功！請記得按儲存。' });
+        } catch (error) {
+            console.error('Upload failed:', error);
+            setMessage({ type: 'error', text: '上傳失敗：' + error.message });
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = ''; // Reset input
+        }
+    };
+
 
     // Listen to network status
     useEffect(() => {
@@ -904,17 +1056,47 @@ const AccountTab = ({ user, isDarkMode, globalSettings, setGlobalSettings }) => 
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2">頭像 URL</label>
-                        <input
-                            type="text"
-                            value={photoURL}
-                            onChange={e => setPhotoURL(e.target.value)}
-                            className={inputClasses(isDarkMode)}
-                            placeholder="https://..."
-                        />
-                        {photoURL && (
-                            <img src={photoURL} alt="Preview" className="w-16 h-16 rounded-full mt-2 border-2 border-indigo-500" />
-                        )}
+                        <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2">頭像 (Avatar)</label>
+                        <div className="flex items-center gap-6 p-4 rounded-xl border border-gray-500/10 bg-gray-500/5">
+                            <div className="relative group flex-shrink-0">
+                                <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-indigo-500/20 shadow-xl bg-gray-500/10">
+                                    <img
+                                        src={photoURL || user?.photoURL}
+                                        alt="Avatar"
+                                        referrerPolicy="no-referrer"
+                                        className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName || 'User')}&background=6366f1&color=fff`;
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-2 w-full max-w-xs">
+                                {/* Hidden Input */}
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                    accept="image/*"
+                                />
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isUploading}
+                                    className={`px-4 py-2 rounded-lg bg-indigo-500/10 text-indigo-500 text-xs font-bold hover:bg-indigo-500/20 transition text-left flex items-center gap-2 ${isUploading ? 'opacity-50 cursor-wait' : ''}`}
+                                >
+                                    {isUploading ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                                    {isUploading ? '上傳中...' : '更換圖片 (Upload Image)'}
+                                </button>
+                                <button
+                                    onClick={() => setPhotoURL(user?.photoURL || '')}
+                                    className="px-4 py-2 rounded-lg bg-gray-500/10 text-gray-500 text-xs font-bold hover:bg-gray-500/20 transition text-left flex items-center gap-2"
+                                >
+                                    <RotateCcw className="w-3 h-3" /> 重設為預設 (Reset)
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <button

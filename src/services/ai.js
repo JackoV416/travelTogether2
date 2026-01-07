@@ -888,7 +888,7 @@ import { createWorker } from 'tesseract.js';
 export const parseTripImage = async (file, importType = 'screenshot') => {
     // Static import used instead of dynamic await import('tesseract.js')
 
-    console.log(`[OCR] Starting OCR for: ${file.name}, Type: ${importType}`);
+    // Starting OCR
 
     try {
         // Tesseract Worker with Timeout
@@ -911,7 +911,7 @@ export const parseTripImage = async (file, importType = 'screenshot') => {
         const rawText = await Promise.race([ocrPromise, timeoutPromise]);
         const confidence = 80; // Mock confidence for now as we simplified return
 
-        console.log(`[OCR] Recognized text:`, rawText.substring(0, 200));
+        // OCR Recognized text
 
         // Parse based on import type (Proceed with rawText)
 

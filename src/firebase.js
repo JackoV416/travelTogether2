@@ -42,7 +42,7 @@ if (globalThis._firestore_db) {
       })
     });
     globalThis._firestore_db = db;
-    console.log("[Firebase] Firestore initialized (Multi-tab Persistence Enabled)");
+    // Firestore initialized (Multi-tab Persistence Enabled)
   } catch (error) {
     // Silently handle known HMR/multi-tab lock scenarios
     db = getFirestore(app);

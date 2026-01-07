@@ -475,8 +475,7 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
                             splitType,
                             category
                         };
-                        console.log('[AddActivityModal] onSave payload:', JSON.stringify(payload, null, 2));
-                        console.log('[AddActivityModal] details.time:', details.time);
+                        // onSave payload log
                         onSave(payload);
                         onClose();
                     }} className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl py-3.5 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">

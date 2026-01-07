@@ -22,7 +22,8 @@ const DashboardHeader = ({
     setIsSmartImportModalOpen,
     setIsSmartExportOpen,
     trips = [],
-    onSelectTrip
+    onSelectTrip,
+    onOpenCommandPalette
 }) => {
     const hasTrips = trips.length > 0;
     return (
@@ -34,12 +35,17 @@ const DashboardHeader = ({
                 {/* Top Row: Title & Actions */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex items-center gap-4">
-                        <div className="relative group cursor-help">
-                            <div className={`p-2.5 rounded-xl border ${isDarkMode ? 'bg-white/5 border-white/10 text-white/20' : 'bg-slate-100 border-slate-200 text-slate-300'}`}>
+                        <div className="relative group">
+                            <button
+                                onClick={onOpenCommandPalette}
+                                className={`p-2.5 rounded-xl border transition-all ${isDarkMode
+                                    ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/30 hover:scale-105'
+                                    : 'bg-white border-indigo-100 text-indigo-600 hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/20 shadow-sm'}`}
+                            >
                                 <Search className="w-5 h-5" />
-                            </div>
-                            <div className="absolute left-0 top-full mt-2 w-48 p-2 bg-black/90 backdrop-blur-md rounded-lg text-[10px] text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none shadow-xl border border-white/10">
-                                🔍 全域搜尋 (Global Search) 稍後版本會更新！一鍵搜尋所有行程、購物及文件。
+                            </button>
+                            <div className="absolute left-0 top-full mt-2 w-max px-3 py-1.5 bg-black/80 backdrop-blur-md rounded-lg text-[10px] text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none shadow-xl border border-white/10">
+                                ⌘ + K 全域搜尋
                             </div>
                         </div>
                         <div>
