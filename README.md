@@ -1,18 +1,27 @@
-# Travel Together (智能旅遊規劃) V1.2.10
+# Travel Together (智能旅遊規劃) V1.2.11
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.2.10-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.2.11-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-11.x-orange.svg)](https://firebase.google.com/)
 
-## 🚀 V1.2.10: Localization Audit & i18n Fixes (2026-01-07)
-**V1.2.10: [i18n] 全站語言審計與修正！**
-深度審計 TripHeader 等組件，移除所有硬編碼中文字串，確保三語 (繁中/廣東話/英文) 完美切換。
+## 🚀 V1.2.11: Global Localization & Stability Patch (2026-01-07)
+**V1.2.11: [i18n & Fix] 全站語言深度本地化與穩定性修復！**
+本次更新專注於全球城市資料庫擴充、全站 UI 翻譯覆蓋，並修復了多項關鍵的執行期錯誤。
 
-### 🌟 V1.2.10 主要更新
-1.  **TripHeader i18n Fix**: 修正 5 處硬編碼中文 (Undo/Redo/Edit/Chat/天行程) 改用 `t()` 函數
-2.  **zh-HK Enhancement**: 新增「復原」「重做」「改行程設定」「傾兩句」等廣東話翻譯
-3.  **Translation Keys**: `i18n.js` 新增 5 個 key (undo, redo, edit_settings, open_chat, days_trip)
+### 🌟 V1.2.11 主要更新
+1.  **Multi-City Localization**: 強力支援跨城市行程翻譯 (例如：`Kyoto -> Osaka` 自動轉為 `京都 → 大阪`)。
+2.  **Currency Summation Fix**: 修復 Itinerary 每日總結的混合幣種計算邏輯，支援即時匯率換算並顯示 HKD 等值。
+3.  **Kanban Localization**: Kanban 視圖現支援分日城市標籤，並全面本地化。
+4.  **City Database Expansion**: 新增日本（北海道、福岡、沖繩、札幌）及多個全球城市的翻譯與貨幣資訊。
+5.  **Critical Bug Fixes**: 修復 `ItineraryTab` 的 `t is not defined`、Helper Shadowing 導致的翻譯錯誤，以及 `VersionModal` 的渲染問題。
+6.  **UI Polishing**: 優化地點選擇器語言切換，並確保全站使用統一的本地化 Helper。
+
+---
+
+## 🚀 V1.2.10: [Archived] Localization Audit (2026-01-07)
+**V1.2.10: [i18n] 全站語言審計與修正！**
+深度審計 TripHeader 等組件，移除硬編碼字串。
 
 ---
 
@@ -212,9 +221,9 @@ graph TD
 
 ## 📋 版本紀錄 (History)
 
-| **V1.2.8** | **Jarvis Keys & zh-HK** | 🚀 最新版 |
-| **V1.2.7** | **Global UI & Local** | ✅ 已發布 |
-| **V1.2.6** | **The Ultimate View** | ✅ 已發布 |
+| **V1.2.11** | **Multi-City & Currency Fix** | 🚀 最新版 |
+| **V1.2.10** | **Localization Audit** | ✅ 已發布 |
+| **V1.2.8** | **Jarvis Keys & zh-HK** | ✅ 已發布 |
 | **V1.2.3** | **Jarvis AI Quota & Sub-tabs** | ✅ 已發布 |
 | **V1.2.2** | **Jarvis AI Support Center** | ✅ 已發布 |
 | **V1.2.1** | **User Group Chat** | ✅ 已發布 |

@@ -1370,23 +1370,32 @@ ${JSON.stringify(rawWeatherData, null, 2)}
  * @param {Object} trip - Trip object with destination, startDate, cities
  * @returns {Promise<string>} A creative trip name
  */
-export async function generateTripName(trip, userId = null) {
+export async function generateTripName(trip, userId = null, language = 'zh-TW') {
     try {
         const destination = trip.city || trip.cities?.[0] || trip.country || "Unknown";
         const country = trip.country || "";
         const startDate = trip.startDate || "";
 
+        // Locale mapping for seasonal info and prompt
+        const langMap = {
+            'zh-TW': { name: '繁體中文', seasons: { spring: '春天', summer: '夏天', autumn: '秋天', winter: '冬天' } },
+            'zh-HK': { name: '廣東話', seasons: { spring: '春天', summer: '夏天', autumn: '秋天', winter: '冬天' } },
+            'en': { name: 'English', seasons: { spring: 'Spring', summer: 'Summer', autumn: 'Autumn', winter: 'Winter' } }
+        };
+
+        const l = langMap[language] || langMap['zh-TW'];
+
         // Determine season from startDate
         let season = "";
         if (startDate) {
             const month = new Date(startDate).getMonth() + 1;
-            if (month >= 3 && month <= 5) season = "Spring";
-            else if (month >= 6 && month <= 8) season = "Summer";
-            else if (month >= 9 && month <= 11) season = "Autumn";
-            else season = "Winter";
+            if (month >= 3 && month <= 5) season = l.seasons.spring;
+            else if (month >= 6 && month <= 8) season = l.seasons.summer;
+            else if (month >= 9 && month <= 11) season = l.seasons.autumn;
+            else season = l.seasons.winter;
         }
 
-        const prompt = `You are a creative travel naming expert. Generate ONE short, catchy trip name.
+        const prompt = `You are a creative travel naming expert. Generate ONE short, catchy trip name in ${l.name}.
 
 === TRIP INFO ===
 Destination: ${destination}, ${country}
@@ -1397,7 +1406,8 @@ Start Date: ${startDate}
 1. Be creative but concise (2-5 words max)
 2. Capture the essence of the destination or season
 3. Use local cultural references when possible
-4. Examples: "Tokyo Sakura Escape", "Osaka Foodie Run", "Winter Hokkaido Bliss"
+4. Language: Return the name ONLY in ${l.name}.
+${language === 'zh-HK' ? '5. Style: Use natural Cantonese (廣東話) if appropriate for the destination.' : ''}
 
 === OUTPUT ===
 Return ONLY the trip name, nothing else. No quotes, no explanation.`;

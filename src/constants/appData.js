@@ -1,12 +1,16 @@
 import {
     Train, Bus, Car, Route
 } from 'lucide-react';
+import { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA } from './countries';
+
+// Re-export for components that expect these in appData
+export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.10";
-export const APP_VERSION_TAG = "Localization Audit & i18n Fixes";
+export const APP_VERSION = "V1.2.11";
+export const APP_VERSION_TAG = "Global Localization & Stability Patch";
 export const APP_LAST_UPDATE = '2026-01-07';
 export const JARVIS_VERSION = "V0.0.4-Beta";
 
@@ -14,36 +18,24 @@ export const JARVIS_VERSION_HISTORY = [
     {
         ver: "V0.0.4-Beta",
         date: "2026-01-07",
-        tag: "Localization Patch",
+        tag: "Internal Stability Patch",
         desc: {
-            "zh-TW": "全站語言審計與修正",
-            "zh-HK": "全站語言審計與修正",
-            "en": "Global Localization Audit & Fixes"
+            "zh-TW": "🤖 助手內部邏輯優化",
+            "zh-HK": "🤖 助手內部邏輯優化",
+            "en": "🤖 Jarvis Core Logic Optimization"
         },
         details: {
             "zh-TW": [
-                "🌍 i18n: 修復 TripHeader 多處硬編碼中文",
-                "🇭🇰 Locale: 確保廣東話 (zh-HK) 與繁體中文 (zh-TW) 區隔",
-                "🐛 Bug Fix: 修復 View Switcher 語言顯示錯誤",
-                "🤖 BYOK: 實裝自訂 API 金鑰系統，支援 OpenAI/Claude/Gemini 輪換",
-                "🛡️ Usage: 新增 AI Provider 用量追蹤與提示功能",
-                "🎨 UI: 優化 Tag 語義化顏色顯示"
+                "🤖 AI: 優化智能傳輸建議的穩定性",
+                "⚡ 效能: 提升 AI 分析面板的反應速度"
             ],
             "zh-HK": [
-                "🌍 i18n: 修復 TripHeader 多處硬編碼中文",
-                "🇭🇰 Locale: 確保廣東話 (zh-HK) 同繁體中文 (zh-TW) 分開",
-                "🐛 Bug Fix: 修復 View Switcher 語言顯示錯誤",
-                "🤖 BYOK: 實裝自訂 API Key 系統，支援 OpenAI/Claude/Gemini 輪換",
-                "🛡️ Usage: 新增 AI Provider 用量追蹤同提示功能",
-                "🎨 UI: 優化 Tag 語義化顏色顯示"
+                "🤖 AI: 優化智能傳輸建議嘅穩定性",
+                "⚡ 效能: 提升 AI 分析面板嘅反應速度"
             ],
             "en": [
-                "🌍 i18n: Fixed hardcoded Chinese strings in TripHeader",
-                "🇭🇰 Locale: Ensured distinct zh-HK and zh-TW localizations",
-                "🐛 Bug Fix: Resolved View Switcher language display issues",
-                "🤖 BYOK: Implemented Custom API Key System (OpenAI/Claude/Gemini)",
-                "🛡️ Usage: Added usage tracking and alerts for AI Providers",
-                "🎨 UI: Semantic coloring for tags"
+                "🤖 AI: Optimized stability of smart transport suggestions",
+                "⚡ Performance: Improved responsiveness of AI analysis panel"
             ]
         }
     },
@@ -131,16 +123,91 @@ export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086
 
 export const VERSION_HISTORY = [
     {
+        ver: "V1.2.11",
+        date: "2026-01-07",
+        tag: "Global Localization & Stability Patch",
+        desc: {
+            "zh-TW": "跨城市行程本地化與幣種計算修正",
+            "zh-HK": "跨城市行程本地化與幣種計算修正",
+            "en": "Multi-City Localization & Currency Summation Fix"
+        },
+        details: {
+            "zh-TW": [
+                "🌍 i18n: 支援「Kyoto -> Osaka」等跨城市行程自動翻譯",
+                "💰 Budget: 修復 Itinerary 每日總結的混合幣種換算邏輯",
+                "📊 UI: Kanban 視圖分日城市標籤本地化",
+                "🇯🇵 Database: 新增北海道、福岡、沖繩、札幌等日系城市翻譯",
+                "🐞 Fix: 修復 t is not defined 及 Helper Shadowing 問題"
+            ],
+            "zh-HK": [
+                "🌍 i18n: 支援「Kyoto -> Osaka」等跨城市行程自動翻譯",
+                "💰 Budget: 修復 Itinerary 每日總結的混合幣種換算邏輯",
+                "📊 UI: Kanban 視圖分日城市標籤本地化及全面本地化",
+                "🇯🇵 Database: 新增北海道、福岡、沖繩、札幌等日系城市翻譯及貨幣資訊",
+                "🐞 Fix: 修復 t is not defined 及 Helper Shadowing 問題"
+            ],
+            "en": [
+                "🌍 i18n: Support multi-city translation (e.g., 'Kyoto -> Osaka' to '京都 → 大阪')",
+                "💰 Budget: Fixed daily summary logic for mixed currency calculations",
+                "📊 UI: Added localized city badges to Kanban column headers",
+                "🇯🇵 Database: Expanded city translations and currency info",
+                "🐞 Fix: Resolved 't is not defined' and helper shadowing bugs"
+            ]
+        }
+    },
+    {
+        ver: "V1.2.10",
+        date: "2026-01-07",
+        tag: "Localization Audit",
+        desc: {
+            "zh-TW": "全站語言審計與修正",
+            "zh-HK": "全站語言審計與修正",
+            "en": "Localization Audit & i18n Fixes"
+        },
+        details: {
+            "zh-TW": [
+                "🔍 深度審計: 移除 TripHeader 等組件的硬編碼中文字串",
+                "🇭🇰 廣東話增強: 新增「復原」「重做」等地道翻譯",
+                "⌨️ 快捷鍵更新: 優化 Command+K 搜尋面板的語言顯示"
+            ],
+            "en": [
+                "🔍 Deep Audit: Removed hardcoded strings from TripHeader",
+                "🇭🇰 zh-HK Enhancement: Added authentic Cantonese translations",
+                "⌨️ Shortcuts: Optimized Command+K search panel labels"
+            ],
+            "zh-HK": [
+                "🔍 深度審計: 攞走 TripHeader 啲格硬寫死嘅中文字",
+                "🇭🇰 廣東話增強: 加返「復原」「重做」「傾兩句」等地道廣東話",
+                "⌨️ 快捷鍵更新: 整好 Command+K 搜尋面板嘅語言顯示"
+            ]
+        }
+    },
+    {
         ver: "V1.2.9",
         date: "2026-01-07",
         tag: "Mobile Polish & Localization",
-        changes: [
-            "🌍 i18n Expansion: 新增「廣東話 (zh-HK)」語系支援，體驗最地道嘅介面",
-            "📱 Mobile UX: 修正手機版 Footer 排版擁擠問題，優化 Settings 頁面觸控體驗",
-            "👤 Profile Fix: 頭像更換功能升級，新增「更換頭像」與「還原預設」實體按鈕",
-            "🛠️ 穩定性: 修正 UserProfileModal 互動問題，確保手機版點擊頭像順暢彈出",
-            "🐞 Bug Fix: 修正 Settings 介面 RefreshCw 引用錯誤"
-        ]
+        desc: {
+            "zh-TW": "行動端優化與語系擴充",
+            "zh-HK": "手機版優化同埋語言擴展",
+            "en": "Mobile Polish & Localization Expansion"
+        },
+        details: {
+            "zh-TW": [
+                "🌍 i18n 擴充: 新增「廣東話 (zh-HK)」語系支援",
+                "📱 行動端優化: 修正手機版 Footer 排版擁擠問題",
+                "👤 頭像功能: 新增「更換頭像」與「還原預設」按鈕"
+            ],
+            "en": [
+                "🌍 i18n Expansion: Added zh-HK (Cantonese) support",
+                "📱 Mobile UX: Fixed footer overcrowding",
+                "👤 Profile: Added Change Avatar and Reset to Default buttons"
+            ],
+            "zh-HK": [
+                "🌍 i18n 擴充: 加咗廣東話 (zh-HK) 支援",
+                "📱 手機版優化: 執返好手機版 Footer 唔好咁迫",
+                "👤 頭像功能: 加咗「換頭像」同「變返預設」掣"
+            ]
+        }
     },
     {
         ver: "V1.2.8",
@@ -827,36 +894,6 @@ export const TIMEZONES = {
     "AU": { offset: 10, label: "雪梨" }
 };
 
-export const COUNTRIES_DATA = {
-    "Australia (澳洲)": { cities: ["Sydney", "Melbourne", "Brisbane", "Gold Coast"], image: "https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?w=1600", region: "south", emergency: "000", taxRefund: "滿 AUD 300", entryInfo: "需申請 ETA", insuranceInfo: "建議購買涵蓋戶外活動之保險", consulate: "澳洲辦事處", tz: "AU", currency: "AUD" },
-    "Canada (加拿大)": { cities: ["Vancouver", "Toronto", "Montreal", "Banff"], image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1600", region: "north", emergency: "911", taxRefund: "無退稅", entryInfo: "eTA / Visitor Visa", insuranceInfo: "溫差大，建議含雪地救援", consulate: "駐加拿大代表處", tz: "US_NY", currency: "CAD" },
-    "France (法國)": { cities: ["Paris", "Nice", "Lyon", "Marseille", "Strasbourg"], image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1600", region: "north", emergency: "112", taxRefund: "滿 100 EUR", entryInfo: "申根免簽", insuranceInfo: "申根區建議投保3萬歐元以上醫療險", consulate: "駐法國代表處", tz: "FR", currency: "EUR" },
-    "Germany (德國)": { cities: ["Berlin", "Munich", "Frankfurt", "Hamburg"], image: "https://images.unsplash.com/photo-1509395062183-67c5ad6faff9?w=1600", region: "north", emergency: "112", taxRefund: "滿 25 EUR", entryInfo: "申根免簽", insuranceInfo: "申根標準醫療保險", consulate: "駐德國代表處", tz: "FR", currency: "EUR" },
-    "Italy (義大利)": { cities: ["Rome", "Milan", "Florence", "Venice"], image: "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=1600", region: "north", emergency: "112", taxRefund: "滿 155 EUR", entryInfo: "申根免簽", insuranceInfo: "建議附加租車責任險", consulate: "駐義大利代表處", tz: "FR", currency: "EUR" },
-    "Japan (日本)": {
-        cities: ["Tokyo", "Osaka", "Kyoto", "Hokkaido", "Fukuoka", "Okinawa"],
-        image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1600",
-        region: "north",
-        emergency: "110 (警) / 119 (火)",
-        taxRefund: "滿 5000 JPY (扣 1.55% 服務費)",
-        entryInfo: "HKSAR/BNO 免簽 90 日。必須預先登錄 Visit Japan Web (VJW) 攞齊入境同海關兩個 QR Code，Cap 圖備份最穩陣。",
-        insuranceInfo: "日本醫療費閒閒地幾萬蚊港紙起跳，強烈建議買包 100 萬醫療、住院現金同醫療轉運嘅保險 (如 AIG / 藍十字)。",
-        consulate: "駐日經濟文化代表處 / 香港駐東京經濟貿易辦事處",
-        tz: "JP",
-        currency: "JPY"
-    },
-    "Korea (韓國)": { cities: ["Seoul", "Busan", "Jeju"], image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600", region: "north", emergency: "112 / 119", taxRefund: "滿 30,000 KRW", entryInfo: "K-ETA", insuranceInfo: "建議涵蓋滑雪運動", consulate: "駐韓國代表處", tz: "KR", currency: "KRW" },
-    "Malaysia (馬來西亞)": { cities: ["Kuala Lumpur", "Penang", "Kota Kinabalu", "Johor Bahru"], image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1600", region: "hot", emergency: "999 / 994（消防）", taxRefund: "滿 300 MYR", entryInfo: "免簽", insuranceInfo: "建議包含戶外及海島活動", consulate: "駐馬國代表處", tz: "TH", currency: "MYR" },
-    "Singapore (新加坡)": { cities: ["Singapore"], image: "https://images.unsplash.com/photo-1505765050516-f72dcac9c60e?w=1600", region: "south", emergency: "999 / 995", taxRefund: "滿 100 SGD", entryInfo: "免簽", insuranceInfo: "高醫療費，建議醫療與航班延誤", consulate: "駐新加坡代表處", tz: "TH", currency: "SGD" },
-    "Spain (西班牙)": { cities: ["Barcelona", "Madrid", "Seville", "Valencia"], image: "https://images.unsplash.com/photo-1464790719320-516ecd75af6c?w=1600", region: "south", emergency: "112", taxRefund: "滿 90 EUR", entryInfo: "申根免簽", insuranceInfo: "炎熱季節注意防曬", consulate: "駐西班牙代表處", tz: "FR", currency: "EUR" },
-    "Switzerland (瑞士)": { cities: ["Zurich", "Geneva", "Lucerne", "Interlaken"], image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1600", region: "north", emergency: "112 / 117", taxRefund: "滿 300 CHF", entryInfo: "申根免簽", insuranceInfo: "登山戶外必備高額醫療", consulate: "駐瑞士代表處", tz: "FR", currency: "CHF" },
-    "Taiwan (台灣)": { cities: ["Taipei", "Kaohsiung", "Tainan", "Taichung"], image: "https://images.unsplash.com/photo-1508233620467-f79f1e317a05?w=1600", region: "north", emergency: "110 (警) / 119 (火)", taxRefund: "滿 2000 TWD", entryInfo: "入台證/網簽", insuranceInfo: "健保完善，旅客仍需旅平險", consulate: "-", tz: "TW", currency: "TWD" },
-    "Thailand (泰國)": { cities: ["Bangkok", "Phuket", "Chiang Mai", "Pattaya"], image: "https://images.unsplash.com/photo-1506665531195-3566af2b4dfa?w=1600", region: "hot", emergency: "191", taxRefund: "滿 2000 THB", entryInfo: "免簽", insuranceInfo: "建議涵蓋機車騎乘意外險", consulate: "駐泰國代表處", tz: "TH", currency: "THB" },
-    "United Kingdom (英國)": { cities: ["London", "Edinburgh", "Manchester", "Bath"], image: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1600", region: "north", emergency: "999", taxRefund: "無退稅", entryInfo: "免簽", insuranceInfo: "NHS 對遊客不免費，需醫療險", consulate: "駐英國代表處", tz: "UK", currency: "GBP" },
-    "United States (美國)": { cities: ["New York", "Los Angeles", "San Francisco", "Las Vegas", "Seattle"], image: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=1600", region: "north", emergency: "911", taxRefund: "部分州", entryInfo: "ESTA", insuranceInfo: "醫療費用極高，強烈建議高額保險", consulate: "駐美代表處", tz: "US_NY", currency: "USD" },
-    "Other": { cities: [], image: DEFAULT_BG_IMAGE, region: "north", emergency: "112 (國際通用)", taxRefund: "Check Local", entryInfo: "Check Visa", insuranceInfo: "請查詢當地外交部建議", consulate: "當地領事館", tz: "UK", currency: "HKD" }
-};
-
 // Detailed Emergency Info by Country (for EmergencyTab)
 export const EMERGENCY_DETAILS_DB = {
     "Japan (日本)": {
@@ -970,87 +1007,8 @@ export const LANGUAGE_OPTIONS = {
 };
 
 
-export const COUNTRY_TRANSLATIONS = {
-    "Australia (澳洲)": { "zh-TW": "澳洲", "en": "Australia" },
-    "Canada (加拿大)": { "zh-TW": "加拿大", "en": "Canada" },
-    "France (法國)": { "zh-TW": "法國", "en": "France" },
-    "Germany (德國)": { "zh-TW": "德國", "en": "Germany" },
-    "Italy (義大利)": { "zh-TW": "義大利", "en": "Italy" },
-    "Japan (日本)": { "zh-TW": "日本", "en": "Japan" },
-    "Korea (韓國)": { "zh-TW": "韓國", "en": "Korea" },
-    "Malaysia (馬來西亞)": { "zh-TW": "馬來西亞", "en": "Malaysia" },
-    "Singapore (新加坡)": { "zh-TW": "新加坡", "en": "Singapore" },
-    "Spain (西班牙)": { "zh-TW": "西班牙", "en": "Spain" },
-    "Switzerland (瑞士)": { "zh-TW": "瑞士", "en": "Switzerland" },
-    "Taiwan (台灣)": { "zh-TW": "台灣", "en": "Taiwan" },
-    "Thailand (泰國)": { "zh-TW": "泰國", "en": "Thailand" },
-    "United Kingdom (英國)": { "zh-TW": "英國", "en": "United Kingdom" },
-    "United States (美國)": { "zh-TW": "美國", "en": "United States" },
-    "Other": { "zh-TW": "其他", "en": "Other" }
-};
 
-export const CITY_TRANSLATIONS = {
-    "Sydney": { "zh-TW": "雪梨", "en": "Sydney" },
-    "Melbourne": { "zh-TW": "墨爾本", "en": "Melbourne" },
-    "Brisbane": { "zh-TW": "布里斯本", "en": "Brisbane" },
-    "Gold Coast": { "zh-TW": "黃金海岸", "en": "Gold Coast" },
-    "Vancouver": { "zh-TW": "溫哥華", "en": "Vancouver" },
-    "Toronto": { "zh-TW": "多倫多", "en": "Toronto" },
-    "Montreal": { "zh-TW": "蒙特婁", "en": "Montreal" },
-    "Banff": { "zh-TW": "班夫", "en": "Banff" },
-    "Paris": { "zh-TW": "巴黎", "en": "Paris" },
-    "Nice": { "zh-TW": "尼斯", "en": "Nice" },
-    "Lyon": { "zh-TW": "里昂", "en": "Lyon" },
-    "Marseille": { "zh-TW": "馬賽", "en": "Marseille" },
-    "Strasbourg": { "zh-TW": "史特拉斯堡", "en": "Strasbourg" },
-    "Berlin": { "zh-TW": "柏林", "en": "Berlin" },
-    "Munich": { "zh-TW": "慕尼黑", "en": "Munich" },
-    "Frankfurt": { "zh-TW": "法蘭克福", "en": "Frankfurt" },
-    "Hamburg": { "zh-TW": "漢堡", "en": "Hamburg" },
-    "Rome": { "zh-TW": "羅馬", "en": "Rome" },
-    "Milan": { "zh-TW": "米蘭", "en": "Milan" },
-    "Florence": { "zh-TW": "佛羅倫斯", "en": "Florence" },
-    "Venice": { "zh-TW": "威尼斯", "en": "Venice" },
-    "Tokyo": { "zh-TW": "東京", "en": "Tokyo" },
-    "Osaka": { "zh-TW": "大阪", "en": "Osaka" },
-    "Kyoto": { "zh-TW": "京都", "en": "Kyoto" },
-    "Hokkaido": { "zh-TW": "北海道", "en": "Hokkaido" },
-    "Fukuoka": { "zh-TW": "福岡", "en": "Fukuoka" },
-    "Okinawa": { "zh-TW": "沖繩", "en": "Okinawa" },
-    "Seoul": { "zh-TW": "首爾", "en": "Seoul" },
-    "Busan": { "zh-TW": "釜山", "en": "Busan" },
-    "Jeju": { "zh-TW": "濟州", "en": "Jeju" },
-    "Kuala Lumpur": { "zh-TW": "吉隆坡", "en": "Kuala Lumpur" },
-    "Penang": { "zh-TW": "檳城", "en": "Penang" },
-    "Kota Kinabalu": { "zh-TW": "亞庇", "en": "Kota Kinabalu" },
-    "Johor Bahru": { "zh-TW": "新山", "en": "Johor Bahru" },
-    "Singapore": { "zh-TW": "新加坡", "en": "Singapore" },
-    "Barcelona": { "zh-TW": "巴塞隆納", "en": "Barcelona" },
-    "Madrid": { "zh-TW": "馬德里", "en": "Madrid" },
-    "Seville": { "zh-TW": "塞維亞", "en": "Seville" },
-    "Valencia": { "zh-TW": "巴倫西亞", "en": "Valencia" },
-    "Zurich": { "zh-TW": "蘇黎世", "en": "Zurich" },
-    "Geneva": { "zh-TW": "日內瓦", "en": "Geneva" },
-    "Lucerne": { "zh-TW": "盧森", "en": "Lucerne" },
-    "Interlaken": { "zh-TW": "因特拉肯", "en": "Interlaken" },
-    "Taipei": { "zh-TW": "台北", "en": "Taipei" },
-    "Kaohsiung": { "zh-TW": "高雄", "en": "Kaohsiung" },
-    "Tainan": { "zh-TW": "台南", "en": "Tainan" },
-    "Taichung": { "zh-TW": "台中", "en": "Taichung" },
-    "Bangkok": { "zh-TW": "曼谷", "en": "Bangkok" },
-    "Phuket": { "zh-TW": "普吉", "en": "Phuket" },
-    "Chiang Mai": { "zh-TW": "清邁", "en": "Chiang Mai" },
-    "Pattaya": { "zh-TW": "芭達雅", "en": "Pattaya" },
-    "London": { "zh-TW": "倫敦", "en": "London" },
-    "Edinburgh": { "zh-TW": "愛丁堡", "en": "Edinburgh" },
-    "Manchester": { "zh-TW": "曼徹斯特", "en": "Manchester" },
-    "Bath": { "zh-TW": "巴斯", "en": "Bath" },
-    "New York": { "zh-TW": "紐約", "en": "New York" },
-    "Los Angeles": { "zh-TW": "洛杉磯", "en": "Los Angeles" },
-    "San Francisco": { "zh-TW": "舊金山", "en": "San Francisco" },
-    "Las Vegas": { "zh-TW": "拉斯維加斯", "en": "Las Vegas" },
-    "Seattle": { "zh-TW": "西雅圖", "en": "Seattle" }
-};
+
 
 export const HOLIDAYS_BY_REGION = {
     "HK": { "01-01": "元旦", "01-29": "農曆新年", "01-30": "農曆新年", "01-31": "農曆新年", "04-04": "清明節", "04-18": "耶穌受難節", "04-19": "耶穌受難節翌日", "04-21": "復活節", "05-01": "勞動節", "05-05": "佛誕", "05-31": "端午節", "07-01": "回歸紀念日", "10-01": "國慶日", "10-07": "中秋節翌日(預測)", "10-29": "重陽節", "12-25": "聖誕節", "12-26": "拆禮物日" },
@@ -1152,16 +1110,18 @@ export const SIMULATION_DATA = {
     name: "🇯🇵 東京冬日豪華之旅 2025 (4人團)",
     city: "Tokyo",
     country: "Japan (日本)",
+    currency: "JPY",
+    budget: 80000,
     startDate: "2025-12-24",
     endDate: "2025-12-29",
     sharePermission: "edit",
     locations: {
-        "2025-12-24": { city: "東京 (Tokyo)", country: "Japan (日本)" },
-        "2025-12-25": { city: "東京 (Tokyo)", country: "Japan (日本)" },
-        "2025-12-26": { city: "東京 (Tokyo)", country: "Japan (日本)" },
-        "2025-12-27": { city: "大阪 (Osaka)", country: "Japan (日本)" },
-        "2025-12-28": { city: "大阪 (Osaka)", country: "Japan (日本)" },
-        "2025-12-29": { city: "大阪 (Osaka)", country: "Japan (日本)" }
+        "2025-12-24": { city: "Tokyo", country: "Japan (日本)" },
+        "2025-12-25": { city: "Tokyo", country: "Japan (日本)" },
+        "2025-12-26": { city: "Tokyo", country: "Japan (日本)" },
+        "2025-12-27": { city: "Osaka", country: "Japan (日本)" },
+        "2025-12-28": { city: "Osaka", country: "Japan (日本)" },
+        "2025-12-29": { city: "Osaka", country: "Japan (日本)" }
     },
     members: [
         { id: "sim-user-1", name: "Alex (主揪)", role: "owner", avatar: "https://ui-avatars.com/api/?name=Alex&background=6366f1&color=fff" },

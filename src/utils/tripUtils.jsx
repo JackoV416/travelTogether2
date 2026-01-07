@@ -4,9 +4,6 @@ import { zhHK } from 'date-fns/locale';
 import { Sun, CloudSun, Snowflake, MapPin, Calendar, Shirt, Moon, CheckCircle2, Cloud, FileText, Shield, Backpack, Plane, Hotel, Ticket } from 'lucide-react';
 import {
     HOLIDAYS_BY_REGION,
-    COUNTRY_TRANSLATIONS,
-    CITY_TRANSLATIONS,
-    COUNTRIES_DATA,
     TIMEZONES,
     OUTFIT_IMAGES,
     CURRENCIES,
@@ -14,6 +11,14 @@ import {
     LANDMARK_IMAGES,
     TYPE_DEFAULT_IMAGES
 } from '../constants/appData';
+import {
+    getLocalizedCountryName,
+    getLocalizedCityName,
+    getSafeCountryInfo,
+    COUNTRY_TRANSLATIONS,
+    CITY_TRANSLATIONS,
+    COUNTRIES_DATA
+} from '../constants/countries';
 import { convertCurrency } from '../services/exchangeRate';
 
 // Glassmorphism 2.0 - Premium Effect (Uses CSS Variables in index.css)
@@ -21,11 +26,8 @@ export const glassCard = () => `glass-card rounded-2xl transition-all duration-5
 
 export const getHolidayMap = (region) => HOLIDAYS_BY_REGION[region] || HOLIDAYS_BY_REGION.Global;
 
-export const getLocalizedCountryName = (country, lang = 'zh-TW') => COUNTRY_TRANSLATIONS[country]?.[lang] || country;
-
-export const getLocalizedCityName = (city, lang = 'zh-TW') => CITY_TRANSLATIONS[city]?.[lang] || city;
-
-export const getSafeCountryInfo = (country) => COUNTRIES_DATA[country] || COUNTRIES_DATA["Other"];
+// Re-export localization helpers for consistency
+export { getLocalizedCountryName, getLocalizedCityName, getSafeCountryInfo };
 
 export const formatDate = (dateStr) => {
     if (!dateStr) return "";

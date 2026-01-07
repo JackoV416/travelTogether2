@@ -102,33 +102,6 @@ const TripHeader = ({
                                         {trip.name}
                                     </h1>
 
-                                    {/* V1.2.6 View Switcher */}
-                                    {activeTab === 'itinerary' && (
-                                        <div className="flex gap-1 p-1 bg-black/20 backdrop-blur-md rounded-xl md:rounded-2xl border border-white/10 self-start lg:self-center mt-2 lg:mt-0 w-full md:w-auto md:max-w-none overflow-x-auto no-scrollbar scroll-smooth">
-                                            {[
-                                                { id: 'list', icon: ListIcon, label: 'list' },
-                                                { id: 'board', icon: Columns, label: 'board' },
-                                                { id: 'kanban', icon: KanbanSquare, label: 'kanban' },
-                                                { id: 'timeline', icon: MonitorPlay, label: 'timeline' },
-                                                { id: 'map', icon: MapIcon, label: 'map' }
-                                            ].map(view => (
-                                                <button
-                                                    key={view.id}
-                                                    onClick={() => setViewMode(view.id)}
-                                                    className={`px-3 py-2 md:px-3 md:py-2 rounded-lg md:rounded-xl flex items-center gap-1.5 transition-all outline-none focus:ring-2 focus:ring-white/20 select-none whitespace-nowrap flex-shrink-0 ${viewMode === view.id
-                                                        ? 'bg-white text-indigo-600 shadow-lg scale-100 font-bold'
-                                                        : 'text-white/60 hover:text-white hover:bg-white/10'
-                                                        }`}
-                                                    title={t(`trip.views.${view.label}`)}
-                                                >
-                                                    <view.icon className="w-4 h-4" />
-                                                    <span className="text-[10px] uppercase tracking-wider font-bold inline whitespace-nowrap">
-                                                        {t(`trip.views.${view.label}`)}
-                                                    </span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
                                     {/* Unified Premium Action Bar */}
                                     <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-black/30 backdrop-blur-2xl border border-white/10 shadow-2xl self-start sm:ml-4 group/toolbar transition-all hover:bg-black/40">
                                         {/* History Actions */}

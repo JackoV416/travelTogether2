@@ -1,166 +1,131 @@
-import React from 'react';
-import { X, GitCommit, Calendar, Tag, Bot, Monitor } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, GitCommit, Calendar, Bot, Monitor } from 'lucide-react';
 import { VERSION_HISTORY, JARVIS_VERSION_HISTORY, APP_VERSION, JARVIS_VERSION, APP_AUTHOR } from '../../constants/appData';
-import { useState } from 'react';
 
 const VersionModal = ({ isOpen, onClose, isDarkMode, globalSettings }) => {
     const [activeTab, setActiveTab] = useState('web'); // 'web' or 'jarvis'
     if (!isOpen) return null;
 
-    const currentLang = globalSettings?.language || 'zh-TW'; // Use globalSettings.language which matches App.jsx state
+    const currentLang = globalSettings?.language || 'zh-TW';
 
-    // Helper to format body text (handle \n string or array)
-    const renderDetails = (detailsRaw) => {
-        if (!detailsRaw) return null;
-        const text = detailsRaw[currentLang] || detailsRaw['en'];
-
-        if (Array.isArray(text)) {
-            return (
-                <ul className="space-y-1.5 mt-2">
-                    {text.map((line, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-xs opacity-80 leading-relaxed">
-                            <span className="mt-1.5 w-1 h-1 rounded-full bg-current opacity-50 flex-shrink-0"></span>
-                            <span>{line}</span>
-                        </li>
-                    ))}
-                </ul>
-            );
-        }
-
-        // Handle legacy string with \n
-        return (
-            <div className="space-y-1.5 mt-2">
-                {text.split('\n').map((line, idx) => (
-                    <div key={idx} className="flex items-start gap-2 text-xs opacity-80 leading-relaxed">
-                        {line.trim().startsWith('•') ? (
-                            <>
-                                <span className="mt-1.5 w-1 h-1 rounded-full bg-current opacity-50 flex-shrink-0"></span>
-                                <span>{line.replace('•', '').trim()}</span>
-                            </>
-                        ) : (
-                            <span>{line}</span>
-                        )}
-                    </div>
-                ))}
-            </div>
-        );
-    };
+    const history = activeTab === 'web' ? VERSION_HISTORY : JARVIS_VERSION_HISTORY;
+    const currentVer = activeTab === 'web' ? APP_VERSION : JARVIS_VERSION;
 
     return (
-        <div className="fixed inset-0 bg-black/60 z-[80] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in">
+        <div className="fixed inset-0 bg-black/70 z-[80] flex items-center justify-center p-4 backdrop-blur-xl animate-fade-in">
             <div
-                className={`w-full max-w-lg rounded-2xl flex flex-col max-h-[85vh] shadow-2xl transition-all ${isDarkMode ? 'bg-gray-900 text-white border border-gray-700' : 'bg-white text-gray-900 border border-gray-200'}`}
+                className={`w-full max-w-lg rounded-3xl flex flex-col max-h-[85vh] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] transition-all overflow-hidden ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200'}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className={`p-5 border-b flex justify-between items-center flex-shrink-0 ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}>
+                <div className={`p-6 border-b flex justify-between items-center flex-shrink-0 ${isDarkMode ? 'border-slate-800' : 'border-slate-100'}`}>
                     <div>
-                        <h2 className="text-lg font-bold flex items-center gap-2">
+                        <h2 className="text-xl font-black flex items-center gap-2 tracking-tight">
                             <GitCommit className="w-5 h-5 text-indigo-500" />
-                            版本紀錄
+                            版本紀錄 (VERSION_LOG)
                         </h2>
-                        <div className="text-xs opacity-50 mt-1 font-mono">
-                            Current: {activeTab === 'web' ? APP_VERSION : JARVIS_VERSION}
+                        <div className={`text-[10px] mt-1 font-mono font-bold tracking-wider ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>
+                            BUILD_NODE: {currentLang.toUpperCase()} | VERSION: {currentVer}
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
+                        className={`p-2 rounded-xl transition-all ${isDarkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-slate-100 text-slate-500 hover:text-slate-900'}`}
                     >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 {/* Tab Switcher */}
-                <div className={`flex border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}>
+                <div className={`flex p-1.5 gap-1.5 mx-6 mt-6 rounded-2xl ${isDarkMode ? 'bg-slate-800/50' : 'bg-slate-100'}`}>
                     <button
                         onClick={() => setActiveTab('web')}
-                        className={`flex-1 py-3 text-xs font-black tracking-widest uppercase flex items-center justify-center gap-2 transition-all border-b-2 ${activeTab === 'web'
-                            ? 'border-indigo-500 text-indigo-500 bg-indigo-500/5'
-                            : 'border-transparent opacity-40 hover:opacity-60'}`}
+                        className={`flex-1 py-3 text-[10px] font-black tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-all rounded-xl ${activeTab === 'web'
+                            ? (isDarkMode ? 'bg-slate-700 text-indigo-400 shadow-lg' : 'bg-white text-indigo-600 shadow-sm border border-slate-200/50')
+                            : 'opacity-40 hover:opacity-100'}`}
                     >
-                        <Monitor className="w-3.5 h-3.5" /> 網站系統
+                        <Monitor className="w-4 h-4" /> 網站系統
                     </button>
                     <button
                         onClick={() => setActiveTab('jarvis')}
-                        className={`flex-1 py-3 text-xs font-black tracking-widest uppercase flex items-center justify-center gap-2 transition-all border-b-2 ${activeTab === 'jarvis'
-                            ? 'border-purple-500 text-purple-500 bg-purple-500/5'
-                            : 'border-transparent opacity-40 hover:opacity-60'}`}
+                        className={`flex-1 py-3 text-[10px] font-black tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-all rounded-xl ${activeTab === 'jarvis'
+                            ? (isDarkMode ? 'bg-slate-700 text-purple-400 shadow-lg' : 'bg-white text-purple-600 shadow-sm border border-slate-200/50')
+                            : 'opacity-40 hover:opacity-100'}`}
                     >
-                        <Bot className="w-3.5 h-3.5" /> Jarvis AI
+                        <Bot className="w-4 h-4" /> Jarvis AI
                     </button>
                 </div>
 
-                {/* Sub-Header info */}
-                <div className={`px-5 py-2 text-[10px] font-bold uppercase tracking-tighter border-b ${isDarkMode ? 'border-gray-800 bg-black/20' : 'border-gray-50 bg-gray-50/50'}`}>
-                    {activeTab === 'web' ? (
-                        <span className="opacity-30">Travel Together Stable Build - {APP_VERSION}</span>
-                    ) : (
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500 font-black">Assistant Engine Beta - {JARVIS_VERSION}</span>
-                    )}
-                </div>
-
                 {/* Scrollable Content */}
-                <div className="overflow-y-auto p-5 space-y-8 custom-scrollbar">
-                    {(activeTab === 'web' ? VERSION_HISTORY : JARVIS_VERSION_HISTORY).map((ver, i) => {
+                <div className="overflow-y-auto p-6 pt-8 space-y-10 custom-scrollbar relative">
+                    {/* Background Grid Pattern - Better Visibility */}
+                    <div className={`absolute inset-0 pointer-events-none opacity-[0.15] ${isDarkMode ? 'text-indigo-500' : 'text-indigo-900/20'}`} style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+
+                    {history.map((ver, i) => {
                         const isLatest = i === 0;
                         const accentColor = activeTab === 'web' ? 'indigo' : 'purple';
-                        const accentClass = activeTab === 'web' ? 'text-indigo-500' : 'text-purple-500';
-                        const borderClass = activeTab === 'web' ? 'border-indigo-500' : 'border-purple-500';
-                        const bgClass = activeTab === 'web'
-                            ? (isDarkMode ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-indigo-50 border-indigo-200')
-                            : (isDarkMode ? 'bg-purple-500/10 border-purple-500/30' : 'bg-purple-50 border-purple-200');
+
+                        // Harmonized data access for zh-TW, zh-HK, en
+                        const description = (typeof ver.desc === 'object' ? (ver.desc[currentLang] || ver.desc?.['zh-TW'] || ver.desc['en']) : ver.desc) || ver.tag;
+                        const logLines = Array.isArray(ver.details?.[currentLang] || ver.details?.['zh-TW'] || ver.details?.['en'])
+                            ? (ver.details[currentLang] || ver.details?.['zh-TW'] || ver.details['en'])
+                            : (ver.changes || []);
 
                         return (
-                            <div key={ver.ver} className="relative pl-6 before:absolute before:left-[7px] before:top-2 before:bottom-[-32px] before:w-[2px] before:bg-gray-500/10 last:before:hidden">
-                                {/* Timeline Dot */}
-                                <div className={`absolute left-0 top-1.5 w-4 h-4 rounded-full border-[3px] z-10 ${isLatest ? `${borderClass} bg-white dark:bg-gray-900` : 'border-gray-400/30 bg-gray-200 dark:bg-gray-700'}`}></div>
+                            <div key={ver.ver} className="relative pl-10 animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
+                                {/* Timeline Line */}
+                                <div className={`absolute left-[7.5px] top-8 bottom-[-40px] w-[2px] ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'} last:hidden`} />
 
-                                {/* Version Card */}
-                                <div className={`p-4 rounded-xl border transition-all ${isLatest ? bgClass : (isDarkMode ? 'bg-gray-800/50 border-gray-700/50' : 'bg-gray-50 border-gray-100')}`}>
+                                {/* Node */}
+                                <div className={`absolute left-0 top-1 w-5 h-5 rounded-full border-2 transition-all duration-500 z-10 ${isLatest
+                                    ? `bg-${accentColor}-500 border-white shadow-[0_0_20px_rgba(99,102,241,0.6)]`
+                                    : 'border-slate-500/30 bg-slate-800/10 opacity-30'}`}>
+                                    {isLatest && <div className={`absolute inset-0 rounded-full animate-ping-slow opacity-30 bg-${accentColor}-500`} />}
+                                </div>
 
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <h3 className={`font-bold font-mono text-sm ${isLatest ? accentClass : 'opacity-90'}`}>
-                                                    {ver.ver}
-                                                </h3>
-                                                {ver.tag && (
-                                                    <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${isLatest ? (activeTab === 'web' ? 'bg-indigo-500 text-white' : 'bg-purple-500 text-white') : 'bg-gray-500/10 opacity-70'}`}>
-                                                        {ver.tag}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="text-xs opacity-50 mt-0.5 flex items-center gap-1">
-                                                <Calendar className="w-3 h-3" />
-                                                {ver.date}
-                                            </div>
+                                {/* Version Block */}
+                                <div className={`group rounded-3xl border p-6 transition-all duration-300 hover:translate-x-1 ${isLatest
+                                    ? (isDarkMode ? 'bg-slate-800/60 border-slate-700 shadow-2xl backdrop-blur-xl' : 'bg-white border-slate-200 shadow-lg')
+                                    : 'bg-transparent border-transparent opacity-60 hover:opacity-100'}`}>
+
+                                    <div className="flex flex-wrap justify-between items-start gap-4 mb-5">
+                                        <div className="flex flex-col gap-1.5">
+                                            <span className={`font-mono font-black text-xl tracking-tight leading-none ${isLatest ? (activeTab === 'web' ? 'text-indigo-400' : 'text-purple-400') : (isDarkMode ? 'text-slate-400' : 'text-slate-500')}`}>
+                                                {ver.ver}
+                                            </span>
+                                            {ver.tag && (
+                                                <span className={`text-[10px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md inline-block w-fit ${isLatest ? (activeTab === 'web' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-purple-500/20 text-purple-400') : 'bg-slate-500/10 text-slate-500'}`}>
+                                                    {ver.tag}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className={`flex items-center gap-1.5 text-[10px] font-bold opacity-80 uppercase tracking-widest font-mono ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                            <Calendar className="w-3.5 h-3.5" />
+                                            {ver.date}
                                         </div>
                                     </div>
 
-                                    {/* Description (Title) */}
-                                    <div className="font-bold text-sm mb-1">
-                                        {ver.desc?.[currentLang] || ver.desc?.['en']}
+                                    {/* System Log Title - Emoji Style */}
+                                    <div className={`font-black text-[15px] mb-6 flex items-start gap-3 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                                        <span className="text-xl flex-shrink-0 mt-[-4px]">
+                                            {activeTab === 'web' ? '🌐' : '🤖'}
+                                        </span>
+                                        <span className="leading-snug">{description}</span>
                                     </div>
 
-                                    {/* Details (Body) */}
-                                    {renderDetails(ver.details)}
-
-                                    {/* Changes (Technical) - Optional */}
-                                    {ver.changes && (
-                                        <div className={`mt-3 pt-3 border-t ${isDarkMode ? 'border-white/5' : 'border-black/5'}`}>
-                                            <div className="text-[10px] font-bold opacity-60 mb-1 uppercase tracking-wider flex items-center gap-1">
-                                                <Tag className="w-3 h-3" /> Tech Specs
+                                    {/* Detailed Logs (Terminal Dots Style) - High Contrast & Font Weight */}
+                                    <div className={`space-y-4 border-l-2 pl-6 py-1 ml-2.5 ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
+                                        {logLines.length > 0 ? logLines.map((line, idx) => (
+                                            <div key={idx} className="flex items-start gap-4 text-[13px] group/line">
+                                                <span className={`w-2 h-2 rounded-full mt-1.5 transition-all group-hover/line:scale-125 flex-shrink-0 ${isLatest ? (activeTab === 'web' ? 'bg-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.6)]' : 'bg-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.6)]') : 'bg-slate-600'}`} />
+                                                <p className={`leading-relaxed transition-opacity ${isLatest ? (isDarkMode ? 'text-slate-100 font-semibold' : 'text-slate-800 font-semibold') : (isDarkMode ? 'text-slate-400 font-medium' : 'text-slate-600 font-medium')} group-hover/line:opacity-100`}>
+                                                    {line}
+                                                </p>
                                             </div>
-                                            <ul className="space-y-1">
-                                                {ver.changes.map((c, idx) => (
-                                                    <li key={idx} className="text-[10px] font-mono opacity-50 truncate">
-                                                        - {c}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    )}
+                                        )) : (
+                                            <p className="text-[11px] opacity-50 font-mono italic tracking-tight">## NULL_POINTER_IN_HISTORY_DATA</p>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -168,29 +133,23 @@ const VersionModal = ({ isOpen, onClose, isDarkMode, globalSettings }) => {
                 </div>
 
                 {/* Footer with Dismiss Button */}
-                <div className={`p-4 border-t text-center flex-shrink-0 ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-100 bg-gray-50'} rounded-b-2xl`}>
-                    <div className="flex justify-between items-center gap-4">
-                        <span className="text-[10px] opacity-40 font-mono">Developed by {APP_AUTHOR}</span>
-                        <button
-                            onClick={() => {
-                                localStorage.setItem('app_last_seen_version', APP_VERSION);
-                                onClose();
-                            }}
-                            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}
-                        >
-                            唔再顯示 (Don't Show Again)
-                        </button>
-                    </div>
+                <div className={`p-6 border-t flex-shrink-0 flex items-center justify-between ${isDarkMode ? 'border-slate-800 bg-slate-900/80 shadow-[0_-10px_30px_rgba(0,0,0,0.3)]' : 'border-slate-100 bg-slate-50 shadow-[0_-10px_30px_rgba(0,0,0,0.03)]'}`}>
+                    <span className="text-[10px] opacity-50 font-mono font-black uppercase tracking-[0.2em]">{APP_AUTHOR} // CORE_DEV</span>
+                    <button
+                        onClick={() => {
+                            localStorage.setItem('app_last_seen_version', APP_VERSION);
+                            onClose();
+                        }}
+                        className={`px-6 py-3 rounded-2xl text-[11px] font-black tracking-widest transition-all ${isDarkMode
+                            ? 'bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 shadow-lg'
+                            : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20'}`}
+                    >
+                        唔再顯示 (DISMISS)
+                    </button>
                 </div>
             </div>
         </div>
     );
-};
-
-// Helper to parse existing version string if needed (optional utility)
-const parseAppVersion = (verStr) => {
-    // e.g. "V0.27.0-PreRelease"
-    return { build: 'Stable' };
 };
 
 export default VersionModal;

@@ -125,7 +125,7 @@ const SortableItem = ({ item, isDarkMode, onItemClick, isEditMode }) => {
 };
 
 // Droppable Column Component
-const DroppableColumn = ({ date, items, isDarkMode, onItemClick, onAddItem, isEditMode }) => {
+const DroppableColumn = ({ date, items, isDarkMode, onItemClick, onAddItem, isEditMode, city, currentLang }) => {
     const { setNodeRef } = useDroppable({
         id: date,
     });
@@ -141,7 +141,14 @@ const DroppableColumn = ({ date, items, isDarkMode, onItemClick, onAddItem, isEd
                     <span className="font-bold uppercase text-xs opacity-60">{getWeekday(date)}</span>
                     <span className="text-[10px] font-mono opacity-40 px-2 py-0.5 bg-black/5 dark:bg-white/5 rounded-full">{items.length} PROJECTS</span>
                 </div>
-                <h3 className="font-black text-lg">{formatDate(date)}</h3>
+                <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-black text-lg">{formatDate(date)}</h3>
+                    {city && (
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDarkMode ? 'bg-indigo-500/20 text-indigo-300' : 'bg-indigo-100 text-indigo-600'}`}>
+                            {getLocalizedCityName(city, currentLang)}
+                        </span>
+                    )}
+                </div>
             </div>
 
             {/* Column Body (Scrollable) */}
@@ -181,7 +188,7 @@ const DroppableColumn = ({ date, items, isDarkMode, onItemClick, onAddItem, isEd
     );
 };
 
-const KanbanView = ({ items, days, isDarkMode, onItemClick, onAddItem, onMoveItem, isEditMode }) => {
+const KanbanView = ({ items, days, isDarkMode, onItemClick, onAddItem, onMoveItem, isEditMode, trip, currentLang }) => {
     const [activeItem, setActiveItem] = useState(null);
 
     // Sensors for drag detection
@@ -285,6 +292,8 @@ const KanbanView = ({ items, days, isDarkMode, onItemClick, onAddItem, onMoveIte
                         onItemClick={onItemClick}
                         onAddItem={onAddItem}
                         isEditMode={isEditMode}
+                        city={trip.locations?.[date]?.city || trip.city}
+                        currentLang={currentLang}
                     />
                 ))}
             </div>

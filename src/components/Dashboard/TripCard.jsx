@@ -1,9 +1,11 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { MapPin as MapIcon, Calendar, Shirt, Sun, Moon, CheckCircle2, Cloud, FileText } from 'lucide-react';
 import { getLocalizedCountryName, getLocalizedCityName, formatDate, getTripSummary, glassCard, getSmartTips } from '../../utils/tripUtils';
 import { COUNTRIES_DATA, DEFAULT_BG_IMAGE } from '../../constants/appData';
 
 const TripCard = ({ trip, currentLang, onSelect, setGlobalBg, cardWeather }) => {
+    const { t } = useTranslation();
     const displayCity = getLocalizedCityName(trip.city || (trip.cities?.[0]) || '', currentLang);
     const countryList = (trip.countries || [trip.country]).slice(0, 3).map(c => getLocalizedCountryName(c, currentLang)).join(', ');
 
@@ -17,13 +19,13 @@ const TripCard = ({ trip, currentLang, onSelect, setGlobalBg, cardWeather }) => 
     let badgeClass = "";
 
     if (trip.endDate && new Date(trip.endDate) < now) {
-        countdownLabel = "已結束";
+        countdownLabel = t('trip.status.ended');
         badgeClass = "bg-gray-700/50 text-gray-400 border-gray-600";
     } else if (daysUntil > 0) {
-        countdownLabel = `倒數 ${daysUntil} 天`;
+        countdownLabel = currentLang === 'en' ? `${daysUntil} ${t('trip.status.countdown')}` : `${t('trip.status.countdown')} ${daysUntil} ${t('trip.header.days_label')}`;
         badgeClass = "bg-rose-500/20 text-rose-400 border-rose-500/30";
     } else {
-        countdownLabel = "進行中";
+        countdownLabel = t('trip.status.ongoing');
         badgeClass = "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
     }
 
@@ -38,7 +40,7 @@ const TripCard = ({ trip, currentLang, onSelect, setGlobalBg, cardWeather }) => 
     const checklist = getSmartTips(trip);
     // Logic: If we have tips, show top 1. If no tips (fully planned), show '準備就緒'.
     // TripCard fix: Use .text instead of .label to match getSmartTips output
-    const nextReminder = checklist.length > 0 ? checklist[0] : { text: '準備就緒', done: true };
+    const nextReminder = checklist.length > 0 ? checklist[0] : { text: t('trip.status.ready'), done: true };
     const remainingReminders = checklist.length > 1 ? checklist.length - 1 : 0;
     const allChecked = checklist.length === 0;
 
@@ -146,11 +148,11 @@ const TripCard = ({ trip, currentLang, onSelect, setGlobalBg, cardWeather }) => 
                     {/* Review / Stats Row */}
                     <div className="flex items-center justify-between border-t border-white/5 pt-2 opacity-60 group-hover:opacity-100 transition-opacity text-[10px] font-mono">
                         <div className="flex gap-3">
-                            <span>👥 {memberCount} 人</span>
-                            <span>📍 {itemCount} 行程</span>
+                            <span>👥 {memberCount} {t('trip.footer.people')}</span>
+                            <span>📍 {itemCount} {t('trip.footer.items')}</span>
                         </div>
                         <div className="group-hover:text-indigo-300 transition-colors">
-                            查看詳情 →
+                            {t('trip.footer.view_details')} →
                         </div>
                     </div>
                 </div>

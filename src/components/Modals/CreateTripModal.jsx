@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Search, CheckCircle, Sparkles, Loader2 } from 'lucide-react';
 import { inputClasses, getLocalizedCountryName, getLocalizedCityName, getHolidayMap } from '../../utils/tripUtils';
 import { generateTripName } from '../../services/ai-parsing';
@@ -6,6 +7,7 @@ import { COUNTRIES_DATA } from '../../constants/appData';
 import DateRangePicker from '../Shared/DateRangePicker';
 
 const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, onAddCity, newCityInput, setNewCityInput, onSubmit, isDarkMode, globalSettings, user }) => {
+    const { t } = useTranslation();
     const currentLang = globalSettings.language;
     const [countrySearch, setCountrySearch] = useState("");
     const [citySearch, setCitySearch] = useState("");
@@ -31,7 +33,7 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
                 startDate: form.startDate,
                 endDate: form.endDate
             };
-            const name = await generateTripName(tripContext, user?.uid);
+            const name = await generateTripName(tripContext, user?.uid, currentLang);
             onInputChange('name', name);
         } catch (e) {
             console.error(e);
@@ -69,8 +71,8 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
             <div className={`w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 sm:p-8 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} shadow-2xl border-[1px] border-[var(--glass-border)] transition-all transform scale-100`}>
                 <div className="flex justify-between items-start mb-8">
                     <div>
-                        <h3 className="text-2xl font-bold tracking-tight">建立新行程</h3>
-                        <p className="text-sm opacity-60 mt-1 font-medium">多選國家與城市，或輸入自訂目的地。</p>
+                        <h3 className="text-2xl font-bold tracking-tight">{t('trip.create_modal.title')}</h3>
+                        <p className="text-sm opacity-60 mt-1 font-medium">{t('trip.create_modal.subtitle')}</p>
                     </div>
                     <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-500/10 transition-colors">
                         <X className="w-6 h-6 opacity-70" />
@@ -79,19 +81,19 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2 space-y-2">
-                        <label className="text-xs font-bold opacity-70 uppercase tracking-wider ml-1">行程名稱</label>
+                        <label className="text-xs font-bold opacity-70 uppercase tracking-wider ml-1">{t('trip.create_modal.trip_name')}</label>
                         <div className="relative">
                             <input
                                 value={form.name}
                                 onChange={e => onInputChange('name', e.target.value)}
-                                placeholder="如：歐洲文化深度遊"
+                                placeholder={t('trip.create_modal.placeholder_name')}
                                 className={inputClasses(isDarkMode) + " pr-10"}
                             />
                             <button
                                 onClick={handleAiNameGen}
                                 disabled={generatingName || (form.cities.length === 0 && form.countries.length === 0)}
                                 className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all ${generatingName ? 'text-indigo-400 cursor-wait' : 'text-indigo-500 hover:bg-indigo-500/10 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed'}`}
-                                title="Jarvis 自動命名 (需先選擇目的地)"
+                                title={t('trip.create_modal.jarvis_name_tip')}
                             >
                                 {generatingName ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                             </button>
@@ -100,13 +102,13 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
 
                     {/* Country Search */}
                     <div className="space-y-2">
-                        <label className="text-xs font-bold opacity-70 uppercase tracking-wider ml-1">目的地國家</label>
+                        <label className="text-xs font-bold opacity-70 uppercase tracking-wider ml-1">{t('trip.create_modal.dest_country')}</label>
                         <div className="relative group">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40 group-focus-within:opacity-100 group-focus-within:text-indigo-500 transition-all" />
                             <input
                                 value={countrySearch}
                                 onChange={e => setCountrySearch(e.target.value)}
-                                placeholder="搜尋國家..."
+                                placeholder={t('trip.create_modal.placeholder_country')}
                                 className={inputClasses(isDarkMode) + " pl-10"}
                             />
                         </div>
@@ -143,13 +145,13 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
 
                     {/* City Search */}
                     <div className="space-y-2">
-                        <label className="text-xs font-bold opacity-70 uppercase tracking-wider ml-1">主要城市</label>
+                        <label className="text-xs font-bold opacity-70 uppercase tracking-wider ml-1">{t('trip.create_modal.main_city')}</label>
                         <div className="relative group">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40 group-focus-within:opacity-100 group-focus-within:text-indigo-500 transition-all" />
                             <input
                                 value={citySearch}
                                 onChange={e => setCitySearch(e.target.value)}
-                                placeholder="搜尋城市..."
+                                placeholder={t('trip.create_modal.placeholder_city')}
                                 className={inputClasses(isDarkMode) + " pl-10"}
                             />
                             {/* Add Custom City Button (Inline) */}
@@ -158,7 +160,7 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
                                     onClick={() => { onAddCity(citySearch); setCitySearch(""); }}
                                     className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1.5 bg-indigo-500 text-white text-xs rounded-md shadow-sm hover:bg-indigo-600 transition-all"
                                 >
-                                    + 加入 "{citySearch}"
+                                    + {t('trip.create_modal.add_custom')} "{citySearch}"
                                 </button>
                             )}
                         </div>
@@ -190,13 +192,13 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
                                     </div>
                                 );
                             }) : (
-                                <div className="p-4 text-center text-xs opacity-40">無相關城市，請輸入並點擊「加入」</div>
+                                <div className="p-4 text-center text-xs opacity-40">{t('trip.create_modal.no_cities')}</div>
                             )}
                         </div>
                     </div>
 
                     <div className="space-y-2 md:col-span-2">
-                        <label className="block text-xs font-bold opacity-70 uppercase tracking-wider ml-1">行程日期</label>
+                        <label className="block text-xs font-bold opacity-70 uppercase tracking-wider ml-1">{t('trip.create_modal.trip_dates')}</label>
                         <DateRangePicker
                             startDate={form.startDate}
                             endDate={form.endDate}
@@ -205,15 +207,15 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
                                 onInputChange('endDate', endDate);
                             }}
                             isDarkMode={isDarkMode}
-                            placeholder="選擇開始與結束日期"
+                            placeholder={t('trip.create_modal.placeholder_dates')}
                             holidays={holidays}
                         />
                     </div>
                 </div>
 
                 <div className="flex gap-4 mt-10 pt-6 border-t border-gray-500/10">
-                    <button onClick={onClose} className="flex-1 px-4 py-3.5 rounded-xl border border-gray-500/30 font-bold opacity-70 hover:opacity-100 hover:bg-gray-500/5 transition-all">取消</button>
-                    <button onClick={onSubmit} className="flex-1 px-4 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold hover:shadow-lg hover:shadow-indigo-500/30 transition-all transform hover:scale-[1.02] active:scale-95">建立行程 🚀</button>
+                    <button onClick={onClose} className="flex-1 px-4 py-3.5 rounded-xl border border-gray-500/30 font-bold opacity-70 hover:opacity-100 hover:bg-gray-500/5 transition-all">{t('common.cancel')}</button>
+                    <button onClick={onSubmit} className="flex-1 px-4 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold hover:shadow-lg hover:shadow-indigo-500/30 transition-all transform hover:scale-[1.02] active:scale-95">{t('trip.create_modal.create_btn')}</button>
                 </div>
             </div>
         </div>

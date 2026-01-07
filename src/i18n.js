@@ -56,6 +56,37 @@ const resources = {
                     "redo": "Redo",
                     "edit_settings": "Edit Settings",
                     "open_chat": "Open Chat"
+                },
+                "status": {
+                    "ended": "Ended",
+                    "ongoing": "Ongoing",
+                    "countdown": "Days to go",
+                    "ready": "Ready"
+                },
+                "footer": {
+                    "people": "People",
+                    "items": "Items",
+                    "view_details": "Details"
+                },
+                "location": {
+                    "select_country": "Select Country",
+                    "multi_city": "Multi-City"
+                },
+                "create_modal": {
+                    "title": "Create New Trip",
+                    "subtitle": "Select destinations or enter custom ones.",
+                    "trip_name": "Trip Name",
+                    "placeholder_name": "e.g. Europe Cultural Tour",
+                    "jarvis_name_tip": "Jarvis Auto Naming (requires destination)",
+                    "dest_country": "Destination Country",
+                    "placeholder_country": "Search countries...",
+                    "main_city": "Main City",
+                    "placeholder_city": "Search cities...",
+                    "add_custom": "Add",
+                    "no_cities": "No cities found, type and click 'Add'",
+                    "trip_dates": "Trip Dates",
+                    "placeholder_dates": "Select start and end dates",
+                    "create_btn": "Create Trip 🚀"
                 }
             }
         }
@@ -113,6 +144,37 @@ const resources = {
                     "redo": "重做",
                     "edit_settings": "編輯行程設定",
                     "open_chat": "開啟行程對話"
+                },
+                "status": {
+                    "ended": "已結束",
+                    "ongoing": "進行中",
+                    "countdown": "倒數",
+                    "ready": "準備就緒"
+                },
+                "footer": {
+                    "people": "人",
+                    "items": "行程",
+                    "view_details": "查看詳情"
+                },
+                "location": {
+                    "select_country": "選擇國家",
+                    "multi_city": "跨城市 (Multi-City)"
+                },
+                "create_modal": {
+                    "title": "建立新行程",
+                    "subtitle": "多選國家與城市，或輸入自訂目的地。",
+                    "trip_name": "行程名稱",
+                    "placeholder_name": "如：歐洲文化深度遊",
+                    "jarvis_name_tip": "Jarvis 自動命名 (需先選擇目的地)",
+                    "dest_country": "目的地國家",
+                    "placeholder_country": "搜尋國家...",
+                    "main_city": "主要城市",
+                    "placeholder_city": "搜尋城市...",
+                    "add_custom": "加入",
+                    "no_cities": "無相關城市，請輸入並點擊「加入」",
+                    "trip_dates": "行程日期",
+                    "placeholder_dates": "選擇開始與結束日期",
+                    "create_btn": "建立行程 🚀"
                 }
             }
         }
@@ -170,6 +232,37 @@ const resources = {
                     "redo": "重做",
                     "edit_settings": "改行程設定",
                     "open_chat": "傾兩句"
+                },
+                "status": {
+                    "ended": "完咗喇",
+                    "ongoing": "玩緊呀",
+                    "countdown": "仲有",
+                    "ready": "Ready 喇"
+                },
+                "footer": {
+                    "people": "人",
+                    "items": "行程",
+                    "view_details": "睇吓細節"
+                },
+                "location": {
+                    "select_country": "揀國家",
+                    "multi_city": "跨城市 (Multi-City)"
+                },
+                "create_modal": {
+                    "title": "開個新行程",
+                    "subtitle": "揀返目的地或者自己輸入都得。",
+                    "trip_name": "行程名",
+                    "placeholder_name": "例如：歐遊深度遊",
+                    "jarvis_name_tip": "Jarvis 自動改名 (要揀咗目的地先)",
+                    "dest_country": "去邊個國家",
+                    "placeholder_country": "搵吓國家...",
+                    "main_city": "主要城市",
+                    "placeholder_city": "搵吓城市...",
+                    "add_custom": "加埋",
+                    "no_cities": "搵唔到城市，自己輸入再撳「加埋」",
+                    "trip_dates": "行程日期",
+                    "placeholder_dates": "揀返開始同結束日期",
+                    "create_btn": "開波 🚀"
                 }
             }
         }

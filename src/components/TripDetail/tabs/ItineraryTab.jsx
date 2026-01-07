@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import SearchFilterBar from '../../Shared/SearchFilterBar';
 import EmptyState from '../../Shared/EmptyState';
@@ -17,7 +18,7 @@ import TimelineView from '../views/TimelineView';
 import TransportCard from '../cards/TransportCard';
 import StandardCard from '../cards/StandardCard';
 import TransportConnector from '../cards/TransportConnector';
-import { formatDuration, getSmartItemImage, getLocalizedCityName } from '../../../utils/tripUtils';
+import { formatDuration, getSmartItemImage, getLocalizedCityName, getLocalizedCountryName } from '../../../utils/tripUtils';
 import { formatTime, parseTime, detectTimeConflicts } from '../../../utils/timeUtils';
 import ItemDetailModal from '../../Modals/ItemDetailModal';
 
@@ -104,6 +105,7 @@ const ItineraryTab = ({
     canUndo = false,
     canRedo = false
 }) => {
+    const { t } = useTranslation();
     // Local UI State
     const [mapScope, setMapScope] = useState('daily'); // 'daily' or 'full'
     const [isEditMode, setIsEditMode] = useState(false);
@@ -178,7 +180,16 @@ const ItineraryTab = ({
     const handleOpenLocationModal = () => {
         const currentLoc = trip.locations?.[currentDisplayDate] || { country: trip.country || "", city: trip.city || "" };
         const hasMulti = currentLoc.startCity || currentLoc.endCity;
-        setLocForm({ ...currentLoc, startCity: currentLoc.startCity || "", endCity: currentLoc.endCity || "" });
+
+        // Localize for display in the modal text fields
+        const localizedLoc = {
+            ...currentLoc,
+            city: getLocalizedCityName(currentLoc.city, currentLang),
+            startCity: currentLoc.startCity ? getLocalizedCityName(currentLoc.startCity, currentLang) : "",
+            endCity: currentLoc.endCity ? getLocalizedCityName(currentLoc.endCity, currentLang) : ""
+        };
+
+        setLocForm({ ...localizedLoc, startCity: localizedLoc.startCity || "", endCity: localizedLoc.endCity || "" });
         setIsMultiCity(!!hasMulti);
         setIsLocationModalOpen(true);
     };
@@ -390,9 +401,9 @@ const ItineraryTab = ({
         .sort((a, b) => {
             // Helper to get time value in minutes
             const getTimeVal = (item) => {
-                const t = item.details?.time || item.time;
-                if (!t) return 9999; // Items without time go to end
-                const [h, m] = t.split(':').map(Number);
+                const timeStr = item.details?.time || item.time;
+                if (!timeStr) return 9999; // Items without time go to end
+                const [h, m] = timeStr.split(':').map(Number);
                 if (isNaN(h) || isNaN(m)) return 9999;
 
                 let mins = h * 60 + m;
@@ -429,7 +440,7 @@ const ItineraryTab = ({
     const allLocations = mapScope === 'daily'
         ? mergedItems.map(item => ({ date: currentDisplayDate, ...item })).filter(item => item.details?.location)
         : days.flatMap(d => (trip.itinerary?.[d] || []).map(item => ({ date: d, ...item }))).filter(item => item.details?.location);
-    const mapQuery = allLocations.length ? allLocations.map(item => item.details.location).join(' via ') : `${trip.city} ${trip.country} `;
+    const mapQuery = allLocations.length ? allLocations.map(item => item.details.location).join(' via ') : `${getLocalizedCityName(trip.city, currentLang)} ${getLocalizedCountryName(trip.country, currentLang)} `;
 
     // Types mapping
     // V1.1 Phase 5: Hotel Transport Smart Shortcuts
@@ -541,7 +552,7 @@ const ItineraryTab = ({
                 onClose={() => setActiveDetailItem(null)}
                 item={activeDetailItem}
                 isDarkMode={isDarkMode}
-                city={trip.city}
+                city={getLocalizedCityName(trip.city, currentLang)}
                 onEdit={canEdit ? onEditItem : null}
                 onDelete={canEdit ? onDeleteItem : null}
             />
@@ -558,8 +569,8 @@ const ItineraryTab = ({
                                     value={locForm.country}
                                     onChange={e => setLocForm({ ...locForm, country: e.target.value })}
                                 >
-                                    <option value="">選擇國家</option>
-                                    {Object.keys(COUNTRIES_DATA).sort().map(c => <option key={c} value={c}>{c}</option>)}
+                                    <option value="">{t('trip.location.select_country') || '選擇國家'}</option>
+                                    {Object.keys(COUNTRIES_DATA).sort().map(c => <option key={c} value={c}>{getLocalizedCountryName(c, currentLang)}</option>)}
                                 </select>
                             </div>
                             <div>
@@ -573,7 +584,7 @@ const ItineraryTab = ({
                                     >
                                         <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${isMultiCity ? 'translate-x-5' : ''}`}></div>
                                     </button>
-                                    <span className="text-xs font-bold opacity-70">跨城市 (Multi-City)</span>
+                                    <span className="text-xs font-bold opacity-70">{t('trip.location.multi_city') || '跨城市 (Multi-City)'}</span>
                                     {isMultiCity && (
                                         <button
                                             onClick={() => {
@@ -630,12 +641,13 @@ const ItineraryTab = ({
                                                     <button
                                                         key={c}
                                                         onClick={() => {
-                                                            if (!locForm.startCity) setLocForm({ ...locForm, startCity: c });
-                                                            else if (!locForm.endCity) setLocForm({ ...locForm, endCity: c });
+                                                            const localizedName = getLocalizedCityName(c, currentLang);
+                                                            if (!locForm.startCity) setLocForm({ ...locForm, startCity: localizedName });
+                                                            else if (!locForm.endCity) setLocForm({ ...locForm, endCity: localizedName });
                                                         }}
-                                                        className={`text-xs px-2 py-1 rounded border transition-colors ${(locForm.startCity === c || locForm.endCity === c) ? 'bg-indigo-500 text-white border-indigo-500' : 'opacity-60 hover:opacity-100'}`}
+                                                        className={`text-xs px-2 py-1 rounded border transition-all ${(locForm.startCity === getLocalizedCityName(c, currentLang) || locForm.endCity === getLocalizedCityName(c, currentLang)) ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg' : (isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-600')} hover:opacity-100 transition-all`}
                                                     >
-                                                        {c}
+                                                        {getLocalizedCityName(c, currentLang)}
                                                     </button>
                                                 ))}
                                             </div>
@@ -654,10 +666,10 @@ const ItineraryTab = ({
                                                 {COUNTRIES_DATA[locForm.country].cities.map(c => (
                                                     <button
                                                         key={c}
-                                                        onClick={() => setLocForm({ ...locForm, city: c })}
-                                                        className={`text-xs px-2 py-1 rounded border transition-colors ${locForm.city === c ? 'bg-indigo-500 text-white border-indigo-500' : 'opacity-60 hover:opacity-100'}`}
+                                                        onClick={() => setLocForm({ ...locForm, city: getLocalizedCityName(c, currentLang) })}
+                                                        className={`text-xs px-2 py-1 rounded border transition-all ${locForm.city === getLocalizedCityName(c, currentLang) ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg' : (isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-600')} hover:opacity-100 transition-all`}
                                                     >
-                                                        {c}
+                                                        {getLocalizedCityName(c, currentLang)}
                                                     </button>
                                                 ))}
                                             </div>
@@ -752,18 +764,18 @@ const ItineraryTab = ({
                                 <span className="text-indigo-500">📅</span>
                                 <span>{formatDate(currentDisplayDate)}</span>
                                 <span className={`text-xs px-2 py-0.5 rounded-full ${isDarkMode ? 'bg-indigo-500/20 text-indigo-300' : 'bg-indigo-100 text-indigo-600'}`}>
-                                    {trip.locations?.[currentDisplayDate]?.city || trip.city}
+                                    {getLocalizedCityName(trip.locations?.[currentDisplayDate]?.city || trip.city, currentLang)}
                                 </span>
                             </button>
 
                             {/* V1.2.6 View Switcher (Mobile Polished) */}
                             <div className="flex items-center gap-1 p-1 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-x-auto scrollbar-hide w-full sm:w-auto max-w-full">
                                 {[
-                                    { id: 'list', icon: List, label: { en: 'List', zh: '列表', 'zh-HK': '列表' } },
-                                    { id: 'board', icon: Columns, label: { en: 'Board', zh: '看板', 'zh-HK': '瀑布流' } },
-                                    { id: 'kanban', icon: KanbanSquare, label: { en: 'Kanban', zh: '進度', 'zh-HK': '進度板' } },
-                                    { id: 'timeline', icon: MonitorPlay, label: { en: 'Timeline', zh: '時間軸', 'zh-HK': '時間軸' } },
-                                    { id: 'map', icon: MapIcon, label: { en: 'Map', zh: '地圖', 'zh-HK': '地圖' } }
+                                    { id: 'list', icon: List, label: 'list' },
+                                    { id: 'board', icon: Columns, label: 'board' },
+                                    { id: 'kanban', icon: KanbanSquare, label: 'kanban' },
+                                    { id: 'timeline', icon: MonitorPlay, label: 'timeline' },
+                                    { id: 'map', icon: MapIcon, label: 'map' }
                                 ].map(view => (
                                     <button
                                         key={view.id}
@@ -772,10 +784,10 @@ const ItineraryTab = ({
                                             ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm z-10 font-bold'
                                             : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5'
                                             } ${isEditMode && viewMode !== view.id ? 'opacity-40 cursor-not-allowed grayscale' : ''}`}
-                                        title={isEditMode ? "請先完成編輯" : (view.label[currentLang] || view.label['en'])}
+                                        title={isEditMode ? t('trip.actions.finish_edit_first') : t(`trip.views.${view.label}`)}
                                     >
                                         <view.icon className="w-4 h-4" />
-                                        <span className="text-[10px] uppercase font-bold inline">{view.label[currentLang] || view.label['en']}</span>
+                                        <span className="text-[10px] uppercase font-bold inline">{t(`trip.views.${view.label}`)}</span>
                                     </button>
                                 ))}
                             </div>
@@ -915,7 +927,7 @@ const ItineraryTab = ({
                                         <div>
                                             <div className="font-bold opacity-70 mb-1">💡 貼士</div>
                                             <ul className="list-disc list-inside space-y-1 opacity-80">
-                                                {jarvisTips.tips.map((t, i) => <li key={i}>{t}</li>)}
+                                                {jarvisTips.tips.map((tip, i) => <li key={i}>{tip}</li>)}
                                             </ul>
                                         </div>
                                     )}
@@ -931,9 +943,9 @@ const ItineraryTab = ({
                                         <div>
                                             <div className="font-bold opacity-70 mb-1">🚇 交通推介</div>
                                             <div className="flex flex-wrap gap-2">
-                                                {jarvisTips.transport.map((t, i) => (
-                                                    <span key={i} className={`px-2 py-1 rounded-full text-[10px] font-bold ${t.recommended ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-gray-500/10 border border-gray-500/20'}`}>
-                                                        {t.name} {t.price && `(${t.price})`}
+                                                {jarvisTips.transport.map((trans, i) => (
+                                                    <span key={i} className={`px-2 py-1 rounded-full text-[10px] font-bold ${trans.recommended ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-gray-500/10 border border-gray-500/20'}`}>
+                                                        {trans.name} {trans.price && `(${trans.price})`}
                                                     </span>
                                                 ))}
                                             </div>
@@ -965,15 +977,35 @@ const ItineraryTab = ({
                                         <div className="text-[10px] opacity-50 font-bold mb-1">預算 Budget</div>
                                         {(() => {
                                             // V1.2.4 Fix: Smart currency detection based on country
-                                            const countryCurrencyMap = { '日本': 'JPY', 'Japan': 'JPY', '台灣': 'TWD', 'Taiwan': 'TWD', '韓國': 'KRW', 'Korea': 'KRW', '中國': 'CNY', 'China': 'CNY', '香港': 'HKD', 'Hong Kong': 'HKD', '美國': 'USD', 'USA': 'USD', '英國': 'GBP', 'UK': 'GBP' };
-                                            const localCurrency = trip?.currency || countryCurrencyMap[trip?.country] || 'HKD';
-                                            const hkdToLocal = { JPY: 18.5, USD: 0.13, EUR: 0.12, GBP: 0.10, CNY: 0.92, TWD: 4.0, KRW: 166, HKD: 1, THB: 4.5, SGD: 0.17, MYR: 0.58 };
-                                            let totalLocal = 0;
-                                            filteredItems.forEach(item => totalLocal += (item.cost || 0));
+                                            const countryCurrencyMap = { '日本': 'JPY', 'Japan': 'JPY', '台灣': 'TWD', 'Taiwan': 'TWD', '韓國': 'KRW', 'Korea': 'KRW', '中國': 'CNY', 'China': 'CNY', '香港': 'HKD', 'Hong Kong': 'HKD', '美國': 'USD', 'USA': 'USD', '英國': 'GBP', 'UK': 'GBP', 'Thailand': 'THB', '泰國': 'THB' };
+
+                                            // Clean country name and lookup currency
+                                            const cleanCountry = (trip?.country || "").replace(/\([^)]+\)/, "").trim();
+                                            const localCurrency = trip?.currency || countryCurrencyMap[cleanCountry] || countryCurrencyMap[trip?.country] || 'HKD';
+
+                                            // Realistic exchange rates (Reference: 1 HKD = ...)
+                                            const hkdToLocal = { JPY: 19.8, USD: 0.128, EUR: 0.12, GBP: 0.10, CNY: 0.92, TWD: 4.15, KRW: 170, HKD: 1, THB: 4.5, SGD: 0.17, MYR: 0.58 };
+
+                                            let totalInLocal = 0;
+                                            filteredItems.forEach(item => {
+                                                const cost = item.cost || 0;
+                                                const itemCurrency = item.currency || localCurrency;
+
+                                                if (itemCurrency === localCurrency) {
+                                                    totalInLocal += cost;
+                                                } else {
+                                                    // Convert item currency to HKD first, then to local
+                                                    const costInHKD = cost / (hkdToLocal[itemCurrency] || 1);
+                                                    totalInLocal += costInHKD * (hkdToLocal[localCurrency] || 1);
+                                                }
+                                            });
+
                                             return (
                                                 <div>
-                                                    <div className="text-sm font-black text-indigo-500">{localCurrency} {Math.round(totalLocal).toLocaleString()}</div>
-                                                    <div className="text-[10px] opacity-40">≈ HKD {Math.round(totalLocal / (hkdToLocal[localCurrency] || 18.5)).toLocaleString()}</div>
+                                                    <div className="text-sm font-black text-indigo-500">{localCurrency} {Math.round(totalInLocal).toLocaleString()}</div>
+                                                    {localCurrency !== 'HKD' && (
+                                                        <div className="text-[10px] opacity-40">≈ HKD {Math.round(totalInLocal / (hkdToLocal[localCurrency] || 18.5)).toLocaleString()}</div>
+                                                    )}
                                                 </div>
                                             );
                                         })()}
@@ -1375,6 +1407,8 @@ const ItineraryTab = ({
                                 onAddItem={onAddItem}
                                 onMoveItem={onMoveItem}
                                 isEditMode={isEditMode}
+                                trip={trip}
+                                currentLang={currentLang}
                             />
                         );
                     })()}
