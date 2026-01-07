@@ -1,6 +1,6 @@
 import React, { useMemo, useState, forwardRef } from 'react';
 import { MapPin, Clock, CalendarDays, Plus, GripVertical } from 'lucide-react';
-import { getWeekday, formatDate } from '../../../utils/tripUtils';
+import { getWeekday, formatDate, getLocalizedCityName } from '../../../utils/tripUtils';
 import {
     DndContext,
     DragOverlay,
