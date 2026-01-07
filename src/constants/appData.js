@@ -5,12 +5,33 @@ import {
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.4";
-export const APP_VERSION_TAG = "Intelligent Onboarding & PWA";
-export const APP_LAST_UPDATE = '2025-12-24';
-export const JARVIS_VERSION = "V0.0.1-Beta";
+export const APP_VERSION = "V1.2.5";
+export const APP_VERSION_TAG = "Architecture & Stability";
+export const APP_LAST_UPDATE = '2026-01-07';
+export const JARVIS_VERSION = "V0.0.2-Beta";
 
 export const JARVIS_VERSION_HISTORY = [
+    {
+        ver: "V0.0.2-Beta",
+        date: "2026-01-07",
+        tag: "Stability Patch",
+        desc: {
+            "zh-TW": "穩定性更新與小錯誤修復",
+            "en": "Stability improvements and minor bug fixes"
+        },
+        details: {
+            "zh-TW": [
+                "🔧 穩定性: 修正了一些 UI 顯示問題",
+                "⚡ 效能: 優化了 AI 回應加載效能",
+                "🐛 Bug Fix: 修復了部分邊緣情況的錯誤"
+            ],
+            "en": [
+                "🔧 Stability: Fixed minor UI display issues",
+                "⚡ Performance: Optimized AI response loading",
+                "🐛 Bug Fix: Resolved edge case errors"
+            ]
+        }
+    },
     {
         ver: "V0.0.1-Beta",
         date: "2025-12-23",
@@ -37,6 +58,20 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.2.5",
+        date: "2026-01-07",
+        tag: "Architecture & Stability",
+        changes: [
+            "🏗️ Layout Refactor: TripDetailContent 拆分為 TripHeader / TripTabs / TripModals 組件",
+            "📐 Z-Index 標準化: tailwind.config.js 新增語義化 z-index scale",
+            "👤 帳戶管理: 新增個人資料編輯、設定同步 (跨裝置)、刪除帳戶功能",
+            "🌐 離線偵測: 離線時自動提示用戶，防止同步失敗",
+            "📊 AI 用量修復: 功能使用明細現已正確顯示各項 AI 功能的使用次數",
+            "🔄 Admin 每日重置: API Monitor 計數器現會按日期自動重置",
+            "🎨 UI 一致性: 設定頁面所有分頁現已統一顯示圖標"
+        ]
+    },
     {
         ver: "V1.2.4",
         date: "2025-12-24",

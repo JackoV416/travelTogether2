@@ -533,18 +533,21 @@ const App = () => {
         // Future proofing: If we add temp trips, delete them here.
     };
 
-    // V1.0.3: Auto-show Version Modal when version changes
+    // V1.0.3: Auto-show Version Modal when version changes (App or Jarvis)
     useEffect(() => {
         const lastSeenVersion = localStorage.getItem('app_last_seen_version');
-        const isNewVersion = lastSeenVersion !== APP_VERSION;
+        const lastSeenJarvisVersion = localStorage.getItem('jarvis_last_seen_version');
+        const isNewAppVersion = lastSeenVersion !== APP_VERSION;
+        const isNewJarvisVersion = lastSeenJarvisVersion !== JARVIS_VERSION;
 
-        if (isNewVersion && user) {
+        if ((isNewAppVersion || isNewJarvisVersion) && user) {
             // Delay to ensure onboarding closes first if applicable
             const timer = setTimeout(() => {
                 // Only show if onboarding is already done (or returning users)
                 if (localStorage.getItem('hasSeenOnboarding')) {
                     setIsVersionOpen(true);
                     localStorage.setItem('app_last_seen_version', APP_VERSION);
+                    localStorage.setItem('jarvis_last_seen_version', JARVIS_VERSION);
                 }
             }, 2500); // Slightly longer delay to accommodate onboarding
             return () => clearTimeout(timer);
@@ -555,12 +558,14 @@ const App = () => {
     const handleOnboardingComplete = () => {
         localStorage.setItem('hasSeenOnboarding', 'true');
         setIsOnboardingOpen(false);
-        // After onboarding, check if version modal should show
+        // After onboarding, check if version modal should show (App or Jarvis)
         const lastSeenVersion = localStorage.getItem('app_last_seen_version');
-        if (lastSeenVersion !== APP_VERSION) {
+        const lastSeenJarvisVersion = localStorage.getItem('jarvis_last_seen_version');
+        if (lastSeenVersion !== APP_VERSION || lastSeenJarvisVersion !== JARVIS_VERSION) {
             setTimeout(() => {
                 setIsVersionOpen(true);
                 localStorage.setItem('app_last_seen_version', APP_VERSION);
+                localStorage.setItem('jarvis_last_seen_version', JARVIS_VERSION);
             }, 500);
         }
     };

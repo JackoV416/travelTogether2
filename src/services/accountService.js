@@ -1,0 +1,109 @@
+/**
+ * 👤 Account Service (V1.2.5)
+ * User profile management and account deletion
+ */
+import { doc, setDoc, deleteDoc, getDoc, collection, getDocs, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { deleteUser, reauthenticateWithCredential, EmailAuthProvider, updateProfile } from 'firebase/auth';
+import { auth, db } from '../firebase';
+
+/**
+ * 📝 Update user profile (display name, avatar)
+ * @param {Object} user - Firebase auth user
+ * @param {Object} data - { displayName?: string, photoURL?: string }
+ */
+export async function updateUserProfile(user, data) {
+    if (!user) throw new Error('User not authenticated');
+
+    // 1. Update Firebase Auth Profile
+    await updateProfile(user, {
+        displayName: data.displayName ?? user.displayName,
+        photoURL: data.photoURL ?? user.photoURL
+    });
+
+    // 2. Update Firestore User Doc
+    const userRef = doc(db, 'users', user.uid);
+    await setDoc(userRef, {
+        displayName: data.displayName ?? user.displayName,
+        photoURL: data.photoURL ?? user.photoURL,
+        email: user.email,
+        lastUpdated: serverTimestamp()
+    }, { merge: true });
+
+    return { success: true };
+}
+
+/**
+ * 🗑️ Delete user account and all associated data
+ * @param {Object} user - Firebase auth user
+ * @param {string} password - User's password for re-authentication
+ */
+export async function deleteUserAccount(user, password) {
+    if (!user) throw new Error('User not authenticated');
+
+    // 1. Re-authenticate user (required for account deletion)
+    const credential = EmailAuthProvider.credential(user.email, password);
+    await reauthenticateWithCredential(user, credential);
+
+    // 2. Delete user data from Firestore
+    const batch = writeBatch(db);
+
+    // Delete user doc
+    batch.delete(doc(db, 'users', user.uid));
+
+    // Delete user's usage/quota data
+    const usageRef = doc(db, 'users', user.uid, 'usage', 'ai_quota');
+    batch.delete(usageRef);
+
+    // Delete user's settings
+    const settingsRef = doc(db, 'users', user.uid, 'settings', 'preferences');
+    batch.delete(settingsRef);
+
+    await batch.commit();
+
+    // 3. Delete Firebase Auth account
+    await deleteUser(user);
+
+    // 4. Clear local storage
+    localStorage.clear();
+
+    return { success: true, message: '帳戶已永久刪除' };
+}
+
+/**
+ * 💾 Save user settings to Firestore (for cross-device sync)
+ * @param {string} uid - User ID
+ * @param {Object} settings - Settings object
+ */
+export async function saveUserSettings(uid, settings) {
+    if (!uid) throw new Error('User not authenticated');
+
+    const settingsRef = doc(db, 'users', uid, 'settings', 'preferences');
+    await setDoc(settingsRef, {
+        ...settings,
+        lastUpdated: serverTimestamp()
+    }, { merge: true });
+
+    return { success: true };
+}
+
+/**
+ * 📥 Load user settings from Firestore
+ * @param {string} uid - User ID
+ * @returns {Object|null} Settings object or null if not found
+ */
+export async function loadUserSettings(uid) {
+    if (!uid) return null;
+
+    try {
+        const settingsRef = doc(db, 'users', uid, 'settings', 'preferences');
+        const snap = await getDoc(settingsRef);
+
+        if (snap.exists()) {
+            return snap.data();
+        }
+        return null;
+    } catch (error) {
+        console.error('[Account] Failed to load settings:', error);
+        return null;
+    }
+}

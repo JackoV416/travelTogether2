@@ -64,6 +64,7 @@ export async function getUserQuotaStatus(uid) {
             total: DEFAULT_DAILY_LIMIT,
             remaining,
             customUsed: data.customCount || 0,
+            features: data.features || {}, // V1.2.5: Return feature breakdown
             allowed: used < DEFAULT_DAILY_LIMIT,
             resetTime: getNextMidnight()
         };
@@ -234,12 +235,41 @@ export async function resetUserQuota(uid) {
 
 /**
  * 🕵️‍♂️ Get System Analytics (Admin Only)
+ * V1.2.5: Added daily reset based on date field
  */
 export async function getSystemAnalytics() {
+    const today = getTodayKey();
+
     try {
         const docRef = doc(db, 'system', 'ai_analytics');
         const snap = await getDoc(docRef);
-        return snap.exists() ? snap.data() : { keys: {}, total_calls: 0 };
+
+        if (!snap.exists()) {
+            return { keys: {}, total_calls: 0, type_system: 0, type_custom: 0, date: today };
+        }
+
+        const data = snap.data();
+
+        // V1.2.5: Check if it's a new day - reset counters
+        if (data.date !== today) {
+            // Reset analytics for new day
+            const resetData = {
+                date: today,
+                total_calls: 0,
+                type_system: 0,
+                type_custom: 0,
+                lastUpdated: serverTimestamp()
+            };
+
+            // Fire and forget - don't block UI
+            setDoc(docRef, resetData, { merge: true }).catch(err =>
+                console.error('[Analytics] Failed to reset daily stats:', err)
+            );
+
+            return resetData;
+        }
+
+        return data;
     } catch (error) {
         console.error("Failed to get analytics", error);
         return null;

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, BrainCircuit, Lock, Sparkles, Eye, EyeOff, RotateCcw, GripVertical, Server, ShieldCheck, Activity } from 'lucide-react';
+import { ArrowLeft, BrainCircuit, Lock, Sparkles, Eye, EyeOff, RotateCcw, GripVertical, Server, ShieldCheck, Activity, User, Trash2, WifiOff, Save, AlertTriangle, Settings, LayoutGrid } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { CURRENCIES, TIMEZONES, LANGUAGE_OPTIONS, APP_VERSION, JARVIS_VERSION } from '../../constants/appData';
 import { inputClasses } from '../../utils/tripUtils';
-import { getUserQuotaStatus, getSystemAnalytics } from '../../services/ai-quota'; // V1.2.3 Async
-import JarvisLogo from '../Shared/JarvisLogo'; // V1.2.3 Global Logo
+import { getUserQuotaStatus, getSystemAnalytics } from '../../services/ai-quota';
+import { updateUserProfile, deleteUserAccount, saveUserSettings, loadUserSettings } from '../../services/accountService';
+import { isOnline, subscribeNetworkStatus } from '../../utils/networkUtils';
+import JarvisLogo from '../Shared/JarvisLogo';
 
 // Default Widget Configuration
 const DEFAULT_WIDGETS = [
@@ -138,9 +140,9 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                 <div className="md:col-span-1 space-y-2">
                     <button
                         onClick={() => setActiveTab('general')}
-                        className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'general' ? (isDarkMode ? 'bg-gray-800 text-white shadow-lg' : 'bg-white text-gray-900 shadow-lg') : 'opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
+                        className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'general' ? (isDarkMode ? 'bg-gray-800 text-white shadow-lg' : 'bg-white text-gray-900 shadow-lg') : 'opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
                     >
-                        一般設定
+                        <Settings className="w-4 h-4" /> 一般設定
                     </button>
                     <button
                         onClick={() => setActiveTab('intelligence')}
@@ -150,9 +152,15 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                     </button>
                     <button
                         onClick={() => setActiveTab('info')}
-                        className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'info' ? (isDarkMode ? 'bg-gray-800 text-white shadow-lg' : 'bg-white text-gray-900 shadow-lg') : 'opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
+                        className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'info' ? (isDarkMode ? 'bg-gray-800 text-white shadow-lg' : 'bg-white text-gray-900 shadow-lg') : 'opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
                     >
-                        資訊中心設定
+                        <LayoutGrid className="w-4 h-4" /> 資訊中心設定
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('account')}
+                        className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'account' ? (isDarkMode ? 'bg-red-600/20 text-red-400 border border-red-500/30' : 'bg-red-50 text-red-600 border border-red-100') : 'opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
+                    >
+                        <User className="w-4 h-4" /> 帳戶管理
                     </button>
                 </div>
 
@@ -736,12 +744,262 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                         </div>
                     )}
 
+                    {/* V1.2.5: Account Management Tab */}
+                    {activeTab === 'account' && (
+                        <AccountTab
+                            user={user}
+                            isDarkMode={isDarkMode}
+                            globalSettings={globalSettings}
+                            setGlobalSettings={setGlobalSettings}
+                        />
+                    )}
+
                     <div className="mt-8 pt-8 border-t border-gray-500/10 flex justify-end">
                         <button onClick={() => window.location.reload()} className="px-6 py-3 rounded-xl bg-gray-500/10 hover:bg-gray-500/20 text-sm font-bold text-gray-600 dark:text-gray-300 transition-all flex items-center gap-2">
                             <span className="text-xs">🔄</span> 儲存設定並重新載入 App
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+    );
+};
+
+// V1.2.5: Account Management Tab Component
+const AccountTab = ({ user, isDarkMode, globalSettings, setGlobalSettings }) => {
+    const [displayName, setDisplayName] = useState(user?.displayName || '');
+    const [photoURL, setPhotoURL] = useState(user?.photoURL || '');
+    const [deletePassword, setDeletePassword] = useState('');
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [networkStatus, setNetworkStatus] = useState(isOnline());
+    const [message, setMessage] = useState(null);
+
+    // Listen to network status
+    useEffect(() => {
+        const cleanup = subscribeNetworkStatus(
+            () => setNetworkStatus(true),
+            () => setNetworkStatus(false)
+        );
+        return cleanup;
+    }, []);
+
+    const handleSaveProfile = async () => {
+        if (!networkStatus) {
+            setMessage({ type: 'error', text: '目前離線中，無法儲存個人資料。' });
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            await updateUserProfile(user, { displayName, photoURL });
+            setMessage({ type: 'success', text: '個人資料已更新！' });
+        } catch (error) {
+            setMessage({ type: 'error', text: '更新失敗：' + error.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleSyncSettings = async () => {
+        if (!networkStatus) {
+            setMessage({ type: 'error', text: '目前離線中，無法同步設定。' });
+            return;
+        }
+
+        setIsSyncing(true);
+        try {
+            await saveUserSettings(user.uid, globalSettings);
+            setMessage({ type: 'success', text: '設定已同步至雲端！' });
+        } catch (error) {
+            setMessage({ type: 'error', text: '同步失敗：' + error.message });
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    const handleLoadSettings = async () => {
+        if (!networkStatus) {
+            setMessage({ type: 'error', text: '目前離線中，無法載入設定。' });
+            return;
+        }
+
+        setIsSyncing(true);
+        try {
+            const cloudSettings = await loadUserSettings(user.uid);
+            if (cloudSettings) {
+                setGlobalSettings(prev => ({ ...prev, ...cloudSettings }));
+                localStorage.setItem('travelTogether_settings', JSON.stringify({ ...globalSettings, ...cloudSettings }));
+                setMessage({ type: 'success', text: '已從雲端載入設定！' });
+            } else {
+                setMessage({ type: 'info', text: '雲端尚無已儲存的設定。' });
+            }
+        } catch (error) {
+            setMessage({ type: 'error', text: '載入失敗：' + error.message });
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        if (!networkStatus) {
+            setMessage({ type: 'error', text: '目前離線中，無法刪除帳戶。' });
+            return;
+        }
+
+        if (!deletePassword) {
+            setMessage({ type: 'error', text: '請輸入密碼以確認刪除。' });
+            return;
+        }
+
+        setIsDeleting(true);
+        try {
+            await deleteUserAccount(user, deletePassword);
+            window.location.href = '/';
+        } catch (error) {
+            setMessage({ type: 'error', text: '刪除失敗：' + error.message });
+            setIsDeleting(false);
+        }
+    };
+
+    return (
+        <div className="space-y-6 animate-fade-in">
+            {/* Offline Banner */}
+            {!networkStatus && (
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3 animate-pulse">
+                    <WifiOff className="w-5 h-5 text-amber-500" />
+                    <div>
+                        <h5 className="font-bold text-amber-500">離線模式</h5>
+                        <p className="text-xs opacity-70">目前無網絡連接，部分功能暫時無法使用。</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Message */}
+            {message && (
+                <div className={`p-3 rounded-xl text-sm font-bold flex items-center gap-2 ${message.type === 'success' ? 'bg-emerald-500/10 text-emerald-500' : message.type === 'error' ? 'bg-red-500/10 text-red-500' : 'bg-blue-500/10 text-blue-500'}`}>
+                    {message.type === 'error' && <AlertTriangle className="w-4 h-4" />}
+                    {message.text}
+                </div>
+            )}
+
+            {/* Profile Section */}
+            <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+                <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                    <User className="w-5 h-5 text-indigo-500" /> 個人資料
+                </h4>
+
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2">顯示名稱</label>
+                        <input
+                            type="text"
+                            value={displayName}
+                            onChange={e => setDisplayName(e.target.value)}
+                            className={inputClasses(isDarkMode)}
+                            placeholder="您的名稱"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2">頭像 URL</label>
+                        <input
+                            type="text"
+                            value={photoURL}
+                            onChange={e => setPhotoURL(e.target.value)}
+                            className={inputClasses(isDarkMode)}
+                            placeholder="https://..."
+                        />
+                        {photoURL && (
+                            <img src={photoURL} alt="Preview" className="w-16 h-16 rounded-full mt-2 border-2 border-indigo-500" />
+                        )}
+                    </div>
+
+                    <button
+                        onClick={handleSaveProfile}
+                        disabled={isSaving || !networkStatus}
+                        className={`px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${networkStatus ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}
+                    >
+                        <Save className="w-4 h-4" />
+                        {isSaving ? '儲存中...' : '儲存個人資料'}
+                    </button>
+                </div>
+            </div>
+
+            {/* Settings Sync Section */}
+            <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-blue-500/10 border-blue-500/30' : 'bg-blue-50 border-blue-200'}`}>
+                <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                    <Server className="w-5 h-5 text-blue-500" /> 設定同步 (跨裝置)
+                </h4>
+                <p className="text-sm opacity-70 mb-4">將您的偏好設定同步到雲端，在其他裝置登入時自動載入。</p>
+
+                <div className="flex gap-3 flex-wrap">
+                    <button
+                        onClick={handleSyncSettings}
+                        disabled={isSyncing || !networkStatus}
+                        className={`px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${networkStatus ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}
+                    >
+                        {isSyncing ? '同步中...' : '⬆️ 上傳設定到雲端'}
+                    </button>
+                    <button
+                        onClick={handleLoadSettings}
+                        disabled={isSyncing || !networkStatus}
+                        className={`px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${networkStatus ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}
+                    >
+                        {isSyncing ? '載入中...' : '⬇️ 從雲端載入設定'}
+                    </button>
+                </div>
+            </div>
+
+            {/* Delete Account Section */}
+            <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-red-500/10 border-red-500/30' : 'bg-red-50 border-red-200'}`}>
+                <h4 className="font-bold text-lg mb-4 flex items-center gap-2 text-red-500">
+                    <Trash2 className="w-5 h-5" /> 刪除帳戶
+                </h4>
+                <p className="text-sm opacity-70 mb-4">
+                    此操作將永久刪除您的帳戶及所有相關數據。<strong>此操作無法復原！</strong>
+                </p>
+
+                {!showDeleteConfirm ? (
+                    <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        disabled={!networkStatus}
+                        className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all"
+                    >
+                        刪除我的帳戶
+                    </button>
+                ) : (
+                    <div className="space-y-3 animate-fade-in">
+                        <div className="p-3 rounded-lg bg-red-500/20 border border-red-500 text-red-400 text-xs font-bold">
+                            ⚠️ 最後確認：請輸入密碼以永久刪除帳戶
+                        </div>
+                        <input
+                            type="password"
+                            value={deletePassword}
+                            onChange={e => setDeletePassword(e.target.value)}
+                            className={inputClasses(isDarkMode)}
+                            placeholder="輸入您的密碼"
+                        />
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => { setShowDeleteConfirm(false); setDeletePassword(''); }}
+                                className="px-4 py-2 rounded-lg bg-gray-500/20 hover:bg-gray-500/30 font-bold text-sm transition-all"
+                            >
+                                取消
+                            </button>
+                            <button
+                                onClick={handleDeleteAccount}
+                                disabled={isDeleting || !deletePassword}
+                                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all flex items-center gap-2"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                {isDeleting ? '刪除中...' : '確認永久刪除'}
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

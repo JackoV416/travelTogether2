@@ -30,6 +30,19 @@ export default {
           highlight: 'var(--glass-highlight)',
         }
       },
+      // V1.2.5: Standardized Z-Index Scale (replace arbitrary z-[999] values)
+      zIndex: {
+        'base': '0',
+        'header': '40',      // TripHeader hero card
+        'members': '60',     // Member avatars hover state
+        'dropdown': '90',    // Dropdown backdrop
+        'menu': '100',       // Dropdown menus (Plan, Manage)
+        'mobileNav': '110',  // Mobile bottom nav & more sheet
+        'modal': '150',      // Standard modals
+        'toast': '180',      // Toast notifications
+        'confirm': '200',    // Confirmation dialogs
+        'max': '9999',       // Absolute top (debugging)
+      },
       animation: {
         'fade-in': 'fadeIn 0.4s ease-out',
         'slide-up': 'slideInUp 0.4s ease-out',

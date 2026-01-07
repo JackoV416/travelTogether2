@@ -1,20 +1,23 @@
-# Travel Together (智能旅遊規劃) V1.2.4
+# Travel Together (智能旅遊規劃) V1.2.5
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.2.4-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.2.5-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-11.x-orange.svg)](https://firebase.google.com/)
 
-## 🚀 V1.2.4: Intelligent Onboarding & PWA Polish (2025-12-24)
-**V1.2.4: [Experience] 智能導覽與 PWA 完美體驗！**
-本次更新專注於新用戶體驗與 PWA 兼容性，修復了關鍵的教學流程 Bug 並優化了移動端顯示。
+## 🚀 V1.2.5: Architecture & Stability (2026-01-07)
+**V1.2.5: [Tech] 架構重構與用戶體驗優化！**
+本次更新專注於代碼架構優化、跨裝置設定同步，以及帳戶管理功能。
 
-### ✨ V1.2.4 核心更新 (Updates)
-- **🎓 Interactive Tour**: 全新「新手智能導覽」修正，Settings 內可隨時重播，並適配移動端顯示 (Step 7 Fix)。
-- **📱 PWA Enhanced**: 優化 `manifest.json`，新增 192/512 標準圖標，提升安裝相容性。
-- **🤖 Jarvis Core**: 修正 `checkInstantAnswer` 引用錯誤，並全面統一 Jarvis 品牌用語。
-- **⚡ Daily AI Summary**: 行程詳情頁新增「每日智能總覽」按鈕，一鍵分析當日安排。
-- **📄 Smart PDF**: 驗證並優化 PDF 智能分頁邏輯。
+### ✨ V1.2.5 核心更新 (Updates)
+- **🏗️ Layout Refactor**: TripDetailContent 拆分為 TripHeader / TripTabs / TripModals 組件。
+- **👤 帳戶管理**: 新增個人資料編輯、設定同步 (跨裝置)、刪除帳戶功能。
+- **🌐 離線偵測**: 離線時自動提示用戶，防止同步失敗。
+- **📊 AI 用量修復**: 功能使用明細現已正確顯示各項 AI 功能的使用次數。
+- **🔄 Admin 每日重置**: API Monitor 計數器現會按日期自動重置。
+- **🎨 UI 一致性**: 設定頁面所有分頁現已統一顯示圖標。
+
+## 🚀 V1.2.4: Intelligent Onboarding & PWA Polish (2025-12-24)
 
 ## 🚀 V1.2.3: Social & AI Quota Control (2025-12-23)
 **V1.2.3: [Social & AI] 用戶級 AI 配額與隱私監控！**
