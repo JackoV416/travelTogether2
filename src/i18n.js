@@ -274,8 +274,8 @@ i18n
     .use(initReactI18next)
     .init({
         resources,
-        lng: localStorage.getItem('app_language') || 'zh',
-        fallbackLng: 'zh',
+        lng: localStorage.getItem('travelTogether_language') || 'zh-HK',
+        fallbackLng: 'zh-HK',
         interpolation: {
             escapeValue: false
         }

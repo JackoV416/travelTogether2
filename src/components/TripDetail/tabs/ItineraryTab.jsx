@@ -842,15 +842,15 @@ const ItineraryTab = ({
 
                         {/* Mobile Date Scroll (Sticky Glassmorphic Ribbon) - Moved Here & Sticky */}
                         {viewMode !== 'kanban' && (
-                            <div className="lg:hidden flex gap-2 overflow-x-auto py-2 px-1 sticky top-0 z-40 bg-white/80 dark:bg-[#0B0F19]/80 backdrop-blur-md border-b border-gray-200/50 dark:border-white/5 scrollbar-hide mb-4 -mx-2 shadow-sm" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                            <div className="lg:hidden flex gap-2 overflow-x-auto py-2 pl-2 pr-6 sticky top-0 z-40 bg-white/80 dark:bg-[#0B0F19]/80 backdrop-blur-md border-b border-gray-200/50 dark:border-white/5 scrollbar-hide mb-4 -mx-2 shadow-sm" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                                 {days.map((d) => {
                                     const dateKey = d.slice(5); // MM-DD
                                     const dName = destHolidays?.[dateKey];
                                     const hName = homeHolidays?.[dateKey];
                                     return (
-                                        <button key={d} onClick={() => setSelectDate(d)} className={`flex-shrink-0 px-3 py-2 rounded-lg border transition text-center min-w-[100px] relative overflow-hidden group ${currentDisplayDate === d ? 'bg-indigo-500 text-white border-indigo-500 shadow-md' : (isDarkMode ? 'bg-gray-800/60 border-gray-700' : 'bg-white border-gray-200')}`}>
+                                        <button key={d} onClick={() => setSelectDate(d)} className={`flex-shrink-0 px-3 py-2 rounded-xl border transition text-center min-w-[115px] relative overflow-hidden group ${currentDisplayDate === d ? 'bg-indigo-500 text-white border-indigo-500 shadow-md' : (isDarkMode ? 'bg-gray-800/60 border-gray-700' : 'bg-white border-gray-200')}`}>
                                             <div className="text-[10px] opacity-70 uppercase">{getWeekday(d)}</div>
-                                            <div className="font-bold text-xs">{formatDate(d)}</div>
+                                            <div className="font-bold text-xs whitespace-nowrap">{formatDate(d)}</div>
                                             {(dName || hName) && (
                                                 <div className="absolute top-0 right-0 flex flex-col items-end">
                                                     {dName && <div className="bg-red-500 text-white text-[8px] px-1 rounded-bl shadow-sm mb-[1px] max-w-[60px] truncate">{dName}</div>}

@@ -437,6 +437,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                     <div className="flex items-center justify-between gap-4 flex-wrap">
                         <h2 className="text-2xl font-black tracking-tight">旅遊資訊中心</h2>
                         <button
+                            onClick={() => onOpenSettings && onOpenSettings('info')}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 text-[11px] font-bold transition-all border border-white/5"
                         >
                             <Settings2 className="w-3.5 h-3.5" /> 自訂排序

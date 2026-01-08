@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.18";
-export const APP_VERSION_TAG = "Quick Language Switch";
+export const APP_VERSION = "V1.2.19";
+export const APP_VERSION_TAG = "PWA Mobile Date Fix";
 export const APP_LAST_UPDATE = '2026-01-08';
 export const JARVIS_VERSION = "V0.0.4-Beta";
 
@@ -122,6 +122,33 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.2.19",
+        date: "2026-01-08",
+        tag: "PWA Mobile Date Fix",
+        desc: {
+            "zh-TW": "修復 iPhone Pro Max 日期顯示問題",
+            "zh-HK": "修復 iPhone Pro Max 日期顯示問題",
+            "en": "Fixed iPhone Pro Max Date Display Issues"
+        },
+        details: {
+            "zh-TW": [
+                "📅 Mobile: 日期選擇器增加最小寬度至 115px，確保年份完整顯示",
+                "📱 Scroll: 日期滾動區增加右邊 padding，防止最後日期被切斷",
+                "✅ Text: 加入 whitespace-nowrap 確保日期不換行"
+            ],
+            "zh-HK": [
+                "📅 Mobile: 日期選擇器增加最小寬度至 115px，確保年份完整顯示",
+                "📱 Scroll: 日期滾動區增加右邊 padding，防止最後日期被切斷",
+                "✅ Text: 加入 whitespace-nowrap 確保日期唔換行"
+            ],
+            "en": [
+                "📅 Mobile: Increased date button min-width to 115px for full year display",
+                "📱 Scroll: Added right padding to date scroll area to prevent last date cutoff",
+                "✅ Text: Added whitespace-nowrap to ensure dates don't wrap"
+            ]
+        }
+    },
     {
         ver: "V1.2.18",
         date: "2026-01-08",
