@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.16";
-export const APP_VERSION_TAG = "Firestore Stability";
+export const APP_VERSION = "V1.2.17";
+export const APP_VERSION_TAG = "Version Update UX Fix";
 export const APP_LAST_UPDATE = '2026-01-08';
 export const JARVIS_VERSION = "V0.0.4-Beta";
 
@@ -122,6 +122,33 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.2.17",
+        date: "2026-01-08",
+        tag: "Version Update UX Fix",
+        desc: {
+            "zh-TW": "版本更新提示優化",
+            "zh-HK": "版本更新提示優化",
+            "en": "Version Update UX Improvement"
+        },
+        details: {
+            "zh-TW": [
+                "📣 UX: 修正「更新成功」通知在舊版本快取下顯示的問題",
+                "✅ Logic: 現在只會在用戶實際刷新後才顯示更新成功",
+                "📝 Text: 優化通知文字清晰度"
+            ],
+            "zh-HK": [
+                "📣 UX: 修正「更新成功」通知在舊版本快取下顯示嘅問題",
+                "✅ Logic: 而家淌會在用戶實際刷新後先顯示更新成功",
+                "📝 Text: 優化通知文字清晰度"
+            ],
+            "en": [
+                "📣 UX: Fixed 'update success' showing on cached old version",
+                "✅ Logic: Now only shows success after user actually refreshes",
+                "📝 Text: Improved notification text clarity"
+            ]
+        }
+    },
     {
         ver: "V1.2.16",
         date: "2026-01-08",

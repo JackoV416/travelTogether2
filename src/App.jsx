@@ -734,30 +734,35 @@ const App = () => {
     }, []);
 
     // --- Update Success Logic (Local Cache) ---
+    // Only shows "update success" if the RUNNING code version (APP_VERSION) is NEWER than what user last saw
+    // This prevents showing "success" on old cached PWA before user actually refreshes
     useEffect(() => {
         const lastSeenVersion = localStorage.getItem('app_version_cache');
+
+        // Only celebrate if:
+        // 1. User has a cached version (returning user)
+        // 2. The running code version is different from cached (means they actually got new code)
         if (lastSeenVersion && lastSeenVersion !== APP_VERSION) {
             const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
             setTimeout(() => {
-                // Success Toast with explicit time to fix "Invalid Date"
                 const now = new Date();
                 const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
                 sendNotification(
-                    `更新成功至 ${APP_VERSION} (Update Success)`,
-                    `${isPWA ? 'App 版本' : '網頁'}已成功升級至 ${APP_VERSION}，享受更佳體驗！`,
+                    `已成功更新至 ${APP_VERSION}`,
+                    `${isPWA ? 'App' : '網頁'}已升級至最新版本，享受更佳體驗！`,
                     "success",
-                    { time: timeStr } // Explicit time string
+                    { time: timeStr }
                 );
 
                 triggerConfetti();
-
-                // Show Version Modal on major updates
                 setIsVersionOpen(true);
 
             }, 1000);
         }
+
+        // Always save current running version to cache
         localStorage.setItem('app_version_cache', APP_VERSION);
     }, [sendNotification]);
 
