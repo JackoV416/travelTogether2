@@ -339,7 +339,7 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
             ></div>
 
             {/* Modal Sheet */}
-            <div className={`w-full sm:w-[500px] max-h-[85vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl shadow-2xl transform transition-transform duration-300 pointer-events-auto ${isOpen ? 'translate-y-0' : 'translate-y-full'} ${isDarkMode ? 'bg-gray-900 border border-white/5' : 'bg-white'}`}>
+            <div className={`w-full sm:w-[500px] max-h-[85vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl shadow-2xl transform transition-transform duration-300 pointer-events-auto pb-[env(safe-area-inset-bottom)] ${isOpen ? 'translate-y-0' : 'translate-y-full'} ${isDarkMode ? 'bg-gray-900 border border-white/5' : 'bg-white'}`}>
 
                 {/* Header Image Area */}
                 <div className="h-48 bg-gray-200 relative overflow-hidden group">

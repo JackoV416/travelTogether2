@@ -9,7 +9,7 @@ const GlobalChatFAB = ({ onClick, isDarkMode, context = 'default' }) => {
         <button
             onClick={onClick}
             data-tour="jarvis-chat"
-            className={`fixed bottom-24 md:bottom-8 right-6 z-[150] group flex items-center justify-center w-14 h-14 rounded-2xl shadow-2xl transition-all duration-500 hover:scale-110 active:scale-95 overflow-hidden
+            className={`fixed bottom-[max(6rem,calc(1.5rem+env(safe-area-inset-bottom)))] md:bottom-8 right-6 z-[150] group flex items-center justify-center w-14 h-14 rounded-2xl shadow-2xl transition-all duration-500 hover:scale-110 active:scale-95 overflow-hidden
                 ${isDarkMode
                     ? 'bg-indigo-600/90 hover:bg-indigo-500 border border-white/10'
                     : 'bg-indigo-600 hover:bg-indigo-700 border border-black/5'}

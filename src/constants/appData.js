@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.14";
-export const APP_VERSION_TAG = "Map Coordinate Fix";
+export const APP_VERSION = "V1.2.15";
+export const APP_VERSION_TAG = "PWA Deep Audit";
 export const APP_LAST_UPDATE = '2026-01-08';
 export const JARVIS_VERSION = "V0.0.4-Beta";
 
@@ -122,6 +122,33 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.2.15",
+        date: "2026-01-08",
+        tag: "PWA Deep Audit",
+        desc: {
+            "zh-TW": "深度 PWA 介面審計與 Safe-Area 修正",
+            "zh-HK": "深度 PWA 介面審計與 Safe-Area 修正",
+            "en": "Deep PWA Interface Audit & Safe-Area Fixes"
+        },
+        details: {
+            "zh-TW": [
+                "🔘 FAB: GlobalChatFAB 新增 safe-area-inset-bottom 支援",
+                "📋 Modal: ItemDetailModal 底部 Sheet 新增安全區域間距",
+                "📱 Audit: 完成 35+ 個固定定位元素的 PWA 相容性審計"
+            ],
+            "zh-HK": [
+                "🔘 FAB: GlobalChatFAB 新增 safe-area-inset-bottom 支援",
+                "📋 Modal: ItemDetailModal 底部 Sheet 新增安全區域間距",
+                "📱 Audit: 完成 35+ 個固定定位元素嘅 PWA 相容性審計"
+            ],
+            "en": [
+                "🔘 FAB: Added safe-area-inset-bottom to GlobalChatFAB",
+                "📋 Modal: Added safe-area padding to ItemDetailModal bottom sheet",
+                "📱 Audit: Completed PWA compatibility audit for 35+ fixed elements"
+            ]
+        }
+    },
     {
         ver: "V1.2.14",
         date: "2026-01-08",
