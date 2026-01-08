@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import BoardView from '../views/BoardView';
 import MapView2 from '../views/MapView2';
-import { CURRENCIES, COUNTRIES_DATA } from '../../../constants/appData';
+import { CURRENCIES, COUNTRIES_DATA, CITY_COORDS } from '../../../constants/appData';
 import KanbanView from '../views/KanbanView';
 import TimelineView from '../views/TimelineView';
 import TransportCard from '../cards/TransportCard';
@@ -437,9 +437,33 @@ const ItineraryTab = ({
 
     // Calculate map locations based on scope
     // FIX: For daily scope, use mergedItems (optimistic) instead of raw trip.itinerary to reflect deletes/adds immediately
+    // Helper to lookup coordinates from city name
+    const getCoordsForItem = (item) => {
+        // Check if item already has coordinates
+        if (item.coordinates && item.coordinates.length === 2) return item.coordinates;
+
+        // Try to match location string against CITY_COORDS
+        const location = item.details?.location || '';
+        for (const [cityName, coords] of Object.entries(CITY_COORDS)) {
+            if (location.toLowerCase().includes(cityName.toLowerCase())) {
+                return [coords.lat, coords.lon];
+            }
+        }
+
+        // Fallback to trip city
+        const tripCity = trip?.city || trip?.cities?.[0] || '';
+        if (CITY_COORDS[tripCity]) {
+            // Add small random offset for visual distinction
+            const offset = () => (Math.random() - 0.5) * 0.01;
+            return [CITY_COORDS[tripCity].lat + offset(), CITY_COORDS[tripCity].lon + offset()];
+        }
+
+        return null;
+    };
+
     const allLocations = mapScope === 'daily'
-        ? mergedItems.map(item => ({ date: currentDisplayDate, ...item })).filter(item => item.details?.location)
-        : days.flatMap(d => (trip.itinerary?.[d] || []).map(item => ({ date: d, ...item }))).filter(item => item.details?.location);
+        ? mergedItems.map(item => ({ date: currentDisplayDate, ...item, coordinates: getCoordsForItem(item) })).filter(item => item.details?.location && item.coordinates)
+        : days.flatMap(d => (trip.itinerary?.[d] || []).map(item => ({ date: d, ...item, coordinates: getCoordsForItem(item) }))).filter(item => item.details?.location && item.coordinates);
     const mapQuery = allLocations.length ? allLocations.map(item => item.details.location).join(' via ') : `${getLocalizedCityName(trip.city, currentLang)} ${getLocalizedCountryName(trip.country, currentLang)} `;
 
     // Types mapping

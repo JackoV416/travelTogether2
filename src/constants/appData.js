@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.13";
-export const APP_VERSION_TAG = "PWA Safe Area Polish";
+export const APP_VERSION = "V1.2.14";
+export const APP_VERSION_TAG = "Map Coordinate Fix";
 export const APP_LAST_UPDATE = '2026-01-08';
 export const JARVIS_VERSION = "V0.0.4-Beta";
 
@@ -122,6 +122,33 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.2.14",
+        date: "2026-01-08",
+        tag: "Map Coordinate Fix",
+        desc: {
+            "zh-TW": "地圖模式座標修正與全域搜尋驗證",
+            "zh-HK": "地圖模式座標修正與全域搜尋驗證",
+            "en": "Map Mode Coordinate Fix & Global Search Verification"
+        },
+        details: {
+            "zh-TW": [
+                "🗺️ Map: 修正地圖模式無反應問題 (缺少座標)",
+                "📍 Coordinates: 新增 CITY_COORDS 自動查找功能",
+                "⌨️ Search: 驗證 Command+K 全域搜尋正常運作"
+            ],
+            "zh-HK": [
+                "🗺️ Map: 修正地圖模式冇反應問題 (缺少座標)",
+                "📍 Coordinates: 新增 CITY_COORDS 自動查找功能",
+                "⌨️ Search: 驗證 Command+K 全域搜尋正常運作"
+            ],
+            "en": [
+                "🗺️ Map: Fixed Map mode not responding (missing coordinates)",
+                "📍 Coordinates: Added CITY_COORDS auto-lookup for itinerary items",
+                "⌨️ Search: Verified Command+K global search functionality"
+            ]
+        }
+    },
     {
         ver: "V1.2.13",
         date: "2026-01-08",
