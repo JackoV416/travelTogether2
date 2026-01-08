@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { buttonPrimary } from './constants/styles';
 const TripDetailContent = lazy(() => import('./components/TripDetail/TripDetailContent'));
 import { signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
@@ -80,7 +81,23 @@ import HttpStatusPage from './components/Shared/HttpStatusPage';
 
 const Footer = ({ isDarkMode, onOpenVersion }) => {
     const [time, setTime] = useState(new Date());
+    const { i18n } = useTranslation();
+
     useEffect(() => { const t = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(t); }, []);
+
+    // Language toggle: cycles zh-HK -> zh-TW -> en -> zh-HK
+    const LANG_CYCLE = ['zh-HK', 'zh-TW', 'en'];
+    const LANG_LABELS = { 'zh-HK': '粵', 'zh-TW': '繁', 'en': 'EN' };
+    const currentLang = i18n.language || 'zh-HK';
+
+    const handleLangToggle = () => {
+        const currentIdx = LANG_CYCLE.indexOf(currentLang);
+        const nextIdx = (currentIdx + 1) % LANG_CYCLE.length;
+        const nextLang = LANG_CYCLE[nextIdx];
+        i18n.changeLanguage(nextLang);
+        localStorage.setItem('travelTogether_language', nextLang);
+    };
+
     return (
         <footer className={`mt-12 pt-6 pb-12 border-t text-center text-xs md:text-sm flex flex-col items-center justify-center gap-1 ${isDarkMode ? 'bg-gray-900 border-gray-800 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-600'} pb-[calc(1.5rem+env(safe-area-inset-bottom))]`}>
             <div className="flex flex-wrap gap-2 items-center justify-center font-bold">
@@ -94,6 +111,21 @@ const Footer = ({ isDarkMode, onOpenVersion }) => {
                 >
                     版本更新內容
                 </button>
+                <span>•</span>
+                {/* Language Switcher Dropdown */}
+                <select
+                    value={currentLang}
+                    onChange={(e) => {
+                        i18n.changeLanguage(e.target.value);
+                        localStorage.setItem('travelTogether_language', e.target.value);
+                    }}
+                    className={`px-2 py-0.5 rounded-full border text-[10px] md:text-xs font-black cursor-pointer outline-none transition-all ${isDarkMode ? 'bg-gray-900 border-emerald-500/50 text-emerald-400 hover:border-emerald-400' : 'bg-white border-emerald-500 text-emerald-600 hover:border-emerald-400'}`}
+                    title="選擇語言"
+                >
+                    <option value="zh-HK">🌐 粵語</option>
+                    <option value="zh-TW">🌐 繁體</option>
+                    <option value="en">🌐 English</option>
+                </select>
                 <span className="hidden sm:inline">•</span>
                 <span className="hidden sm:inline">Design with ❤️</span>
             </div>

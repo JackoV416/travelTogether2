@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.17";
-export const APP_VERSION_TAG = "Version Update UX Fix";
+export const APP_VERSION = "V1.2.18";
+export const APP_VERSION_TAG = "Quick Language Switch";
 export const APP_LAST_UPDATE = '2026-01-08';
 export const JARVIS_VERSION = "V0.0.4-Beta";
 
@@ -122,6 +122,33 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.2.18",
+        date: "2026-01-08",
+        tag: "Quick Language Switch",
+        desc: {
+            "zh-TW": "Footer 語言快速切換按鈕",
+            "zh-HK": "Footer 語言快速切換按鈕",
+            "en": "Footer Quick Language Switcher"
+        },
+        details: {
+            "zh-TW": [
+                "🌐 Language: Footer 新增語言切換按鈕",
+                "🔄 Toggle: 直接點擊循環切換 (粵 → 繁 → EN)",
+                "💾 Storage: 自動儲存語言偏好到 localStorage"
+            ],
+            "zh-HK": [
+                "🌐 Language: Footer 新增語言切換按鈕",
+                "🔄 Toggle: 直接點擊循環切換 (粵 → 繁 → EN)",
+                "💾 Storage: 自動儲存語言偏好到 localStorage"
+            ],
+            "en": [
+                "🌐 Language: Added language switcher button to Footer",
+                "🔄 Toggle: Direct click cycles through (粵 → 繁 → EN)",
+                "💾 Storage: Language preference auto-saved to localStorage"
+            ]
+        }
+    },
     {
         ver: "V1.2.17",
         date: "2026-01-08",
