@@ -242,7 +242,7 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
             <div className={`relative flex flex-col h-full ${!isMobile && 'border border-white/10 rounded-t-2xl'}`}>
                 {/* Unified Header with Tabs */}
                 <div
-                    className={`flex flex-col px-5 pt-5 pb-2 border-b border-white/5 gap-3 cursor-pointer ${!isMobile && 'hover:bg-white/5 transition-colors'}`}
+                    className={`flex flex-col px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-2 border-b border-white/5 gap-3 cursor-pointer ${!isMobile && 'hover:bg-white/5 transition-colors'}`}
                     onClick={() => !isMobile && setIsMinimized(!isMinimized)}
                 >
                     <div className="flex items-center justify-between">
@@ -478,7 +478,7 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
 
                 {/* Global Bottom Banner - Only visible when not minimized */}
                 {!isMinimized && (
-                    <div className="px-5 py-3 bg-black/40 backdrop-blur-md flex items-center justify-between border-t border-white/5">
+                    <div className="px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-black/40 backdrop-blur-md flex items-center justify-between border-t border-white/5">
                         <div className="flex items-center gap-1.5 opacity-30">
                             <Hash className="w-2.5 h-2.5" />
                             <span className="text-[8px] font-black uppercase tracking-widest italic">SafeChat™ Encrypted</span>

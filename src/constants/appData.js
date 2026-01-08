@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.12";
-export const APP_VERSION_TAG = "Stability & UI Polish Patch";
+export const APP_VERSION = "V1.2.13";
+export const APP_VERSION_TAG = "PWA Safe Area Polish";
 export const APP_LAST_UPDATE = '2026-01-08';
 export const JARVIS_VERSION = "V0.0.4-Beta";
 
@@ -122,6 +122,33 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.2.13",
+        date: "2026-01-08",
+        tag: "PWA Safe Area Polish",
+        desc: {
+            "zh-TW": "iPhone 17 Pro Max PWA 安全區域修正",
+            "zh-HK": "iPhone 17 Pro Max PWA 安全區域修正",
+            "en": "iPhone 17 Pro Max PWA Safe Area Fixes"
+        },
+        details: {
+            "zh-TW": [
+                "📱 PWA: 修正 Header 與 iOS 狀態列 (Dynamic Island) 重疊問題",
+                "💬 Chat: 修正群聊客棧頂部與底部安全區域間距",
+                "🏠 Home Indicator: 底部輸入區新增 Safe Area 處理"
+            ],
+            "zh-HK": [
+                "📱 PWA: 修正 Header 同 iOS 狀態列 (Dynamic Island) 重疊問題",
+                "💬 Chat: 修正群聊客棧頂部同底部安全區域間距",
+                "🏠 Home Indicator: 底部輸入區新增 Safe Area 處理"
+            ],
+            "en": [
+                "📱 PWA: Fixed Header overlapping with iOS status bar (Dynamic Island)",
+                "💬 Chat: Fixed UniversalChat safe-area spacing (top and bottom)",
+                "🏠 Home Indicator: Added safe-area handling for bottom input areas"
+            ]
+        }
+    },
     {
         ver: "V1.2.12",
         date: "2026-01-08",
