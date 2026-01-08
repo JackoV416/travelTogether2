@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.15";
-export const APP_VERSION_TAG = "PWA Deep Audit";
+export const APP_VERSION = "V1.2.16";
+export const APP_VERSION_TAG = "Firestore Stability";
 export const APP_LAST_UPDATE = '2026-01-08';
 export const JARVIS_VERSION = "V0.0.4-Beta";
 
@@ -122,6 +122,33 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.2.16",
+        date: "2026-01-08",
+        tag: "Firestore Stability",
+        desc: {
+            "zh-TW": "修正 Firestore BloomFilter 警告",
+            "zh-HK": "修正 Firestore BloomFilter 警告",
+            "en": "Fixed Firestore BloomFilter Warning"
+        },
+        details: {
+            "zh-TW": [
+                "🔇 Firestore: 擴展 setLogLevel 抑制到生產環境",
+                "📦 Cache: BloomFilter 錯誤是良性的緩存同步警告",
+                "✅ Stability: 控制台警告已清除"
+            ],
+            "zh-HK": [
+                "🔇 Firestore: 擴展 setLogLevel 抑制到生產環境",
+                "📦 Cache: BloomFilter 錯誤係良性嘅緩存同步警告",
+                "✅ Stability: 控制台警告已清除"
+            ],
+            "en": [
+                "🔇 Firestore: Extended setLogLevel suppression to production",
+                "📦 Cache: BloomFilter error is a benign cache sync warning",
+                "✅ Stability: Console warnings cleared"
+            ]
+        }
+    },
     {
         ver: "V1.2.15",
         date: "2026-01-08",

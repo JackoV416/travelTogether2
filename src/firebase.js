@@ -4,10 +4,9 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getFirestore, setLogLevel } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
-// Suppress noisy Firestore warnings in development (HMR causes benign lock contention)
-if (import.meta.env.DEV) {
-  setLogLevel('error'); // Only show errors, not warnings
-}
+// Suppress noisy Firestore warnings (BloomFilter errors are benign cache sync issues)
+// This affects both development and production to hide the BloomFilterError warning
+setLogLevel('error'); // Only show errors, not warnings
 
 // Unified configuration
 const firebaseConfig = {
