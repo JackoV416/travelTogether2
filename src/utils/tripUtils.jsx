@@ -63,7 +63,10 @@ export const getTripSummary = (trip) => {
 
 export const calculateDebts = (budget, repayments, members, baseCurrency, exchangeRates) => {
     const balances = {};
-    members.forEach(m => balances[m.name] = 0);
+    if (!members || !Array.isArray(members)) return { balances: {}, totalSpent: 0 };
+    members.forEach(m => {
+        if (m && m.name) balances[m.name] = 0;
+    });
     let totalSpent = 0;
 
     const rates = exchangeRates || Object.keys(CURRENCIES).reduce((acc, key) => ({ ...acc, [key]: CURRENCIES[key].rate }), {});
@@ -131,8 +134,11 @@ export const getWeatherForecast = (country, currentTempStr, customDesc, customIc
     };
 
     // If real temp is provided (e.g. "28°C" or "25°C / 18°C")
-    if (currentTempStr) {
-        const parts = currentTempStr.split('/').map(p => parseInt(p.trim()));
+    if (currentTempStr && currentTempStr !== "-- / --") {
+        const parts = currentTempStr.split('/').map(p => {
+            const val = parseInt(p.trim());
+            return isNaN(val) ? 20 : val;
+        });
         const maxTemp = parts[0] || 20;
         const minTemp = parts[1] || maxTemp; // Fallback to maxTemp if no minTemp provided
 

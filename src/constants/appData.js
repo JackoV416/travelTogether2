@@ -9,9 +9,9 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.11";
-export const APP_VERSION_TAG = "Global Localization & Stability Patch";
-export const APP_LAST_UPDATE = '2026-01-07';
+export const APP_VERSION = "V1.2.12";
+export const APP_VERSION_TAG = "Stability & UI Polish Patch";
+export const APP_LAST_UPDATE = '2026-01-08';
 export const JARVIS_VERSION = "V0.0.4-Beta";
 
 export const JARVIS_VERSION_HISTORY = [
@@ -122,6 +122,39 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.2.12",
+        date: "2026-01-08",
+        tag: "Stability & UI Polish Patch",
+        desc: {
+            "zh-TW": "核心穩定性修復與 UI 重疊修正",
+            "zh-HK": "核心穩定性修復與 UI 重疊修正",
+            "en": "Core Stability Fixes & UI Spacing Patch"
+        },
+        details: {
+            "zh-TW": [
+                "🐞 Fix: 修復行程詳情載入時的崩潰問題 (ErrorBoundary)",
+                "🐞 Fix: 修正 Dashboard 天氣資訊讀取緩衝問題",
+                "📱 UI: 調整行動裝置頂部狀態欄重疊，增加安全區域間距",
+                "🌍 i18n: 修正語言設定讀取錯誤 (language vs lang)",
+                "🛡️ Robustness: 增強債務計算與行程規劃的數據安全檢查"
+            ],
+            "zh-HK": [
+                "🐞 Fix: 修復行程詳情載入時嘅崩潰問題 (ErrorBoundary)",
+                "🐞 Fix: 修正 Dashboard 天氣資訊讀取緩衝問題",
+                "📱 UI: 調整行動裝置頂部狀態欄重疊，增加安全區域間距",
+                "🌍 i18n: 修正語言設定讀取錯誤 (language vs lang)",
+                "🛡️ Robustness: 增強債務計算同行程規劃嘅數據安全檢查"
+            ],
+            "en": [
+                "🐞 Fix: Resolved TripDetail loading crash caused by null references",
+                "🐞 Fix: Standardized weather data keys for Dashboard TripCards",
+                "📱 UI: Adjusted mobile header spacing and safe-area-insets",
+                "🌍 i18n: Fixed language setting key mismatch (language vs lang)",
+                "🛡️ Robustness: Added defensive checks for debt calculations and itinerary ripple effects"
+            ]
+        }
+    },
     {
         ver: "V1.2.11",
         date: "2026-01-07",

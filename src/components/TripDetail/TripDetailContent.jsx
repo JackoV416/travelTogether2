@@ -370,9 +370,9 @@ const TripDetailMainLayout = ({ trip, tripData, onBack, user, isDarkMode, setGlo
     }, [realWeather, currentDisplayDate, trip.country, mockWeather]);
     const debtInfo = calculateDebts(trip.budget || [], trip.repayments || [], trip.members || [], globalSettings.currency, exchangeRates);
     const timeDiff = getTimeDiff(globalSettings.region, trip.country);
-    const tripSummary = getTripSummary(trip, user?.uid);
+    const tripSummary = getTripSummary(trip);
     const countryInfo = getSafeCountryInfo(trip.country);
-    const currentLang = globalSettings?.lang || 'zh-TW';
+    const currentLang = globalSettings?.language || 'zh-HK';
     const displayCountry = getLocalizedCountryName(trip.country, currentLang);
     const displayCity = getLocalizedCityName(headerCity || '', currentLang);
     // V1.1 Fix: Use pendingItemsCache for optimistic UI (drag & drop updates)

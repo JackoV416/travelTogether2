@@ -1051,7 +1051,7 @@ const App = () => {
             />
             {/* Fixed Header - Outside content wrapper for proper fixed positioning */}
             {view !== 'tutorial' && <Header title="✈️ Travel Together" user={user} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} onLogout={() => signOut(auth)} onBack={(view !== 'dashboard' && view !== 'settings') ? () => setView('dashboard') : null} onTutorialStart={() => setShowOnboardingTour(true)} onViewChange={setView} onOpenUserSettings={() => setView('settings')} onOpenFeedback={() => setIsReportCenterOpen(true)} onOpenAdminFeedback={() => setIsAdminFeedbackModalOpen(true)} isAdmin={isAdmin} adminPendingCount={openFeedbackCount} onOpenVersion={() => setIsVersionOpen(true)} notifications={notifications} onRemoveNotification={removeNotification} onMarkNotificationsRead={markNotificationsRead} onNotificationClick={handleNotificationNavigate} />}
-            <div className={`relative z-10 flex-grow ${view !== 'tutorial' ? 'pt-[76px]' : ''}`}>
+            <div className={`relative z-10 flex-grow pt-safe ${view !== 'tutorial' ? 'pt-[88px] pb-safe' : ''}`}>
                 {view === 'dashboard' && (
                     <div className="animate-fade-in">
                         <ErrorBoundary fallbackMessage="儀表板載入失敗，請重新整理" onOpenFeedback={() => setIsReportCenterOpen(true)}>
