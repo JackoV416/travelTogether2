@@ -1,15 +1,15 @@
-# Travel Together (智能旅遊規劃) V1.2.21
+# Travel Together (智能旅遊規劃) V1.2.22
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.2.21-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.2.22-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-11.x-orange.svg)](https://firebase.google.com/)
 
-## 🚀 V1.2.21: Tutorial & UX Fixes (2026-01-09)
-**V1.2.21: [PWA] 模擬例子「閒聊」按鈕 + UX 修復！**
-本次更新修復咗模擬例子嘅閒聊功能同 PWA 介面問題。
+## 🚀 V1.2.22: Data Saver Implementation (2026-01-09)
+**V1.2.22: [PWA] 省流量模式正式實裝！**
+本次更新實裝咗省流量模式，開啟後圖片會自動壓縮以節省數據用量。
 
-### 🌟 V1.2.21 主要更新
+### 🌟 V1.2.22 主要更新
 1.  **Multi-City Localization**: 強力支援跨城市行程翻譯 (例如：`Kyoto -> Osaka` 自動轉為 `京都 → 大阪`)。
 2.  **Currency Summation Fix**: 修復 Itinerary 每日總結的混合幣種計算邏輯，支援即時匯率換算並顯示 HKD 等值。
 3.  **Kanban Localization**: Kanban 視圖現支援分日城市標籤，並全面本地化。

@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.21";
-export const APP_VERSION_TAG = "Tutorial & UX Fixes";
+export const APP_VERSION = "V1.2.22";
+export const APP_VERSION_TAG = "Data Saver Implementation";
 export const APP_LAST_UPDATE = '2026-01-09';
 export const JARVIS_VERSION = "V0.0.4-Beta";
 
@@ -122,6 +122,33 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.2.22",
+        date: "2026-01-09",
+        tag: "Data Saver Implementation",
+        desc: {
+            "zh-TW": "實裝省流量模式，圖片自動壓縮",
+            "zh-HK": "實裝省流量模式，圖片自動壓縮",
+            "en": "Data Saver Mode Implementation with Image Compression"
+        },
+        details: {
+            "zh-TW": [
+                "📱 Data Saver: ImageWithFallback 組件支援省流量模式",
+                "🖼️ 壓縮: Unsplash 圖片自動降低質量 (w=400, q=60, fm=webp)",
+                "⚡ 優化: 所有圖片加入 lazy loading 屬性"
+            ],
+            "zh-HK": [
+                "📱 Data Saver: ImageWithFallback 組件支援省流量模式",
+                "🖼️ 壓縮: Unsplash 圖片自動降低質量 (w=400, q=60, fm=webp)",
+                "⚡ 優化: 所有圖片加入 lazy loading 屬性"
+            ],
+            "en": [
+                "📱 Data Saver: ImageWithFallback component now supports data saver mode",
+                "🖼️ Compression: Unsplash images auto-compressed (w=400, q=60, fm=webp)",
+                "⚡ Optimization: All images now use lazy loading"
+            ]
+        }
+    },
     {
         ver: "V1.2.21",
         date: "2026-01-09",
