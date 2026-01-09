@@ -9,9 +9,9 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.19";
-export const APP_VERSION_TAG = "PWA Mobile Date Fix";
-export const APP_LAST_UPDATE = '2026-01-08';
+export const APP_VERSION = "V1.2.20";
+export const APP_VERSION_TAG = "PWA Safe Area Audit";
+export const APP_LAST_UPDATE = '2026-01-09';
 export const JARVIS_VERSION = "V0.0.4-Beta";
 
 export const JARVIS_VERSION_HISTORY = [
@@ -122,6 +122,39 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.2.20",
+        date: "2026-01-09",
+        tag: "PWA Safe Area Audit",
+        desc: {
+            "zh-TW": "修復 iPhone Pro Max PWA 安全區域顯示問題",
+            "zh-HK": "修復 iPhone Pro Max PWA 安全區域顯示問題",
+            "en": "Fixed iPhone Pro Max PWA Safe Area Display Issues"
+        },
+        details: {
+            "zh-TW": [
+                "📱 Main: 主內容區 padding-top 配合 safe-area-inset-top 計算",
+                "🔔 Toast: 通知系統位置加入 safe-area-inset-top",
+                "⬆️ Reload: PWA 更新提示位置加入 safe-area-inset-bottom",
+                "🎨 Board: 看板視圖 toast 位置改進",
+                "📁 Files: 文件上傳指示器位置改進"
+            ],
+            "zh-HK": [
+                "📱 Main: 主內容區 padding-top 配合 safe-area-inset-top 計算",
+                "🔔 Toast: 通知系統位置加入 safe-area-inset-top",
+                "⬆️ Reload: PWA 更新提示位置加入 safe-area-inset-bottom",
+                "🎨 Board: 看板視圖 toast 位置改進",
+                "📁 Files: 文件上傳指示器位置改進"
+            ],
+            "en": [
+                "📱 Main: Main content padding-top now includes safe-area-inset-top calculation",
+                "🔔 Toast: Notification system position includes safe-area-inset-top",
+                "⬆️ Reload: PWA update prompt position includes safe-area-inset-bottom",
+                "🎨 Board: Board view toast position improved",
+                "📁 Files: File upload indicator position improved"
+            ]
+        }
+    },
     {
         ver: "V1.2.19",
         date: "2026-01-08",

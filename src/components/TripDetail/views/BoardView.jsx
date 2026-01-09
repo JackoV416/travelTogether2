@@ -100,7 +100,7 @@ const BoardView = ({ items, days, isDarkMode, onItemClick, isEditMode }) => {
 
             {/* CSS Toast Notification */}
             {notification && (
-                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-fade-in-up">
+                <div className="fixed left-1/2 -translate-x-1/2 z-50 animate-fade-in-up" style={{ bottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}>
                     <div className="bg-gray-900/90 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/10">
                         <div className="bg-indigo-500/20 p-1.5 rounded-full">
                             <Info className="w-4 h-4 text-indigo-300" />

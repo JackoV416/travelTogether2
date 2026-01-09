@@ -37,7 +37,7 @@ const NotificationSystem = ({ notifications, setNotifications, isDarkMode, onNot
     };
 
     return (
-        <div className="fixed top-20 right-4 z-[100] flex flex-col gap-3 pointer-events-none w-full max-w-sm p-4">
+        <div className="fixed right-4 z-[100] flex flex-col gap-3 pointer-events-none w-full max-w-sm p-4" style={{ top: 'calc(5rem + env(safe-area-inset-top, 0px))' }}>
             {notifications.map(notif => (
                 <div
                     key={notif.id}

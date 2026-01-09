@@ -91,7 +91,7 @@ const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, glassCa
 
             {/* Loading Indicator */}
             {loading && (
-                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-black/80 text-white px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl backdrop-blur-md">
+                <div className="fixed left-1/2 -translate-x-1/2 z-50 bg-black/80 text-white px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl backdrop-blur-md" style={{ bottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}>
                     <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
                     <span className="text-sm font-bold">Uploading...</span>
                 </div>

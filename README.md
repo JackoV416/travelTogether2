@@ -1,15 +1,15 @@
-# Travel Together (智能旅遊規劃) V1.2.19
+# Travel Together (智能旅遊規劃) V1.2.20
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.2.19-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.2.20-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-11.x-orange.svg)](https://firebase.google.com/)
 
-## 🚀 V1.2.19: PWA Mobile Date Fix (2026-01-08)
-**V1.2.19: [PWA] iPhone Pro Max 日期顯示修正！**
-本次更新專注於修復 PWA 模式下 Mobile Date Scroll 組件嘅顯示問題。
+## 🚀 V1.2.20: PWA Safe Area Audit (2026-01-09)
+**V1.2.20: [PWA] iPhone Pro Max Safe Area 全面修復！**
+本次更新專注於修復 PWA 模式下多個組件嘅 safe-area 顯示問題。
 
-### 🌟 V1.2.19 主要更新
+### 🌟 V1.2.20 主要更新
 1.  **Multi-City Localization**: 強力支援跨城市行程翻譯 (例如：`Kyoto -> Osaka` 自動轉為 `京都 → 大阪`)。
 2.  **Currency Summation Fix**: 修復 Itinerary 每日總結的混合幣種計算邏輯，支援即時匯率換算並顯示 HKD 等值。
 3.  **Kanban Localization**: Kanban 視圖現支援分日城市標籤，並全面本地化。

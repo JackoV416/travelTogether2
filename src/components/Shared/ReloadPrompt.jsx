@@ -27,7 +27,7 @@ function ReloadPrompt() {
     if (!offlineReady && !needRefresh) return null;
 
     return (
-        <div className="fixed bottom-20 md:bottom-24 left-1/2 -translate-x-1/2 z-[60] w-full max-w-sm px-4 animate-fade-in-up">
+        <div className="fixed left-1/2 -translate-x-1/2 z-[60] w-full max-w-sm px-4 animate-fade-in-up" style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
             <div className={`backdrop-blur-md p-4 rounded-2xl shadow-2xl border flex items-center gap-4 ${isStandalone ? 'bg-indigo-600/90 text-white border-white/20' : 'bg-gray-900/90 text-white border-white/10'}`}>
                 <div className={`p-2 rounded-xl ${isStandalone ? 'bg-white/20' : 'bg-indigo-500'}`}>
                     {offlineReady ? <Wifi className="w-5 h-5" /> : <RefreshCw className="w-5 h-5 animate-spin-slow" />}

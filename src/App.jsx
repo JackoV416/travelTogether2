@@ -1088,7 +1088,7 @@ const App = () => {
             />
             {/* Fixed Header - Outside content wrapper for proper fixed positioning */}
             {view !== 'tutorial' && <Header title="✈️ Travel Together" user={user} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} onLogout={() => signOut(auth)} onBack={(view !== 'dashboard' && view !== 'settings') ? () => setView('dashboard') : null} onTutorialStart={() => setShowOnboardingTour(true)} onViewChange={setView} onOpenUserSettings={() => setView('settings')} onOpenFeedback={() => setIsReportCenterOpen(true)} onOpenAdminFeedback={() => setIsAdminFeedbackModalOpen(true)} isAdmin={isAdmin} adminPendingCount={openFeedbackCount} onOpenVersion={() => setIsVersionOpen(true)} notifications={notifications} onRemoveNotification={removeNotification} onMarkNotificationsRead={markNotificationsRead} onNotificationClick={handleNotificationNavigate} />}
-            <div className={`relative z-10 flex-grow pt-safe ${view !== 'tutorial' ? 'pt-[88px] pb-safe' : ''}`}>
+            <div className={`relative z-10 flex-grow pb-safe`} style={{ paddingTop: view !== 'tutorial' ? 'calc(72px + env(safe-area-inset-top, 0px))' : '0px' }}>
                 {view === 'dashboard' && (
                     <div className="animate-fade-in">
                         <ErrorBoundary fallbackMessage="儀表板載入失敗，請重新整理" onOpenFeedback={() => setIsReportCenterOpen(true)}>
@@ -1167,7 +1167,7 @@ const App = () => {
                     />
                 )}
 
-                {view === 'tutorial' && <div className="h-screen flex flex-col animate-fade-in"><div className="p-4 border-b flex gap-4"><button onClick={() => { setView('dashboard'); setIsPreviewMode(false); }}><ChevronLeft /></button> 模擬模式 (東京範例)</div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} isPreview={false} globalSettings={globalSettings} exchangeRates={exchangeRates} weatherData={weatherData} onOpenSmartImport={() => setIsSmartImportModalOpen(true)} /></div></div>}
+                {view === 'tutorial' && <div className={`min-h-screen flex flex-col animate-fade-in ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}><div className={`p-4 border-b flex gap-4 items-center sticky top-0 z-50 backdrop-blur-lg ${isDarkMode ? 'bg-gray-900/90 border-gray-800' : 'bg-white/90 border-gray-200'}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}><button onClick={() => { setView('dashboard'); setIsPreviewMode(false); }} className="p-2 rounded-full hover:bg-gray-500/10"><ChevronLeft /></button><span className="font-bold">模擬模式 (東京範例)</span></div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} isPreview={false} globalSettings={globalSettings} exchangeRates={exchangeRates} weatherData={weatherData} onOpenSmartImport={() => setIsSmartImportModalOpen(true)} /></div></div>}
             </div>
             {view !== 'tutorial' && <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} />}
             {/* SettingsModal removed */}
