@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.24";
-export const APP_VERSION_TAG = "Simulation Chat Implementation";
+export const APP_VERSION = "V1.2.25";
+export const APP_VERSION_TAG = "Desktop Chat Button Fix";
 export const APP_LAST_UPDATE = '2026-01-09';
 export const JARVIS_VERSION = "V0.0.4-Beta";
 
@@ -122,6 +122,33 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.2.25",
+        date: "2026-01-09",
+        tag: "Desktop Chat Button Fix",
+        desc: {
+            "zh-TW": "修復桌面版模擬模式聊天按鈕不可見問題",
+            "zh-HK": "修復桌面版模擬模式 Chat 按鈕睇唔到嘅問題",
+            "en": "Fixed Desktop Chat Button Visibility in Simulation Mode"
+        },
+        details: {
+            "zh-TW": [
+                "🔧 Fix: TripDetail 組件現已正確傳遞 isChatOpen prop",
+                "💬 Chat: 模擬模式 Header 工具欄聊天按鈕已恢復正常",
+                "🔗 Props: index.jsx wrapper 現已正確解構並傳遞 isChatOpen"
+            ],
+            "zh-HK": [
+                "🔧 Fix: TripDetail 組件而家正確傳遞 isChatOpen prop",
+                "💬 Chat: 模擬模式 Header 工具欄 Chat 按鈕已經正常顯示",
+                "🔗 Props: index.jsx wrapper 而家正確解構同傳遞 isChatOpen"
+            ],
+            "en": [
+                "🔧 Fix: TripDetail component now correctly passes isChatOpen prop",
+                "💬 Chat: Simulation mode Header toolbar chat button is now visible",
+                "🔗 Props: index.jsx wrapper now properly destructures and forwards isChatOpen"
+            ]
+        }
+    },
     {
         ver: "V1.2.24",
         date: "2026-01-09",

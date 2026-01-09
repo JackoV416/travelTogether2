@@ -26,7 +26,8 @@ const TripDetail = ({
     isSimulation,
     globalSettings,
     exchangeRates,
-    onOpenChat
+    onOpenChat,
+    isChatOpen
 }) => {
     // ============================================
     // HOOKS 區域 - 所有 hooks 必須喺呢度！
@@ -138,6 +139,7 @@ const TripDetail = ({
             globalSettings={globalSettings}
             exchangeRates={exchangeRates}
             onOpenChat={onOpenChat}
+            isChatOpen={isChatOpen}
         />
     );
 };

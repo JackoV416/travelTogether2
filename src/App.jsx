@@ -1063,6 +1063,23 @@ const App = () => {
     const [requestedItemId, setRequestedItemId] = useState(null);
 
 
+    // V1.2.25: Centralized Chat Handler with Security Check
+    const handleOpenChat = (targetTrip = null) => {
+        // AI features require login, UNLESS it's a simulation
+        const isSimulation = (targetTrip?.id?.startsWith('sim-')) || (view === 'tutorial');
+
+        if (!user && !isSimulation) {
+            sendNotification(
+                "需要登入",
+                "AI 對話功能需要登入或註冊後才可使用。請先登入您的 Google 帳戶。",
+                "warning"
+            );
+            return;
+        }
+        if (targetTrip) setSelectedTrip(targetTrip);
+        setIsChatOpen(true);
+    };
+
     if (isLoading) {
         return <DashboardSkeleton isDarkMode={isDarkMode} />;
     }
@@ -1133,7 +1150,8 @@ const App = () => {
                                 onItemHandled={() => setRequestedItemId(null)}
                                 isBanned={isBanned}
                                 isAdmin={isAdmin}
-                                onOpenChat={() => setIsChatOpen(true)}
+                                onOpenChat={() => handleOpenChat()}
+                                isChatOpen={isChatOpen}
                             />
                         </ErrorBoundary>
                     </div>
@@ -1161,20 +1179,24 @@ const App = () => {
                     />
                 )}
 
-                {view === 'tutorial' && <div className={`min-h-screen flex flex-col animate-fade-in ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}><div className={`p-4 border-b flex gap-4 items-center sticky top-0 z-50 backdrop-blur-lg ${isDarkMode ? 'bg-gray-900/90 border-gray-800' : 'bg-white/90 border-gray-200'}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}><button onClick={() => { setView('dashboard'); setIsPreviewMode(false); }} className="p-2 rounded-full hover:bg-gray-500/10"><ChevronLeft /></button><span className="font-bold">模擬模式 (東京範例)</span></div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} isPreview={false} globalSettings={globalSettings} exchangeRates={exchangeRates} weatherData={weatherData} onOpenSmartImport={() => setIsSmartImportModalOpen(true)} onOpenChat={() => { setSelectedTrip(SIMULATION_DATA); setIsChatOpen(true); }} /></div></div>}
+                {view === 'tutorial' && <div className={`min-h-screen flex flex-col animate-fade-in ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}><div className={`p-4 border-b flex gap-4 items-center sticky top-0 z-50 backdrop-blur-lg ${isDarkMode ? 'bg-gray-900/90 border-gray-800' : 'bg-white/90 border-gray-200'}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}><button onClick={() => { setView('dashboard'); setIsPreviewMode(false); }} className="p-2 rounded-full hover:bg-gray-500/10"><ChevronLeft /></button><span className="font-bold">模擬模式 (東京範例)</span></div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} isPreview={false} globalSettings={globalSettings} exchangeRates={exchangeRates} weatherData={weatherData} onOpenSmartImport={() => setIsSmartImportModalOpen(true)} onOpenChat={() => handleOpenChat(SIMULATION_DATA)} isChatOpen={isChatOpen} /></div></div>}
             </div>
             {view !== 'tutorial' && <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} />}
             {/* SettingsModal removed */}
             <OnboardingModal isOpen={isOnboardingOpen} onClose={handleOnboardingComplete} isDarkMode={isDarkMode} />
 
             {/* Global Chat / AI FAB */}
-            {user && view !== 'tutorial' && !isChatOpen && (
+            {(user || view === 'tutorial') && !isChatOpen && (
                 <GlobalChatFAB
                     isDarkMode={isDarkMode}
-                    context={view === 'detail' ? 'trip' : 'default'}
+                    context={view === 'detail' || view === 'tutorial' ? 'trip' : 'default'}
                     onClick={() => {
                         // Priority: Open Trip Chat if in detail view, else Jarvis
-                        setIsChatOpen(true);
+                        if (view === 'tutorial') {
+                            handleOpenChat(SIMULATION_DATA);
+                        } else {
+                            handleOpenChat();
+                        }
                     }}
                 />
             )}
@@ -1194,7 +1216,7 @@ const App = () => {
                 onClose={() => setIsReportCenterOpen(false)}
                 isDarkMode={isDarkMode}
                 user={user}
-                onOpenJarvis={() => { setIsReportCenterOpen(false); setIsChatOpen(true); }}
+                onOpenJarvis={() => { setIsReportCenterOpen(false); handleOpenChat(); }}
             />
             <SmartImportModal
                 isOpen={isSmartImportModalOpen}
@@ -1245,7 +1267,7 @@ const App = () => {
                             localStorage.setItem(`tripViewMode_${selectedTrip?.id || 'global'}`, 'map');
                             window.dispatchEvent(new CustomEvent('refreshTripView'));
                         } else if (item.action === 'ask-jarvis') {
-                            setIsChatOpen(true);
+                            handleOpenChat();
                         } else if (item.action === 'view-kanban') {
                             localStorage.setItem(`tripViewMode_${selectedTrip?.id || 'global'}`, 'kanban');
                             window.dispatchEvent(new CustomEvent('refreshTripView'));

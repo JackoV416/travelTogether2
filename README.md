@@ -1,9 +1,20 @@
-# Travel Together (智能旅遊規劃) V1.2.24
+# Travel Together (智能旅遊規劃) V1.2.25
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.2.24-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.2.25-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-11.x-orange.svg)](https://firebase.google.com/)
+
+## 🚀 V1.2.25: Desktop Simulation Fix (2026-01-09)
+**V1.2.25: [Fix] 桌面版模擬模式 Chat Button 修復！**
+修復了桌面版模擬模式中，聊天 FAB 不可見的問題。
+
+### 🌟 V1.2.25 主要更新
+1.  **Bug Fix**: 修正 `GlobalChatFAB` 在模擬模式下的渲染條件。
+2.  **Logic Fix**: 確保 `isChatOpen` 狀態正確傳遞至 Header。
+3.  **Enhancement**: 未登入用戶現在也可在模擬模式使用聊天按鈕。
+
+---
 
 ## 🚀 V1.2.24: Simulation Chat Implementation (2026-01-09)
 **V1.2.24: [模擬模式] 群聊功能實裝！**
@@ -219,7 +230,8 @@ graph TD
 
 ## 📋 版本紀錄 (History)
 
-| **V1.2.24** | **Simulation Chat** | 🚀 最新版 |
+| **V1.2.25** | **Desktop Sim Fix** | 🚀 最新版 |
+| **V1.2.24** | **Simulation Chat** | ✅ 已發布 |
 | **V1.2.23** | **Documentation Cleanup** | ✅ 已發布 |
 | **V1.2.22** | **Data Saver & PWA Fix** | ✅ 已發布 |
 | **V1.2.21** | **Tutorial & UX Fixes** | ✅ 已發布 |
