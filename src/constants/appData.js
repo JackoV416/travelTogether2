@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.20";
-export const APP_VERSION_TAG = "PWA Safe Area Audit";
+export const APP_VERSION = "V1.2.21";
+export const APP_VERSION_TAG = "Tutorial & UX Fixes";
 export const APP_LAST_UPDATE = '2026-01-09';
 export const JARVIS_VERSION = "V0.0.4-Beta";
 
@@ -122,6 +122,33 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.2.21",
+        date: "2026-01-09",
+        tag: "Tutorial & UX Fixes",
+        desc: {
+            "zh-TW": "修復模擬例子閒聊按鈕及 PWA 介面問題",
+            "zh-HK": "修復模擬例子閒聊按鈕同 PWA 介面問題",
+            "en": "Fixed Tutorial Chat Button & PWA UI Issues"
+        },
+        details: {
+            "zh-TW": [
+                "💬 Fix: 模擬例子「閒聊」Tab 現已正常運作，附帶教學提示",
+                "📱 Fix: Jarvis FAB 位置調整，不再擋住 Footer 語言切換器",
+                "🔗 Fix: TripDetail component 正確傳遞 onOpenChat prop"
+            ],
+            "zh-HK": [
+                "💬 Fix: 模擬例子「閒聊」Tab 而家正常運作，附帶教學提示",
+                "📱 Fix: Jarvis FAB 位置調整，唔會再擋住 Footer 語言切換器",
+                "🔗 Fix: TripDetail component 正確傳遞 onOpenChat prop"
+            ],
+            "en": [
+                "💬 Fix: Simulation Chat Tab now works with tutorial hints",
+                "📱 Fix: Jarvis FAB repositioned to avoid blocking Footer language switcher",
+                "🔗 Fix: TripDetail component correctly passes onOpenChat prop"
+            ]
+        }
+    },
     {
         ver: "V1.2.20",
         date: "2026-01-09",
