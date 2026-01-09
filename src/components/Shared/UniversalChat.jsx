@@ -41,11 +41,35 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
         }
     }, [isOpen, initialTab, trip]);
 
-    // V1.2.2: Real-time Message Listener for Trip Chat
+    // V1.2.2: Real-time Message Listener for Trip Chat (V1.2.24: Simulation Support)
     useEffect(() => {
         if (!isOpen || activeTab !== 'trip' || !trip?.id) {
             setMessages([]);
             return;
+        }
+
+        // V1.2.24: Simulation Mode Support - Use trip.chatMessages instead of Firebase
+        const isSimulation = trip.id?.startsWith('sim-');
+        if (isSimulation && trip.chatMessages) {
+            // Transform simulation chatMessages to match real message format
+            const simMessages = trip.chatMessages.map(msg => {
+                const member = trip.members?.find(m => m.id === msg.senderId);
+                return {
+                    id: msg.id,
+                    text: msg.text,
+                    senderId: msg.senderId,
+                    senderName: member?.name || 'Unknown',
+                    senderPhoto: member?.avatar || '',
+                    timestamp: new Date(msg.timestamp),
+                    type: 'text'
+                };
+            });
+            setMessages(simMessages);
+            setIsLoading(false);
+            setTimeout(() => {
+                scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+            return; // No Firebase listener needed for simulation
         }
 
         setIsLoading(true);
@@ -70,11 +94,19 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
         });
 
         return () => unsubscribe();
-    }, [isOpen, activeTab, trip?.id]);
+    }, [isOpen, activeTab, trip?.id, trip?.chatMessages]);
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!inputText.trim() || isSending || !user || activeTab !== 'trip') return;
+
+        // V1.2.24: Simulation mode - show friendly message instead of sending
+        const isSimulation = trip?.id?.startsWith('sim-');
+        if (isSimulation) {
+            alert('📱 呢個係模擬模式！\n\n實際使用時，你可以喺呢度同團友傾計、分享相片、討論行程。');
+            setInputText('');
+            return;
+        }
 
         setIsSending(true);
         const text = inputText.trim();

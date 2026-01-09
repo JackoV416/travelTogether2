@@ -466,14 +466,7 @@ const App = () => {
     const [trips, setTrips] = useState([]);
     const [loadingTrips, setLoadingTrips] = useState(true);
     const [isVersionOpen, setIsVersionOpen] = useState(false);
-    // Version Check
-    useEffect(() => {
-        const storedVersion = localStorage.getItem('app_version');
-        if (storedVersion !== APP_VERSION) {
-            setIsVersionOpen(true);
-            localStorage.setItem('app_version', APP_VERSION);
-        }
-    }, [setIsVersionOpen]);
+    // Version Check moved to unified Update Success Logic (line ~770)
 
     // --- URL Routing for Sharing ---
     useEffect(() => {
@@ -766,8 +759,8 @@ const App = () => {
     }, []);
 
     // --- Update Success Logic (Local Cache) ---
-    // Only shows "update success" if the RUNNING code version (APP_VERSION) is NEWER than what user last saw
-    // This prevents showing "success" on old cached PWA before user actually refreshes
+    // Only shows "update success" NOTIFICATION if user actually got new code
+    // Version modal is handled separately by the Auto-show Version Modal useEffect
     useEffect(() => {
         const lastSeenVersion = localStorage.getItem('app_version_cache');
 
@@ -789,7 +782,8 @@ const App = () => {
                 );
 
                 triggerConfetti();
-                setIsVersionOpen(true);
+                // Note: Version modal is handled by Auto-show Version Modal useEffect (line ~597)
+                // Don't duplicate setIsVersionOpen(true) here
 
             }, 1000);
         }
@@ -1167,7 +1161,7 @@ const App = () => {
                     />
                 )}
 
-                {view === 'tutorial' && <div className={`min-h-screen flex flex-col animate-fade-in ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}><div className={`p-4 border-b flex gap-4 items-center sticky top-0 z-50 backdrop-blur-lg ${isDarkMode ? 'bg-gray-900/90 border-gray-800' : 'bg-white/90 border-gray-200'}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}><button onClick={() => { setView('dashboard'); setIsPreviewMode(false); }} className="p-2 rounded-full hover:bg-gray-500/10"><ChevronLeft /></button><span className="font-bold">模擬模式 (東京範例)</span></div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} isPreview={false} globalSettings={globalSettings} exchangeRates={exchangeRates} weatherData={weatherData} onOpenSmartImport={() => setIsSmartImportModalOpen(true)} onOpenChat={() => sendNotification('💬 閒聊功能', '呢個係模擬模式，實際使用時可以喺呢度同團友傾計！支援即時通訊、分享相片同行程討論。', 'info')} /></div></div>}
+                {view === 'tutorial' && <div className={`min-h-screen flex flex-col animate-fade-in ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}><div className={`p-4 border-b flex gap-4 items-center sticky top-0 z-50 backdrop-blur-lg ${isDarkMode ? 'bg-gray-900/90 border-gray-800' : 'bg-white/90 border-gray-200'}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}><button onClick={() => { setView('dashboard'); setIsPreviewMode(false); }} className="p-2 rounded-full hover:bg-gray-500/10"><ChevronLeft /></button><span className="font-bold">模擬模式 (東京範例)</span></div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} isPreview={false} globalSettings={globalSettings} exchangeRates={exchangeRates} weatherData={weatherData} onOpenSmartImport={() => setIsSmartImportModalOpen(true)} onOpenChat={() => { setSelectedTrip(SIMULATION_DATA); setIsChatOpen(true); }} /></div></div>}
             </div>
             {view !== 'tutorial' && <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} />}
             {/* SettingsModal removed */}

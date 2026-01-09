@@ -1,20 +1,19 @@
-# Travel Together (智能旅遊規劃) V1.2.23
+# Travel Together (智能旅遊規劃) V1.2.24
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.2.23-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.2.24-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-11.x-orange.svg)](https://firebase.google.com/)
 
-## 🚀 V1.2.23: Documentation & Backlog Cleanup (2026-01-09)
-**V1.2.23: [Docs] 文檔全面更新與版本標籤修正！**
-本次更新全面清理過時文檔，修正所有「Coming Soon」標籤版本號。
+## 🚀 V1.2.24: Simulation Chat Implementation (2026-01-09)
+**V1.2.24: [模擬模式] 群聊功能實裝！**
+模擬模式而家支援完整的群聊介面，顯示 23 條地道廣東話模擬對話。
 
-### 🌟 V1.2.23 主要更新
-1.  **文檔更新**: jarvis_ai_features.md 更新至 V1.2.22 狀態，標記 Multi-Key 功能為已實裝。
-2.  **版本標籤修正**: Pro Editor (V1.2→V1.4)、Mapbox 3D (V1.2.6→V2.0)、BentoPDF (→V2.0)。
-3.  **Backlog 清理**: 重構 v1.1.x/v1.2.x backlog，清理重複條目，歸檔完成項目。
-4.  **Roadmap 重構**: version_roadmap.md 新結構，清晰區分已完成/進行中/未來版本。
-5.  **Workflow 修正**: release-new-version.md 路徑指引由 App.jsx 改為 appData.js。
+### 🌟 V1.2.24 主要更新
+1.  **模擬 Chat**: 䃒「閒聊」按鈕會開 UniversalChat 面板。
+2.  **地道對話**: 顯示 23 條地道廣東話模擬訊息。
+3.  **友善提示**: 模擬模式發訊息時顯示教學提示。
+4.  **安全性**: 模擬模式不會嘗試連接 Firebase。
 
 ---
 
@@ -220,7 +219,8 @@ graph TD
 
 ## 📋 版本紀錄 (History)
 
-| **V1.2.23** | **Documentation Cleanup** | 🚀 最新版 |
+| **V1.2.24** | **Simulation Chat** | 🚀 最新版 |
+| **V1.2.23** | **Documentation Cleanup** | ✅ 已發布 |
 | **V1.2.22** | **Data Saver & PWA Fix** | ✅ 已發布 |
 | **V1.2.21** | **Tutorial & UX Fixes** | ✅ 已發布 |
 | **V1.2.20** | **PWA Safe Area Audit** | ✅ 已發布 |

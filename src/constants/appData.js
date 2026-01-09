@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.23";
-export const APP_VERSION_TAG = "Documentation & Backlog Cleanup";
+export const APP_VERSION = "V1.2.24";
+export const APP_VERSION_TAG = "Simulation Chat Implementation";
 export const APP_LAST_UPDATE = '2026-01-09';
 export const JARVIS_VERSION = "V0.0.4-Beta";
 
@@ -122,6 +122,36 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.2.24",
+        date: "2026-01-09",
+        tag: "Simulation Chat Implementation",
+        desc: {
+            "zh-TW": "模擬模式群聊功能實裝",
+            "zh-HK": "模擬模式群聊功能實裝",
+            "en": "Simulation Mode Group Chat Implementation"
+        },
+        details: {
+            "zh-TW": [
+                "💬 Chat: 模擬模式現已支援完整群聊介面",
+                "📱 UI: 點擊閒聊按鈕會開啟 UniversalChat 面板",
+                "🗣️ Messages: 顯示 23 條地道廣東話模擬對話",
+                "🔒 安全: 模擬模式發送訊息時顯示友善提示"
+            ],
+            "zh-HK": [
+                "💬 Chat: 模擬模式而家支援完整群聊介面",
+                "📱 UI: 㩒「閒聊」按鈕會開 UniversalChat 面板",
+                "🗣️ Messages: 顯示 23 條地道廣東話模擬對話",
+                "🔒 安全: 模擬模式發訊息時顯示友善提示"
+            ],
+            "en": [
+                "💬 Chat: Simulation mode now supports full group chat interface",
+                "📱 UI: Clicking chat button opens UniversalChat panel",
+                "🗣️ Messages: Displays 23 authentic Cantonese simulation messages",
+                "🔒 Safety: Friendly prompt shown when trying to send in simulation"
+            ]
+        }
+    },
     {
         ver: "V1.2.23",
         date: "2026-01-09",
