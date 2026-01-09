@@ -204,7 +204,7 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
                         <button onClick={() => setActiveTab('export')} className={`flex-1 py-3 text-xs font-black tracking-widest transition-all ${activeTab === 'export' ? 'text-indigo-400 bg-indigo-500/10 border-b-2 border-indigo-500' : 'opacity-40 hover:bg-white/5'}`}>📤 匯出</button>
                         <button onClick={() => setActiveTab('share')} className={`flex-1 py-3 text-xs font-black tracking-widest transition-all ${activeTab === 'share' ? 'text-indigo-400 bg-indigo-500/10 border-b-2 border-indigo-500' : 'opacity-40 hover:bg-white/5'}`}>🔗 分享</button>
                         <div className="relative group flex-1">
-                            <button disabled className="w-full py-3 text-[10px] font-black tracking-widest opacity-20 cursor-not-allowed">🎨 編輯 (V1.2)</button>
+                            <button disabled className="w-full py-3 text-[10px] font-black tracking-widest opacity-20 cursor-not-allowed">🎨 編輯 (V1.4)</button>
                             <div className="absolute inset-x-0 bottom-full mb-2 p-2 bg-indigo-600 rounded-lg text-[9px] text-white opacity-0 group-hover:opacity-100 transition-opacity z-50 text-center pointer-events-none font-bold">
                                 🚀 Pro Editor (執位器) 即將登場！可自由拖拽 PDF 項目順序。
                             </div>
@@ -377,7 +377,7 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
                                         <span className="text-[10px] font-black uppercase tracking-widest">{exportType?.label ? `${exportType.label} 預覽` : '請選擇匯出格式'}</span>
                                     </div>
                                     <div className="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-[9px] font-black text-indigo-300 animate-pulse">
-                                        COMING SOON: PRO EDITOR V1.2
+                                        COMING SOON: PRO EDITOR V1.4
                                     </div>
                                 </div>
 

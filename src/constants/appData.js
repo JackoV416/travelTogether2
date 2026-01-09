@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.22";
-export const APP_VERSION_TAG = "Data Saver Implementation";
+export const APP_VERSION = "V1.2.23";
+export const APP_VERSION_TAG = "Documentation & Backlog Cleanup";
 export const APP_LAST_UPDATE = '2026-01-09';
 export const JARVIS_VERSION = "V0.0.4-Beta";
 
@@ -122,6 +122,39 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.2.23",
+        date: "2026-01-09",
+        tag: "Documentation & Backlog Cleanup",
+        desc: {
+            "zh-TW": "文檔全面更新與版本標籤修正",
+            "zh-HK": "文檔全面更新同版本標籤修正",
+            "en": "Documentation & Version Label Updates"
+        },
+        details: {
+            "zh-TW": [
+                "📚 文檔: 更新 jarvis_ai_features.md 至 V1.2.22 狀態",
+                "🏷️ 標籤: 修正過時嘅 Coming Soon 版本標籤 (V1.2→V1.4/V2.0)",
+                "📋 Backlog: 清理 v1.1.x/v1.2.x backlog 重複條目",
+                "🗺️ Roadmap: 重構版本規劃結構",
+                "📝 Workflow: 修正 release-new-version.md 路徑指引"
+            ],
+            "zh-HK": [
+                "📚 文檔: 更新 jarvis_ai_features.md 至 V1.2.22 狀態",
+                "🏷️ 標籤: 修正過時嘅 Coming Soon 版本標籤 (V1.2→V1.4/V2.0)",
+                "📋 Backlog: 清理 v1.1.x/v1.2.x backlog 重複條目",
+                "🗺️ Roadmap: 重構版本規劃結構",
+                "📝 Workflow: 修正 release-new-version.md 路徑指引"
+            ],
+            "en": [
+                "📚 Docs: Updated jarvis_ai_features.md to V1.2.22 status",
+                "🏷️ Labels: Fixed outdated Coming Soon tags (V1.2→V1.4/V2.0)",
+                "📋 Backlog: Cleaned up v1.1.x/v1.2.x duplicate entries",
+                "🗺️ Roadmap: Restructured version planning",
+                "📝 Workflow: Fixed release-new-version.md path references"
+            ]
+        }
+    },
     {
         ver: "V1.2.22",
         date: "2026-01-09",
@@ -1551,6 +1584,31 @@ export const SIMULATION_DATA = {
         { id: "mem-5", date: "2025-12-28", memo: "USJ 走咗十二個鐘，任天堂世界金幣全取。Mike 尿袋救咗全或命！" },
         { id: "mem-6", date: "2025-12-29", memo: "黑門市場海膽鮮甘到喊。Rapit 鐵人 28 型列車賣相勁高，完美歸航！" }
     ],
+    chatMessages: [
+        { id: "chat-1", text: "各位～我哋機票 confirm 咗啦！CX520 聖誕早機，記得 12:30 前到 T1 呀！🛫", senderId: "sim-user-1", timestamp: "2025-12-20T18:30:00Z" },
+        { id: "chat-2", text: "收到！我負責帶尿袋同藥包，全員裝備話俾我知有冇遺漏 👍", senderId: "sim-user-4", timestamp: "2025-12-20T18:32:00Z" },
+        { id: "chat-3", text: "Alex 我啲相機好重，可唔可以借你個箱放 lens bag？🙏", senderId: "sim-user-3", timestamp: "2025-12-20T19:15:00Z" },
+        { id: "chat-4", text: "冇問題！記住 VJW 填晒未？入境要用㗎！", senderId: "sim-user-1", timestamp: "2025-12-20T19:20:00Z" },
+        { id: "chat-5", text: "我已經填好晒同 cap 咗圖！記住要 cap 埋藍色 top bar 先係有效㗎！", senderId: "sim-user-2", timestamp: "2025-12-20T19:25:00Z" },
+        { id: "chat-6", text: "聽日喺新宿酒店集合！哥吉拉街嗰間，8F lobby！🦖", senderId: "sim-user-1", timestamp: "2025-12-24T17:00:00Z" },
+        { id: "chat-7", text: "嘩！個酒店望出去真係見到哥吉拉個頭！癲咗 🤯", senderId: "sim-user-3", timestamp: "2025-12-24T18:15:00Z" },
+        { id: "chat-8", text: "敘敘苑訂咗 7:30！行過去 5 分鐘。記住帶定胃藥 😂", senderId: "sim-user-4", timestamp: "2025-12-24T18:20:00Z" },
+        { id: "chat-9", text: "今日築地外市場好多人！但係玉子燒真係好食到喊 🥚✨", senderId: "sim-user-2", timestamp: "2025-12-25T10:30:00Z" },
+        { id: "chat-10", text: "淺草寺求籤我抽到凶！即刻綁咗喺棵樹度 😅", senderId: "sim-user-3", timestamp: "2025-12-25T16:00:00Z" },
+        { id: "chat-11", text: "Shibuya Sky 風大到癲！@Sarah 你頂帽飛咗未？😂", senderId: "sim-user-4", timestamp: "2025-12-26T11:30:00Z" },
+        { id: "chat-12", text: "差啲飛咗落山！好彩 Alex 幫我捉住 🫣", senderId: "sim-user-3", timestamp: "2025-12-26T11:32:00Z" },
+        { id: "chat-13", text: "聽日新幹線！記住 8:15 喺東京站月台集合，遲到唔等㗎！🚅", senderId: "sim-user-1", timestamp: "2025-12-26T21:00:00Z" },
+        { id: "chat-14", text: "富士山！右手邊！快啲影！📸", senderId: "sim-user-2", timestamp: "2025-12-27T10:30:00Z" },
+        { id: "chat-15", text: "影到喇！300km/h 縮時完成！", senderId: "sim-user-1", timestamp: "2025-12-27T10:32:00Z" },
+        { id: "chat-16", text: "W Osaka 間房全黑色好型！個 view 望到心齋橋夜景 🌃", senderId: "sim-user-3", timestamp: "2025-12-27T14:00:00Z" },
+        { id: "chat-17", text: "USJ 開門喇！任天堂世界衝呀！🍄", senderId: "sim-user-2", timestamp: "2025-12-28T09:00:00Z" },
+        { id: "chat-18", text: "Power-Up Band 敲磚好治癒！已經儲咗 200 金幣！", senderId: "sim-user-4", timestamp: "2025-12-28T11:00:00Z" },
+        { id: "chat-19", text: "全日行咗 2 萬步，隻腳廢咗 😵 返酒店貼休足時間！", senderId: "sim-user-3", timestamp: "2025-12-28T21:30:00Z" },
+        { id: "chat-20", text: "最後一日喇！機場前去黑門食海膽 🦐", senderId: "sim-user-1", timestamp: "2025-12-29T08:00:00Z" },
+        { id: "chat-21", text: "Rapit 藍武士好靚！鐵人 28 造型！最後衝刺買手信！", senderId: "sim-user-4", timestamp: "2025-12-29T13:00:00Z" },
+        { id: "chat-22", text: "Safe flight everyone！下次再約！🙌🇯🇵", senderId: "sim-user-2", timestamp: "2025-12-29T15:00:00Z" },
+        { id: "chat-23", text: "多謝大家！呢個 trip 真係好難忘 🥹 有你哋真好！", senderId: "sim-user-1", timestamp: "2025-12-29T15:05:00Z" }
+    ],
     budget: [
         { id: "b-1", name: "機票 (CX520 來回 4人)", cost: 18000, currency: "HKD", category: "flight", payerId: "sim-user-1", splitType: "group", details: "【Alex 支付】包含 Economy Lite 行李額 23kg *4。國泰旗艦長途機。已預選位置。" },
         { id: "b-2", name: "N'EX 來回套票 (4人)", cost: 16280, currency: "JPY", category: "transport", payerId: "sim-user-4", splitType: "group", details: "【Mike 支付】成田機場店購買。只限外國護照。包含成田到新宿來回。" },
@@ -1560,7 +1618,9 @@ export const SIMULATION_DATA = {
         { id: "b-shinkansen", name: "新幹線 Nozomi (東京-新大阪)", cost: 59000, currency: "JPY", category: "transport", payerId: "sim-user-1", splitType: "group", details: "【Alex 支付】包含特大行李預約位 (最後排)。Nozomi 21 號次。" },
         { id: "b-hotel1", name: "Hotel Gracery Shinjuku (3晚)", cost: 95000, currency: "JPY", category: "hotel", payerId: "sim-user-1", splitType: "group", details: "【Alex 支付】兩間 Twin Room。聖誕旺季價錢。" },
         { id: "b-hotel2", name: "W Osaka (2晚)", cost: 120000, currency: "JPY", category: "hotel", payerId: "sim-user-1", splitType: "group", details: "【Alex 支付】Wonderful Room。包含 1F 行李寄存服務。" },
-        { id: "b-porter", name: "Porter Tanker XS (Sarah)", cost: 32000, currency: "JPY", category: "shopping", payerId: "sim-user-3", splitType: "individual", details: "【Sarah 自付】原宿限定版。已扣 10% 消費稅。" }
+        { id: "b-porter", name: "Porter Tanker XS (Sarah)", cost: 32000, currency: "JPY", category: "shopping", payerId: "sim-user-3", splitType: "individual", details: "【Sarah 自付】原宿限定版。已扣 10% 消費稅。" },
+        { id: "b-donki", name: "藥妝掃貨 (Don Quijote)", cost: 25000, currency: "JPY", category: "shopping", payerId: "sim-user-4", splitType: "group", details: "【Mike 支付】全員藥妝統一採購。撒隆巴斯、龍角散、休足時間、EVE 止痛藥。已用 5% Coupon + Tax Free。" },
+        { id: "b-kani", name: "蟹道樂晚餐 (道頓堀)", cost: 52000, currency: "JPY", category: "food", payerId: "sim-user-1", splitType: "group", details: "【Alex 支付】蟹懷石料理套餐。包含刺身、炭燒、火鍋。大阪地標打卡。" }
     ]
 };
 

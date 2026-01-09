@@ -1,21 +1,20 @@
-# Travel Together (智能旅遊規劃) V1.2.22
+# Travel Together (智能旅遊規劃) V1.2.23
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.2.22-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.2.23-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-11.x-orange.svg)](https://firebase.google.com/)
 
-## 🚀 V1.2.22: Data Saver Implementation (2026-01-09)
-**V1.2.22: [PWA] 省流量模式正式實裝！**
-本次更新實裝咗省流量模式，開啟後圖片會自動壓縮以節省數據用量。
+## 🚀 V1.2.23: Documentation & Backlog Cleanup (2026-01-09)
+**V1.2.23: [Docs] 文檔全面更新與版本標籤修正！**
+本次更新全面清理過時文檔，修正所有「Coming Soon」標籤版本號。
 
-### 🌟 V1.2.22 主要更新
-1.  **Multi-City Localization**: 強力支援跨城市行程翻譯 (例如：`Kyoto -> Osaka` 自動轉為 `京都 → 大阪`)。
-2.  **Currency Summation Fix**: 修復 Itinerary 每日總結的混合幣種計算邏輯，支援即時匯率換算並顯示 HKD 等值。
-3.  **Kanban Localization**: Kanban 視圖現支援分日城市標籤，並全面本地化。
-4.  **City Database Expansion**: 新增日本（北海道、福岡、沖繩、札幌）及多個全球城市的翻譯與貨幣資訊。
-5.  **Critical Bug Fixes**: 修復 `ItineraryTab` 的 `t is not defined`、Helper Shadowing 導致的翻譯錯誤，以及 `VersionModal` 的渲染問題。
-6.  **UI Polishing**: 優化地點選擇器語言切換，並確保全站使用統一的本地化 Helper。
+### 🌟 V1.2.23 主要更新
+1.  **文檔更新**: jarvis_ai_features.md 更新至 V1.2.22 狀態，標記 Multi-Key 功能為已實裝。
+2.  **版本標籤修正**: Pro Editor (V1.2→V1.4)、Mapbox 3D (V1.2.6→V2.0)、BentoPDF (→V2.0)。
+3.  **Backlog 清理**: 重構 v1.1.x/v1.2.x backlog，清理重複條目，歸檔完成項目。
+4.  **Roadmap 重構**: version_roadmap.md 新結構，清晰區分已完成/進行中/未來版本。
+5.  **Workflow 修正**: release-new-version.md 路徑指引由 App.jsx 改為 appData.js。
 
 ---
 
@@ -221,21 +220,14 @@ graph TD
 
 ## 📋 版本紀錄 (History)
 
-| **V1.2.11** | **Multi-City & Currency Fix** | 🚀 最新版 |
-| **V1.2.10** | **Localization Audit** | ✅ 已發布 |
-| **V1.2.8** | **Jarvis Keys & zh-HK** | ✅ 已發布 |
-| **V1.2.3** | **Jarvis AI Quota & Sub-tabs** | ✅ 已發布 |
-| **V1.2.2** | **Jarvis AI Support Center** | ✅ 已發布 |
-| **V1.2.1** | **User Group Chat** | ✅ 已發布 |
-| **V1.1.8** | **Dark Mode & AI Polish** | ✅ 已發布 |
-| **V1.1.7** | **Daily Intelligence** | ✅ 已發布 |
-| **V1.1.2** | **Audit & Precision** | ✅ 已發布 |
-| **V1.1.1** | **Resilience & Polish** | ✅ 已發布 |
-| **V1.0.5** | **Security Update** | ✅ 已發布 |
-| **V1.0.4** | **Optimistic UI Update** | ✅ 已發布 |
-| **V1.0.3** | **Immigration System** | ✅ 已發布 |
-| **V1.0.2** | **Zero-Loop Fix** | ✅ 已發布 |
-| **V1.0.1** | **Matrix Sync Update** | ✅ 已發布 |
+| **V1.2.23** | **Documentation Cleanup** | 🚀 最新版 |
+| **V1.2.22** | **Data Saver & PWA Fix** | ✅ 已發布 |
+| **V1.2.21** | **Tutorial & UX Fixes** | ✅ 已發布 |
+| **V1.2.20** | **PWA Safe Area Audit** | ✅ 已發布 |
+| **V1.2.11** | **Multi-City & Currency** | ✅ 已發布 |
+| **V1.2.6** | **The Ultimate View** | ✅ 已發布 |
+| **V1.2.4** | **Intelligent Onboarding** | ✅ 已發布 |
+| **V1.1.0** | **Ticket Style & Smart** | ✅ 已發布 |
 | **V1.0.0** | **Official Release** | ✅ 已發布 |
 
 ---
@@ -253,4 +245,4 @@ graph TD
 ---
 
 **Author**: [Jamie Kwok](https://github.com/JackoV416)
-**Last Updated**: 2026-01-07
+**Last Updated**: 2026-01-09

@@ -589,11 +589,11 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                                                 <Sparkles className="w-4 h-4" />
                                             </div>
                                             <div>
-                                                <p className="text-[10px] font-black text-indigo-300">本地混合辨識 (BentoPDF) 稍後版本會更新</p>
+                                                <p className="text-[10px] font-black text-indigo-300">本地混合辨識 (BentoPDF) V2.0</p>
                                                 <p className="text-[9px] opacity-40">將支持本地 OCR，大幅提升隱私與速度</p>
                                             </div>
                                         </div>
-                                        <div className="text-[10px] font-bold opacity-30 group-hover:opacity-100 transition-opacity">即將推出</div>
+                                        <div className="text-[10px] font-bold opacity-30 group-hover:opacity-100 transition-opacity">V2.0</div>
                                     </div>
                                 </div>
                             )}
