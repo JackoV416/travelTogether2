@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Map as MapIcon, Utensils, ShoppingBag, Bus, PlaneTakeoff, Hotel, Shirt, Sparkles, Smartphone, FileText, Pill, Package, Trash2, ArrowRight, Clock } from 'lucide-react';
 import { inputClasses, formatDate, getWeekday } from '../../utils/tripUtils';
 import { buttonPrimary } from '../../constants/styles';
@@ -6,6 +7,7 @@ import { CURRENCIES, MODAL_LABELS } from '../../constants/appData';
 
 const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date, defaultType = 'spot', editData = null, members = [], trip = {}, language = 'zh-TW' }) => {
     // i18n helper
+    const { t: i18n_t } = useTranslation();
     const t = (key) => MODAL_LABELS[key]?.[language] || MODAL_LABELS[key]?.['zh-TW'] || key;
     const [name, setName] = useState('');
     const [cost, setCost] = useState('');
@@ -20,21 +22,30 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
     useEffect(() => {
         if (isOpen) {
             if (editData) {
-                setName(editData.name || ''); // CRITICAL: Restore name for edit
-                setCost(editData.cost || ''); setType(editData.type || editData.category || 'spot'); setCurrency(editData.currency || 'HKD');
-                setPayer(editData.payer || members[0]?.name);
-                setSplitType(editData.splitType || 'group');
-                setDetails(editData.details || { isRefund: false, refund: '', tax: '', taxCurrency: 'HKD', layover: false, time: '', location: '' });
-                setEstPrice(editData.estPrice || '');
-                setCategory(editData.category || 'misc');
+                queueMicrotask(() => setName(editData.name || '')); // CRITICAL: Restore name for edit
+                queueMicrotask(() => {
+                    setCost(editData.cost || '');
+                    setType(editData.type || editData.category || 'spot');
+                    setCurrency(editData.currency || 'HKD');
+                    setPayer(editData.payer || members[0]?.name);
+                    setSplitType(editData.splitType || 'group');
+                    setDetails(editData.details || { isRefund: false, refund: '', tax: '', taxCurrency: 'HKD', layover: false, time: '', location: '' });
+                    setEstPrice(editData.estPrice || '');
+                    setCategory(editData.category || 'misc');
+                });
             } else {
                 // Reset for new item
-                setName(''); setCost(''); setType(defaultType); setCurrency('HKD');
-                setPayer(members[0]?.name || '');
-                setSplitType('group');
-                setDetails({ isRefund: false, refund: '', tax: '', taxCurrency: 'HKD', layover: false, time: '', location: '' });
-                setEstPrice('');
-                setCategory('misc');
+                queueMicrotask(() => {
+                    setName('');
+                    setCost('');
+                    setType(defaultType);
+                    setCurrency('HKD');
+                    setPayer(members[0]?.name || '');
+                    setSplitType('group');
+                    setDetails({ isRefund: false, refund: '', tax: '', taxCurrency: 'HKD', layover: false, time: '', location: '' });
+                    setEstPrice('');
+                    setCategory('misc');
+                });
             }
         }
     }, [isOpen, editData, defaultType, members]);
@@ -126,7 +137,7 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
 
     return (
         <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-md">
-            <div className={`w-full max-w-xl p-6 rounded-2xl ${isDarkMode ? 'bg-gray-900 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-200'} shadow-2xl border transition-all max-h-[90vh] overflow-y-auto custom-scrollbar`}>
+            <div className={`w-full max-w-xl p-6 rounded-2xl ${isDarkMode ? 'bg-gray-900 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-200'} shadow-2xl border transition-all max-h-[90vh] overflow-y-auto custom-scrollbar`} data-tour="add-activity-modal">
                 <div className="flex items-start justify-between mb-6">
                     <div>
                         <h3 className="font-bold text-2xl tracking-tight">
@@ -135,7 +146,7 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
                         {date && !isPacking && (
                             <div className="text-sm font-medium opacity-60 mt-1 flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-                                {formatDate(date)}（{getWeekday(date)}）
+                                {formatDate(date)}（{getWeekday(date, i18n_t)}）
                             </div>
                         )}
                     </div>
@@ -145,7 +156,7 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
                 </div>
 
                 {!isPacking ? (
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-6">
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-6" data-tour="add-activity-types">
                         {categories.map(cat => (
                             <button
                                 key={cat.id}
@@ -176,7 +187,7 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
                     </div>
                 )}
 
-                <div className="space-y-5">
+                <div className="space-y-5" data-tour="add-activity-form">
                     <div>
                         <div className="flex justify-between items-center mb-2 ml-1">
                             <label className="block text-xs font-bold opacity-70 uppercase tracking-wider">{t('name')}</label>

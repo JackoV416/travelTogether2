@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
     RefreshCw, List, FileUp, Loader2, DollarSign, PieChart,
     TrendingUp, ArrowDownCircle, ArrowUpCircle, Coffee,
-    Bus, ShoppingBag, Hotel, Plane, Ticket, HelpCircle
+    Bus, ShoppingBag, Hotel, Plane, Ticket, HelpCircle, Plus
 } from 'lucide-react';
 import SearchFilterBar from '../../Shared/SearchFilterBar';
 import EmptyState from '../../Shared/EmptyState';
@@ -18,7 +18,8 @@ const BudgetTab = ({
     handleReceiptUpload,
     glassCard,
     onOpenSmartImport,
-    onOpenSmartExport
+    onOpenSmartExport,
+    onAddItem // V1.2.6
 }) => {
     const [searchValue, setSearchValue] = useState("");
     const [activeFilters, setActiveFilters] = useState({ category: 'all' });
@@ -72,7 +73,15 @@ const BudgetTab = ({
             />
 
             {/* View Toggle */}
-            <div className="flex justify-end mb-4">
+            <div className="flex justify-between items-center mb-4">
+                <button
+                    onClick={onAddItem}
+                    data-tour="add-expense"
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg active:scale-95"
+                >
+                    <Plus className="w-4 h-4" /> <span>新增支出</span>
+                </button>
+
                 <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-lg inline-flex">
                     <button
                         onClick={() => setViewMode('list')}
@@ -97,7 +106,7 @@ const BudgetTab = ({
                     glassCard={glassCard}
                 />
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-tour="budget-content">
                     {/* Main Stats Card */}
                     <div className={`${glassCard(isDarkMode)} p-8 md:col-span-1 flex flex-col items-center justify-center relative overflow-hidden group`}>
                         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform">

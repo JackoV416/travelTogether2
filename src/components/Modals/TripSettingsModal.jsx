@@ -1,17 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { X, Search, CheckCircle } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { X, Search, CheckCircle, Globe, Lock } from 'lucide-react';
 import { inputClasses, getLocalizedCountryName, getLocalizedCityName, getHolidayMap } from '../../utils/tripUtils';
+import { useTranslation } from 'react-i18next';
 import { buttonPrimary } from '../../constants/styles';
 import { COUNTRIES_DATA } from '../../constants/appData';
 import DateRangePicker from '../Shared/DateRangePicker';
 
 const TripSettingsModal = ({ isOpen, onClose, trip, onUpdate, isDarkMode, globalSettings }) => {
+    const { t } = useTranslation();
     const currentLang = globalSettings?.language || 'zh-TW';
     // Initialize form with array support for countries/cities, defaulting to current single value if array missing
     const [form, setForm] = useState({
         ...trip,
         countries: trip?.countries || (trip?.country ? [trip.country] : []),
-        cities: trip?.cities || (trip?.city ? [trip.city] : [])
+        cities: trip?.cities || (trip?.city ? [trip.city] : []),
+        isPublic: trip?.isPublic || false
     });
 
     const [countrySearch, setCountrySearch] = useState("");
@@ -20,15 +23,16 @@ const TripSettingsModal = ({ isOpen, onClose, trip, onUpdate, isDarkMode, global
     // Update form when trip prop changes
     useEffect(() => {
         if (trip) {
-            setForm({
+            queueMicrotask(() => setForm({
                 ...trip,
                 countries: trip.countries || (trip.country ? [trip.country] : []),
-                cities: trip.cities || (trip.city ? [trip.city] : [])
-            });
+                cities: trip.cities || (trip.city ? [trip.city] : []),
+                isPublic: trip.isPublic || false
+            }));
         }
     }, [trip]);
 
-    const tripHolidays = React.useMemo(() => {
+    const tripHolidays = useMemo(() => {
         const homeHolidays = getHolidayMap(globalSettings?.countryCode || 'HK');
         // Use the first selected country for holidays
         const destCountry = form.countries?.[0] || form.country;
@@ -65,7 +69,8 @@ const TripSettingsModal = ({ isOpen, onClose, trip, onUpdate, isDarkMode, global
             country: form.countries[0] || form.country, // Fallback to first selected
             city: form.cities[0] || form.city,          // Fallback to first selected
             countries: form.countries,
-            cities: form.cities
+            cities: form.cities,
+            isPublic: form.isPublic // V1.3.0 Public Trip
         };
         onUpdate(updateData);
         onClose();
@@ -75,7 +80,7 @@ const TripSettingsModal = ({ isOpen, onClose, trip, onUpdate, isDarkMode, global
         <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-md">
             <div className={`w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 sm:p-8 ${isDarkMode ? 'bg-gray-900 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-200'} shadow-2xl border transition-all`}>
                 <div className="flex justify-between items-center mb-8">
-                    <h3 className="text-2xl font-bold tracking-tight">行程設定</h3>
+                    <h3 className="text-2xl font-bold tracking-tight">{t('trip.settings.title')}</h3>
                     <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-500/10 transition-colors">
                         <X className="w-6 h-6 opacity-70" />
                     </button>
@@ -83,36 +88,64 @@ const TripSettingsModal = ({ isOpen, onClose, trip, onUpdate, isDarkMode, global
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2 space-y-2">
-                        <label className="text-xs font-bold opacity-70 uppercase tracking-wider ml-1">行程名稱</label>
+                        <label className="text-xs font-bold opacity-70 uppercase tracking-wider ml-1">{t('trip.settings.name')}</label>
                         <input
                             value={form.name}
                             onChange={e => setForm({ ...form, name: e.target.value })}
                             className={inputClasses(isDarkMode)}
-                            placeholder="名稱"
+                            placeholder={t('dashboard.search_placeholder') || "名稱"}
                         />
                     </div>
 
+                    {/* V1.3.0: Public Trip Toggle */}
+                    <div className={`md:col-span-2 p-4 rounded-xl border flex items-center justify-between ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+                        <div className="flex gap-4 items-center">
+                            <div className={`p-3 rounded-full ${form.isPublic ? 'bg-green-500/20 text-green-500' : 'bg-gray-500/20 text-gray-500'}`}>
+                                {form.isPublic ? <Globe className="w-6 h-6" /> : <Lock className="w-6 h-6" />}
+                            </div>
+                            <div>
+                                <div className="font-bold flex items-center gap-2">
+                                    {form.isPublic ? t('trip.settings.public') : t('trip.settings.private')}
+                                    {form.isPublic && <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-500 text-[10px] tracking-wide">LIVE</span>}
+                                </div>
+                                <div className="text-xs opacity-60 mt-0.5">
+                                    {form.isPublic
+                                        ? t('trip.settings.public_desc')
+                                        : t('trip.settings.private_desc')}
+                                </div>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setForm({ ...form, isPublic: !form.isPublic })}
+                            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none ${form.isPublic ? 'bg-green-500' : 'bg-gray-600/30'}`}
+                        >
+                            <span
+                                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${form.isPublic ? 'translate-x-7' : 'translate-x-1'}`}
+                            />
+                        </button>
+                    </div>
+
                     <div className="md:col-span-2 space-y-2">
-                        <label className="text-xs font-bold opacity-70 uppercase tracking-wider ml-1">行程日期</label>
+                        <label className="text-xs font-bold opacity-70 uppercase tracking-wider ml-1">{t('trip.settings.dates')}</label>
                         <DateRangePicker
                             startDate={form.startDate}
                             endDate={form.endDate}
                             onSelect={({ startDate, endDate }) => setForm({ ...form, startDate, endDate })}
                             isDarkMode={isDarkMode}
-                            placeholder="選擇行程日期"
+                            placeholder={t('trip.settings.select_dates')}
                             holidays={tripHolidays}
                         />
                     </div>
 
                     {/* Country Selection */}
                     <div className="space-y-2">
-                        <label className="text-xs font-bold opacity-70 uppercase tracking-wider ml-1">國家 (可多選)</label>
+                        <label className="text-xs font-bold opacity-70 uppercase tracking-wider ml-1">{t('trip.settings.countries')}</label>
                         <div className="relative group">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40 group-focus-within:opacity-100 group-focus-within:text-indigo-500 transition-all" />
                             <input
                                 value={countrySearch}
                                 onChange={e => setCountrySearch(e.target.value)}
-                                placeholder="搜尋國家..."
+                                placeholder={t('trip.settings.search_countries')}
                                 className={inputClasses(isDarkMode) + " pl-10"}
                             />
                         </div>
@@ -147,13 +180,13 @@ const TripSettingsModal = ({ isOpen, onClose, trip, onUpdate, isDarkMode, global
 
                     {/* City Selection */}
                     <div className="space-y-2">
-                        <label className="text-xs font-bold opacity-70 uppercase tracking-wider ml-1">城市 (可多選)</label>
+                        <label className="text-xs font-bold opacity-70 uppercase tracking-wider ml-1">{t('trip.settings.cities')}</label>
                         <div className="relative group">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40 group-focus-within:opacity-100 group-focus-within:text-indigo-500 transition-all" />
                             <input
                                 value={citySearch}
                                 onChange={e => setCitySearch(e.target.value)}
-                                placeholder="搜尋城市..."
+                                placeholder={t('trip.settings.search_cities')}
                                 className={inputClasses(isDarkMode) + " pl-10"}
                             />
                             {citySearch && !filteredCities.includes(citySearch) && (
@@ -194,15 +227,15 @@ const TripSettingsModal = ({ isOpen, onClose, trip, onUpdate, isDarkMode, global
                                     </div>
                                 );
                             }) : (
-                                <div className="p-4 text-center text-xs opacity-40">請先選擇國家，或直接輸入城市名稱</div>
+                                <div className="p-4 text-center text-xs opacity-40">{t('trip.settings.city_hint')}</div>
                             )}
                         </div>
                     </div>
 
                     <div className="flex gap-4 mt-10 pt-6 border-t border-gray-500/10 md:col-span-2">
-                        <button onClick={onClose} className="flex-1 py-3.5 rounded-xl border border-gray-500/30 font-bold opacity-70 hover:opacity-100 hover:bg-gray-500/5 transition-all">取消</button>
+                        <button onClick={onClose} className="flex-1 py-3.5 rounded-xl border border-gray-500/30 font-bold opacity-70 hover:opacity-100 hover:bg-gray-500/5 transition-all">{t('common.cancel')}</button>
                         <button onClick={handleSave} className={buttonPrimary + " flex-1 py-3.5 rounded-xl shadow-lg font-bold tracking-wide"}>
-                            儲存設定
+                            {t('trip.settings.save')}
                         </button>
                     </div>
                 </div>

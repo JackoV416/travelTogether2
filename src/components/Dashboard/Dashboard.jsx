@@ -1,10 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Sparkles, Rocket } from 'lucide-react';
 import {
     collection, doc, updateDoc,
     addDoc, serverTimestamp, arrayUnion
 } from 'firebase/firestore';
-import { Settings2 } from 'lucide-react';
+
 
 import { db } from '../../firebase';
 import {
@@ -20,35 +22,20 @@ import SmartExportModal from '../Modals/SmartExportModal';
 import CreateTripModal from '../Modals/CreateTripModal';
 import DashboardHeader from './DashboardHeader';
 import TripsGrid from './TripsGrid';
+import GlobalChatFAB from '../Shared/GlobalChatFAB';
 
 // Hooks
 import useDashboardData from '../../hooks/useDashboardData';
 import { checkAbuse } from '../../services/security';
+import { useTour } from '../../contexts/TourContext';
+import { parseImageDirectly, generateItineraryWithGemini } from '../../services/ai-parsing';
 
-// Widget Components
-import {
-    WeatherWidget,
-    NewsWidget,
-    HotelsWidget,
-    FlightsWidget,
-    TransportWidget,
-    ConnectivityWidget,
-    CurrencyConverter
-} from './widgets';
+
 import SearchFilterBar from './SearchFilterBar';
 
-// Default Widget Configuration
-const DEFAULT_WIDGETS = [
-    { id: 'weather', name: '天氣預報', visible: true },
-    { id: 'news', name: '旅遊新聞', visible: true },
-    { id: 'hotels', name: '酒店推介', visible: true },
-    { id: 'flights', name: '機票優惠', visible: true },
-    { id: 'transport', name: '交通資訊', visible: true },
-    { id: 'connectivity', name: '網絡方案', visible: true },
-    { id: 'currency', name: '匯率計算', visible: true },
-];
 
-const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSettings, setGlobalBg, globalSettings, exchangeRates, weatherData, isLoadingWeather, isBanned, onOpenCommandPalette }) => {
+
+const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSettings, setGlobalBg, globalSettings, exchangeRates, weatherData, isLoadingWeather, isBanned, onOpenCommandPalette, deferredPrompt, onInstall, shouldStartProductTour, onProductTourStarted, onOpenChat, setChatInitialTab }) => {
     const {
         trips, loadingTrips, newsData, loadingNews,
         hotels, loadingHotels, flights, loadingFlights,
@@ -56,7 +43,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
         refreshTrigger, setRefreshTrigger, sendNotification
     } = useDashboardData(user, globalSettings, exchangeRates);
 
-    const [form, setForm] = useState({ name: '', countries: [], cities: [], startDate: '', endDate: '' });
+    const [form, setForm] = useState({ name: '', countries: [], cities: [], startDate: '', endDate: '', isAI: false });
     const [selectedCountryImg, setSelectedCountryImg] = useState(DEFAULT_BG_IMAGE);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSmartImportModalOpen, setIsSmartImportModalOpen] = useState(false);
@@ -65,31 +52,42 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
     const [isSmartExportOpen, setIsSmartExportOpen] = useState(false);
     const [selectedExportTrip, setSelectedExportTrip] = useState("");
     const [newCityInput, setNewCityInput] = useState('');
-    const currentLang = globalSettings?.lang || 'zh-TW';
+    const { i18n } = useTranslation();
+    const currentLang = i18n.language;
 
-    const [convAmount, setConvAmount] = useState(100);
-    const [convFrom, setConvFrom] = useState(globalSettings?.currency || 'HKD');
-    const [convTo, setConvTo] = useState('JPY');
 
-    const [widgets, setWidgets] = useState(() => {
-        const saved = localStorage.getItem('dashboardWidgets');
-        return saved ? JSON.parse(saved) : DEFAULT_WIDGETS;
-    });
 
     // Search & Filter State
     const [searchQuery, setSearchQuery] = useState('');
     const [sortOption, setSortOption] = useState('nearest');
     const [filterOption, setFilterOption] = useState('all');
 
-    useEffect(() => {
-        if (globalSettings?.currency) setConvFrom(globalSettings.currency);
-    }, [globalSettings]);
+
 
     useEffect(() => { setGlobalBg(selectedCountryImg); }, [selectedCountryImg, setGlobalBg]);
 
     useEffect(() => {
         if (trips.length && !selectedExportTrip) setSelectedExportTrip(trips[0].id);
     }, [trips, selectedExportTrip]);
+
+    // Tour Integration: Force Modal to stay open during specific steps, and close when done
+    const { currentStepData, isActive, startTour } = useTour();
+    useEffect(() => {
+        if (shouldStartProductTour) {
+            startTour();
+            onProductTourStarted?.();
+        }
+    }, [shouldStartProductTour, startTour, onProductTourStarted]);
+
+    useEffect(() => {
+        if (!isActive) return;
+
+        if (currentStepData?.id === 'create-trip-country' || currentStepData?.id === 'create-trip-dates') {
+            setIsCreateModalOpen(true);
+        } else if (currentStepData?.id === 'trip-card') {
+            setIsCreateModalOpen(false);
+        }
+    }, [isActive, currentStepData?.id]);
 
     const handleMultiSelect = (field, values) => {
 
@@ -101,6 +99,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
             setSelectedCountryImg(DEFAULT_BG_IMAGE);
         }
     };
+
 
     const handleInputChange = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
@@ -180,7 +179,52 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
         const primaryCountry = form.countries[0];
         const primaryCity = form.cities[0] || COUNTRIES_DATA[primaryCountry]?.cities?.[0] || '';
         const countryCurrency = COUNTRIES_DATA[primaryCountry]?.currency || 'HKD';
+
         try {
+            let generatedItinerary = {};
+            let generatedBudget = [];
+
+            // V1.3.1: AI Trip Generation
+            if (form.isAI) {
+                // Determine duration
+                const start = new Date(form.startDate);
+                const end = new Date(form.endDate);
+                const diffTime = Math.abs(end - start);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+                sendNotification("Jarvis 正在規劃行程 🤖", `正在為您生成 ${diffDays} 日的 ${primaryCity} 之旅...`, 'info', 5000);
+
+                const aiResult = await generateItineraryWithGemini({
+                    city: primaryCity,
+                    days: diffDays,
+                    budget: 'mid', // Default
+                    userId: user.uid
+                });
+
+                if (aiResult && aiResult.itinerary) {
+                    // Convert AI format to Firestore Format
+                    // AI returns { itinerary: [ { day: 1, items: [...] } ] }
+                    // Firestore expects { itinerary: { "2024-01-01": [items], "2024-01-02": [items] } }
+
+                    aiResult.itinerary.forEach((dayPlan, idx) => {
+                        const dateObj = new Date(start);
+                        dateObj.setDate(dateObj.getDate() + (dayPlan.day - 1));
+                        const dateKey = dateObj.toISOString().split('T')[0];
+
+                        generatedItinerary[dateKey] = (dayPlan.items || []).map(item => ({
+                            ...item,
+                            id: item.id || `ai-${Date.now()}-${Math.random()}`,
+                            currency: countryCurrency, // Force consistency
+                            createdBy: { name: 'Jarvis', id: 'ai' }
+                        }));
+                    });
+
+                    // Add Transports to budget or itinerary? 
+                    // Usually we put transport in 'budget' or as itinerary items.
+                    // For now, let's just stick to itinerary items.
+                }
+            }
+
             await addDoc(collection(db, "trips"), {
                 ...form,
                 country: primaryCountry,
@@ -188,17 +232,18 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                 currency: countryCurrency, // V1.2.4: Auto-set currency
                 members: [{ id: user.uid, name: user.displayName, email: user.email, role: 'owner' }],
                 createdAt: serverTimestamp(),
-                itinerary: {},
-                budget: [],
+                itinerary: generatedItinerary,
+                budget: generatedBudget,
                 shoppingList: [],
-                notes: ""
+                notes: "",
+                isAI: !!form.isAI
             });
             sendNotification("行程已建立 ✅", `成功建立行程: ${form.name}`, 'success');
-            setForm({ name: '', countries: [], cities: [], startDate: '', endDate: '' });
+            setForm({ name: '', countries: [], cities: [], startDate: '', endDate: '', isAI: false });
             setIsCreateModalOpen(false);
         } catch (e) {
             console.error(e);
-            sendNotification("建立失敗 ❌", "無法建立行程，請檢查網路連線", 'error');
+            sendNotification("建立失敗 ❌", "無法建立行程 (" + e.message + ")", 'error');
         }
     };
 
@@ -272,25 +317,74 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
             });
 
             if (type === 'itinerary') {
-                // For itinerary - attach file and prompt manual input
-                const dateKey = targetTrip.startDate || new Date().toISOString().split('T')[0];
-                const newItem = {
-                    id: Date.now().toString(),
-                    name: `📎 已上傳: ${file.name}`,
-                    type: 'spot',
-                    time: '10:00',
-                    cost: 0,
-                    currency: globalSettings.currency,
-                    details: {
-                        location: "請手動編輯",
-                        desc: "已附加原始檔案，點擊編輯填入詳情"
-                    },
-                    attachment: base64,
-                    createdBy: { name: user.displayName, id: user.uid },
-                    needsManualInput: true
-                };
-                await updateDoc(docRef, { [`itinerary.${dateKey}`]: arrayUnion(newItem) });
-                sendNotification("已上傳行程截圖 📸", "請點擊編輯填入行程詳情", 'success');
+                try {
+                    // V1.3.1: Restore AI Parsing
+                    const aiItems = await parseImageDirectly(file, {
+                        city: targetTrip.city || targetTrip.cities?.[0],
+                        date: targetTrip.startDate,
+                        currency: targetTrip.currency || globalSettings.currency
+                    }, user.uid);
+
+                    if (aiItems && aiItems.length > 0) {
+                        const batchPromises = aiItems.map(item => {
+                            // Determine date key (use item date if valid, else trip start)
+                            // Parsing logic might return specific check-in dates for hotels
+                            let itemDateKey = targetTrip.startDate || new Date().toISOString().split('T')[0];
+
+                            // If item has a specific date (e.g. checkIn), try to use it if within range?
+                            // For simplicity, we default to trip start or use logic in addDoc if strict
+                            // But here we set to `itinerary.${date}`. 
+                            // Let's assume parsed items might not have 'date' property compatible with top-level keys yet
+                            // The service returns items with 'details'.
+
+                            // Transform to Firestore Itinerary Item
+                            const newItem = {
+                                id: Date.now().toString() + Math.random().toString().slice(2, 5),
+                                name: item.name || "AI Imported Item",
+                                type: item.type || 'spot',
+                                time: item.time || '10:00',
+                                cost: parseFloat(item.details?.price?.replace(/[^0-9.]/g, '')) || 0,
+                                currency: targetTrip.currency || 'HKD',
+                                details: {
+                                    location: item.details?.location || "",
+                                    desc: item.details?.desc || "Imported by Jarvis AI",
+                                    ...item.details
+                                },
+                                attachment: base64, // Keep original image
+                                createdBy: { name: user.displayName, id: user.uid },
+                                aiGenerated: true
+                            };
+                            return updateDoc(docRef, { [`itinerary.${itemDateKey}`]: arrayUnion(newItem) });
+                        });
+
+                        await Promise.all(batchPromises);
+                        sendNotification("AI 識別成功 ✨", `成功匯入 ${aiItems.length} 個項目`, 'success');
+                    } else {
+                        // Fallback to manual if AI found nothing
+                        throw new Error("AI_NO_RESULT");
+                    }
+                } catch (aiErr) {
+                    console.warn("AI Import Failed, falling back to manual:", aiErr);
+                    // Fallback to manual input placeholder
+                    const dateKey = targetTrip.startDate || new Date().toISOString().split('T')[0];
+                    const newItem = {
+                        id: Date.now().toString(),
+                        name: `📎 已上傳: ${file.name}`,
+                        type: 'spot',
+                        time: '10:00',
+                        cost: 0,
+                        currency: globalSettings.currency,
+                        details: {
+                            location: "請手動編輯",
+                            desc: "Jarvis 未能識別詳情，請手動填入 (已附加原始檔案)"
+                        },
+                        attachment: base64,
+                        createdBy: { name: user.displayName, id: user.uid },
+                        needsManualInput: true
+                    };
+                    await updateDoc(docRef, { [`itinerary.${dateKey}`]: arrayUnion(newItem) });
+                    sendNotification("已上傳 (需手動編輯) 📸", "AI 未能識別，請手動編輯", 'warning');
+                }
             }
             else if (type === 'budget') {
                 // For budget - attach file and prompt manual input
@@ -407,6 +501,35 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                 />
             </div>
 
+            {/* PWA Install Invite */}
+            {deferredPrompt && (
+                <div className="animate-fade-in px-2">
+                    <div className={`relative overflow-hidden p-6 rounded-[2rem] border transition-all ${isDarkMode ? 'bg-indigo-900/20 border-indigo-400/20 text-indigo-100 shadow-[0_20px_50px_rgba(0,0,0,0.3)]' : 'bg-white/70 border-indigo-100 shadow-[0_20px_50px_rgba(99,102,241,0.05)]'} backdrop-blur-xl`}>
+                        {/* Decorative Background */}
+                        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                        <div className="relative flex flex-col md:flex-row items-center gap-6">
+                            <div className="w-16 h-16 flex-shrink-0 flex items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-xl shadow-indigo-500/40">
+                                <Sparkles className="w-8 h-8 text-white animate-pulse" />
+                            </div>
+
+                            <div className="flex-1 text-center md:text-left">
+                                <h3 className="text-xl font-black tracking-tight mb-1">將 Travel Together 安裝到手機</h3>
+                                <p className="text-sm font-medium opacity-70 leading-relaxed max-w-2xl">獲得更流暢嘅全螢幕體驗、支援離線查看行程，仲可以收到實時旅遊資訊同系統更新添！</p>
+                            </div>
+
+                            <button
+                                onClick={onInstall}
+                                className="group px-8 py-3.5 bg-indigo-500 hover:bg-indigo-600 text-white font-black rounded-2xl transition-all shadow-lg shadow-indigo-500/30 active:scale-95 whitespace-nowrap flex items-center gap-2"
+                            >
+                                立即安裝 App
+                                <Rocket className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div data-tour="trip-card">
                 <TripsGrid
                     trips={sortedTrips}
@@ -431,36 +554,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                 />
             </div>
 
-            {/* Travel Information Hub */}
-            <div className="pb-10" data-tour="widgets-section">
-                <div className="flex flex-col mb-8 border-l-4 border-indigo-500 pl-4">
-                    <div className="flex items-center justify-between gap-4 flex-wrap">
-                        <h2 className="text-2xl font-black tracking-tight">旅遊資訊中心</h2>
-                        <button
-                            onClick={() => onOpenSettings && onOpenSettings('info')}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 text-[11px] font-bold transition-all border border-white/5"
-                        >
-                            <Settings2 className="w-3.5 h-3.5" /> 自訂排序
-                        </button>
-                    </div>
-                </div>
 
-                {/* Dynamic Widget Rendering based on localStorage config */}
-                <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-                    {widgets.filter(w => w.visible).map((widget) => {
-                        const widgetComponents = {
-                            weather: <WeatherWidget isDarkMode={isDarkMode} weatherData={weatherData} isLoadingWeather={isLoadingWeather} currentLang={currentLang} />,
-                            news: <NewsWidget isDarkMode={isDarkMode} newsData={newsData} loadingNews={loadingNews} />,
-                            hotels: <HotelsWidget isDarkMode={isDarkMode} hotels={hotels} loadingHotels={loadingHotels} />,
-                            flights: <FlightsWidget isDarkMode={isDarkMode} flights={flights} loadingFlights={loadingFlights} />,
-                            transport: <TransportWidget isDarkMode={isDarkMode} transports={transports} loadingTransports={loadingTransports} />,
-                            connectivity: <ConnectivityWidget isDarkMode={isDarkMode} connectivity={connectivity} loadingConnectivity={loadingConnectivity} />,
-                            currency: <CurrencyConverter isDarkMode={isDarkMode} convAmount={convAmount} setConvAmount={setConvAmount} convFrom={convFrom} setConvFrom={setConvFrom} convTo={convTo} setConvTo={setConvTo} exchangeRates={exchangeRates} onOpenSettings={onOpenSettings} />,
-                        };
-                        return <div key={widget.id} className="break-inside-avoid mb-6">{widgetComponents[widget.id]}</div>;
-                    })}
-                </div>
-            </div>
 
             {/* Modals */}
             <CreateTripModal
@@ -513,6 +607,15 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                 trip={trips.find(t => t.id === selectedExportTrip) || trips[0]}
                 trips={trips}
                 isDarkMode={isDarkMode}
+            />
+
+            {/* V1.3.1: Global Chat Entry Point */}
+            <GlobalChatFAB
+                isDarkMode={isDarkMode}
+                onClick={() => {
+                    if (onOpenChat) onOpenChat('jarvis');
+                    if (setChatInitialTab) setChatInitialTab('jarvis');
+                }}
             />
         </main>
     );

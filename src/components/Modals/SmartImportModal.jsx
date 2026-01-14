@@ -5,15 +5,14 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from '../../firebase';
 import { parseImageDirectly, filterJunkItems } from '../../services/ai-parsing';
 import { getDaysArray, glassCard } from '../../utils/tripUtils';
+import { useTranslation } from 'react-i18next';
 
-
-const IMPORT_TYPES = [
-    { id: 'screenshot', label: '行程截圖', icon: Image, desc: '上傳行程圖片，Jarvis 自動識別', color: 'indigo' },
-    { id: 'receipt', label: '預算單據', icon: Receipt, desc: '機票、酒店、收據掃描', color: 'green' },
-    { id: 'memory', label: '回憶 / 靈感', icon: Brain, desc: '相片或文件存檔', color: 'purple' },
-    { id: 'plaintext', label: '純文字', icon: FileText, desc: '貼上/輸入行程文字', color: 'pink' },
-    { id: 'json', label: 'JSON 匯入', icon: FileJson, desc: '完整行程資料結構', color: 'blue' },
-    { id: 'csv', label: 'CSV 匯入', icon: FileSpreadsheet, desc: '表格格式匯入', color: 'amber' },
+// IMPORT_TYPES with translation keys
+const getImportTypes = (t) => [
+    { id: 'memory', label: t('smartImport.types.memory.label') || '回憶 / 靈感', icon: Brain, desc: t('smartImport.types.memory.desc') || '相片或文件存檔', color: 'purple' },
+    { id: 'plaintext', label: t('smartImport.types.plaintext.label') || '純文字', icon: FileText, desc: t('smartImport.types.plaintext.desc') || '貼上/輸入行程文字', color: 'pink' },
+    { id: 'json', label: t('smartImport.types.json.label') || 'JSON 匯入', icon: FileJson, desc: t('smartImport.types.json.desc') || '完整行程資料結構', color: 'blue' },
+    { id: 'csv', label: t('smartImport.types.csv.label') || 'CSV 匯入', icon: FileSpreadsheet, desc: t('smartImport.types.csv.desc') || '表格格式匯入', color: 'amber' },
 ];
 
 // Helper to infer category if AI fails
@@ -27,6 +26,9 @@ const inferCategory = (name) => {
 };
 
 export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport, trips = [], trip }) {
+    const { t } = useTranslation();
+    const IMPORT_TYPES = getImportTypes(t);
+
     const [importType, setImportType] = useState(null);
     const [files, setFiles] = useState([]);
     const [stage, setStage] = useState(1); // 1: Select type, 2: Upload, 3: Processing, 4: Review, 5: Result

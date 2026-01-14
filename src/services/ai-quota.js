@@ -6,7 +6,7 @@ import { doc, getDoc, setDoc, serverTimestamp, increment } from 'firebase/firest
 import { db } from '../firebase';
 
 // Default quota settings
-const DEFAULT_DAILY_LIMIT = 300; // V1.3.0: Increased to 300 (Gemini Free Tier is ~1500/day, 300 is safe per user)
+const DEFAULT_DAILY_LIMIT = 20; // V1.3.1: Adjusted to 20 RPD (Free Tier Safety Limit)
 const QUOTA_COLLECTION = 'users';
 const QUOTA_DOC = 'ai_quota';
 
@@ -193,6 +193,14 @@ export async function incrementUserQuota(uid, feature = 'General', keyIndex = -1
  */
 export async function checkUserQuota(uid) {
     const status = await getUserQuotaStatus(uid);
+
+    // V1.3.3 Auto-Fix: If used > total (likely leftover from debug mode), reset it once.
+    if (status.used > status.total) {
+        console.warn(`[AI Quota] Detected overflow (${status.used}/${status.total}). Auto-fixing for user ${uid}.`);
+        await resetUserQuota(uid);
+        // Allow this request immediately after reset
+        return { allowed: true, message: "Quota auto-corrected", retryIn: null };
+    }
 
     if (status.allowed) {
         return { allowed: true, message: null, retryIn: null };

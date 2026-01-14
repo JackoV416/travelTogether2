@@ -43,8 +43,6 @@ const TripHeader = ({
     onOptimize,
     setAddType,
     setIsAddModal,
-    setAddType,
-    setIsAddModal,
     globalSettings,
     viewMode,
     setViewMode

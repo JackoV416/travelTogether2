@@ -41,9 +41,33 @@ service cloud.firestore {
     }
     
     // --- Trips Collection ---
+    // --- Trips Collection (Updated V1.3.0) ---
     match /trips/{tripId} {
-       allow read: if resource.data.isPublic == true || (isAuthenticated() && (resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.sharedWith));
-       allow write: if isAuthenticated();
+       
+       function isTripOwnerOrShared() {
+         return isAuthenticated() && (
+           resource.data.ownerId == request.auth.uid || 
+           (resource.data.keys().hasAll(['sharedWith']) && request.auth.uid in resource.data.sharedWith)
+         );
+       }
+
+       // V1.3.0 Social: Allow authenticated users to update counters on public trips
+       function isSocialInteraction() {
+         return isAuthenticated() 
+           && resource.data.isPublic == true
+           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likedBy', 'forks', 'views', 'lastUpdate']);
+       }
+
+       allow read: if resource.data.isPublic == true || isTripOwnerOrShared();
+       
+       // Create: Must assign self as owner
+       allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+       
+       // Update: Full access for owner/shared, specific fields for social
+       allow update: if isTripOwnerOrShared() || isSocialInteraction();
+       
+       // Delete: Only Owner
+       allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
     }
     
     // --- Global Settings ---

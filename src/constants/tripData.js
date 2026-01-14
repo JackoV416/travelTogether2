@@ -90,8 +90,32 @@ export const INSURANCE_RESOURCES = [
 ];
 
 export const AUTHOR_NAME = "Jamie Kwok";
-export const APP_VERSION = "V1.0.0-RC1";
+export const APP_VERSION = "V1.3.1";
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.3.1",
+        date: "2026-01-08",
+        desc: {
+            "zh-TW": "Jarvis 回歸 & AI 智能生成",
+            "en": "Jarvis Resurrection & AI Generation"
+        },
+        details: {
+            "zh-TW": "• 全局對話：Jarvis 聊天視窗回歸，新增本地 FAQ 快答\n• 智能匯入：恢復 AI Vision 識別機票與單據\n• 行程生成：新增 AI 智能規劃全旅程功能",
+            "en": "• Global Chat: Jarvis chat returns with local FAQ\n• Smart Import: Restored AI Vision for tickets/receipts\n• Trip Gen: Added AI full itinerary generation"
+        }
+    },
+    {
+        ver: "V1.3.0",
+        date: "2026-01-07",
+        desc: {
+            "zh-TW": "多語言本地化 & 新手引導修復",
+            "en": "Localization & Onboarding Fixes"
+        },
+        details: {
+            "zh-TW": "• 全面本地化：城市名稱與 UI 翻譯修正 (zh-HK/zh-TW)\n• 導覽修復：解決 UniversalChat 導致的 Tour Target 丟失問題\n• 體驗優化：修復 Badges 顯示與 Tutorial 流程",
+            "en": "• Full Localization: City names & UI translation fixes\n• Tour Fixes: Resolved UniversalChat unmounting issues\n• UX Polish: Fixed Badges display & Tutorial flow"
+        }
+    },
     {
         ver: "V1.0.0-RC1",
         date: "2025-12-20",

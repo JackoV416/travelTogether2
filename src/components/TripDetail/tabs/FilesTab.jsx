@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FileText, Trash2, Download, HardDrive, FileCheck, Share2, FileUp, Loader2 } from 'lucide-react';
 import SearchFilterBar from '../../Shared/SearchFilterBar';
 import { useTripFiles } from '../../../hooks/useTripFiles';
 import { formatFileSize, isImageFile } from '../../../utils/tripUtils';
 
 const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, glassCard }) => {
+    const { t } = useTranslation();
     const [isDragging, setIsDragging] = useState(false);
+    const [searchValue, setSearchValue] = useState("");
     const { deleteFile, uploadFile, loading } = useTripFiles(trip, language); // Added uploadFile
     const files = trip.files || [];
 
+    const [now] = useState(() => Date.now());
     // Drag & Drop Handlers
     const handleDragOver = (e) => {
         e.preventDefault();
@@ -60,15 +64,15 @@ const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, glassCa
                     <div className="bg-white dark:bg-gray-900 p-6 rounded-full shadow-2xl mb-4">
                         <FileUp className="w-12 h-12 text-indigo-500" />
                     </div>
-                    <h3 className="text-2xl font-black text-indigo-500">Drop files here to upload</h3>
-                    <p className="font-bold opacity-50">Release to start uploading</p>
+                    <h3 className="text-2xl font-black text-indigo-500">{t('trip.files.smart_import_title')}</h3>
+                    <p className="font-bold opacity-50">{t('trip.files.start_now')}</p>
                 </div>
             )}
 
             <SearchFilterBar
                 searchValue={searchValue}
                 onSearchChange={setSearchValue}
-                placeholder="搜尋文件、相片名稱..."
+                placeholder={t('common.search')}
                 isDarkMode={isDarkMode}
             />
 
@@ -93,7 +97,7 @@ const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, glassCa
             {loading && (
                 <div className="fixed left-1/2 -translate-x-1/2 z-50 bg-black/80 text-white px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl backdrop-blur-md" style={{ bottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}>
                     <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
-                    <span className="text-sm font-bold">Uploading...</span>
+                    <span className="text-sm font-bold">{t('common.loading')}</span>
                 </div>
             )}
 
@@ -104,8 +108,8 @@ const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, glassCa
                         <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mb-4">
                             <FileCheck className="w-10 h-10 text-indigo-500 opacity-50" />
                         </div>
-                        <div className="text-sm font-black uppercase tracking-[0.2em]">No Files Found</div>
-                        <p className="text-xs mt-2 max-w-[200px] leading-relaxed">拖放檔案至此，或使用「智能匯入」開始。</p>
+                        <div className="text-sm font-black uppercase tracking-[0.2em]">{t('trip.files.empty')}</div>
+                        <p className="text-xs mt-2 max-w-[200px] leading-relaxed">{t('trip.files.smart_import_desc')}</p>
                     </div>
                 )}
 
@@ -136,7 +140,7 @@ const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, glassCa
                                     <p className="text-[9px] opacity-50 font-medium mt-0.5 uppercase">{formatFileSize(file.size)} • {file.uploadedBy}</p>
                                 </div>
                                 <div className="text-[8px] font-black text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded uppercase">
-                                    {new Date(file.uploadedAt?.seconds ? file.uploadedAt.seconds * 1000 : (file.uploadedAt || Date.now())).toLocaleDateString()}
+                                    {new Date(file.uploadedAt?.seconds ? file.uploadedAt.seconds * 1000 : (file.uploadedAt || now)).toLocaleDateString()}
                                 </div>
                             </div>
                         </div>

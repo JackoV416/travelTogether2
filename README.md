@@ -1,9 +1,31 @@
-# Travel Together (智能旅遊規劃) V1.2.25
+# Travel Together (智能旅遊規劃) V1.3.1
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.2.25-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.3.1-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-11.x-orange.svg)](https://firebase.google.com/)
+
+## 🚀 V1.3.1: Jarvis Resurrection (2026-01-08)
+**V1.3.1: [Feature] Jarvis AI 全面回歸！**
+Jarvis 帶著更強大的功能回歸！重啟了全域對話、智能匯入與全新的行程生成功能。
+
+### 🌟 V1.3.1 主要更新
+1.  **AI Trip Gen**: 新增「AI 智能生成」按鈕，一鍵規劃全旅程 (Itinerary + Budget)。
+2.  **Global Chat**: Jarvis 聊天視窗回歸，並加入 Local FAQ 快答以節省 API 用量。
+3.  **Smart Import**: 重新啟用 Vision API，支援單據與行程截圖識別。
+
+---
+
+## 🚀 V1.3.0: Localization & Onboarding (2026-01-07)
+**V1.3.0: [Stable] 穩定性與本地化更新**
+專注於多語言體驗與新手引導流程的修復。
+
+### 🌟 V1.3.0 主要更新
+1.  **Localization**: 全面修正城市名與 UI 翻譯 (zh-HK/zh-TW)。
+2.  **Onboarding**: 修復 UniversalChat 導致的導覽目標丟失問題。
+3.  **UI Polish**: 修復 Badges 顯示與 Tutorial 流程。
+
+---
 
 ## 🚀 V1.2.25: Desktop Simulation Fix (2026-01-09)
 **V1.2.25: [Fix] 桌面版模擬模式 Chat Button 修復！**
@@ -230,7 +252,8 @@ graph TD
 
 ## 📋 版本紀錄 (History)
 
-| **V1.2.25** | **Desktop Sim Fix** | 🚀 最新版 |
+| **V1.3.0** | **Stability & AI Pause** | 🚀 最新版 |
+| **V1.2.25** | **Desktop Sim Fix** | ✅ 已發布 |
 | **V1.2.24** | **Simulation Chat** | ✅ 已發布 |
 | **V1.2.23** | **Documentation Cleanup** | ✅ 已發布 |
 | **V1.2.22** | **Data Saver & PWA Fix** | ✅ 已發布 |

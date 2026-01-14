@@ -4,6 +4,7 @@
  */
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { deleteUser, reauthenticateWithCredential, EmailAuthProvider, updateProfile } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp, writeBatch, getDoc } from 'firebase/firestore';
 import { auth, db, storage } from '../firebase';
 
 /**
@@ -130,3 +131,34 @@ export async function loadUserSettings(uid) {
         return null;
     }
 }
+
+/**
+ * 📤 Upload user banner to Firebase Storage
+ * @param {Object} user - Firebase auth user
+ * @param {File} file - File object to upload
+ * @returns {Promise<string>} Download URL
+ */
+export async function uploadUserBanner(user, file) {
+    if (!user) throw new Error('User not authenticated');
+
+    // Create reference: users/{uid}/banner_{timestamp}
+    const fileExt = file.name.split('.').pop();
+    const fileName = `banner_${Date.now()}.${fileExt}`;
+    const storageRef = ref(storage, `users/${user.uid}/${fileName}`);
+
+    // Upload
+    await uploadBytes(storageRef, file);
+
+    // Get URL
+    const url = await getDownloadURL(storageRef);
+
+    // Update Firestore User Doc with bannerURL
+    const userRef = doc(db, 'users', user.uid);
+    await setDoc(userRef, {
+        bannerURL: url,
+        lastUpdated: serverTimestamp()
+    }, { merge: true });
+
+    return url;
+}
+

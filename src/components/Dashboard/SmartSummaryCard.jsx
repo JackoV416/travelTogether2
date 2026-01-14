@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { MapPin, ArrowRight, FileText, Shield, Backpack } from 'lucide-react';
 import { differenceInDays, parseISO, startOfDay } from 'date-fns';
 import { getSmartTips } from '../../utils/tripUtils';
@@ -8,6 +9,7 @@ import { getSmartTips } from '../../utils/tripUtils';
  * Mobile Priority: Show Reminders using minimal space.
  */
 const SmartSummaryCard = ({ trip, onClick, isDarkMode }) => {
+    const { t } = useTranslation();
     const today = startOfDay(new Date());
     const startDate = trip.startDate ? parseISO(trip.startDate) : null;
     const daysLeft = startDate ? differenceInDays(startDate, today) : null;
@@ -18,24 +20,24 @@ const SmartSummaryCard = ({ trip, onClick, isDarkMode }) => {
 
     // Status Logic
     if (!startDate) {
-        countdownLabel = "未定";
+        countdownLabel = t('trip.status.pending') || "未定";
         badgeClass = "text-gray-400";
     } else if (daysLeft < 0) {
-        countdownLabel = "已結束";
+        countdownLabel = t('trip.status.ended');
         badgeClass = "text-gray-400";
     } else if (daysLeft === 0) {
-        countdownLabel = "今天!";
+        countdownLabel = t('trip.status.today') || "今天!";
         badgeClass = "text-rose-400 font-bold animate-pulse";
     } else if (daysLeft <= 7) {
-        countdownLabel = `倒數 ${daysLeft} 天`;
+        countdownLabel = t('trip.status.days_to_go_fmt', { days: daysLeft });
         badgeClass = "text-rose-400 font-bold";
     } else {
-        countdownLabel = `${daysLeft} 天後`;
+        countdownLabel = t('trip.status.upcoming_fmt', { days: daysLeft });
         badgeClass = "text-indigo-400";
     }
 
     // Dynamic Smart Tips
-    const reminders = getSmartTips(trip);
+    const reminders = getSmartTips(trip, t);
 
     // Mobile Strategy: Show max 2 reminders with Icon Only if space is tight, or Icon + Text if fits.
     // We will use Icon + Text but allow scrolling or wrapping? 

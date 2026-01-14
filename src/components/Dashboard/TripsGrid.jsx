@@ -1,5 +1,6 @@
 import React from 'react';
 import { Plus, Globe, Upload } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { glassCard, getWeatherForecast } from '../../utils/tripUtils';
 import TripCard from './TripCard';
 import SkeletonLoader from '../Shared/SkeletonLoader';
@@ -31,28 +32,29 @@ const TripsGrid = ({
     setIsCreateModalOpen,
     searchFilter
 }) => {
+    const { t } = useTranslation();
     return (
-        <div>
+        <div data-tour="dashboard-overview">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-                <h2 className="text-2xl font-bold border-l-4 border-indigo-500 pl-3">我的行程</h2>
+                <h2 className="text-2xl font-bold border-l-4 border-indigo-500 pl-3">{t('dashboard.my_trips') || '我的行程'}</h2>
                 <div className="flex gap-2">
                     <button
                         onClick={() => setIsSmartImportModalOpen(true)}
                         className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm flex items-center gap-2 btn-hover-glow"
                     >
-                        <Upload className="w-4 h-4" /> 匯入
+                        <Upload className="w-4 h-4" /> {t('dashboard.import') || '匯入'}
                     </button>
                     <button
                         onClick={() => setIsSmartExportOpen(true)}
                         className="px-4 py-2 rounded-xl border border-purple-500/20 text-sm hover:bg-purple-500/10 transition-colors"
                     >
-                        匯出
+                        {t('dashboard.export') || '匯出'}
                     </button>
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
                         className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm flex items-center gap-2 btn-hover-glow"
                     >
-                        <Plus className="w-4 h-4" /> 建立
+                        <Plus className="w-4 h-4" /> {t('dashboard.create') || '建立'}
                     </button>
                 </div>
             </div>
@@ -67,28 +69,33 @@ const TripsGrid = ({
             ) : trips.length === 0 ? (
                 <EmptyState
                     icon={Globe}
-                    title="尚無行程"
-                    description="立即開始規劃您的下一趟旅程！您可以手動建立或從截圖匯入。"
+                    title={t('dashboard.empty.title') || '尚無行程'}
+                    description={t('dashboard.empty.desc') || '立即開始規劃您的下一趟旅程！您可以手動建立或從截圖匯入。'}
                     isDarkMode={isDarkMode}
                     action={{
-                        label: "立即建立行程",
+                        label: t('dashboard.empty.action') || '立即建立行程',
                         onClick: () => setIsCreateModalOpen(true),
                         icon: Plus
                     }}
                 />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {trips.map((t, index) => (
-                        <div key={t.id} className="animate-fade-in" style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}>
+                    {trips.map((trip, index) => (
+                        <div
+                            key={trip.id}
+                            className="animate-fade-in"
+                            style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
+                            data-tour={index === 0 ? "trip-card" : undefined}
+                        >
                             <TripCard
-                                trip={t}
+                                trip={trip}
                                 isDarkMode={isDarkMode}
                                 currentLang={currentLang}
                                 onSelect={onSelectTrip}
                                 setGlobalBg={setGlobalBg}
                                 cardWeather={(() => {
-                                    const wData = weatherData?.[t.city];
-                                    return getWeatherForecast(t.country, wData?.temp, wData?.desc, wData?.icon);
+                                    const wData = weatherData?.[trip.city];
+                                    return getWeatherForecast(trip.country, wData?.temp, wData?.desc, wData?.icon, t);
                                 })()}
                             />
                         </div>
@@ -98,7 +105,7 @@ const TripsGrid = ({
                         onClick={() => setIsCreateModalOpen(true)}
                     >
                         <Plus className="w-10 h-10 mb-2 text-indigo-400" />
-                        <p className="font-bold">建立更多行程</p>
+                        <p className="font-bold">{t('dashboard.create_more') || '建立更多行程'}</p>
                     </div>
                 </div>
             )}

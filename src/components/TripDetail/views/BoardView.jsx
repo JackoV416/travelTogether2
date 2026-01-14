@@ -45,7 +45,8 @@ const BoardView = ({ items, days, isDarkMode, onItemClick, isEditMode }) => {
                                 </button>
                             </div>
                             <div className="text-white font-bold text-2xl drop-shadow-md truncate">
-                                {item.name.replace(/^[✈️🏨🚆🍽️⛩️🛍️🎢🛂]+ /, '')}
+                                {/* eslint-disable-next-line no-misleading-character-class */}
+                                {item.name.replace(/^[\u0020-\u007E\u00A0-\u00FF\u0100-\u017F\u0180-\u024F\u2C60-\u2C7F\uA720-\uA7FF\uAB30-\uAB6F\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}]+\s*/u, '').replace(/^[✈️🏨🚆🍽️⛩️🛍️🎢🛂]+\s*/u, '')}
                             </div>
                             <div className="text-white/80 text-[10px] font-mono flex items-center gap-1">
                                 <span className="bg-black/20 px-1.5 py-0.5 rounded backdrop-blur-sm">{item.type.toUpperCase()}</span>

@@ -1,24 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Cloud, Wifi, WifiOff, RefreshCw, Save } from 'lucide-react';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
+import { useTranslation } from 'react-i18next';
 
 const SyncStatus = ({ isDarkMode, showTimestamp = true }) => {
+    const { t } = useTranslation();
     const isOnline = useOnlineStatus();
     const [status, setStatus] = useState('synced'); // 'synced', 'offline', 'syncing'
     const [lastSync, setLastSync] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
     useEffect(() => {
         if (!isOnline) {
-            setStatus('offline');
+            queueMicrotask(() => setStatus('offline'));
         } else {
             if (status === 'offline') {
-                setStatus('syncing');
+                queueMicrotask(() => setStatus('syncing'));
                 setTimeout(() => {
                     setStatus('synced');
                     setLastSync(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
                 }, 2000);
             } else {
-                setStatus('synced');
+                queueMicrotask(() => setStatus('synced'));
             }
         }
     }, [isOnline]);
@@ -41,14 +43,14 @@ const SyncStatus = ({ isDarkMode, showTimestamp = true }) => {
                 {status === 'synced' && <Cloud className="w-3 h-3" />}
 
                 <span>
-                    {status === 'offline' ? '已儲存 (離線)' :
-                        status === 'syncing' ? '同步中...' :
-                            '已同步'}
+                    {status === 'offline' ? (t('footer.sync.offline') || '已儲存 (離線)') :
+                        status === 'syncing' ? (t('footer.sync.syncing') || '同步中...') :
+                            (t('footer.sync.synced') || '已同步')}
                 </span>
             </div>
             {status === 'synced' && showTimestamp && (
                 <span className="text-[10px] opacity-60 font-mono font-bold tracking-tighter">
-                    (最新同步: {lastSync})
+                    ({t('footer.sync.last_sync') || '最新同步'}: {lastSync})
                 </span>
             )}
         </div>

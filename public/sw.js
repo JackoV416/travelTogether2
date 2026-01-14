@@ -1,5 +1,5 @@
 // Service Worker for Travel Together PWA
-const CACHE_NAME = 'travel-together-v16.2.1';
+const CACHE_NAME = 'travel-together-v16.2.2';
 const urlsToCache = [
     '/',
     '/index.html',

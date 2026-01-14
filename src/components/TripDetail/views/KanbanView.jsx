@@ -1,4 +1,5 @@
 import React, { useMemo, useState, forwardRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MapPin, Clock, CalendarDays, Plus, GripVertical } from 'lucide-react';
 import { getWeekday, formatDate, getLocalizedCityName } from '../../../utils/tripUtils';
 import {
@@ -51,7 +52,8 @@ const KanbanCard = forwardRef(({ item, isDarkMode, onItemClick, isDragging, isEd
                 </div>
 
                 <div className="font-bold text-sm leading-tight line-clamp-2 mt-2">
-                    {item.name.replace(/^[✈️🏨🚆🍽️⛩️🛍️🎢🛂]+ /, '')}
+                    {/* eslint-disable-next-line no-misleading-character-class */}
+                    {item.name.replace(/^[\u0020-\u007E\u00A0-\u00FF\u0100-\u017F\u0180-\u024F\u2C60-\u2C7F\uA720-\uA7FF\uAB30-\uAB6F\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}]+\s*/u, '').replace(/^[✈️🏨🚆🍽️⛩️🛍️🎢🛂]+\s*/u, '')}
                 </div>
 
                 {/* Location */}
@@ -125,7 +127,7 @@ const SortableItem = ({ item, isDarkMode, onItemClick, isEditMode }) => {
 };
 
 // Droppable Column Component
-const DroppableColumn = ({ date, items, isDarkMode, onItemClick, onAddItem, isEditMode, city, currentLang }) => {
+const DroppableColumn = ({ date, items, isDarkMode, onItemClick, onAddItem, isEditMode, city, currentLang, t }) => {
     const { setNodeRef } = useDroppable({
         id: date,
     });
@@ -138,8 +140,8 @@ const DroppableColumn = ({ date, items, isDarkMode, onItemClick, onAddItem, isEd
             {/* Column Header */}
             <div className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                 <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold uppercase text-xs opacity-60">{getWeekday(date)}</span>
-                    <span className="text-[10px] font-mono opacity-40 px-2 py-0.5 bg-black/5 dark:bg-white/5 rounded-full">{items.length} PROJECTS</span>
+                    <span className="font-bold uppercase text-xs opacity-60">{getWeekday(date, t)}</span>
+                    <span className="text-[10px] font-mono opacity-40 px-2 py-0.5 bg-black/5 dark:bg-white/5 rounded-full">{items.length} {t('footer.items') || 'ITEMS'}</span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
                     <h3 className="font-black text-lg">{formatDate(date)}</h3>
@@ -159,7 +161,7 @@ const DroppableColumn = ({ date, items, isDarkMode, onItemClick, onAddItem, isEd
                 >
                     {items.length === 0 && (
                         <div className="text-center py-10 opacity-30 text-sm border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl">
-                            拖放到此處
+                            {t('common.drag_drop') || 'Drag items here'}
                         </div>
                     )}
 
@@ -181,7 +183,7 @@ const DroppableColumn = ({ date, items, isDarkMode, onItemClick, onAddItem, isEd
                     onClick={() => { if (onAddItem) onAddItem(date, 'spot'); }}
                     className="w-full py-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 text-xs font-bold opacity-50 hover:opacity-100 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center justify-center gap-1 transition-all"
                 >
-                    <Plus className="w-3.5 h-3.5" /> Add Task
+                    <Plus className="w-3.5 h-3.5" /> {t('actions.add_custom') || 'Add Task'}
                 </button>
             </div>
         </div>
@@ -189,6 +191,7 @@ const DroppableColumn = ({ date, items, isDarkMode, onItemClick, onAddItem, isEd
 };
 
 const KanbanView = ({ items, days, isDarkMode, onItemClick, onAddItem, onMoveItem, isEditMode, trip, currentLang }) => {
+    const { t } = useTranslation();
     const [activeItem, setActiveItem] = useState(null);
 
     // Sensors for drag detection
@@ -294,6 +297,7 @@ const KanbanView = ({ items, days, isDarkMode, onItemClick, onAddItem, onMoveIte
                         isEditMode={isEditMode}
                         city={trip.locations?.[date]?.city || trip.city}
                         currentLang={currentLang}
+                        t={t}
                     />
                 ))}
             </div>

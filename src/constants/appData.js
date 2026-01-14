@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.2.25";
-export const APP_VERSION_TAG = "Desktop Chat Button Fix";
+export const APP_VERSION = "V1.3.0";
+export const APP_VERSION_TAG = "Stability & AI Pause";
 export const APP_LAST_UPDATE = '2026-01-09';
 export const JARVIS_VERSION = "V0.0.4-Beta";
 
@@ -122,6 +122,39 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.3.0",
+        date: "2026-01-09",
+        tag: "Stability Release & AI Pause",
+        desc: {
+            "zh-TW": "穩定性更新與 Jarvis AI 暫時維護",
+            "zh-HK": "穩定性更新同 Jarvis AI 暫時維護",
+            "en": "Stability Release & Temporary AI Pause"
+        },
+        details: {
+            "zh-TW": [
+                "⏸️ AI Pause: 為進行核心邏輯升級，Jarvis 功能 (聊天/生成) 暫時停用，將於下個版本回歸",
+                "👤 Profile: 社交檔案頁面顯示優化與連結修復",
+                "🔧 Fix: 修復多個核心組件的潛在崩潰問題",
+                "⚡ Perf: 提升整體應用加載速度與穩定性",
+                "💰 Global: 修復匯率計算機顯示 0.0000 的問題 (API Fallback)"
+            ],
+            "zh-HK": [
+                "⏸️ AI Pause: 為咗做核心邏輯升級，Jarvis 功能 (聊天/生成) 暫時停用，下個版本會加返",
+                "👤 Profile: 社交檔案頁面顯示優化同埋連結修復",
+                "🔧 Fix: 修復自多個核心組件嘅潛在崩潰問題",
+                "⚡ Perf: 提升整體 App 加載速度同穩定性",
+                "💰 Global: 修復匯率計算機顯示 0.0000 嘅問題 (API Fallback)"
+            ],
+            "en": [
+                "⏸️ AI Pause: Jarvis features (Chat/Gen) temporarily disabled for core upgrades, returning in next minor version",
+                "👤 Profile: Improved Social Profile display and fixed links",
+                "🔧 Fix: Resolved potential crashes in core components",
+                "⚡ Perf: Improved overall application loading speed and stability",
+                "💰 Global: Fixed Currency Converter showing 0.0000 (Robust Fallback)"
+            ]
+        }
+    },
     {
         ver: "V1.2.25",
         date: "2026-01-09",
@@ -1510,7 +1543,7 @@ export const SIMULATION_DATA = {
     city: "Tokyo",
     country: "Japan (日本)",
     currency: "JPY",
-    budget: 80000,
+    budgetLimit: 80000,
     startDate: "2025-12-24",
     endDate: "2025-12-29",
     sharePermission: "edit",
@@ -1683,68 +1716,68 @@ export const SIMULATION_DATA = {
 
 
 export const TAB_LABELS = {
-    itinerary: { "zh-TW": "行程", "en": "Itinerary" },
-    shopping: { "zh-TW": "購物", "en": "Shopping" },
-    budget: { "zh-TW": "預算", "en": "Budget" },
-    files: { "zh-TW": "文件", "en": "Files" },
-    insurance: { "zh-TW": "保險", "en": "Insurance" },
-    emergency: { "zh-TW": "緊急", "en": "Emergency" },
-    visa: { "zh-TW": "簽證", "en": "Visa" },
-    notes: { "zh-TW": "筆記", "en": "Notes" },
-    currency: { "zh-TW": "匯率", "en": "Currency" },
-    settings: { "zh-TW": "設定", "en": "Settings" }
+    itinerary: { "zh-TW": "行程", "zh-HK": "行程", "en": "Itinerary" },
+    shopping: { "zh-TW": "購物", "zh-HK": "買嘢", "en": "Shopping" },
+    budget: { "zh-TW": "預算", "zh-HK": "銀包", "en": "Budget" },
+    files: { "zh-TW": "文件", "zh-HK": "檔案", "en": "Files" },
+    insurance: { "zh-TW": "保險", "zh-HK": "保險", "en": "Insurance" },
+    emergency: { "zh-TW": "緊急", "zh-HK": "緊急", "en": "Emergency" },
+    visa: { "zh-TW": "簽證", "zh-HK": "簽證", "en": "Visa" },
+    notes: { "zh-TW": "筆記", "zh-HK": "筆記", "en": "Notes" },
+    currency: { "zh-TW": "匯率", "zh-HK": "匯率", "en": "Currency" },
+    settings: { "zh-TW": "設定", "zh-HK": "設定", "en": "Settings" }
 };
 
 // --- Modal Labels (i18n) ---
 export const MODAL_LABELS = {
     // AddActivityModal
-    addItem: { "zh-TW": "加入行程項目", "en": "Add Activity" },
-    editItem: { "zh-TW": "編輯行程項目", "en": "Edit Activity" },
-    addPacking: { "zh-TW": "加入行李項目", "en": "Add Packing Item" },
-    editPacking: { "zh-TW": "編輯行李項目", "en": "Edit Packing Item" },
-    name: { "zh-TW": "名稱", "en": "Name" },
-    startTime: { "zh-TW": "開始時間", "en": "Start Time" },
-    endTime: { "zh-TW": "結束時間", "en": "End Time" },
-    optional: { "zh-TW": "選填", "en": "Optional" },
-    duration: { "zh-TW": "時長", "en": "Duration" },
-    durationMinutes: { "zh-TW": "預計時長 (分鐘)", "en": "Duration (mins)" },
-    durationPlaceholder: { "zh-TW": "例如: 60", "en": "e.g. 60" },
-    location: { "zh-TW": "地點", "en": "Location" },
-    locationPlaceholder: { "zh-TW": "輸入地點", "en": "Enter location" },
-    origin: { "zh-TW": "出發地", "en": "Origin" },
-    destination: { "zh-TW": "目的地", "en": "Destination" },
-    amount: { "zh-TW": "金額", "en": "Amount" },
-    currency: { "zh-TW": "貨幣", "en": "Currency" },
-    payer: { "zh-TW": "付款人", "en": "Payer" },
-    splitType: { "zh-TW": "分攤方式", "en": "Split Type" },
-    splitGroup: { "zh-TW": "多人均分", "en": "Split Equally" },
-    splitMe: { "zh-TW": "個人支出", "en": "Personal" },
-    estimatedTax: { "zh-TW": "預估稅金", "en": "Est. Tax" },
-    estimatedRefund: { "zh-TW": "預估退稅", "en": "Est. Refund" },
-    flightInfo: { "zh-TW": "航班資訊", "en": "Flight Info" },
-    flightNumber: { "zh-TW": "航班編號", "en": "Flight No." },
-    layover: { "zh-TW": "需轉機", "en": "Layover" },
-    nights: { "zh-TW": "晚", "en": "Nights" },
-    hotelNights: { "zh-TW": "住宿晚數", "en": "Hotel Nights" },
-    cancel: { "zh-TW": "取消", "en": "Cancel" },
-    confirm: { "zh-TW": "確認加入", "en": "Add Item" },
-    save: { "zh-TW": "儲存變更", "en": "Save Changes" },
-    aiInspiration: { "zh-TW": "AI 靈感", "en": "AI Inspire" },
-    minutes: { "zh-TW": "分鐘", "en": "mins" },
+    addItem: { "zh-TW": "加入行程項目", "zh-HK": "加入行程", "en": "Add Activity" },
+    editItem: { "zh-TW": "編輯行程項目", "zh-HK": "改行程", "en": "Edit Activity" },
+    addPacking: { "zh-TW": "加入行李項目", "zh-HK": "加入行李", "en": "Add Packing Item" },
+    editPacking: { "zh-TW": "編輯行李項目", "zh-HK": "改行李", "en": "Edit Packing Item" },
+    name: { "zh-TW": "名稱", "zh-HK": "名", "en": "Name" },
+    startTime: { "zh-TW": "開始時間", "zh-HK": "開始時間", "en": "Start Time" },
+    endTime: { "zh-TW": "結束時間", "zh-HK": "結束時間", "en": "End Time" },
+    optional: { "zh-TW": "選填", "zh-HK": "可唔填", "en": "Optional" },
+    duration: { "zh-TW": "時長", "zh-HK": "時長", "en": "Duration" },
+    durationMinutes: { "zh-TW": "預計時長 (分鐘)", "zh-HK": "預計幾耐 (分鐘)", "en": "Duration (mins)" },
+    durationPlaceholder: { "zh-TW": "例如: 60", "zh-HK": "例如: 60", "en": "e.g. 60" },
+    location: { "zh-TW": "地點", "zh-HK": "地點", "en": "Location" },
+    locationPlaceholder: { "zh-TW": "輸入地點", "zh-HK": "入地點", "en": "Enter location" },
+    origin: { "zh-TW": "出發地", "zh-HK": "起點", "en": "Origin" },
+    destination: { "zh-TW": "目的地", "zh-HK": "終點", "en": "Destination" },
+    amount: { "zh-TW": "金額", "zh-HK": "幾錢", "en": "Amount" },
+    currency: { "zh-TW": "貨幣", "zh-HK": "貨幣", "en": "Currency" },
+    payer: { "zh-TW": "付款人", "zh-HK": "邊個俾", "en": "Payer" },
+    splitType: { "zh-TW": "分攤方式", "zh-HK": "點分", "en": "Split Type" },
+    splitGroup: { "zh-TW": "多人均分", "zh-HK": "大家夾", "en": "Split Equally" },
+    splitMe: { "zh-TW": "個人支出", "zh-HK": "自己俾", "en": "Personal" },
+    estimatedTax: { "zh-TW": "預估稅金", "zh-HK": "預計稅", "en": "Est. Tax" },
+    estimatedRefund: { "zh-TW": "預估退稅", "zh-HK": "退稅", "en": "Est. Refund" },
+    flightInfo: { "zh-TW": "航班資訊", "zh-HK": "航班資料", "en": "Flight Info" },
+    flightNumber: { "zh-TW": "航班編號", "zh-HK": "航班號碼", "en": "Flight No." },
+    layover: { "zh-TW": "需轉機", "zh-HK": "要轉機", "en": "Layover" },
+    nights: { "zh-TW": "晚", "zh-HK": "晚", "en": "Nights" },
+    hotelNights: { "zh-TW": "住宿晚數", "zh-HK": "住幾晚", "en": "Hotel Nights" },
+    cancel: { "zh-TW": "取消", "zh-HK": "取消", "en": "Cancel" },
+    confirm: { "zh-TW": "確認加入", "zh-HK": "加入", "en": "Add Item" },
+    save: { "zh-TW": "儲存變更", "zh-HK": "儲存", "en": "Save Changes" },
+    aiInspiration: { "zh-TW": "AI 靈感", "zh-HK": "AI 靈感", "en": "AI Inspire" },
+    minutes: { "zh-TW": "分鐘", "zh-HK": "分鐘", "en": "mins" },
     // Category labels
-    spot: { "zh-TW": "景點", "en": "Attraction" },
-    food: { "zh-TW": "餐廳", "en": "Restaurant" },
-    shopping: { "zh-TW": "購物", "en": "Shopping" },
-    transport: { "zh-TW": "交通", "en": "Transport" },
-    flight: { "zh-TW": "航班", "en": "Flight" },
-    hotel: { "zh-TW": "住宿", "en": "Hotel" },
+    spot: { "zh-TW": "景點", "zh-HK": "景點", "en": "Attraction" },
+    food: { "zh-TW": "餐廳", "zh-HK": "食嘢", "en": "Restaurant" },
+    shopping: { "zh-TW": "購物", "zh-HK": "買嘢", "en": "Shopping" },
+    transport: { "zh-TW": "交通", "zh-HK": "交通", "en": "Transport" },
+    flight: { "zh-TW": "航班", "zh-HK": "飛機", "en": "Flight" },
+    hotel: { "zh-TW": "住宿", "zh-HK": "酒店", "en": "Hotel" },
     // Packing categories
-    clothes: { "zh-TW": "衣物鞋履", "en": "Clothing" },
-    toiletries: { "zh-TW": "個人護理", "en": "Toiletries" },
-    electronics: { "zh-TW": "電子產品", "en": "Electronics" },
-    documents: { "zh-TW": "證件/文件", "en": "Documents" },
-    medicine: { "zh-TW": "藥品/急救", "en": "Medicine" },
-    misc: { "zh-TW": "其他雜項", "en": "Misc" }
+    clothes: { "zh-TW": "衣物鞋履", "zh-HK": "衫褲鞋", "en": "Clothing" },
+    toiletries: { "zh-TW": "個人護理", "zh-HK": "洗漱用品", "en": "Toiletries" },
+    electronics: { "zh-TW": "電子產品", "zh-HK": "電子嘢", "en": "Electronics" },
+    documents: { "zh-TW": "證件/文件", "zh-HK": "證件", "en": "Documents" },
+    medicine: { "zh-TW": "藥品/急救", "zh-HK": "藥物", "en": "Medicine" },
+    misc: { "zh-TW": "其他雜項", "zh-HK": "其他", "en": "Misc" }
 };
 
 // --- Smart Visual Assets ---

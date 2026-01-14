@@ -890,14 +890,16 @@ export const parseTripImage = async (file, importType = 'screenshot') => {
 
     // Starting OCR
 
+    let worker = null;
     try {
         // Tesseract Worker with Timeout
         const ocrPromise = (async () => {
-            const worker = await createWorker('chi_tra+eng');
+            worker = await createWorker('chi_tra+eng');
             const imageUrl = URL.createObjectURL(file);
             try {
                 const { data } = await worker.recognize(imageUrl);
                 await worker.terminate();
+                worker = null;
                 return data.text;
             } finally {
                 URL.revokeObjectURL(imageUrl);
@@ -948,7 +950,7 @@ export const parseTripImage = async (file, importType = 'screenshot') => {
 
     } catch (error) {
         console.error('[OCR] Error:', error);
-        await worker.terminate().catch(() => { });
+        if (worker) await worker.terminate().catch(() => { });
 
         return {
             success: false,
@@ -1000,8 +1002,8 @@ const parseReceiptText = (text) => {
 
     // Try to extract date
     const datePatterns = [
-        /(\d{4}[-\/]\d{1,2}[-\/]\d{1,2})/,
-        /(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/,
+        /(\d{4}[-/]\d{1,2}[-/]\d{1,2})/,
+        /(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})/,
         /(\d{4}年\d{1,2}月\d{1,2}日)/
     ];
     let date = null;
@@ -1145,7 +1147,7 @@ const parseItineraryText = (text) => {
                         type: type, // 'flight', 'transport', 'hotel', 'food', 'spot'
                         cost: 0,
                         currency: 'HKD',
-                        details: { location: cleanName, desc: '由 OCR 識別 (無時間)' },
+                        details: { location: line.trim(), desc: '由 OCR 識別 (無時間)' },
                         ocrExtracted: true
                     });
                 }

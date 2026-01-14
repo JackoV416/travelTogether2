@@ -1,8 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
-import './index.css' // 👈 這一行非常重要，沒有它 Tailwind 不會運作！
+import './index.css'
 import './i18n';
+import 'leaflet/dist/leaflet.css'; // Fix Leaflet Map UI
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

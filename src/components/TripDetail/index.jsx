@@ -27,7 +27,9 @@ const TripDetail = ({
     globalSettings,
     exchangeRates,
     onOpenChat,
-    isChatOpen
+    isChatOpen,
+    setIsChatOpen,
+    setChatInitialTab
 }) => {
     // ============================================
     // HOOKS 區域 - 所有 hooks 必須喺呢度！
@@ -42,20 +44,20 @@ const TripDetail = ({
     useEffect(() => {
         // Simulation mode 唔需要 fetch
         if (isSimulation) {
-            setIsLoading(false);
+            queueMicrotask(() => setIsLoading(false));
             return;
         }
 
         // 需要 tripData.id 才能 fetch
         if (!tripData?.id) {
-            setError('Invalid trip data');
-            setIsLoading(false);
+            queueMicrotask(() => setError('Invalid trip data'));
+            queueMicrotask(() => setIsLoading(false));
             return;
         }
 
         // 開始 loading
-        setIsLoading(true);
-        setError(null);
+        queueMicrotask(() => setIsLoading(true));
+        queueMicrotask(() => setError(null));
 
         // Firebase real-time listener
         const unsubscribe = onSnapshot(
@@ -140,6 +142,8 @@ const TripDetail = ({
             exchangeRates={exchangeRates}
             onOpenChat={onOpenChat}
             isChatOpen={isChatOpen}
+            setIsChatOpen={setIsChatOpen}
+            setChatInitialTab={setChatInitialTab}
         />
     );
 };

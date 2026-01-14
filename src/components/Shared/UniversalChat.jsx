@@ -7,9 +7,10 @@ import { askTravelAI } from '../../services/ai-parsing';
 import { checkUserQuota, incrementUserQuota, getUserQuotaStatus } from '../../services/ai-quota';
 import { checkInstantAnswer } from '../../services/jarvis-instant'; // V1.2.5 Instant Answers
 import ImageWithFallback from './ImageWithFallback';
+import { LOCAL_FAQ, INITIAL_SUGGESTIONS } from '../../constants/cannedResponses';
 
-const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = 'trip' }) => {
-    const [activeTab, setActiveTab] = useState(initialTab); // 'trip' or 'jarvis'
+const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, activeTab = 'trip', onTabChange }) => {
+    // const [activeTab, setActiveTab] = useState(initialTab); // Converted to Controlled Component
     const [isMinimized, setIsMinimized] = useState(false);
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState('');
@@ -33,13 +34,10 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Sync activeTab and reset minimize when opened
+    // Reset minimize when opened
     useEffect(() => {
-        if (isOpen) {
-            setActiveTab(trip ? initialTab : 'jarvis');
-            setIsMinimized(false);
-        }
-    }, [isOpen, initialTab, trip]);
+        if (isOpen) setIsMinimized(false);
+    }, [isOpen]);
 
     // V1.2.2: Real-time Message Listener for Trip Chat (V1.2.24: Simulation Support)
     useEffect(() => {
@@ -151,6 +149,45 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
         jarvisAbortRef.current = abortController;
 
         try {
+            // --- V1.3.1: Local Canned Responses (API Optimization) ---
+            const findLocalMatch = (text) => {
+                const lower = text.toLowerCase();
+                // 1. Direct Key Match (from Suggestions)
+                if (LOCAL_FAQ[lower]) return LOCAL_FAQ[lower];
+                // 2. Keyword Match
+                for (const key in LOCAL_FAQ) {
+                    if (LOCAL_FAQ[key].keywords.some(k => lower.includes(k.toLowerCase()))) {
+                        return LOCAL_FAQ[key];
+                    }
+                }
+                return null;
+            };
+
+            const localMatch = findLocalMatch(question);
+            if (localMatch) {
+                // Simulate thinking briefly
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                const aiMsg = {
+                    id: Date.now() + 1,
+                    role: 'jarvis',
+                    text: localMatch.answer,
+                    time: new Date().toISOString(),
+                    isLocal: true // Mark as local response
+                };
+                setJarvisMessages(prev => [...prev, aiMsg]);
+                setIsJarvisThinking(false);
+                setJarvisProgress({ message: '', percent: 0 });
+                setTimeout(() => jarvisScrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+
+                // Handle Action (Optional - can extend later)
+                if (localMatch.action === 'view-quota') {
+                    // Maybe prompt user or add a button? 
+                    // For now, text is enough.
+                }
+                return; // SKIP API CALL
+            }
+
             // --- V1.2.5: Jarvis Instant Answers (Client-side) ---
             const instantAnswer = checkInstantAnswer(question, {
                 city: trip?.city || trip?.cities?.[0]
@@ -255,7 +292,7 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
         return () => clearInterval(interval);
     }, [isJarvisThinking]);
 
-    if (!isOpen) return null;
+    // if (!isOpen) return null; // Removed for persistent mounting (Tour Targeting)
 
     const textMain = isDarkMode ? 'text-slate-200' : 'text-gray-900';
     const cardBg = isDarkMode ? 'bg-white/5' : 'bg-gray-50';
@@ -266,7 +303,7 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
         : `fixed bottom-0 right-8 w-[380px] z-[300] transition-all duration-500 ease-in-out transform ${isOpen ? 'translate-y-0' : 'translate-y-full'} ${isMinimized ? 'h-[60px]' : 'h-[550px]'} rounded-t-2xl shadow-[-10px_-10px_50px_rgba(0,0,0,0.3)]`;
 
     return (
-        <div className={`${containerClasses} flex flex-col overflow-hidden`}>
+        <div data-tour="chat-window" className={`${containerClasses} flex flex-col overflow-hidden`}>
             {/* Backdrop Layer */}
             <div className={`absolute inset-0 backdrop-blur-3xl transition-opacity duration-500 ${isDarkMode ? 'bg-slate-950/90' : 'bg-white/95'} ${isMinimized ? 'opacity-0' : 'opacity-100'}`} />
 
@@ -311,14 +348,14 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
                         <div className="flex bg-black/20 p-1 rounded-xl mb-1">
                             {trip && (
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); setActiveTab('trip'); }}
+                                    onClick={(e) => { e.stopPropagation(); onTabChange('trip'); }}
                                     className={`flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'trip' ? 'bg-white/10 text-white shadow-lg' : 'text-white/40 hover:text-white/60'}`}
                                 >
                                     <MessageCircle className="w-3 h-3" /> 行程群聊
                                 </button>
                             )}
                             <button
-                                onClick={(e) => { e.stopPropagation(); setActiveTab('jarvis'); }}
+                                onClick={(e) => { e.stopPropagation(); onTabChange('jarvis'); }}
                                 className={`flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'jarvis' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-white/40 hover:text-white/60'}`}
                             >
                                 <Bot className="w-3 h-3" /> JARVIS AI
@@ -411,14 +448,14 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, initialTab = '
                                                 我是您的行程管家 Jarvis。問我任何關於旅遊或 App 操作的問題！
                                             </p>
                                             <div className="grid grid-cols-2 gap-2 w-full px-2">
-                                                {['如何優化行程？', 'PWA 安裝教學', '匯出 PDF 方法', '行程建議'].map(hint => (
+                                                {INITIAL_SUGGESTIONS.map(suggestion => (
                                                     <button
-                                                        key={hint}
-                                                        onClick={() => handleJarvisSend(hint)}
+                                                        key={suggestion.value}
+                                                        onClick={() => handleJarvisSend(suggestion.value)}
                                                         className={`p-2.5 rounded-xl border text-[9px] font-bold text-left transition-all hover:border-indigo-500/50 hover:bg-indigo-500/10 hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 group ${cardBg} border-white/5`}
                                                     >
                                                         <Sparkles className="w-3 h-3 text-indigo-400 opacity-40 group-hover:opacity-100" />
-                                                        {hint}
+                                                        {suggestion.label}
                                                     </button>
                                                 ))}
                                             </div>

@@ -37,10 +37,10 @@ const TripCard = ({ trip, currentLang, onSelect, setGlobalBg, cardWeather }) => 
     const itemCount = Object.values(trip.itinerary || {}).flat().length || 0;
 
     // V1.1 Phase 3: Smart Reminders (Dynamic)
-    const checklist = getSmartTips(trip);
+    const checklist = getSmartTips(trip, t);
     // Logic: If we have tips, show top 1. If no tips (fully planned), show '準備就緒'.
     // TripCard fix: Use .text instead of .label to match getSmartTips output
-    const nextReminder = checklist.length > 0 ? checklist[0] : { text: t('trip.status.ready'), done: true };
+    const nextReminder = checklist.length > 0 ? checklist[0] : { text: t('trip.status.ready') || '準備就緒', done: true };
     const remainingReminders = checklist.length > 1 ? checklist.length - 1 : 0;
     const allChecked = checklist.length === 0;
 

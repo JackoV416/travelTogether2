@@ -68,7 +68,7 @@ export const useNotifications = (user) => {
             setNotifications(prev => prev.filter(n => n.id !== localNotif.id));
         }, 8000);
 
-    }, [permission, user?.uid]);
+    }, [permission, user]);
 
     // Mark all notifications as read
     const markNotificationsRead = useCallback(async () => {
@@ -82,7 +82,7 @@ export const useNotifications = (user) => {
         } catch (e) {
             console.error("Mark read error:", e);
         }
-    }, [user?.uid]);
+    }, [user]);
 
     // Remove single notification
     const removeNotification = useCallback(async (id) => {
@@ -95,7 +95,7 @@ export const useNotifications = (user) => {
         } catch (e) {
             console.error("Remove notif error:", e);
         }
-    }, [user?.uid]);
+    }, [user]);
 
     // Firestore Sync (Simplified query to avoid composite index requirement)
     useEffect(() => {

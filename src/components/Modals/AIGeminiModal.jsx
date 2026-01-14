@@ -20,6 +20,7 @@ import {
     buildDailyReminder, getUserInitial, inputClasses,
     formatDuration
 } from '../../utils/tripUtils'; // Fixed import path
+import { useTour } from '../../contexts/TourContext';
 
 const SHOPPING_CATEGORIES = [
     { id: 'food', label: '🍱 美食伴手禮', types: ['food', 'snack', 'alcohol'] },
@@ -56,6 +57,7 @@ const AIGeminiModal = ({
     user = null // V1.2.3: For Quota Tracking
 }) => {
     // V0.22: Coming Soon removed - Full functionality restored
+    const { isMockMode, startTourAt } = useTour(); // Interact with Tour Framework
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [activeTab, setActiveTab] = useState(mode === 'shopping' ? 'shopping' : (mode === 'packing' ? 'packing' : 'itinerary'));
@@ -112,7 +114,20 @@ const AIGeminiModal = ({
         return () => clearInterval(timer);
     }, [loading]);
 
-    // Toggle between real Gemini API and mock data
+    // V1.3.13: First-time entry auto-start tour (AI Demo)
+    useEffect(() => {
+        if (isOpen) {
+            const hasSeenAIMenuTour = localStorage.getItem('hasSeenAIMenuTour');
+            if (!hasSeenAIMenuTour) {
+                // Find index of 'ai-demo' step
+                const stepIndex = 7; // Based on known TOUR_STEPS index
+                startTourAt(stepIndex);
+                localStorage.setItem('hasSeenAIMenuTour', 'true');
+            }
+        }
+    }, [isOpen, startTourAt]);
+
+    // Enhanced AI Logic - Uses Real Gemini API when available
     const [useRealAI, setUseRealAI] = useState(true);
 
     // Enhanced AI Logic - Uses Real Gemini API when available
@@ -128,7 +143,7 @@ const AIGeminiModal = ({
         const rate = CURRENCIES[currency]?.rate || 1;
 
         // Try real Gemini API first
-        if (useRealAI) {
+        if (useRealAI && !isMockMode) {
             try {
                 // Using REAL Gemini API
 
@@ -300,6 +315,23 @@ const AIGeminiModal = ({
     const handleShoppingAnalyze = async () => {
         setLoading(true);
         try {
+            if (isMockMode) {
+                // Mock Delay
+                await new Promise(r => setTimeout(r, 2000));
+                // Mock Result
+                const mockShopping = [
+                    { id: 'mock-1', name: 'Tokyo Banana', type: 'food', desc: 'Classic Tokyo Souvenir', price: '¥1000' },
+                    { id: 'mock-2', name: 'KitKat Matcha', type: 'snack', desc: 'Popular Matcha Flavor', price: '¥300' },
+                    { id: 'mock-3', name: 'Shiseido Perfect Whip', type: 'cosmetic', desc: 'Daily Face Wash', price: '¥450' },
+                    { id: 'mock-4', name: 'Uniql T-Shirt', type: 'fashion', desc: 'Comfortable Wear', price: '¥1500' },
+                ];
+                setResult(prev => ({ ...(prev || {}), shopping: mockShopping }));
+                setSelections(prev => ({ ...prev, shopping: mockShopping.map(i => i.id) }));
+                setActiveTab('shopping');
+                setShoppingStep('result');
+                return;
+            }
+
             const res = await generateEnhancedAI(contextCity || "Tokyo", "shopping_focus");
             if (res.shopping) {
                 setResult(prev => ({ ...(prev || {}), ...res }));
@@ -317,6 +349,23 @@ const AIGeminiModal = ({
     const handlePackingAnalyze = async () => {
         setLoading(true);
         try {
+            if (isMockMode) {
+                // Mock Delay
+                await new Promise(r => setTimeout(r, 2000));
+                // Mock Result
+                const mockPacking = [
+                    { id: 'mock-p1', item: 'Passport', category: 'essentials', checked: false },
+                    { id: 'mock-p2', item: 'Power Bank', category: 'electronics', checked: false },
+                    { id: 'mock-p3', item: 'Jacket', category: 'clothing', checked: false },
+                    { id: 'mock-p4', item: 'Toothbrush', category: 'toiletries', checked: false },
+                ];
+                setResult(prev => ({ ...(prev || {}), packing: mockPacking }));
+                setSelections(prev => ({ ...prev, packing: mockPacking.map(i => i.id) }));
+                setActiveTab('packing');
+                setPackingStep('result');
+                return;
+            }
+
             const res = await generateEnhancedAI(contextCity || "Tokyo", "packing_focus");
             if (res.packing) {
                 setResult(prev => ({ ...(prev || {}), ...res }));
@@ -335,6 +384,29 @@ const AIGeminiModal = ({
         setLoading(true);
         setProgress(10);
         try {
+            if (isMockMode) {
+                // Mock Delay
+                await new Promise(r => setTimeout(r, 2000));
+                setResult(prev => ({
+                    ...(prev || {}),
+                    itinerary: [],
+                    tips: ["今天天氣很好，適合戶外活動！", "建議早上 9 點出發，避開人潮。", "記得攜帶水壺，保持水分。"],
+                    transport: [
+                        { id: 'mock-tr-1', type: 'metro', name: '地鐵全日通', price: '¥800', desc: '無限次搭乘，最划算', recommended: true },
+                        { id: 'mock-tr-2', type: 'taxi', name: '計程車', price: '¥2000', desc: '直達目的地，節省時間' }
+                    ],
+                    warnings: ["部分景點下午 5 點關門，請注意時間。"],
+                    source: 'mock-daily-summary'
+                }));
+                setSelections(prev => ({
+                    ...prev,
+                    transport: ['mock-tr-1']
+                }));
+                setItineraryStep('result');
+                setActiveTab('transport');
+                return;
+            }
+
             // Filter items for the target date
             const dateItems = (trip?.itinerary?.[targetDate] || []).map(i => ({
                 time: i.time,
@@ -443,7 +515,11 @@ const AIGeminiModal = ({
         <div className={`fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 transition-all duration-500 ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-            <div className={`relative w-full max-w-2xl h-[85vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col transition-all duration-500 transform ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'} ${isDarkMode ? 'bg-[#0f111a] text-white border border-gray-800' : 'bg-white text-gray-900'}`}>
+            <div
+                data-tour="ai-modal"
+                data-tour-chat="jarvis-chat"
+                className={`relative w-full max-w-2xl h-[85vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col transition-all duration-500 transform ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'} ${isDarkMode ? 'bg-[#0f111a] text-white border border-gray-800' : 'bg-white text-gray-900'}`}
+            >
 
                 {/* Header */}
                 <div className="p-5 border-b border-gray-500/10 flex items-center justify-between bg-gradient-to-r from-indigo-600/10 to-purple-600/10 backdrop-blur-md z-10">
@@ -473,7 +549,7 @@ const AIGeminiModal = ({
                             </div>
 
                             {/* Visual Option Cards */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-4" data-tour="jarvis-smart-guide">
                                 {mode === 'daily-summary' ? (
                                     <button
                                         onClick={handleDailySummaryAnalyze}
@@ -493,14 +569,17 @@ const AIGeminiModal = ({
                                     <>
                                         <button
                                             onClick={() => setItineraryStep('preferences')}
-                                            className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-center gap-3 transition-all hover:shadow-lg hover:-translate-y-1 active:scale-95 ${isDarkMode ? 'border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20' : 'border-indigo-200 bg-indigo-50 hover:bg-indigo-100'}`}
+                                            className="group relative p-1 rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-95"
                                         >
-                                            <div className={`p-2.5 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-white shadow-sm'}`}>
-                                                <Sparkles className="w-6 h-6 text-indigo-500" />
-                                            </div>
-                                            <div className="text-center">
-                                                <div className="font-bold">客製化行程</div>
-                                                <div className="text-[10px] opacity-60 mt-1">深度自選，Jarvis 精準規劃</div>
+                                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
+                                            <div className={`relative h-full p-6 rounded-xl border backdrop-blur-sm flex flex-col items-center justify-center gap-4 transition-all ${isDarkMode ? 'bg-gray-900/40 border-indigo-500/30' : 'bg-white/60 border-indigo-100'}`}>
+                                                <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 shadow-lg shadow-indigo-500/20 group-hover:shadow-indigo-500/40 transition-shadow">
+                                                    <Sparkles className="w-6 h-6 text-white" />
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="font-bold text-lg text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">客製化行程</div>
+                                                    <div className="text-xs opacity-60 mt-1">深度自選，Jarvis 精準規劃</div>
+                                                </div>
                                             </div>
                                         </button>
                                     </>
@@ -511,14 +590,17 @@ const AIGeminiModal = ({
                                         setActiveTab('shopping');
                                         setShoppingStep('selection');
                                     }}
-                                    className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-center gap-3 transition-all hover:shadow-lg hover:-translate-y-1 active:scale-95 ${isDarkMode ? 'border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20' : 'border-purple-200 bg-purple-50 hover:bg-purple-100'}`}
+                                    className="group relative p-1 rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-95"
                                 >
-                                    <div className={`p-2.5 rounded-xl ${isDarkMode ? 'bg-purple-500/20' : 'bg-white shadow-sm'}`}>
-                                        <ShoppingBag className="w-6 h-6 text-purple-500" />
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="font-bold">購物清單</div>
-                                        <div className="text-[10px] opacity-60 mt-1">必買伴手禮推薦</div>
+                                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
+                                    <div className={`relative h-full p-6 rounded-xl border backdrop-blur-sm flex flex-col items-center justify-center gap-4 transition-all ${isDarkMode ? 'bg-gray-900/40 border-purple-500/30' : 'bg-white/60 border-purple-100'}`}>
+                                        <div className="p-3 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg shadow-purple-500/20 group-hover:shadow-purple-500/40 transition-shadow">
+                                            <ShoppingBag className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="font-bold text-lg text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">購物清單</div>
+                                            <div className="text-xs opacity-60 mt-1">必買伴手禮推薦</div>
+                                        </div>
                                     </div>
                                 </button>
 
@@ -547,14 +629,17 @@ const AIGeminiModal = ({
                                                 setLoading(false);
                                             });
                                     }}
-                                    className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-center gap-3 transition-all hover:shadow-lg hover:-translate-y-1 active:scale-95 ${isDarkMode ? 'border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20' : 'border-emerald-200 bg-emerald-50 hover:bg-emerald-100'}`}
+                                    className="group relative p-1 rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-95"
                                 >
-                                    <div className={`p-2.5 rounded-xl ${isDarkMode ? 'bg-emerald-500/20' : 'bg-white shadow-sm'}`}>
-                                        <PackageCheck className="w-6 h-6 text-emerald-500" />
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="font-bold">智能行李</div>
-                                        <div className="text-[10px] opacity-60 mt-1">根據天氣自動打包</div>
+                                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
+                                    <div className={`relative h-full p-6 rounded-xl border backdrop-blur-sm flex flex-col items-center justify-center gap-4 transition-all ${isDarkMode ? 'bg-gray-900/40 border-emerald-500/30' : 'bg-white/60 border-emerald-100'}`}>
+                                        <div className="p-3 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/20 group-hover:shadow-emerald-500/40 transition-shadow">
+                                            <PackageCheck className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="font-bold text-lg text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500">智能行李</div>
+                                            <div className="text-xs opacity-60 mt-1">根據天氣自動打包</div>
+                                        </div>
                                     </div>
                                 </button>
 
@@ -563,14 +648,17 @@ const AIGeminiModal = ({
                                         // Expand to show text input area
                                         setItineraryStep('text-input');
                                     }}
-                                    className={`p-5 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-all hover:shadow-lg hover:-translate-y-1 active:scale-95 ${isDarkMode ? 'border-gray-600 hover:border-gray-500 hover:bg-white/5' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'}`}
+                                    className="group relative p-1 rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-95"
                                 >
-                                    <div className={`p-2.5 rounded-xl ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                                        <BrainCircuit className="w-6 h-6 text-gray-500" />
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="font-bold opacity-80 text-sm">SmartImport</div>
-                                        <div className="text-[10px] opacity-50 mt-1">匯入資料客製規劃</div>
+                                    <div className="absolute inset-0 bg-gradient-to-br from-gray-500 to-gray-600 rounded-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
+                                    <div className={`relative h-full p-6 rounded-xl border border-dashed backdrop-blur-sm flex flex-col items-center justify-center gap-4 transition-all ${isDarkMode ? 'bg-gray-900/40 border-gray-600' : 'bg-white/60 border-gray-300'}`}>
+                                        <div className={`p-3 rounded-2xl ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} group-hover:bg-gray-700/50 transition-colors`}>
+                                            <BrainCircuit className="w-6 h-6 text-gray-500" />
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="font-bold text-lg opacity-80">SmartImport</div>
+                                            <div className="text-xs opacity-50 mt-1">匯入資料客製規劃</div>
+                                        </div>
                                     </div>
                                 </button>
                             </div>

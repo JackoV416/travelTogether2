@@ -4,7 +4,6 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 
 const ExportTripModal = ({ isOpen, onClose, trip, isDarkMode }) => {
-    if (!isOpen) return null;
 
     const [isPublic, setIsPublic] = useState(trip.isPublic || false);
     const [copied, setCopied] = useState(false);
@@ -41,6 +40,8 @@ const ExportTripModal = ({ isOpen, onClose, trip, isDarkMode }) => {
             a.click();
         }
     };
+
+    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 bg-black/60 z-[80] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in">

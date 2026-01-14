@@ -48,14 +48,20 @@ export const getDaysArray = (start, end) => {
     return arr;
 };
 
-export const getWeekday = (dateStr) => ["週日", "週一", "週二", "週三", "週四", "週五", "週六"][new Date(dateStr).getDay()];
+export const getWeekday = (dateStr, t) => {
+    const day = new Date(dateStr).getDay();
+    const keys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    return t ? t(`itinerary.weekdays.${keys[day]}`) : ["週日", "週一", "週二", "週三", "週四", "週五", "週六"][day];
+};
 
-export const getTripSummary = (trip) => {
+export const getTripSummary = (trip, t) => {
     if (!trip) return "";
     const now = new Date();
     const start = new Date(trip.startDate);
     const diffDays = Math.ceil((start - now) / (1000 * 60 * 60 * 24));
-    let summary = diffDays > 0 ? `距離出發 ${diffDays} 天` : "旅程進行中";
+    let summary = diffDays > 0
+        ? (t ? t('trip.status.days_to_go_fmt', { days: diffDays }) : `距離出發 ${diffDays} 天`)
+        : (t ? t('trip.status.ongoing') : "旅程進行中");
     const nextFlight = trip.itinerary?.[now.toISOString().split('T')[0]]?.find(i => i.type === 'flight');
     if (nextFlight) summary += ` • ✈️ ${nextFlight.details.number} `;
     return summary;
@@ -102,17 +108,17 @@ export const getTimeDiff = (userRegion, destCountry) => {
 
 export const getLocalCityTime = (tz) => new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit' });
 
-export const getWeatherForecast = (country, currentTempStr, customDesc, customIcon) => {
+export const getWeatherForecast = (country, currentTempStr, customDesc, customIcon, t) => {
     const region = getSafeCountryInfo(country).region;
     const iconUrl = OUTFIT_IMAGES[region] || OUTFIT_IMAGES.north;
 
     // Helper: Get clothes based on temperature
     const getClothesForTemp = (temp) => {
-        if (temp >= 28) return "背心、短褲、防曬";
-        if (temp >= 23) return "短袖、透氣帆布鞋";
-        if (temp >= 18) return "薄長袖、針織衫";
-        if (temp >= 12) return "夾克、帽T、牛仔褲";
-        return "厚大衣、圍巾、發熱衣";
+        if (temp >= 28) return t ? t('trip.weather.clothes.hot') : "背心、短褲、防曬";
+        if (temp >= 23) return t ? t('trip.weather.clothes.warm') : "短袖、透氣帆布鞋";
+        if (temp >= 18) return t ? t('trip.weather.clothes.comfortable') : "薄長袖、針織衫";
+        if (temp >= 12) return t ? t('trip.weather.clothes.cool') : "夾克、帽T、牛仔褲";
+        return t ? t('trip.weather.clothes.cold') : "厚大衣、圍巾、發熱衣";
     };
 
     // Helper: Get icon based on temperature
@@ -126,11 +132,11 @@ export const getWeatherForecast = (country, currentTempStr, customDesc, customIc
 
     // Helper: Get desc based on temperature
     const getDescForTemp = (temp) => {
-        if (temp >= 28) return "炎熱";
-        if (temp >= 23) return "溫暖";
-        if (temp >= 18) return "舒適";
-        if (temp >= 12) return "微涼";
-        return "寒冷";
+        if (temp >= 28) return t ? t('trip.weather.desc.hot') : "炎熱";
+        if (temp >= 23) return t ? t('trip.weather.desc.warm') : "溫暖";
+        if (temp >= 18) return t ? t('trip.weather.desc.comfortable') : "舒適";
+        if (temp >= 12) return t ? t('trip.weather.desc.cool') : "微涼";
+        return t ? t('trip.weather.desc.cold') : "寒冷";
     };
 
     // If real temp is provided (e.g. "28°C" or "25°C / 18°C")
@@ -145,7 +151,9 @@ export const getWeatherForecast = (country, currentTempStr, customDesc, customIc
         const dayClothes = getClothesForTemp(maxTemp);
         const nightClothes = getClothesForTemp(minTemp);
         // Always show Day/Night format for clarity - Use standard pipe for regex compatibility
-        const clothes = `日：${dayClothes} | 夜：${nightClothes} `;
+        const dayLabel = t ? t('trip.weather.day') : "日";
+        const nightLabel = t ? t('trip.weather.night') : "夜";
+        const clothes = `${dayLabel}：${dayClothes} | ${nightLabel}：${nightClothes} `;
 
         return {
             temp: currentTempStr,
@@ -169,21 +177,79 @@ export const getWeatherForecast = (country, currentTempStr, customDesc, customIc
         dayClothes: "--",
         nightClothes: "--",
         icon: <Sun className="text-gray-400" />,
-        desc: "載入中...",
+        desc: t ? t('trip.weather.loading') : "載入中...",
         outfitIcon: iconUrl
     };
 };
 
-export const buildDailyReminder = (date, items = []) => {
-    if (!items.length) return "今日尚未規劃行程，快去新增吧！";
+export const buildDailyReminder = (date, items = [], t, destHolidays = {}) => {
+    if (!items.length) return t ? t('trip.reminders.no_plan') : "今日尚未規劃行程，快去新增吧！";
+
+    const holidayName = destHolidays[date.slice(5)]; // "MM-DD"
+    if (holidayName) {
+        if (holidayName.includes("元日") || holidayName.includes("New Year")) return `⚠️ ${holidayName}${t ? t('trip.reminders.holidays.new_year') : "：大部分商店可能休息，請確認營業時間。"}`;
+        if (holidayName.includes("除夕") || holidayName.includes("大晦日")) return `⚠️ ${holidayName}${t ? t('trip.reminders.holidays.eve') : "：注意交通管制與提早結束營業。"}`;
+        if (holidayName.includes("聖誕")) return `🎄 ${holidayName}${t ? t('trip.reminders.holidays.christmas') : "：部分景點可能調整時間，建議預約餐廳。"}`;
+        return `⚠️ ${holidayName}${t ? t('trip.reminders.holidays.general') : "：人潮可能較多，建議預留交通時間。"}`;
+    }
+
     const first = items[0];
     const flights = items.filter(i => i.type === 'flight');
-    if (flights.length) return `請確認 ${flights.map(f => f.details?.number).join(", ")} 航班，提前 2 小時抵達機場。`;
-    return `${items.length} 項安排，從 ${first.details?.time || '早晨'} 開始，記得預留交通時間。`;
+    if (flights.length) return t ? t('trip.reminders.flight_confirm', { number: flights.map(f => f.details?.number).join(", ") }) : `請確認 ${flights.map(f => f.details?.number).join(", ")} 航班，提前 2 小時抵達機場。`;
+    return t ? t('trip.reminders.start_from', { count: items.length, time: first.details?.time || '早晨' }) : `${items.length} 項安排，從 ${first.details?.time || '早晨'} 開始，記得預留交通時間。`;
 };
 
 
 export const getUserInitial = (nameOrEmail = "") => (nameOrEmail[0] || "T").toUpperCase();
+
+export const getWalkMeta = () => {
+    const distance = (0.4 + Math.random() * 0.8).toFixed(1);
+    const steps = Math.round(Number(distance) * 1400);
+    const minutes = Math.round(Number(distance) * 12);
+    return { distance, steps, minutes };
+};
+
+export const getTransportAdvice = (item, city = "", t) => {
+    if (!item?.details?.location) return null;
+
+    const translateApprox = (price) => t ? t('trip.transport.approx', { price }) : `約 ${price}`;
+
+    if (item.type === 'flight') return {
+        mode: 'metro',
+        label: t ? t('trip.transport.airport_express') : "機場快線 / 地鐵",
+        cost: translateApprox("$120")
+    };
+
+    if (item.type === 'hotel') return {
+        mode: 'car',
+        label: t ? t('trip.transport.taxi_mins', { mins: 15 }) : "計程車約 15 分",
+        cost: translateApprox("$80")
+    };
+
+    if (item.type === 'food') {
+        const walk = getWalkMeta();
+        return {
+            mode: 'walk',
+            label: t ? t('trip.transport.walking_mins', { mins: walk.minutes }) : `步行 ${walk.minutes} 分`,
+            cost: "$0",
+            meta: walk
+        };
+    }
+
+    if (item.type === 'transport') return {
+        mode: 'bus',
+        label: t ? t('trip.transport.bus_express') : "巴士 / 高速巴士",
+        cost: item.cost ? `${item.currency} ${item.cost}` : (t ? t('trip.transport.fare') : "依票價")
+    };
+
+    return {
+        mode: 'metro',
+        label: t ? t('trip.transport.metro_city', { city }) : `${city} 地鐵`,
+        cost: translateApprox("$30")
+    };
+};
+
+export const buttonPrimary = `flex items-center justify-center px-6 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.05] active:scale-95 w-full cursor-pointer`;
 
 // ============================================
 // TIME CALCULATIONS (V1.1 Smart Scheduler)
@@ -301,7 +367,9 @@ const optimizeImage = (url) => {
                 return newUrl;
             }
         }
-    } catch (e) { }
+    } catch (e) {
+        console.debug("Smart image failed:", e);
+    }
     return url;
 };
 
@@ -362,7 +430,7 @@ export const isImageFile = (type) => type?.startsWith('image/');
  * 💡 Get Smart Tips for a Trip
  * Uses trip data (dates, itinerary completeness) to generate relevant tips.
  */
-export const getSmartTips = (trip) => {
+export const getSmartTips = (trip, t) => {
     if (!trip) return [];
 
     const tips = [];
@@ -375,8 +443,8 @@ export const getSmartTips = (trip) => {
     if (items.length === 0) {
         tips.push({
             icon: MapPin,
-            text: "規劃行程",
-            subtext: "尚未有任何安排",
+            text: t ? t('trip.tips.plan_itinerary') : "規劃行程",
+            subtext: t ? t('trip.tips.no_items') : "尚未有任何安排",
             color: "text-amber-500",
             bg: "bg-amber-500/10",
             action: "itinerary"
@@ -384,8 +452,8 @@ export const getSmartTips = (trip) => {
     } else if (daysUntil !== null && daysUntil > 0 && daysUntil <= 30 && items.length < 5) {
         tips.push({
             icon: MapPin,
-            text: "完善細節",
-            subtext: "行程比較空閒",
+            text: t ? t('trip.tips.refine_details') : "完善細節",
+            subtext: t ? t('trip.tips.too_free') : "行程比較空閒",
             color: "text-indigo-500",
             bg: "bg-indigo-500/10",
             action: "itinerary"
@@ -399,8 +467,8 @@ export const getSmartTips = (trip) => {
     if (!hasFlight && daysUntil !== null && daysUntil > 30) {
         tips.push({
             icon: Plane,
-            text: "預訂機票",
-            subtext: "建議提前預訂",
+            text: t ? t('trip.tips.book_flight') : "預訂機票",
+            subtext: t ? t('trip.tips.book_early') : "建議提前預訂",
             color: "text-sky-500",
             bg: "bg-sky-500/10",
             action: "flight" // Could trigger a search or modal
@@ -410,8 +478,8 @@ export const getSmartTips = (trip) => {
     if (!hasHotel && daysUntil !== null && daysUntil > 14) {
         tips.push({
             icon: Hotel,
-            text: "預訂住宿",
-            subtext: "查看推薦酒店",
+            text: t ? t('trip.tips.book_hotel') : "預訂住宿",
+            subtext: t ? t('trip.tips.check_hotel') : "查看推薦酒店",
             color: "text-rose-500",
             bg: "bg-rose-500/10",
             action: "hotel"
@@ -423,8 +491,8 @@ export const getSmartTips = (trip) => {
         if (daysUntil > 14 && daysUntil <= 60) {
             tips.push({
                 icon: Shield,
-                text: "購買保險",
-                subtext: "保障旅程安全",
+                text: t ? t('trip.tips.buy_insurance') : "購買保險",
+                subtext: t ? t('trip.tips.safety_first') : "保障旅程安全",
                 color: "text-emerald-500",
                 bg: "bg-emerald-500/10"
             });
@@ -433,8 +501,8 @@ export const getSmartTips = (trip) => {
         if (daysUntil > 7 && daysUntil <= 30) {
             tips.push({
                 icon: Ticket,
-                text: "檢查簽證",
-                subtext: "確認護照有效期",
+                text: t ? t('trip.tips.check_visa') : "檢查簽證",
+                subtext: t ? t('trip.tips.check_passport') : "確認護照有效期",
                 color: "text-purple-500",
                 bg: "bg-purple-500/10"
             });
@@ -443,16 +511,16 @@ export const getSmartTips = (trip) => {
         if (daysUntil <= 3 && daysUntil >= 0) {
             tips.push({
                 icon: Backpack,
-                text: "收拾行李",
-                subtext: "檢查必帶物品",
+                text: t ? t('trip.tips.pack_luggage') : "收拾行李",
+                subtext: t ? t('trip.tips.check_essentials') : "檢查必帶物品",
                 color: "text-orange-500",
                 bg: "bg-orange-500/10",
                 action: "packing"
             });
             tips.push({
                 icon: Sun,
-                text: "查看天氣",
-                subtext: "準備合適衣物",
+                text: t ? t('trip.tips.check_weather') : "查看天氣",
+                subtext: t ? t('trip.tips.prepare_clothes') : "準備合適衣物",
                 color: "text-blue-500",
                 bg: "bg-blue-500/10",
                 action: "weather"
@@ -462,13 +530,28 @@ export const getSmartTips = (trip) => {
 
     // Default Fallback
     if (tips.length === 0) {
-        tips.push({
-            icon: MapPin,
-            text: "準備出發",
-            subtext: "祝你旅途愉快！",
-            color: "text-indigo-500",
-            bg: "bg-indigo-500/10"
-        });
+        const endDate = trip.endDate ? parseISO(trip.endDate) : null;
+        // differenceInDays(dateLeft, dateRight) -> if dateLeft < dateRight, result is negative.
+        // If end date is yesterday, diff(yesterday, today) is -1.
+        const isEnded = endDate && differenceInDays(endDate, today) < 0;
+
+        if (isEnded) {
+            tips.push({
+                icon: CheckCircle2,
+                text: t ? t('trip.tips.trip_ended') : "旅程結束",
+                subtext: t ? t('trip.tips.welcome_back') : "歡迎回家！",
+                color: "text-gray-500",
+                bg: "bg-gray-500/10"
+            });
+        } else {
+            tips.push({
+                icon: MapPin,
+                text: t ? t('trip.tips.ready_to_go') : "準備出發",
+                subtext: t ? t('trip.tips.enjoy_trip') : "祝你旅途愉快！",
+                color: "text-indigo-500",
+                bg: "bg-indigo-500/10"
+            });
+        }
     }
 
     return tips;

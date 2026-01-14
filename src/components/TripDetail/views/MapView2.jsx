@@ -149,7 +149,7 @@ const MapView2 = ({ items, trip, isDarkMode, onItemClick }) => {
     const attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
     return (
-        <div className="relative w-full h-full bg-transparent overflow-hidden rounded-2xl border border-white/10 shadow-2xl group/map leaflet-container-fix">
+        <div className="relative w-full h-full bg-transparent overflow-hidden rounded-2xl border border-white/10 shadow-2xl group/map leaflet-container-fix" data-tour="map-content">
             <style dangerouslySetInnerHTML={{
                 __html: `
                 .leaflet-container { background: ${isDarkMode ? '#0f172a' : '#f8fafc'} !important; width: 100%; height: 100%; }

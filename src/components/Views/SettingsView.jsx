@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, BrainCircuit, Lock, Sparkles, Eye, EyeOff, RotateCcw, GripVertical, Server, ShieldCheck, Activity, User, Trash2, WifiOff, Save, AlertTriangle, Settings, LayoutGrid, ChevronRight, AlertCircle, RefreshCw } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { CURRENCIES, TIMEZONES, LANGUAGE_OPTIONS, APP_VERSION, JARVIS_VERSION } from '../../constants/appData';
@@ -7,6 +8,17 @@ import { getUserQuotaStatus, getSystemAnalytics } from '../../services/ai-quota'
 import { updateUserProfile, deleteUserAccount, saveUserSettings, loadUserSettings, uploadUserAvatar } from '../../services/accountService';
 import { isOnline, subscribeNetworkStatus } from '../../utils/networkUtils';
 import JarvisLogo from '../Shared/JarvisLogo';
+// Widget Components
+import {
+    WeatherWidget,
+    NewsWidget,
+    HotelsWidget,
+    FlightsWidget,
+    TransportWidget,
+    ConnectivityWidget,
+    CurrencyConverter
+} from '../Dashboard/widgets';
+import useDashboardData from '../../hooks/useDashboardData';
 
 // Widget Labels for Localization
 const WIDGET_LABELS = {
@@ -30,12 +42,22 @@ const DEFAULT_WIDGETS = [
     { id: 'currency', visible: true },
 ];
 
-const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, initialTab = 'general', user, isAdmin }) => {
+const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, initialTab = 'general', user, isAdmin, exchangeRates, weatherData }) => {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState(initialTab);
     const [intelTab, setIntelTab] = useState('usage'); // V1.2.3: Intelligence Sub-tabs
     const [expandedProvider, setExpandedProvider] = useState(null); // V1.2.8
 
+    // V1.3.0: Info Hub Logic (Moved from Dashboard)
+    const {
+        newsData, loadingNews,
+        hotels, loadingHotels, flights, loadingFlights,
+        transports, loadingTransports, connectivity, loadingConnectivity,
+    } = useDashboardData(user, globalSettings, exchangeRates);
 
+    const [convAmount, setConvAmount] = useState(100);
+    const [convFrom, setConvFrom] = useState(globalSettings?.currency || 'HKD');
+    const [convTo, setConvTo] = useState('JPY');
 
     // Widget Customization State
     const [widgetConfig, setWidgetConfig] = useState(() => {
@@ -167,9 +189,9 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                     <ArrowLeft className="w-6 h-6" />
                 </button>
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">設定</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">{t('settings.title')}</h1>
                     <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        管理您的應用程式偏好、Jarvis 設定與 API 金鑰。
+                        {t('settings.subtitle')}
                     </p>
                 </div>
             </div>
@@ -181,25 +203,25 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                         onClick={() => setActiveTab('general')}
                         className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'general' ? (isDarkMode ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30' : 'bg-indigo-50 text-indigo-600 border border-indigo-100') : 'opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
                     >
-                        <Settings className="w-4 h-4" /> 一般設定
+                        <Settings className="w-4 h-4" /> {t('settings.tabs.general')}
                     </button>
                     <button
                         onClick={() => setActiveTab('intelligence')}
                         className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'intelligence' ? (isDarkMode ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30' : 'bg-indigo-50 text-indigo-600 border border-indigo-100') : 'opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
                     >
-                        <BrainCircuit className="w-4 h-4" /> Jarvis AI
+                        <BrainCircuit className="w-4 h-4" /> {t('settings.tabs.intelligence')}
                     </button>
                     <button
                         onClick={() => setActiveTab('info')}
                         className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'info' ? (isDarkMode ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30' : 'bg-indigo-50 text-indigo-600 border border-indigo-100') : 'opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
                     >
-                        <LayoutGrid className="w-4 h-4" /> 資訊中心設定
+                        <LayoutGrid className="w-4 h-4" /> {t('settings.tabs.info')}
                     </button>
                     <button
                         onClick={() => setActiveTab('account')}
                         className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'account' ? (isDarkMode ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30' : 'bg-indigo-50 text-indigo-600 border border-indigo-100') : 'opacity-60 hover:opacity-100 hover:bg-gray-500/5'}`}
                     >
-                        <User className="w-4 h-4" /> 帳戶管理
+                        <User className="w-4 h-4" /> {t('settings.tabs.account')}
                     </button>
                 </div>
 
@@ -209,22 +231,22 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                     {activeTab === 'general' && (
                         <div className="space-y-8 animate-fade-in">
                             <div className="max-w-lg">
-                                <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">貨幣單位</label>
+                                <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">{t('settings.general.currency')}</label>
                                 <select value={globalSettings.currency} onChange={e => setGlobalSettings({ ...globalSettings, currency: e.target.value })} className={inputClasses(isDarkMode) + " cursor-pointer appearance-none"}>
                                     {Object.keys(CURRENCIES).map(c => <option key={c} value={c}>{c} - {CURRENCIES[c].symbol}</option>)}
                                 </select>
-                                <p className="mt-2 text-xs opacity-50 ml-1">所有行程預算將以此貨幣顯示</p>
+                                <p className="mt-2 text-xs opacity-50 ml-1">{t('settings.general.currency_desc')}</p>
                             </div>
 
                             <div className="max-w-lg">
-                                <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">預設所在地 (用於緊急資訊)</label>
+                                <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">{t('settings.general.region')}</label>
                                 <select value={globalSettings.region} onChange={e => setGlobalSettings({ ...globalSettings, region: e.target.value })} className={inputClasses(isDarkMode) + " cursor-pointer appearance-none"}>
                                     {Object.keys(TIMEZONES).map(r => <option key={r} value={r}>{TIMEZONES[r].label}</option>)}
                                 </select>
                             </div>
 
                             <div className="max-w-lg">
-                                <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">介面語言</label>
+                                <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">{t('settings.general.language')}</label>
                                 <select value={globalSettings.language} onChange={e => setGlobalSettings({ ...globalSettings, language: e.target.value })} className={inputClasses(isDarkMode) + " cursor-pointer appearance-none"}>
                                     {Object.entries(LANGUAGE_OPTIONS).map(([code, conf]) => <option key={code} value={code}>{conf.label}</option>)}
                                 </select>
@@ -232,8 +254,8 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
 
                             <div className="max-w-lg flex items-center justify-between p-4 rounded-xl border border-gray-500/10 bg-gray-500/5">
                                 <div>
-                                    <div className="font-bold text-sm">省流量模式 (Data Saver)</div>
-                                    <div className="text-xs opacity-60 mt-0.5">使用壓縮圖片以節省數據用量，適合漫遊時使用</div>
+                                    <div className="font-bold text-sm">{t('settings.general.data_saver')}</div>
+                                    <div className="text-xs opacity-60 mt-0.5">{t('settings.general.data_saver_desc')}</div>
                                 </div>
                                 <button
                                     onClick={() => {
@@ -253,9 +275,9 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <div className="font-bold text-sm flex items-center gap-2">
-                                            <span>🎓</span> 重播新手導覽
+                                            <span>🎓</span> {t('settings.general.replay_tutorial')}
                                         </div>
-                                        <div className="text-xs opacity-60 mt-0.5">重新體驗 Jarvis 的新手教學流程</div>
+                                        <div className="text-xs opacity-60 mt-0.5">{t('settings.general.replay_desc')}</div>
                                     </div>
                                     <button
                                         onClick={() => {
@@ -277,12 +299,12 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <div className="font-bold text-sm flex items-center gap-2">
-                                            <span>🔄</span> 檢查與更新
+                                            <span>🔄</span> {t('settings.general.check_update')}
                                         </div>
-                                        <div className="text-xs opacity-60 mt-0.5">版本: {APP_VERSION}. 如遇顯示問題，請嘗試強制重載。</div>
+                                        <div className="text-xs opacity-60 mt-0.5">{t('settings.general.version', { version: APP_VERSION })}</div>
                                         <details className="mt-1 group">
                                             <summary className="text-[10px] text-blue-500 cursor-pointer hover:underline list-none flex items-center gap-1 select-none">
-                                                <AlertCircle className="w-3 h-3" /> 如何強制重載？ (How?)
+                                                <AlertCircle className="w-3 h-3" /> {t('settings.general.how_to')}
                                             </summary>
                                             <div className="mt-2 p-2 bg-white/50 dark:bg-black/20 rounded border border-blue-500/10 text-[10px] opacity-80 leading-relaxed">
                                                 <ul className="list-disc pl-3 space-y-1">
@@ -297,7 +319,7 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                         onClick={() => window.location.reload(true)}
                                         className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold transition-all flex items-center gap-2 shadow-sm"
                                     >
-                                        <RefreshCw className="w-3 h-3" /> 強制刷新
+                                        <RefreshCw className="w-3 h-3" /> {t('settings.general.force_reload')}
                                     </button>
                                 </div>
                             </div>
@@ -352,13 +374,13 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                         <div className="flex justify-between items-end mb-4">
                                             <div>
                                                 <label className="text-sm font-bold opacity-90 flex items-center gap-2">
-                                                    <Activity className="w-5 h-5 text-indigo-500" />今日用量統計
+                                                    <Activity className="w-5 h-5 text-indigo-500" />{t('settings.intelligence.today_usage')}
                                                 </label>
-                                                <p className="text-[10px] opacity-40 mt-1">累積消耗: <span className="text-indigo-400 font-mono font-bold">{(aiUsage.tokens || 0).toLocaleString()} Tokens</span></p>
+                                                <p className="text-[10px] opacity-40 mt-1">{t('settings.intelligence.accumulated', { tokens: (aiUsage.tokens || 0).toLocaleString() })}</p>
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-xl font-black text-indigo-500 font-mono">{aiUsage.used} <span className="text-sm opacity-50 font-normal text-gray-500">/ {aiUsage.total}</span></div>
-                                                <div className="text-[10px] opacity-50 font-bold uppercase tracking-widest">Requests</div>
+                                                <div className="text-[10px] opacity-50 font-bold uppercase tracking-widest">{t('settings.intelligence.requests')}</div>
                                             </div>
                                         </div>
                                         <div className="h-3 w-full bg-gray-500/10 rounded-full overflow-hidden">
@@ -368,9 +390,12 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                             ></div>
                                         </div>
                                         <div className="flex justify-between mt-3">
-                                            <p className="text-[10px] opacity-40 uppercase tracking-tighter font-bold">Status: {aiUsage.remaining > 0 ? 'Active' : 'Limit Reached'}</p>
+                                            <div>
+                                                <p className="text-[10px] opacity-40 uppercase tracking-tighter font-bold">{t('settings.intelligence.status')}: {aiUsage.remaining > 0 ? t('settings.intelligence.active') : t('settings.intelligence.limit_reached')}</p>
+                                                <p className="text-[10px] opacity-40 uppercase tracking-tighter font-bold">Standard Tier (Active)</p>
+                                            </div>
                                             <div className="text-right">
-                                                <p className="text-[10px] opacity-50">重置倒數: {timeUntilReset}</p>
+                                                <p className="text-[10px] opacity-50">{t('settings.intelligence.reset_countdown', { time: timeUntilReset })}</p>
                                             </div>
                                         </div>
 
@@ -394,7 +419,7 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                     <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-gray-800/30 border-gray-700/50' : 'bg-gray-50/50 border-gray-200'}`}>
                                         <h4 className="font-bold text-sm mb-3 flex items-center gap-2">
                                             <Sparkles className="w-4 h-4 text-purple-400" />
-                                            功能使用明細 (今日)
+                                            {t('settings.intelligence.features_title')}
                                         </h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                             {[
@@ -490,9 +515,9 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                         <div className="flex justify-between items-start gap-4">
                                             <div>
                                                 <h4 className="font-bold flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-2 text-lg">
-                                                    <Lock className="w-5 h-5" /> 自訂 Jarvis Keys (BYOK)
+                                                    <Lock className="w-5 h-5" /> {t('settings.api.title')}
                                                 </h4>
-                                                <p className="text-sm opacity-70 leading-relaxed">切換至自訂金鑰模式以解除每日限額。API Key 只會儲存在本地瀏覽器。</p>
+                                                <p className="text-sm opacity-70 leading-relaxed">{t('settings.api.desc')}</p>
                                             </div>
                                             <button
                                                 onClick={() => {
@@ -515,10 +540,10 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                             {Object.keys(globalSettings.aiKeys || {}).length === 0 && (
                                                 <div className="flex items-center gap-3 p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-600 dark:text-orange-400">
                                                     <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                                                    <div className="text-sm font-bold">尚未設定任何金鑰，請選擇供應商並輸入 API Key。</div>
+                                                    <div className="text-sm font-bold">{t('settings.api.no_keys')}</div>
                                                 </div>
                                             )}
-                                            <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">AI 供應商分類 (BYOK Categories)</label>
+                                            <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">{t('settings.api.provider_cat')}</label>
                                             <div className="grid grid-cols-1 gap-3">
                                                 {[
                                                     { id: 'gemini', label: 'Google Gemini', icon: '✨', desc: '最佳速度與性價比', url: 'https://aistudio.google.com/app/apikey' },
@@ -661,9 +686,9 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                 <div className="space-y-6 animate-fade-in">
                                     <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 p-5 rounded-2xl border border-indigo-500/20">
                                         <h4 className="font-bold flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-2 text-lg">
-                                            <Sparkles className="w-5 h-5" /> Jarvis 偏好
+                                            <Sparkles className="w-5 h-5" /> {t('settings.prefs.title')}
                                         </h4>
-                                        <p className="text-sm opacity-70">勾選您的興趣，讓 Jarvis 建議更懂您。</p>
+                                        <p className="text-sm opacity-70">{t('settings.prefs.desc')}</p>
                                     </div>
 
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -683,10 +708,10 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                         <div>
                                             <div className="font-bold text-sm flex items-center gap-2">
                                                 <BrainCircuit className={`w-4 h-4 ${globalSettings.autoJarvis !== false ? 'text-indigo-500' : 'text-gray-400'}`} />
-                                                自動啟用 Jarvis 功能
+                                                {t('settings.prefs.auto_title')}
                                             </div>
                                             <div className="text-xs opacity-60 mt-1 max-w-sm">
-                                                {globalSettings.autoJarvis !== false ? '已啟用：Jarvis 將自動為您提供行程建議、命名及分析。' : '已停用：需手動啟用個別功能，節省用量。 (部分核心功能仍可使用)'}
+                                                {globalSettings.autoJarvis !== false ? t('settings.prefs.auto_on') : t('settings.prefs.auto_off')}
                                             </div>
                                         </div>
                                         <button
@@ -708,8 +733,8 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                             {intelTab === 'help' && (
                                 <div className="space-y-6 animate-fade-in">
                                     <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 p-5 rounded-2xl border border-blue-500/20">
-                                        <h4 className="font-bold flex items-center gap-2 text-blue-600 dark:text-blue-400 mb-2 text-lg">💡 Jarvis Q&A 指南</h4>
-                                        <p className="text-sm opacity-70">這裡收集了關於 Jarvis 的常見問題與使用技巧。</p>
+                                        <h4 className="font-bold flex items-center gap-2 text-blue-600 dark:text-blue-400 mb-2 text-lg">💡 {t('settings.help.title')}</h4>
+                                        <p className="text-sm opacity-70">{t('settings.help.desc')}</p>
                                     </div>
 
                                     <div className="space-y-4">
@@ -742,15 +767,13 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                         </div>
 
                                         <div className={`p-4 rounded-xl border transition-all ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
-                                            <h5 className="font-bold text-sm mb-2 text-indigo-500">Q: 重播新手教學？</h5>
+                                            <h5 className="font-bold text-sm mb-2 text-indigo-500">Q: {t('settings.general.replay_tutorial')}?</h5>
                                             <p className="text-sm opacity-80 leading-relaxed mb-3">
-                                                如果您想再次回顧 App 的使用方法，可以點擊下方按鈕重啟教學。
+                                                {t('settings.general.replay_desc')}
                                             </p>
                                             <button
                                                 onClick={() => {
                                                     localStorage.removeItem('travelTogether_onboardingComplete');
-                                                    // localStorage.removeItem('hasSeenOnboarding'); // Keep Intro status
-                                                    // window.location.reload(); // Don't reload
                                                     onBack();
                                                     setTimeout(() => {
                                                         window.dispatchEvent(new CustomEvent('START_ONBOARDING_TOUR'));
@@ -758,7 +781,7 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                                 }}
                                                 className="px-4 py-2 bg-indigo-500 text-white rounded-lg text-xs font-bold hover:bg-indigo-600 transition-colors"
                                             >
-                                                🔄 重啟新手教學
+                                                🔄 {t('settings.general.start_tour')}
                                             </button>
                                         </div>
                                     </div>
@@ -772,12 +795,12 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                         activeTab === 'info' && (
                             <div className="space-y-6 animate-fade-in">
                                 <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 p-5 rounded-2xl border border-emerald-500/20">
-                                    <h4 className="font-bold flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-2 text-lg">🎛️ 資訊中心自訂</h4>
-                                    <p className="text-sm opacity-70">拖曳以重新排序。眼睛圖示控制顯示/隱藏。設定會自動儲存。</p>
+                                    <h4 className="font-bold flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-2 text-lg">🎛️ {t('settings.tabs.info')} (Travel Hub)</h4>
+                                    <p className="text-sm opacity-70">{t('settings.info_desc') || "Manage your dashboard widgets here."}</p>
                                 </div>
 
                                 {/* Action Buttons */}
-                                <div className="flex gap-2 flex-wrap">
+                                <div className="flex gap-2 flex-wrap mb-4">
                                     <button
                                         onClick={() => {
                                             const newWidgets = widgetConfig.map(w => ({ ...w, visible: true }));
@@ -798,68 +821,87 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                     >
                                         <EyeOff className="w-3 h-3" /> 全部隱藏
                                     </button>
-                                    <button
-                                        onClick={() => {
-                                            setWidgetConfig(DEFAULT_WIDGETS);
-                                            localStorage.removeItem('dashboardWidgets');
-                                        }}
-                                        className="px-3 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-500 text-xs font-bold transition-all flex items-center gap-1"
-                                    >
-                                        <RotateCcw className="w-3 h-3" /> 重設預設
-                                    </button>
                                 </div>
 
-                                {/* Widget List with Drag & Drop */}
+                                {/* Draggable Widgets Grid */}
                                 <DragDropContext onDragEnd={handleWidgetDragEnd}>
-                                    <Droppable droppableId="widget-settings">
+                                    <Droppable droppableId="widgets">
                                         {(provided) => (
                                             <div
                                                 {...provided.droppableProps}
                                                 ref={provided.innerRef}
-                                                className="space-y-2"
+                                                className="grid grid-cols-1 gap-6"
                                             >
-                                                {widgetConfig.map((widget, index) => (
-                                                    <Draggable key={widget.id} draggableId={widget.id} index={index}>
-                                                        {(provided, snapshot) => (
-                                                            <div
-                                                                ref={provided.innerRef}
-                                                                {...provided.draggableProps}
-                                                                className={`flex items-center justify-between p-4 rounded-xl border transition-all ${snapshot.isDragging ? 'ring-2 ring-indigo-500 shadow-lg' : ''} ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
-                                                            >
-                                                                <div className="flex items-center gap-3">
-                                                                    <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 rounded hover:bg-gray-500/10">
-                                                                        <GripVertical className="w-5 h-5 opacity-50" />
-                                                                    </div>
-                                                                    <span className={`font-bold ${!widget.visible ? 'opacity-40 line-through' : ''}`}>
-                                                                        {WIDGET_LABELS[widget.id]?.[globalSettings.language] || WIDGET_LABELS[widget.id]?.['en'] || widget.name}
-                                                                    </span>
-                                                                </div>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        const newWidgets = widgetConfig.map(w =>
-                                                                            w.id === widget.id ? { ...w, visible: !w.visible } : w
-                                                                        );
-                                                                        setWidgetConfig(newWidgets);
-                                                                        localStorage.setItem('dashboardWidgets', JSON.stringify(newWidgets));
-                                                                    }}
-                                                                    className={`p-2 rounded-full transition-all ${widget.visible ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}
+                                                {widgetConfig.map((widget, index) => {
+                                                    const isVisible = widget.visible;
+                                                    // Only render active widget logic if visible to save resources
+                                                    return (
+                                                        <Draggable key={widget.id} draggableId={widget.id} index={index}>
+                                                            {(provided, snapshot) => (
+                                                                <div
+                                                                    ref={provided.innerRef}
+                                                                    {...provided.draggableProps}
+                                                                    className={`rounded-2xl border transition-all ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-indigo-500 scale-105 z-50 bg-gray-900' : (isDarkMode ? 'bg-gray-800/30 border-gray-700' : 'bg-gray-50 border-gray-200')} ${!isVisible && 'opacity-60 grayscale'}`}
                                                                 >
-                                                                    {widget.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                                                                </button>
-                                                            </div>
-                                                        )}
-                                                    </Draggable>
-                                                ))}
+                                                                    {/* Header / Handle */}
+                                                                    <div className="flex items-center justify-between p-4 border-b border-gray-500/10">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div {...provided.dragHandleProps} className="p-2 cursor-grab hover:bg-gray-500/10 rounded-lg text-gray-400">
+                                                                                <GripVertical className="w-4 h-4" />
+                                                                            </div>
+                                                                            <span className="font-bold text-sm">
+                                                                                {WIDGET_LABELS[widget.id]?.[globalSettings.language || 'zh-HK'] || widget.id}
+                                                                            </span>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                const newWidgets = [...widgetConfig];
+                                                                                newWidgets[index].visible = !isVisible;
+                                                                                setWidgetConfig(newWidgets);
+                                                                                localStorage.setItem('dashboardWidgets', JSON.stringify(newWidgets));
+                                                                            }}
+                                                                            className={`p-2 rounded-full transition-colors ${isVisible ? 'text-indigo-500 bg-indigo-500/10' : 'text-gray-400 bg-gray-500/10'}`}
+                                                                        >
+                                                                            {isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                                                        </button>
+                                                                    </div>
+
+                                                                    {/* Widget Content Area */}
+                                                                    {isVisible && (
+                                                                        <div className="p-4">
+                                                                            {widget.id === 'weather' && <WeatherWidget isDarkMode={isDarkMode} weatherData={weatherData} isLoadingWeather={false} currentLang={globalSettings.language} />}
+                                                                            {widget.id === 'currency' && <CurrencyConverter isDarkMode={isDarkMode} convAmount={convAmount} setConvAmount={setConvAmount} convFrom={convFrom} setConvFrom={setConvFrom} convTo={convTo} setConvTo={setConvTo} exchangeRates={exchangeRates} onOpenSettings={() => { }} />}
+                                                                            {widget.id === 'news' && <NewsWidget isDarkMode={isDarkMode} newsData={newsData} loadingNews={loadingNews} />}
+                                                                            {widget.id === 'hotels' && <HotelsWidget isDarkMode={isDarkMode} hotels={hotels} loadingHotels={loadingHotels} />}
+                                                                            {widget.id === 'flights' && <FlightsWidget isDarkMode={isDarkMode} flights={flights} loadingFlights={loadingFlights} />}
+                                                                            {widget.id === 'transport' && <TransportWidget isDarkMode={isDarkMode} transports={transports} loadingTransports={loadingTransports} />}
+                                                                            {widget.id === 'connectivity' && <ConnectivityWidget isDarkMode={isDarkMode} connectivity={connectivity} loadingConnectivity={loadingConnectivity} />}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </Draggable>
+                                                    );
+                                                })}
                                                 {provided.placeholder}
                                             </div>
                                         )}
                                     </Droppable>
                                 </DragDropContext>
-
-                                <p className="text-xs opacity-50 text-center">設定會自動儲存到瀏覽器，下次開啟即生效。</p>
+                                <button
+                                    onClick={() => {
+                                        setWidgetConfig(DEFAULT_WIDGETS);
+                                        localStorage.removeItem('dashboardWidgets');
+                                    }}
+                                    className="px-3 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-500 text-xs font-bold transition-all flex items-center gap-1"
+                                >
+                                    <RotateCcw className="w-3 h-3" /> 重設預設
+                                </button>
                             </div>
+
                         )
                     }
+
 
                     {/* V1.2.5: Account Management Tab */}
                     {
@@ -875,7 +917,7 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
 
                     <div className="mt-8 pt-8 border-t border-gray-500/10 flex justify-end">
                         <button onClick={() => window.location.reload()} className="px-6 py-3 rounded-xl bg-gray-500/10 hover:bg-gray-500/20 text-sm font-bold text-gray-600 dark:text-gray-300 transition-all flex items-center gap-2">
-                            <span className="text-xs">🔄</span> 儲存設定並重新載入 App
+                            <span className="text-xs">🔄</span> {t('settings.general.save_reload')}
                         </button>
                     </div>
                 </div >
@@ -886,6 +928,7 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
 
 // V1.2.5: Account Management Tab Component
 const AccountTab = ({ user, isDarkMode, globalSettings, setGlobalSettings }) => {
+    const { t } = useTranslation();
     // Avatar Upload State
     const fileInputRef = useRef(null);
     const [isUploading, setIsUploading] = useState(false);
@@ -1023,8 +1066,8 @@ const AccountTab = ({ user, isDarkMode, globalSettings, setGlobalSettings }) => 
                 <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3 animate-pulse">
                     <WifiOff className="w-5 h-5 text-amber-500" />
                     <div>
-                        <h5 className="font-bold text-amber-500">離線模式</h5>
-                        <p className="text-xs opacity-70">目前無網絡連接，部分功能暫時無法使用。</p>
+                        <h5 className="font-bold text-amber-500">{t('settings.account.offline_title')}</h5>
+                        <p className="text-xs opacity-70">{t('settings.account.offline_desc')}</p>
                     </div>
                 </div>
             )}
@@ -1040,23 +1083,23 @@ const AccountTab = ({ user, isDarkMode, globalSettings, setGlobalSettings }) => 
             {/* Profile Section */}
             <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
                 <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
-                    <User className="w-5 h-5 text-indigo-500" /> 個人資料
+                    <User className="w-5 h-5 text-indigo-500" /> {t('settings.account.profile_title')}
                 </h4>
 
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2">顯示名稱</label>
+                        <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2">{t('settings.account.display_name')}</label>
                         <input
                             type="text"
                             value={displayName}
                             onChange={e => setDisplayName(e.target.value)}
                             className={inputClasses(isDarkMode)}
-                            placeholder="您的名稱"
+                            placeholder={t('settings.account.display_name')}
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2">頭像 (Avatar)</label>
+                        <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2">{t('settings.account.avatar')}</label>
                         <div className="flex items-center gap-6 p-4 rounded-xl border border-gray-500/10 bg-gray-500/5">
                             <div className="relative group flex-shrink-0">
                                 <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-indigo-500/20 shadow-xl bg-gray-500/10">
@@ -1087,13 +1130,13 @@ const AccountTab = ({ user, isDarkMode, globalSettings, setGlobalSettings }) => 
                                     className={`px-4 py-2 rounded-lg bg-indigo-500/10 text-indigo-500 text-xs font-bold hover:bg-indigo-500/20 transition text-left flex items-center gap-2 ${isUploading ? 'opacity-50 cursor-wait' : ''}`}
                                 >
                                     {isUploading ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                                    {isUploading ? '上傳中...' : '更換圖片 (Upload Image)'}
+                                    {isUploading ? t('settings.account.saving') : t('settings.account.upload_btn')}
                                 </button>
                                 <button
                                     onClick={() => setPhotoURL(user?.photoURL || '')}
                                     className="px-4 py-2 rounded-lg bg-gray-500/10 text-gray-500 text-xs font-bold hover:bg-gray-500/20 transition text-left flex items-center gap-2"
                                 >
-                                    <RotateCcw className="w-3 h-3" /> 重設為預設 (Reset)
+                                    <RotateCcw className="w-3 h-3" /> {t('settings.account.reset_btn')}
                                 </button>
                             </div>
                         </div>
@@ -1105,7 +1148,7 @@ const AccountTab = ({ user, isDarkMode, globalSettings, setGlobalSettings }) => 
                         className={`px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${networkStatus ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}
                     >
                         <Save className="w-4 h-4" />
-                        {isSaving ? '儲存中...' : '儲存個人資料'}
+                        {isSaving ? t('settings.account.saving') : t('settings.account.save_btn')}
                     </button>
                 </div>
             </div>
@@ -1113,9 +1156,9 @@ const AccountTab = ({ user, isDarkMode, globalSettings, setGlobalSettings }) => 
             {/* Settings Sync Section */}
             <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-blue-500/10 border-blue-500/30' : 'bg-blue-50 border-blue-200'}`}>
                 <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
-                    <Server className="w-5 h-5 text-blue-500" /> 設定同步 (跨裝置)
+                    <Server className="w-5 h-5 text-blue-500" /> {t('settings.account.sync_title')}
                 </h4>
-                <p className="text-sm opacity-70 mb-4">將您的偏好設定同步到雲端，在其他裝置登入時自動載入。</p>
+                <p className="text-sm opacity-70 mb-4">{t('settings.account.sync_desc')}</p>
 
                 <div className="flex gap-3 flex-wrap">
                     <button
@@ -1123,14 +1166,14 @@ const AccountTab = ({ user, isDarkMode, globalSettings, setGlobalSettings }) => 
                         disabled={isSyncing || !networkStatus}
                         className={`px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${networkStatus ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}
                     >
-                        {isSyncing ? '同步中...' : '⬆️ 上傳設定到雲端'}
+                        {isSyncing ? t('settings.account.syncing') : `⬆️ ${t('settings.account.upload_settings')}`}
                     </button>
                     <button
                         onClick={handleLoadSettings}
                         disabled={isSyncing || !networkStatus}
                         className={`px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${networkStatus ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}
                     >
-                        {isSyncing ? '載入中...' : '⬇️ 從雲端載入設定'}
+                        {isSyncing ? t('settings.account.loading') : `⬇️ ${t('settings.account.download_settings')}`}
                     </button>
                 </div>
             </div>
@@ -1138,10 +1181,10 @@ const AccountTab = ({ user, isDarkMode, globalSettings, setGlobalSettings }) => 
             {/* Delete Account Section */}
             <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-red-500/10 border-red-500/30' : 'bg-red-50 border-red-200'}`}>
                 <h4 className="font-bold text-lg mb-4 flex items-center gap-2 text-red-500">
-                    <Trash2 className="w-5 h-5" /> 刪除帳戶
+                    <Trash2 className="w-5 h-5" /> {t('settings.account.delete_title')}
                 </h4>
                 <p className="text-sm opacity-70 mb-4">
-                    此操作將永久刪除您的帳戶及所有相關數據。<strong>此操作無法復原！</strong>
+                    {t('settings.account.delete_desc')}
                 </p>
 
                 {!showDeleteConfirm ? (
@@ -1150,26 +1193,26 @@ const AccountTab = ({ user, isDarkMode, globalSettings, setGlobalSettings }) => 
                         disabled={!networkStatus}
                         className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all"
                     >
-                        刪除我的帳戶
+                        {t('settings.account.delete_btn')}
                     </button>
                 ) : (
                     <div className="space-y-3 animate-fade-in">
                         <div className="p-3 rounded-lg bg-red-500/20 border border-red-500 text-red-400 text-xs font-bold">
-                            ⚠️ 最後確認：請輸入密碼以永久刪除帳戶
+                            ⚠️ {t('settings.account.confirm_delete')}
                         </div>
                         <input
                             type="password"
                             value={deletePassword}
                             onChange={e => setDeletePassword(e.target.value)}
                             className={inputClasses(isDarkMode)}
-                            placeholder="輸入您的密碼"
+                            placeholder="Password"
                         />
                         <div className="flex gap-3">
                             <button
                                 onClick={() => { setShowDeleteConfirm(false); setDeletePassword(''); }}
                                 className="px-4 py-2 rounded-lg bg-gray-500/20 hover:bg-gray-500/30 font-bold text-sm transition-all"
                             >
-                                取消
+                                {t('settings.account.cancel')}
                             </button>
                             <button
                                 onClick={handleDeleteAccount}
@@ -1177,7 +1220,7 @@ const AccountTab = ({ user, isDarkMode, globalSettings, setGlobalSettings }) => 
                                 className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all flex items-center gap-2"
                             >
                                 <Trash2 className="w-4 h-4" />
-                                {isDeleting ? '刪除中...' : '確認永久刪除'}
+                                {isDeleting ? t('settings.account.deleting') : t('settings.account.confirm_delete')}
                             </button>
                         </div>
                     </div>

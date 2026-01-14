@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Search, SlidersHorizontal, ArrowUpDown, Filter } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const SearchFilterBar = ({ onSearch, onSort, onFilter, currentSort, currentFilter }) => {
+    const { t } = useTranslation();
     const [searchTerm, setSearchTerm] = useState('');
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -27,7 +29,7 @@ const SearchFilterBar = ({ onSearch, onSort, onFilter, currentSort, currentFilte
                              text-gray-900 dark:text-gray-100 placeholder-gray-400 
                              focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 
                              transition-all shadow-sm hover:shadow-md hover:bg-white dark:hover:bg-white/10"
-                    placeholder="搜尋行程名稱、地點..."
+                    placeholder={t('dashboard.search_placeholder') || '搜尋行程名稱、地點...'}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -50,10 +52,10 @@ const SearchFilterBar = ({ onSearch, onSort, onFilter, currentSort, currentFilte
                                  focus:outline-none focus:ring-2 focus:ring-indigo-500/30 
                                  cursor-pointer hover:bg-white dark:hover:bg-white/10 transition-colors shadow-sm"
                     >
-                        <option value="nearest">🕒 最近出發 (默認)</option>
-                        <option value="date_asc">📅 日期 (舊→新)</option>
-                        <option value="date_desc">📅 日期 (新→舊)</option>
-                        <option value="name_asc">🔤 名稱 (A-Z)</option>
+                        <option value="nearest">🕒 {t('dashboard.sort.nearest') || '最近出發 (默認)'}</option>
+                        <option value="date_asc">📅 {t('dashboard.sort.date_asc') || '日期 (舊→新)'}</option>
+                        <option value="date_desc">📅 {t('dashboard.sort.date_desc') || '日期 (新→舊)'}</option>
+                        <option value="name_asc">🔤 {t('dashboard.sort.name_asc') || '名稱 (A-Z)'}</option>
                     </select>
                     <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
@@ -70,10 +72,10 @@ const SearchFilterBar = ({ onSearch, onSort, onFilter, currentSort, currentFilte
                                  focus:outline-none focus:ring-2 focus:ring-indigo-500/30 
                                  cursor-pointer hover:bg-white dark:hover:bg-white/10 transition-colors shadow-sm"
                     >
-                        <option value="all">🌐 全部行程</option>
-                        <option value="upcoming">🚀 即將開始</option>
-                        <option value="active">✈️ 進行中</option>
-                        <option value="completed">🏁 已結束</option>
+                        <option value="all">🌐 {t('dashboard.filter.all') || '全部行程'}</option>
+                        <option value="upcoming">🚀 {t('dashboard.filter.upcoming') || '即將開始'}</option>
+                        <option value="active">✈️ {t('dashboard.filter.active') || '進行中'}</option>
+                        <option value="completed">🏁 {t('dashboard.filter.completed') || '已結束'}</option>
                     </select>
                     <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
@@ -83,3 +85,4 @@ const SearchFilterBar = ({ onSearch, onSort, onFilter, currentSort, currentFilte
 };
 
 export default SearchFilterBar;
+

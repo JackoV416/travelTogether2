@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import ReactDOM from 'react-dom';
 import { doc, setDoc, collection, onSnapshot, deleteDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -6,6 +7,7 @@ import { getUserInitial } from '../../utils/tripUtils';
 import { TAB_LABELS } from '../../constants/appData';
 
 const ActiveUsersList = ({ tripId, user, activeTab, language = "zh-TW", onUserClick }) => {
+    const { t } = useTranslation();
     const [activeUsers, setActiveUsers] = useState([]);
     const [hoveredUser, setHoveredUser] = useState(null);
     const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
@@ -69,6 +71,13 @@ const ActiveUsersList = ({ tripId, user, activeTab, language = "zh-TW", onUserCl
         setHoveredUser(null);
     };
 
+    const [now, setNow] = useState(() => Date.now());
+
+    useEffect(() => {
+        const timer = setInterval(() => setNow(Date.now()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
     if (activeUsers.length === 0) return null;
 
     return (
@@ -113,13 +122,13 @@ const ActiveUsersList = ({ tripId, user, activeTab, language = "zh-TW", onUserCl
                     style={{ top: tooltipPos.top, left: tooltipPos.left, zIndex: 9999 }}
                 >
                     <div className="font-bold flex items-center gap-1">
-                        {hoveredUser.user.name} {hoveredUser.user.uid === user?.uid && <span className="text-green-400">(Me)</span>}
+                        {hoveredUser.user.name} {hoveredUser.user.uid === user?.uid && <span className="text-green-400">({t('common.active_users.me')})</span>}
                     </div>
                     <div className="opacity-70">
-                        {language === 'zh-TW' ? '正在查看: ' : 'Viewing: '}{TAB_LABELS[hoveredUser.activeTab]?.[language] || hoveredUser.activeTab || (language === 'zh-TW' ? '總覽' : 'Overview')}
+                        {t('common.active_users.viewing')}: {TAB_LABELS[hoveredUser.activeTab]?.[language] || hoveredUser.activeTab || t('common.active_users.overview')}
                     </div>
                     <div className="opacity-50 text-[9px]">
-                        {language === 'zh-TW' ? '活躍於: ' : 'Active: '}{Math.floor((Date.now() - hoveredUser.lastActive) / 1000) < 15 ? (language === 'zh-TW' ? '剛剛' : 'Just now') : `${Math.floor((Date.now() - hoveredUser.lastActive) / 1000)}${language === 'zh-TW' ? '秒前' : 's ago'}`}
+                        {t('common.active_users.active')}: {Math.floor((now - hoveredUser.lastActive) / 1000) < 15 ? t('common.active_users.just_now') : t('common.active_users.seconds_ago', { count: Math.floor((now - hoveredUser.lastActive) / 1000) })}
                     </div>
                 </div>,
                 document.body

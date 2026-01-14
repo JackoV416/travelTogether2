@@ -25,24 +25,33 @@ export async function getExchangeRates(baseCurrency = 'HKD') {
         // 1. 檢查緩存
         const cached = localStorage.getItem(CACHE_KEY);
         if (cached) {
-            const { data, timestamp, base } = JSON.parse(cached);
-            // 如果緩存有效且基礎貨幣相同，直接返回
-            if (Date.now() - timestamp < CACHE_DURATION && base === baseCurrency) {
-                // Using cached exchange rates
-                return data;
+            try {
+                const { data, timestamp, base } = JSON.parse(cached);
+                // 如果緩存有效且基礎貨幣相同，直接返回
+                if (Date.now() - timestamp < CACHE_DURATION && base === baseCurrency && data && Object.keys(data).length > 0) {
+                    // Using cached exchange rates
+                    return data;
+                }
+            } catch (e) {
+                console.error("Cache parse error", e);
+                localStorage.removeItem(CACHE_KEY);
             }
         }
 
         // 2. 調用 API (ExchangeRate-API 免費版)
         // 註：免費版支援標準 HTTP 請求，無須 API Key (v4版)
-        // Fetching new exchange rates...
+        console.log("Fetching new exchange rates for", baseCurrency);
         const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${baseCurrency}`);
 
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            throw new Error(`Network response was not ok: ${response.status}`);
         }
 
         const data = await response.json();
+
+        if (!data || !data.rates || Object.keys(data.rates).length === 0) {
+            throw new Error('Invalid API response data');
+        }
 
         // 3. 更新緩存
         localStorage.setItem(CACHE_KEY, JSON.stringify({
@@ -54,11 +63,21 @@ export async function getExchangeRates(baseCurrency = 'HKD') {
         return data.rates;
     } catch (error) {
         console.error('Failed to fetch exchange rates:', error);
-        // 發生錯誤時使用備份數據或舊緩存
+
+        // 發生錯誤時使用由舊緩存 (如果有)
         const cached = localStorage.getItem(CACHE_KEY);
         if (cached) {
-            return JSON.parse(cached).data;
+            try {
+                const parsed = JSON.parse(cached);
+                if (parsed.data && Object.keys(parsed.data).length > 0) {
+                    console.warn("Using stale cache due to API error");
+                    return parsed.data;
+                }
+            } catch (e) { /* ignore */ }
         }
+
+        // 最后手段：使用靜態備份數據
+        console.warn("Using static fallback rates");
         return FALLBACK_RATES;
     }
 }

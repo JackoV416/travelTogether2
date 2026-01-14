@@ -71,18 +71,72 @@ if (API_KEYS.length === 0) {
 // Model priority chain: Simplified for stability (Updated V1.2.9 - Verified 2.5 Flash)
 const MODEL_CHAIN = [
     ...(getStoredModel() ? [getStoredModel()] : []), // User's custom model comes first!
-    "gemini-2.5-flash",       // NEW: Confirmed working & fast!
-    "gemini-2.5-flash-lite",  // PROMOTED: Best availability (1/10 RPM)
-    "gemini-flash-latest",    // Backup
-    "gemini-2.0-flash-exp",   // High Performance (Often 429 busy, keep as fallback)
+    "gemini-1.5-flash",       // STABLE: Reverted to 1.5 Flash for reliability
+    "gemini-1.5-pro",         // STABLE: High intelligence fallback
+    "gemini-1.0-pro",         // LEGACY: Ultimate backup
 ];
 
 let currentKeyIndex = 0;
 let currentModelIndex = 0;
 
 // V1.5: Avoid hammering exhausted models
-const MODEL_COOLDOWNS = new Map(); // `${keyIndex}-${modelIndex}` -> expiry timestamp
-const COOLDOWN_MS = 60000; // 1 minute
+// V1.5: Strict Rate Limiting (Token Bucket / Sliding Window) - Per Model
+const MODEL_LIMITS = {
+    "default": { RPM: 2, TPM: 32000, RPD: 50 },
+    "gemini-1.5-flash": { RPM: 5, TPM: 250000, RPD: 20 }, // User Screenshot
+    "gemini-2.5-flash": { RPM: 5, TPM: 250000, RPD: 20 }, // User Screenshot
+    "gemini-1.5-pro": { RPM: 2, TPM: 32000, RPD: 50 },
+    "gemini-2.0-flash-exp": { RPM: 5, TPM: 250000, RPD: 20 }
+};
+
+// Internal tracker: Map<modelName, { timestamps: [], tokens: [] }>
+const USAGE_TRACKER = {};
+
+// Legacy Cooldown map
+const MODEL_COOLDOWNS = new Map();
+const COOLDOWN_MS = 60000;
+
+/**
+ * 🚦 checkRateLimits - Per-Model Throttling
+ * Returns delay needed (ms) or 0 if safe
+ */
+const checkRateLimits = (modelName, estimatedTokens = 1000) => {
+    const limits = MODEL_LIMITS[modelName] || MODEL_LIMITS["default"];
+    const now = Date.now();
+    const oneMinAgo = now - 60000;
+
+    if (!USAGE_TRACKER[modelName]) {
+        USAGE_TRACKER[modelName] = { timestamps: [], tokens: [] };
+    }
+    const tracker = USAGE_TRACKER[modelName];
+
+    // 1. Cleanup old records
+    tracker.timestamps = tracker.timestamps.filter(t => t > oneMinAgo);
+    tracker.tokens = tracker.tokens.filter(t => t.time > oneMinAgo);
+
+    // 2. Check RPM (Buffer: Keep 1 slot free)
+    if (tracker.timestamps.length >= limits.RPM) {
+        const oldest = tracker.timestamps[0];
+        return (oldest + 61000) - now;
+    }
+
+    // 3. Check TPM
+    const currentTokens = tracker.tokens.reduce((acc, item) => acc + item.count, 0);
+    if (currentTokens + estimatedTokens > limits.TPM) {
+        return 5000; // Wait 5s
+    }
+
+    return 0;
+};
+
+const recordUsage = (modelName, tokens = 1000) => {
+    if (!USAGE_TRACKER[modelName]) {
+        USAGE_TRACKER[modelName] = { timestamps: [], tokens: [] };
+    }
+    const now = Date.now();
+    USAGE_TRACKER[modelName].timestamps.push(now);
+    USAGE_TRACKER[modelName].tokens.push({ time: now, count: tokens });
+};
 
 // Create GenAI instances for each API key
 const genAIInstances = API_KEYS.map(key => new GoogleGenerativeAI(key));
@@ -91,6 +145,9 @@ const genAIInstances = API_KEYS.map(key => new GoogleGenerativeAI(key));
  * 🔑 Get current GenAI instance
  */
 function getGenAI() {
+    if (genAIInstances.length === 0) {
+        throw new Error("MISSING_API_KEY: Please configure your API Key in Settings > Jarvis AI.");
+    }
     return genAIInstances[currentKeyIndex];
 }
 
@@ -263,9 +320,8 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
         }
 
         // 1. Report Progress
+        const percent = Math.min(10 + Math.floor((attempt / maxAttempts) * 80), 95);
         if (onProgress) {
-            // Percent calculation: 10% start, then increment based on attempt, cap at 90%
-            const percent = Math.min(10 + Math.floor((attempt / maxAttempts) * 80), 95);
             // V1.2.7: Better status messages
             let msg = attempt === 0 ? "正在分析..." : `切換線路 (Attempt ${attempt + 1}/${maxAttempts})...`;
             if (attempt > 3) msg = "網絡繁忙，正在尋找可用線路...";
@@ -273,13 +329,21 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
             onProgress(msg, percent);
         }
 
-        // 2. Check Cooldown
+        // 2. Check Rate Limits (Client Side - V1.5 Strict)
+        const modelNameStr = MODEL_CHAIN[currentModelIndex];
+        const rateLimitDelay = checkRateLimits(modelNameStr);
+
+        if (rateLimitDelay > 0) {
+            if (onProgress) onProgress(`API 冷卻中 (Waiting ${Math.ceil(rateLimitDelay / 1000)}s)...`, percent);
+            await new Promise(r => setTimeout(r, rateLimitDelay));
+        }
+
+        // 3. Check Legacy Cooldown (Server Side 429s)
         const cooldownKey = `${currentKeyIndex}-${currentModelIndex}`;
         const cooldownExpiry = MODEL_COOLDOWNS.get(cooldownKey);
 
         if (cooldownExpiry && Date.now() < cooldownExpiry) {
-
-
+            // ... (keep existing logic)
             // If we are at the end of the chain on this key, switch key
             if (!rotateToNextModel()) {
                 rotateToNextKey();
@@ -290,16 +354,16 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
         }
 
         try {
-            const modelName = MODEL_CHAIN[currentModelIndex];
             const model = getModel(); // Uses currentKeyIndex
 
-
-
-            // 3. Make the Call
+            // 4. Make the Call
             const result = await makeCall(model);
 
             // Success!
             if (onProgress) onProgress("完成！", 100);
+
+            // Record Usage (V1.5)
+            recordUsage(modelNameStr, 1000); // Assume ~1k tokens per call avg if not returned
 
             // V1.2.3: Increment Quota (Centralized)
             if (userId) {
@@ -372,13 +436,14 @@ export const AI_ERRORS = {
 // ============================================
 
 const AI_USAGE_KEY = "travelTogether_aiUsage";
-const DEFAULT_DAILY_LIMIT = 300; // Configurable: Max AI calls per user per day (V1.3.0: Synced with Server)
+const DEFAULT_DAILY_LIMIT = 20; // Safe Quota based on Free Tier Limits (20 RPD)
 
 /**
  * 📊 Get today's date string (YYYY-MM-DD)
  */
 function getTodayKey() {
-    return new Date().toISOString().split('T')[0];
+    // V1.3.1: Align with Server (HKT) to prevents "Midnight Lag" (00:00-08:00 HK vs UTC)
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Hong_Kong' });
 }
 
 /**
@@ -426,7 +491,9 @@ export function checkAIUsageLimit() {
             const parsed = parseInt(settings.userGeminiLimit);
             if (!isNaN(parsed) && parsed > 0) limit = parsed;
         }
-    } catch (e) { }
+    } catch (e) {
+        console.debug("Gemini usage check failed", e);
+    }
 
     return {
         used: usage.count,
@@ -861,7 +928,7 @@ export function filterJunkItems(items) {
         if (normalizedName.length < 3) return false;
 
         // Filter if name is mostly numbers/punctuation
-        if (/^[\d\s.,:：/\-\[\]（）()]+$/.test(item.name)) return false;
+        if (/^[\d\s.,:：/\-[\]（）()]+$/.test(item.name)) return false;
 
         // Check junk keywords on normalized text
         if (junkKeywords.some(kw => normalizedName.includes(normalize(kw)))) return false;

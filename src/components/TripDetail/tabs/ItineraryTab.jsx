@@ -18,48 +18,24 @@ import TimelineView from '../views/TimelineView';
 import TransportCard from '../cards/TransportCard';
 import StandardCard from '../cards/StandardCard';
 import TransportConnector from '../cards/TransportConnector';
-import { formatDuration, getSmartItemImage, getLocalizedCityName, getLocalizedCountryName } from '../../../utils/tripUtils';
+import {
+    formatDuration, getSmartItemImage, getLocalizedCityName, getLocalizedCountryName,
+    formatDate, getWeekday, getWalkMeta, getTransportAdvice
+} from '../../../utils/tripUtils';
 import { formatTime, parseTime, detectTimeConflicts } from '../../../utils/timeUtils';
+import { generateDailyAnalysis, suggestTransportBetweenSpots } from '../../../services/ai-parsing';
 import ItemDetailModal from '../../Modals/ItemDetailModal';
 
 
 
 // --- Local Helpers ---
 
-const formatDate = (dateStr) => {
-    if (!dateStr) return "";
-    const [y, m, d] = dateStr.split('-');
-    const pad = (val) => val.toString().padStart(2, '0');
-    return `${pad(d)}/${pad(m)}/${y}`;
-};
-
-const getWeekday = (dateStr) => ["週日", "週一", "週二", "週三", "週四", "週五", "週六"][new Date(dateStr).getDay()];
-
-const getWalkMeta = () => {
-    const distance = (0.4 + Math.random() * 0.8).toFixed(1);
-    const steps = Math.round(Number(distance) * 1400);
-    const minutes = Math.round(Number(distance) * 12);
-    return { distance, steps, minutes };
-};
-
-const TRANSPORT_ICONS = {
-    metro: { label: "地鐵", icon: Train, color: "text-indigo-500" },
-    bus: { label: "巴士", icon: Bus, color: "text-emerald-500" },
-    car: { label: "自駕", icon: Car, color: "text-amber-500" },
-    walk: { label: "步行", icon: Route, color: "text-blue-500" }
-};
-
-const getTransportAdvice = (item, city = "") => {
-    if (!item?.details?.location) return null;
-    if (item.type === 'flight') return { mode: 'metro', label: "機場快線 / 地鐵", cost: "約 $120" };
-    if (item.type === 'hotel') return { mode: 'car', label: "計程車約 15 分", cost: "約 $80" };
-    if (item.type === 'food') {
-        const walk = getWalkMeta();
-        return { mode: 'walk', label: `步行 ${walk.minutes} 分`, cost: "$0", meta: walk };
-    }
-    if (item.type === 'transport') return { mode: 'bus', label: "巴士/高速巴士", cost: item.cost ? `${item.currency} ${item.cost} ` : "依票價" };
-    return { mode: 'metro', label: `${city} 地鐵`, cost: "約 $30" };
-};
+const getTransportIcons = (t) => ({
+    metro: { label: t('itinerary.transport.metro') || "地鐵", icon: Train, color: "text-indigo-500" },
+    bus: { label: t('itinerary.transport.bus') || "巴士", icon: Bus, color: "text-emerald-500" },
+    car: { label: t('itinerary.transport.car') || "自駕", icon: Car, color: "text-amber-500" },
+    walk: { label: t('itinerary.transport.walk') || "步行", icon: Route, color: "text-blue-500" }
+});
 
 const ItineraryTab = ({
     trip,
@@ -221,6 +197,8 @@ const ItineraryTab = ({
     const [isLoadingJarvisTips, setIsLoadingJarvisTips] = useState(false);
 
     const handleFetchJarvisTips = async () => {
+        return; // DISABLED FOR V1.3.0
+        /* eslint-disable no-unreachable */
         if (isLoadingJarvisTips || !filteredItems.length) return;
         setIsLoadingJarvisTips(true);
         try {
@@ -254,6 +232,8 @@ const ItineraryTab = ({
 
     // Fetch AI transport suggestion between two spots
     const fetchTransportSuggestion = async (fromItem, toItem) => {
+        return; // DISABLED FOR V1.3.0
+        /* eslint-disable no-unreachable */
         const key = `${fromItem.id}-${toItem.id}`;
         if (transportSuggestions[key] || loadingTransport === key) return;
 
@@ -272,9 +252,8 @@ const ItineraryTab = ({
                 preference: 'public'
             });
             setTransportSuggestions(prev => ({ ...prev, [key]: suggestion }));
-        } catch (error) {
-            console.error('[AI Transport] Failed:', error);
-            setTransportSuggestions(prev => ({ ...prev, [key]: { error: true } }));
+        } catch (err) {
+            console.error('Transport suggestion error:', err);
         } finally {
             setLoadingTransport(null);
         }
@@ -317,13 +296,13 @@ const ItineraryTab = ({
 
     const filters = [{
         key: 'type',
-        label: '類型',
+        label: t('itinerary.filters.type') || '類型',
         options: [
-            { value: 'spot', label: '景點' },
-            { value: 'food', label: '美食' },
-            { value: 'transport', label: '交通' },
-            { value: 'hotel', label: '住宿' },
-            { value: 'shopping', label: '購物' }
+            { value: 'spot', label: t('itinerary.filters.spot') || '景點' },
+            { value: 'food', label: t('itinerary.filters.food') || '美食' },
+            { value: 'transport', label: t('itinerary.filters.transport') || '交通' },
+            { value: 'hotel', label: t('itinerary.filters.hotel') || '住宿' },
+            { value: 'shopping', label: t('itinerary.filters.shopping') || '購物' }
         ]
     }];
 
@@ -735,7 +714,7 @@ const ItineraryTab = ({
                                             }`}
                                     >
                                         <div>
-                                            <div className={`text-[10px] font-bold uppercase mb-0.5 ${isActive ? 'opacity-80' : 'opacity-50'}`}>{getWeekday(d)}</div>
+                                            <div className={`text-[10px] font-bold uppercase mb-0.5 ${isActive ? 'opacity-80' : 'opacity-50'}`}>{getWeekday(d, t)}</div>
                                             <div className="font-black text-sm">{formatDate(d)}</div>
                                         </div>
                                         <div className="flex flex-col items-end gap-1">
@@ -757,7 +736,7 @@ const ItineraryTab = ({
                 )}
 
                 {/* Main Content Column */}
-                <div className="flex-1 min-w-0 space-y-6">
+                <div className="flex-1 min-w-0 space-y-6" data-tour="itinerary-content">
 
                     {/* Mobile Date Scroll (Sticky Glassmorphic Ribbon) - HIDE in Kanban View */}
 
@@ -793,7 +772,7 @@ const ItineraryTab = ({
                             </button>
 
                             {/* V1.2.6 View Switcher (Mobile Polished) */}
-                            <div className="flex items-center gap-1 p-1 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-x-auto scrollbar-hide w-full sm:w-auto max-w-full">
+                            <div className="flex items-center gap-1 p-1 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-x-auto scrollbar-hide w-full sm:w-auto max-w-full" data-tour="view-switcher">
                                 {[
                                     { id: 'list', icon: List, label: 'list' },
                                     { id: 'board', icon: Columns, label: 'board' },
@@ -849,7 +828,7 @@ const ItineraryTab = ({
                                     const hName = homeHolidays?.[dateKey];
                                     return (
                                         <button key={d} onClick={() => setSelectDate(d)} className={`flex-shrink-0 px-3 py-2 rounded-xl border transition text-center min-w-[115px] relative overflow-hidden group ${currentDisplayDate === d ? 'bg-indigo-500 text-white border-indigo-500 shadow-md' : (isDarkMode ? 'bg-gray-800/60 border-gray-700' : 'bg-white border-gray-200')}`}>
-                                            <div className="text-[10px] opacity-70 uppercase">{getWeekday(d)}</div>
+                                            <div className="text-[10px] opacity-70 uppercase">{getWeekday(d, t)}</div>
                                             <div className="font-bold text-xs whitespace-nowrap">{formatDate(d)}</div>
                                             {(dName || hName) && (
                                                 <div className="absolute top-0 right-0 flex flex-col items-end">
@@ -1244,6 +1223,7 @@ const ItineraryTab = ({
                                                                     <div
                                                                         ref={provided.innerRef}
                                                                         {...provided.draggableProps}
+                                                                        data-tour="activity-card"
                                                                         onClick={() => {
                                                                             const originalIndex = itineraryItems.indexOf(item);
                                                                             const itemWithIndex = { ...item, _index: originalIndex };
@@ -1314,6 +1294,7 @@ const ItineraryTab = ({
                                                                     id={`item-${item.id}`}
                                                                     ref={provided.innerRef}
                                                                     {...provided.draggableProps}
+                                                                    data-tour="activity-card"
                                                                     onClick={() => {
                                                                         const originalIndex = itineraryItems.indexOf(item);
                                                                         const itemWithIndex = { ...item, _index: originalIndex };
@@ -1402,12 +1383,7 @@ const ItineraryTab = ({
                             days={days}
                             isDarkMode={isDarkMode}
                             isEditMode={isEditMode}
-                            onItemClick={(item) => {
-                                setEditingItem(item);
-                                setSelectDate(item.date);
-                                setAddType(item.type);
-                                setIsItemDetailModalOpen(true);
-                            }}
+                            onItemClick={(item) => setActiveDetailItem(item)}
                         />
                     )}
 

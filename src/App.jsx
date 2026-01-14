@@ -16,13 +16,13 @@ import TripExportImportModal from './components/Modals/TripExportImportModal';
 import SmartImportModal from './components/Modals/SmartImportModal';
 import NotificationSystem from './components/Shared/NotificationSystem';
 import OfflineBanner from './components/Shared/OfflineBanner';
-import SyncStatus from './components/Shared/SyncStatus';
+
 import ReloadPrompt from './components/Shared/ReloadPrompt';
 import { useNotifications } from './hooks/useNotifications';
 import { checkAbuse } from './services/security';
 import AIGeminiModal from './components/Modals/AIGeminiModal';
 import ErrorBoundary from './components/Shared/ErrorBoundary';
-import OnboardingModal from './components/Modals/OnboardingModal';
+import UniversalOnboarding from './components/Modals/UniversalOnboarding';
 import FeedbackModal from './components/Modals/FeedbackModal';
 import VersionModal from './components/Modals/VersionModal'; // Imported
 import VersionGuardModal from './components/Modals/VersionGuardModal'; // V1.1.8
@@ -32,7 +32,12 @@ import SettingsView from './components/Views/SettingsView'; // New View
 import GlobalChatFAB from './components/Shared/GlobalChatFAB'; // V1.2.2 Global FAB
 import UniversalChat from './components/Shared/UniversalChat'; // V1.2.1-Globalized
 import OnboardingTour from './components/Shared/OnboardingTour'; // V1.2.4 Interactive Tutorial
+import { TourProvider, useTour } from './contexts/TourContext'; // V1.3.4 Interactive Product Tour
+import TourOverlay from './components/Tour/TourOverlay'; // V1.3.4 Interactive Product Tour
+
 import CommandPalette from './components/Shared/CommandPalette'; // V1.2.7 Global Search
+import SocialProfile from './components/Social/Profile/SocialProfile'; // V1.3.0 Profile
+import Footer from './components/Shared/Footer'; // V1.3.1 Clean Architecture
 
 // --- V0.16.2 Refactored Imports ---
 import {
@@ -79,78 +84,30 @@ import HttpStatusPage from './components/Shared/HttpStatusPage';
 
 // --- Components ---
 
-const Footer = ({ isDarkMode, onOpenVersion }) => {
-    const [time, setTime] = useState(new Date());
-    const { i18n } = useTranslation();
 
-    useEffect(() => { const t = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(t); }, []);
-
-    // Language toggle: cycles zh-HK -> zh-TW -> en -> zh-HK
-    const LANG_CYCLE = ['zh-HK', 'zh-TW', 'en'];
-    const LANG_LABELS = { 'zh-HK': '粵', 'zh-TW': '繁', 'en': 'EN' };
-    const currentLang = i18n.language || 'zh-HK';
-
-    const handleLangToggle = () => {
-        const currentIdx = LANG_CYCLE.indexOf(currentLang);
-        const nextIdx = (currentIdx + 1) % LANG_CYCLE.length;
-        const nextLang = LANG_CYCLE[nextIdx];
-        i18n.changeLanguage(nextLang);
-        localStorage.setItem('travelTogether_language', nextLang);
-    };
-
-    return (
-        <footer className={`mt-12 pt-6 pb-12 border-t text-center text-xs md:text-sm flex flex-col items-center justify-center gap-1 ${isDarkMode ? 'bg-gray-900 border-gray-800 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-600'} pb-[calc(1.5rem+env(safe-area-inset-bottom))]`}>
-            <div className="flex flex-wrap gap-2 items-center justify-center font-bold">
-                <span data-tour="app-version">Travel Together {APP_VERSION}</span>
-                <span className="opacity-30">|</span>
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500 font-bold">Jarvis {JARVIS_VERSION}</span>
-                <span>•</span>
-                <button
-                    onClick={onOpenVersion}
-                    className="px-2 py-0.5 rounded-full border border-indigo-400 text-indigo-500 text-[10px] md:text-xs hover:bg-indigo-500 hover:text-white transition"
-                >
-                    版本更新內容
-                </button>
-                <span>•</span>
-                {/* Language Switcher Dropdown */}
-                <select
-                    value={currentLang}
-                    onChange={(e) => {
-                        i18n.changeLanguage(e.target.value);
-                        localStorage.setItem('travelTogether_language', e.target.value);
-                    }}
-                    className={`px-2 py-0.5 rounded-full border text-[10px] md:text-xs font-black cursor-pointer outline-none transition-all ${isDarkMode ? 'bg-gray-900 border-emerald-500/50 text-emerald-400 hover:border-emerald-400' : 'bg-white border-emerald-500 text-emerald-600 hover:border-emerald-400'}`}
-                    title="選擇語言"
-                >
-                    <option value="zh-HK">🌐 粵語</option>
-                    <option value="zh-TW">🌐 繁體</option>
-                    <option value="en">🌐 English</option>
-                </select>
-                <span className="hidden sm:inline">•</span>
-                <span className="hidden sm:inline">Design with ❤️</span>
-            </div>
-            <div className="font-mono flex flex-col md:flex-row items-center gap-1 md:gap-3 opacity-60 mt-1">
-                <div className="flex items-center gap-2">
-                    <Clock className="w-3 h-3" />
-                    <span>{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-                    <span className="opacity-50 text-[10px] hidden sm:inline">({Intl.DateTimeFormat().resolvedOptions().timeZone})</span>
-                </div>
-                <span className="hidden md:inline">|</span>
-                <span data-tour="sync-status">
-                    <SyncStatus isDarkMode={isDarkMode} />
-                </span>
-            </div>
-        </footer>
-    );
-};
 
 // --- Header ---
-const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onTutorialStart, onViewChange, onOpenUserSettings, onOpenVersion, notifications = [], onRemoveNotification, onMarkNotificationsRead, onNotificationClick, onOpenFeedback, onOpenAdminFeedback, isAdmin, adminPendingCount = 0 }) => { // Added Admin props
+const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onTutorialStart, onViewChange, onOpenUserSettings, onOpenVersion, notifications = [], onRemoveNotification, onMarkNotificationsRead, onNotificationClick, onOpenFeedback, onOpenAdminFeedback, isAdmin, adminPendingCount = 0, activeView, allTrips = [] }) => { // Added allTrips prop
+    const { t } = useTranslation();
+    const { startTour } = useTour(); // V1.3.4: Use Interactive Tour
     const [hoverMenu, setHoverMenu] = useState(false);
     const [showNotif, setShowNotif] = useState(false);
     const [photoError, setPhotoError] = useState(false);
     const unreadCount = notifications.filter(n => !n.read).length;
 
+    // Mini Profile Stats Calculation
+    const stats = React.useMemo(() => {
+        if (!user || !allTrips.length) return { countries: 0, trips: 0, continents: 0 };
+        // Filter trips for current user
+        const myTrips = allTrips.filter(t => t.members?.some(m => m.id === user.uid));
+        const countries = new Set(myTrips.map(t => t.country).filter(Boolean));
+        const continents = new Set(Array.from(countries).map(c => COUNTRIES_DATA[c]?.continent).filter(Boolean));
+        return {
+            countries: countries.size,
+            trips: myTrips.length,
+            continents: continents.size
+        };
+    }, [user, allTrips]);
     const handleBellClick = () => {
         const next = !showNotif;
         setShowNotif(next);
@@ -184,10 +141,11 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                     {onTutorialStart && (
                         <>
                             <button onClick={() => onViewChange && onViewChange('tutorial')} className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 btn-press">
-                                <MonitorPlay className="w-4 h-4" /> 模擬例子
+                                <MonitorPlay className="w-4 h-4" /> {t('app.menu.tutorial') || '模擬例子'}
                             </button>
-                            <button onClick={onTutorialStart} className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 btn-press">
-                                <Route className="w-4 h-4" /> 教學
+                            {/* V1.3.4: Trigger Interactive Tour instead of Modal */}
+                            <button onClick={startTour} className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 btn-press">
+                                <Route className="w-4 h-4" /> {t('app.menu.guide') || '教學'}
                             </button>
                         </>
                     )}
@@ -247,7 +205,7 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
 
                     {/* Hover Menu */}
                     <div className="relative" onMouseEnter={() => setHoverMenu(true)} onMouseLeave={() => setHoverMenu(false)}>
-                        <button onClick={() => setHoverMenu(!hoverMenu)} className="p-1 rounded-full border-2 border-transparent hover:border-indigo-500 transition-all btn-press" aria-label="用戶選單">
+                        <button data-tour="profile-menu" onClick={() => setHoverMenu(!hoverMenu)} className="p-1 rounded-full border-2 border-transparent hover:border-indigo-500 transition-all btn-press" aria-label="用戶選單">
                             {user ? (
                                 user.photoURL && !photoError ? (
                                     <ImageWithFallback
@@ -265,18 +223,35 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                             ) : <UserCircle className="w-8 h-8" />}
                             {isAdmin && adminPendingCount > 0 && <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 border-2 border-white rounded-full"></span>}
                         </button>
+
                         <div className={`absolute top-10 right-0 w-64 pt-4 transition-all duration-300 origin-top-right ${hoverMenu ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible'}`}>
                             <div className={`rounded-xl shadow-2xl border overflow-hidden backdrop-blur-xl ${isDarkMode ? 'bg-gray-900/95 border-white/10 text-white' : 'bg-white/95 border-gray-200 text-gray-800'}`}>
                                 <div className="p-4 border-b border-gray-500/10">
                                     <p className="font-bold truncate">{user?.displayName}</p>
                                     <p className="text-xs opacity-50 truncate">{user?.email}</p>
                                 </div>
+                                {/* Mini Profile Stats */}
+                                <div className="flex justify-around py-3 border-b border-gray-500/10 bg-gray-50/50 dark:bg-black/20">
+                                    <div className="text-center">
+                                        <div className="text-lg font-black text-indigo-500">{stats.countries}</div>
+                                        <div className="text-[10px] opacity-60 font-bold uppercase">{t('profile.stats.countries')}</div>
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="text-lg font-black text-purple-500">{stats.trips}</div>
+                                        <div className="text-[10px] opacity-60 font-bold uppercase">{t('profile.stats.trips')}</div>
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="text-lg font-black text-emerald-500">{stats.continents}</div>
+                                        <div className="text-[10px] opacity-60 font-bold uppercase">{t('profile.stats.continents')}</div>
+                                    </div>
+                                </div>
                                 <div className="p-2 flex flex-col gap-1">
-                                    <button onClick={() => { setHoverMenu(false); onViewChange('dashboard'); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><Home className="w-4 h-4" /> 我的行程</button>
-                                    <button onClick={() => { setHoverMenu(false); onViewChange('tutorial'); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} md:hidden`}><MonitorPlay className="w-4 h-4 text-indigo-500" /> 模擬例子</button>
-                                    <button onClick={() => { setHoverMenu(false); onTutorialStart(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} md:hidden`}><Route className="w-4 h-4 text-emerald-500" /> 引導教學</button>
-                                    <button onClick={() => { setHoverMenu(false); onOpenUserSettings(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><Edit3 className="w-4 h-4" /> 個人設定</button>
-                                    <button onClick={() => { setHoverMenu(false); onOpenFeedback(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><MessageCircle className="w-4 h-4" /> 意見回饋</button>
+                                    <button onClick={() => { setHoverMenu(false); onViewChange('profile'); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><User className="w-4 h-4 text-indigo-500" /> {t('app.menu.profile')}</button>
+                                    <button onClick={() => { setHoverMenu(false); onViewChange('dashboard'); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><Home className="w-4 h-4" /> {t('app.menu.dashboard')}</button>
+                                    <button onClick={() => { setHoverMenu(false); onViewChange('tutorial'); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} md:hidden`}><MonitorPlay className="w-4 h-4 text-indigo-500" /> {t('app.menu.tutorial')}</button>
+                                    <button onClick={() => { setHoverMenu(false); onTutorialStart(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} md:hidden`}><Route className="w-4 h-4 text-emerald-500" /> {t('app.menu.guide')}</button>
+                                    <button onClick={() => { setHoverMenu(false); onOpenUserSettings(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><Edit3 className="w-4 h-4" /> {t('app.menu.settings')}</button>
+                                    <button onClick={() => { setHoverMenu(false); onOpenFeedback(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><MessageCircle className="w-4 h-4" /> {t('app.menu.feedback')}</button>
                                     {isAdmin && (
                                         <button onClick={() => { setHoverMenu(false); onOpenAdminFeedback(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
                                             <div className="relative">
@@ -295,10 +270,10 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                                     </button>
                                     <button onClick={onLogout} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg text-red-500 transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-red-50'}`}><LogOut className="w-4 h-4" /> 登出</button>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                            </div >
+                        </div >
+                    </div >
+                </div >
             </div >
         </header >
     );
@@ -324,7 +299,7 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
 // --- Files & Attachments Tab ---
 
 // --- Trip Detail Wrapper (handles ALL data loading, TripDetailContent only renders when trip is ready) ---
-const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, globalSettings, exchangeRates, onOpenSmartImport, weatherData, onUpdateSimulationTrip, requestedTab, onTabHandled, requestedItemId, onItemHandled, isBanned, isAdmin, onOpenChat }) => {
+const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, isPreview = false, globalSettings, exchangeRates, onOpenSmartImport, weatherData, onUpdateSimulationTrip, requestedTab, onTabHandled, requestedItemId, onItemHandled, isBanned, isAdmin, onOpenChat, onUserClick, onViewProfile, isChatOpen, setIsChatOpen }) => {
 
     // ALL hooks in wrapper - consistent on every render
     const [realTrip, setRealTrip] = useState(null);
@@ -334,7 +309,7 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
     // Data loading effect
     useEffect(() => {
         if (isSimulation) {
-            setIsLoading(false);
+            queueMicrotask(() => setIsLoading(false));
             return;
         }
         if (!tripData?.id) {
@@ -373,12 +348,12 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
     useEffect(() => {
         if (trip?.country) {
             const country = trip.country;
-            if (country.includes('Japan') || country.includes('日本')) setConvTo('JPY');
-            else if (country.includes('Taiwan') || country.includes('台灣')) setConvTo('TWD');
-            else if (country.includes('Korea') || country.includes('韓國')) setConvTo('KRW');
-            else if (country.includes('US') || country.includes('美國')) setConvTo('USD');
-            else if (country.includes('UK') || country.includes('英國')) setConvTo('GBP');
-            else if (country.includes('Europe') || country.includes('歐洲')) setConvTo('EUR');
+            if (country.includes('Japan') || country.includes('日本')) queueMicrotask(() => setConvTo('JPY'));
+            else if (country.includes('Taiwan') || country.includes('台灣')) queueMicrotask(() => setConvTo('TWD'));
+            else if (country.includes('Korea') || country.includes('韓國')) queueMicrotask(() => setConvTo('KRW'));
+            else if (country.includes('US') || country.includes('美國')) queueMicrotask(() => setConvTo('USD'));
+            else if (country.includes('UK') || country.includes('英國')) queueMicrotask(() => setConvTo('GBP'));
+            else if (country.includes('Europe') || country.includes('歐洲')) queueMicrotask(() => setConvTo('EUR'));
         }
     }, [trip?.country]);
 
@@ -434,6 +409,10 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
                 isBanned={isBanned}
                 isAdmin={isAdmin}
                 onOpenChat={onOpenChat}
+                isChatOpen={isChatOpen}
+                setIsChatOpen={setIsChatOpen}
+                onUserClick={onUserClick}
+                onViewProfile={onViewProfile}
             />
         </Suspense>
     );
@@ -444,6 +423,7 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
 // --- Trip Detail Content (UI only - trip is GUARANTEED to exist) ---
 // No data loading here - all hooks will always execute consistently
 const App = () => {
+    const { t, i18n } = useTranslation();
     const [user, setUser] = useState(null);
     const [view, setView] = useState('dashboard');
     const [selectedTrip, setSelectedTrip] = useState(null);
@@ -454,7 +434,7 @@ const App = () => {
         sound: true,
         currency: 'HKD',
         region: 'HK', // Default to Hong Kong
-        language: 'zh-TW', // Default to Traditional Chinese
+        language: localStorage.getItem('travelTogether_language') || 'zh-TW', // Default to LocalStorage or Traditional Chinese
         preferences: [], // Default preferences
         useCustomKeys: false, // V1.2.8
         aiKeys: {} // V1.2.8
@@ -534,29 +514,44 @@ const App = () => {
         return () => unsub();
     }, [user]);
 
-    // Load User Settings from Firebase
+    // Load User Settings & Profile from Firebase (Real-time)
     useEffect(() => {
         if (user?.uid) {
-            getDoc(doc(db, "users", user.uid)).then(snap => {
-                if (snap.exists() && snap.data().settings) {
-                    setGlobalSettings(prev => ({ ...prev, ...snap.data().settings }));
+            const unsub = onSnapshot(doc(db, "users", user.uid), (doc) => {
+                if (doc.exists()) {
+                    const data = doc.data();
+                    setUserProfile(data); // Sync profile data (banner, etc.)
+                    if (data.settings) {
+                        setGlobalSettings(prev => ({ ...prev, ...data.settings }));
+                    }
                 }
+            }, (error) => {
+                console.log("Error fetching user profile:", error);
             });
+            return () => unsub();
         }
     }, [user]);
 
-    // Save User Settings to Firebase (Debounced roughly by effect behavior)
+    // Save User Settings to Firebase (Debounced)
     useEffect(() => {
         if (user?.uid) {
             const timer = setTimeout(() => {
+                // Only update settings part, don't overwrite profile
                 setDoc(doc(db, "users", user.uid), { settings: globalSettings }, { merge: true });
             }, 1000); // Debounce 1s
             return () => clearTimeout(timer);
         }
     }, [globalSettings, user]);
 
+    // Sync Language with Global Settings
+    useEffect(() => {
+        if (globalSettings.language && i18n.language !== globalSettings.language) {
+            i18n.changeLanguage(globalSettings.language);
+            localStorage.setItem('travelTogether_language', globalSettings.language);
+        }
+    }, [globalSettings.language, i18n]);
+
     // Modals State
-    // isSettingsOpen state removed
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isReportCenterOpen, setIsReportCenterOpen] = useState(false); // V1.1.8 Report Center
 
@@ -615,10 +610,18 @@ const App = () => {
         }
     }, [user]);
 
-    // Handle Onboarding close to trigger version modal for new users
+    const [shouldStartProductTour, setShouldStartProductTour] = useState(false);
+
+    // Handle Onboarding close to trigger version modal for new users AND Start Product Tour
     const handleOnboardingComplete = () => {
         localStorage.setItem('hasSeenOnboarding', 'true');
         setIsOnboardingOpen(false);
+        setView('dashboard'); // Ensure we are on dashboard
+
+        // Start product tour on all devices (Mobile & Desktop)
+        // Delay slightly to allow dashboard to mount
+        setTimeout(() => setShouldStartProductTour(true), 500);
+
         // After onboarding, check if version modal should show (App or Jarvis)
         const lastSeenVersion = localStorage.getItem('app_last_seen_version');
         const lastSeenJarvisVersion = localStorage.getItem('jarvis_last_seen_version');
@@ -627,7 +630,8 @@ const App = () => {
                 setIsVersionOpen(true);
                 localStorage.setItem('app_last_seen_version', APP_VERSION);
                 localStorage.setItem('jarvis_last_seen_version', JARVIS_VERSION);
-            }, 500);
+            }, 1000); // Delay more to not conflict with tour start? Or maybe don't show version modal if tour starting?
+            // Tour might be more important for new user.
         }
     };
 
@@ -643,12 +647,44 @@ const App = () => {
     const [isBanned, setIsBanned] = useState(false);
     const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
+    // --- PWA: Handle Install Prompt ---
+    const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+    useEffect(() => {
+        const handleBeforeInstallPrompt = (e) => {
+            // Prevent the mini-infobar from appearing on mobile
+            e.preventDefault();
+            // Stash the event so it can be triggered later.
+            setDeferredPrompt(e);
+            console.log('PWA: Install prompt deferred');
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        };
+    }, []);
+
+    const handleInstallClick = async () => {
+        if (!deferredPrompt) return;
+        // Show the install prompt
+        deferredPrompt.prompt();
+        // Wait for the user to respond to the prompt
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`PWA: User response to the install prompt: ${outcome}`);
+        // We've used the prompt, and can't use it again, throw it away
+        setDeferredPrompt(null);
+    };
+
     // Dynamic Admin List from Firestore
     useEffect(() => {
         const unsub = onSnapshot(doc(db, "settings", "admin_config"), (doc) => {
             if (doc.exists() && doc.data().admin_emails) {
                 setDynamicAdminEmails(doc.data().admin_emails);
             }
+        }, (error) => {
+            console.log("Error loading admin config:", error);
         });
         return () => unsub();
     }, []);
@@ -691,6 +727,8 @@ const App = () => {
                 });
             }
             isFirstLoad = false;
+        }, (error) => {
+            console.log("Error listening to feedback:", error);
         });
         return () => unsub();
     }, [isAdmin]);
@@ -754,9 +792,21 @@ const App = () => {
                     setIsVersionGuardOpen(false);
                 }
             }
+        }, (error) => {
+            console.log("Error checking version:", error);
         });
         return () => unsub();
     }, []);
+
+    // --- User Profile State (Real-time) ---
+    const [userProfile, setUserProfile] = useState({});
+    const [viewingProfileUser, setViewingProfileUser] = useState(null); // For viewing other profiles
+
+    // Computed User Object (Auth + Cloud Profile)
+    const currentUser = React.useMemo(() => {
+        if (!user) return null;
+        return { ...user, ...userProfile };
+    }, [user, userProfile]);
 
     // --- Update Success Logic (Local Cache) ---
     // Only shows "update success" NOTIFICATION if user actually got new code
@@ -1064,7 +1114,7 @@ const App = () => {
 
 
     // V1.2.25: Centralized Chat Handler with Security Check
-    const handleOpenChat = (targetTrip = null) => {
+    const handleOpenChat = (targetTrip = null, tab = null) => {
         // AI features require login, UNLESS it's a simulation
         const isSimulation = (targetTrip?.id?.startsWith('sim-')) || (view === 'tutorial');
 
@@ -1078,6 +1128,88 @@ const App = () => {
         }
         if (targetTrip) setSelectedTrip(targetTrip);
         setIsChatOpen(true);
+        if (tab) setChatInitialTab(tab);
+    };
+
+    // V1.3.0: Contextual Onboarding - Switch background based on step
+    const handleOnboardingStepChange = (index) => {
+        // Step 4 (Index 3): Footprints
+        if (index === 3) {
+            setView('tutorial');
+            setRequestedTab('footprints');
+        }
+        // Step 6 (Index 5): Visual Planning
+        else if (index === 5) {
+            setView('tutorial');
+            setRequestedTab('itinerary');
+            // Trigger map view via localstorage event if possible
+            localStorage.setItem(`tripViewMode_sim-tokyo-2025`, 'map'); // Corrected ID
+            window.dispatchEvent(new CustomEvent('refreshTripView'));
+        }
+        // Step 7 (Index 6): Smart Card / Packing
+        else if (index === 6) {
+            setView('tutorial');
+            setRequestedTab('packing');
+        }
+        // Step 8 (Index 7): Budget -> Show Trip Budget
+        else if (index === 7) {
+            setView('tutorial');
+            setRequestedTab('budget');
+        }
+        // Step 9 (Index 8): Offline Mode
+        else if (index === 8) {
+            setView('dashboard');
+            // Just show dashboard, PWA is integrated
+        }
+        // Step 10 (Index 9): Travel Database
+        else if (index === 9) {
+            setView('profile');
+            // Default to own profile or simulate
+        }
+        // Step 11 (Index 10): Weather -> Show Dashboard Weather Widget
+        else if (index === 10) {
+            setView('dashboard');
+            // Ensure weather widget is visible on dashboard?
+            // Usually it is by default if dashboardWidgets state is not empty.
+        }
+        // Step 2-7, 9, 10, 12 could also show relevant views
+        // Step 2 (Index 1): Jarvis -> Show Tutorial (Itinerary)
+        else if (index >= 1 && index <= 5) {
+            setView('tutorial');
+            setRequestedTab('itinerary');
+        }
+        // Default to Dashboard for others
+        else {
+            setView('dashboard');
+        }
+    };
+
+    // V1.3.4: Tour Navigation Handler
+    const handleTourNavigation = (stepData) => {
+        // V1.3.14: Handle string navigation (e.g. 'dashboard' from endTour)
+        if (stepData === 'dashboard') {
+            setView('dashboard');
+            return;
+        }
+
+        const { page, tab, action } = stepData;
+
+        if (page === 'dashboard') {
+            setView('dashboard');
+        } else if (page === 'trip-detail') {
+            // V1.3.15: Force 'tutorial' view during tour to show Simulation Data (Tokyo)
+            // This ensures the user sees a populated trip instead of an empty one.
+            setView('tutorial');
+
+            // Force map view refresh if tab is itinerary (for split view)
+            if (tab === 'itinerary') {
+                setTimeout(() => window.dispatchEvent(new CustomEvent('refreshTripView')), 100);
+            }
+
+            if (tab) {
+                setRequestedTab(tab);
+            }
+        }
     };
 
     if (isLoading) {
@@ -1087,255 +1219,326 @@ const App = () => {
     if (!user && !isPreviewMode && view !== 'tutorial') return <LandingPage onLogin={() => signInWithPopup(auth, googleProvider)} />;
 
     return (
-        <div className={`min-h-screen flex flex-col overflow-x-hidden transition-colors duration-500 font-sans selection:bg-indigo-500/30 ${isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-slate-50 text-gray-900'}`}>
-            <NotificationSystem notifications={notifications} setNotifications={setNotifications} isDarkMode={isDarkMode} onNotificationClick={handleNotificationNavigate} />
-            <OfflineBanner isDarkMode={isDarkMode} />
-            <ReloadPrompt />
-            {/* Background Image (Global) */}
-            <ImageWithFallback
-                src={globalBg}
-                className="fixed inset-0 z-0 opacity-20 pointer-events-none transition-all duration-1000 object-cover w-full h-full"
-                alt="Background"
-            />
-            {/* Fixed Header - Outside content wrapper for proper fixed positioning */}
-            {view !== 'tutorial' && <Header title="✈️ Travel Together" user={user} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} onLogout={() => signOut(auth)} onBack={(view !== 'dashboard' && view !== 'settings') ? () => setView('dashboard') : null} onTutorialStart={() => setShowOnboardingTour(true)} onViewChange={setView} onOpenUserSettings={() => setView('settings')} onOpenFeedback={() => setIsReportCenterOpen(true)} onOpenAdminFeedback={() => setIsAdminFeedbackModalOpen(true)} isAdmin={isAdmin} adminPendingCount={openFeedbackCount} onOpenVersion={() => setIsVersionOpen(true)} notifications={notifications} onRemoveNotification={removeNotification} onMarkNotificationsRead={markNotificationsRead} onNotificationClick={handleNotificationNavigate} />}
-            <div className={`relative z-10 flex-grow pb-safe`} style={{ paddingTop: view !== 'tutorial' ? 'calc(72px + env(safe-area-inset-top, 0px))' : '0px' }}>
-                {view === 'dashboard' && (
-                    <div className="animate-fade-in">
-                        <ErrorBoundary fallbackMessage="儀表板載入失敗，請重新整理" onOpenFeedback={() => setIsReportCenterOpen(true)}>
-                            <Dashboard
-                                user={user}
-                                onSelectTrip={(t) => { setSelectedTrip(t); setView('detail'); setIsPreviewMode(false); }}
-                                isDarkMode={isDarkMode}
-                                setGlobalBg={setGlobalBg}
-                                globalSettings={globalSettings}
-                                exchangeRates={exchangeRates}
-                                weatherData={weatherData}
-                                isLoadingWeather={isLoadingWeather}
-                                onViewChange={setView}
-                                onOpenSettings={(tab) => { setSettingsInitialTab(tab || 'general'); setView('settings'); }}
-                                isBanned={isBanned}
-                                onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
-                            />
-                        </ErrorBoundary>
-                    </div>
-                )}
-                {view === 'detail' && (
-                    <div className="animate-slide-up">
-                        <ErrorBoundary fallbackMessage="行程詳情載入失敗，請重新整理" onOpenFeedback={() => setIsReportCenterOpen(true)}>
-                            <TripDetail
-                                tripData={isPreviewMode ? previewTrip : selectedTrip}
-                                user={user}
-                                isDarkMode={isDarkMode}
-                                setGlobalBg={setGlobalBg}
-                                isSimulation={false}
-                                isPreview={isPreviewMode}
-                                globalSettings={globalSettings}
-                                onBack={() => { setView('dashboard'); window.history.replaceState({}, '', '/'); }}
-                                exchangeRates={exchangeRates}
-                                weatherData={weatherData}
-                                onOpenSmartImport={async () => {
-                                    if (isBanned) return sendNotification("帳戶已鎖定", "您目前無法使用上傳功能。", "error");
+        <TourProvider onNavigate={handleTourNavigation}>
+            <div className={`min-h-screen flex flex-col overflow-x-hidden transition-colors duration-500 font-sans selection:bg-indigo-500/30 ${isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-slate-50 text-gray-900'}`}>
+                <NotificationSystem notifications={notifications} setNotifications={setNotifications} isDarkMode={isDarkMode} onNotificationClick={handleNotificationNavigate} />
+                <OfflineBanner isDarkMode={isDarkMode} />
+                <ReloadPrompt isDarkMode={isDarkMode} />
+                {/* Background Image (Global) */}
+                <ImageWithFallback
+                    src={globalBg}
+                    className="fixed inset-0 z-0 opacity-20 pointer-events-none transition-all duration-1000 object-cover w-full h-full"
+                    alt="Background"
+                />
+                {/* Fixed Header - Outside content wrapper for proper fixed positioning */}
+                {view !== 'tutorial' && <Header title="✈️ Travel Together" user={currentUser || user} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} onLogout={() => signOut(auth)} onBack={(view !== 'dashboard' && view !== 'settings') ? () => setView('dashboard') : null} onTutorialStart={() => { if (localStorage.getItem('hasSeenOnboarding')) { setView('dashboard'); setTimeout(() => setShouldStartProductTour(true), 300); } else { setIsOnboardingOpen(true); } }} onViewChange={setView} onOpenUserSettings={() => setView('settings')} onOpenFeedback={() => setIsReportCenterOpen(true)} onOpenAdminFeedback={() => setIsAdminFeedbackModalOpen(true)} isAdmin={isAdmin} adminPendingCount={openFeedbackCount} onOpenVersion={() => setIsVersionOpen(true)} notifications={notifications} onRemoveNotification={removeNotification} onMarkNotificationsRead={markNotificationsRead} onNotificationClick={handleNotificationNavigate} allTrips={trips} />}
 
-                                    const isAbuse = await checkAbuse(user, 'upload_file');
-                                    if (isAbuse) return sendNotification("帳戶已鎖定", "檢測到異常上傳活動。", "error");
+                <div className={`relative z-10 flex-grow pb-safe`} style={{ paddingTop: view !== 'tutorial' ? 'calc(72px + env(safe-area-inset-top, 0px))' : '0px' }}>
+                    {view === 'dashboard' && (
+                        <div className="animate-fade-in">
+                            <ErrorBoundary fallbackMessage="儀表板載入失敗，請重新整理" onOpenFeedback={() => setIsReportCenterOpen(true)}>
+                                <Dashboard
+                                    user={user}
+                                    onSelectTrip={(t) => { setSelectedTrip(t); setView('detail'); setIsPreviewMode(false); }}
+                                    isDarkMode={isDarkMode}
+                                    setGlobalBg={setGlobalBg}
+                                    globalSettings={globalSettings}
+                                    exchangeRates={exchangeRates}
+                                    weatherData={weatherData}
+                                    isLoadingWeather={isLoadingWeather}
+                                    onViewChange={setView}
+                                    onOpenSettings={(tab) => { setSettingsInitialTab(tab || 'general'); setView('settings'); }}
+                                    isBanned={isBanned}
+                                    onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+                                    deferredPrompt={deferredPrompt}
+                                    onInstall={handleInstallClick}
+                                    shouldStartProductTour={shouldStartProductTour}
+                                    onProductTourStarted={() => setShouldStartProductTour(false)}
+                                    // Chat Control
+                                    onOpenChat={handleOpenChat}
+                                    setChatInitialTab={setChatInitialTab}
+                                />
+                            </ErrorBoundary>
+                        </div>
+                    )}
+                    {/* Profile View (V1.3.0) */}
+                    {view === 'profile' && (
+                        <div className="pt-4 animate-fade-in" data-tour="profile-view">
+                            <ErrorBoundary fallbackMessage="個人檔案載入失敗，請重新整理" onOpenFeedback={() => setIsReportCenterOpen(true)}>
+                                <SocialProfile
+                                    user={viewingProfileUser || currentUser || user} // Use viewing user OR current user (with profile data)
+                                    currentUser={currentUser || user}
+                                    isOwnProfile={!viewingProfileUser || viewingProfileUser.uid === user?.uid}
+                                    trips={trips}
+                                    isDarkMode={isDarkMode}
+                                    onEditProfile={() => {
+                                        setSettingsInitialTab('account');
+                                        setView('settings');
+                                    }}
+                                />
+                            </ErrorBoundary>
+                        </div>
+                    )}
+                    {view === 'detail' && (
+                        <div className="animate-slide-up">
+                            <ErrorBoundary fallbackMessage="行程詳情載入失敗，請重新整理" onOpenFeedback={() => setIsReportCenterOpen(true)}>
+                                <TripDetail
+                                    tripData={isPreviewMode ? previewTrip : selectedTrip}
+                                    user={user}
+                                    isDarkMode={isDarkMode}
+                                    setGlobalBg={setGlobalBg}
+                                    isSimulation={false}
+                                    isPreview={isPreviewMode}
+                                    globalSettings={globalSettings}
+                                    onBack={() => { setView('dashboard'); window.history.replaceState({}, '', '/'); }}
+                                    exchangeRates={exchangeRates}
+                                    weatherData={weatherData}
+                                    onOpenSmartImport={async () => {
+                                        if (isBanned) return sendNotification("帳戶已鎖定", "您目前無法使用上傳功能。", "error");
 
-                                    setSelectedImportTrip(isPreviewMode ? previewTrip : selectedTrip);
-                                    setIsSmartImportModalOpen(true);
-                                }}
-                                onUpdateSimulationTrip={null}
-                                requestedTab={requestedTab}
-                                onTabHandled={() => setRequestedTab(null)}
-                                requestedItemId={requestedItemId}
-                                onItemHandled={() => setRequestedItemId(null)}
-                                isBanned={isBanned}
+                                        const isAbuse = await checkAbuse(user, 'upload_file');
+                                        if (isAbuse) return sendNotification("帳戶已鎖定", "檢測到異常上傳活動。", "error");
+
+                                        setSelectedImportTrip(isPreviewMode ? previewTrip : selectedTrip);
+                                        setIsSmartImportModalOpen(true);
+                                    }}
+                                    onUpdateSimulationTrip={null}
+                                    requestedTab={requestedTab}
+                                    onTabHandled={() => setRequestedTab(null)}
+                                    requestedItemId={requestedItemId}
+                                    onItemHandled={() => setRequestedItemId(null)}
+                                    setIsChatOpen={setIsChatOpen}
+                                    isBanned={isBanned}
+                                    // Chat Control
+                                    onOpenChat={(tab) => {
+                                        if (isSimulation) return;
+                                        handleOpenChat(isPreviewMode ? previewTrip : selectedTrip, tab);
+                                    }}
+                                    setChatInitialTab={setChatInitialTab}
+                                    isAdmin={isAdmin}
+                                    isChatOpen={isChatOpen}
+                                    onUserClick={(u) => { setViewingProfileUser(u); setView('profile'); }}
+                                    onViewProfile={(u) => { setViewingProfileUser(u); setView('profile'); }}
+                                />
+                            </ErrorBoundary>
+                        </div>
+                    )}
+                    {view === 'settings' && (
+                        <div className="animate-fade-in">
+                            <SettingsView
+                                globalSettings={globalSettings}
+                                setGlobalSettings={setGlobalSettings}
+                                isDarkMode={isDarkMode}
+                                onBack={() => setView('dashboard')}
+                                initialTab={settingsInitialTab}
+                                user={user}
                                 isAdmin={isAdmin}
-                                onOpenChat={() => handleOpenChat()}
-                                isChatOpen={isChatOpen}
+                                exchangeRates={exchangeRates}
+                                weatherData={weatherData}
                             />
-                        </ErrorBoundary>
-                    </div>
-                )}
-                {view === 'settings' && (
-                    <div className="animate-fade-in">
-                        <SettingsView
-                            globalSettings={globalSettings}
-                            setGlobalSettings={setGlobalSettings}
-                            isDarkMode={isDarkMode}
-                            onBack={() => setView('dashboard')}
-                            initialTab={settingsInitialTab}
-                            user={user}
-                            isAdmin={isAdmin}
-                        />
-                    </div>
-                )}
+                        </div>
+                    )}
 
-                {['403', '404', '500', '503'].includes(view) && (
-                    <HttpStatusPage
-                        code={parseInt(view)}
+                    {['403', '404', '500', '503'].includes(view) && (
+                        <HttpStatusPage
+                            code={parseInt(view)}
+                            isDarkMode={isDarkMode}
+                            onBackHome={() => setView('dashboard')}
+                            onOpenFeedback={() => setIsFeedbackModalOpen(true)}
+                        />
+                    )}
+
+                    {view === 'tutorial' && <div className={`min-h-screen flex flex-col animate-fade-in ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}><div className={`p-4 border-b flex gap-4 items-center sticky top-0 z-50 backdrop-blur-lg ${isDarkMode ? 'bg-gray-900/90 border-gray-800' : 'bg-white/90 border-gray-200'}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}><button onClick={() => { setView('dashboard'); setIsPreviewMode(false); }} className="p-2 rounded-full hover:bg-gray-500/10"><ChevronLeft /></button><span className="font-bold">模擬模式 (東京範例)</span></div><div className="flex-grow overflow-y-auto">                <TripDetail
+                        tripData={SIMULATION_DATA}
+                        user={user}
                         isDarkMode={isDarkMode}
-                        onBackHome={() => setView('dashboard')}
-                        onOpenFeedback={() => setIsFeedbackModalOpen(true)}
+                        setGlobalBg={() => { }}
+                        isSimulation={true}
+                        isPreview={false}
+                        globalSettings={globalSettings}
+                        exchangeRates={exchangeRates}
+                        weatherData={weatherData}
+                        onOpenSmartImport={() => setIsSmartImportModalOpen(true)}
+                        onOpenChat={(tab) => handleOpenChat(SIMULATION_DATA, tab)}
+                        isChatOpen={isChatOpen}
+                        requestedTab={requestedTab}
+                        onTabHandled={() => setRequestedTab(null)}
+                        requestedItemId={requestedItemId}
+                        onItemHandled={() => setRequestedItemId(null)}
+                        setIsChatOpen={setIsChatOpen}
+                        setChatInitialTab={setChatInitialTab}
+                    /></div></div>}
+                </div>
+                {view !== 'tutorial' && <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} onLanguageChange={(lang) => setGlobalSettings(prev => ({ ...prev, language: lang }))} />}
+                {/* SettingsModal removed */}
+                <UniversalOnboarding
+                    isOpen={isOnboardingOpen}
+                    onClose={handleOnboardingComplete}
+                    isDarkMode={isDarkMode}
+                    onStartDemo={() => setView('tutorial')}
+                    onStepChange={handleOnboardingStepChange}
+                />
+
+                {/* Global Chat / AI FAB */}
+                {(user || view === 'tutorial') && !isChatOpen && (
+                    <GlobalChatFAB
+                        isDarkMode={isDarkMode}
+                        context={view === 'detail' || view === 'tutorial' ? 'trip' : 'default'}
+                        onClick={() => {
+                            // Priority: Open Trip Chat if in detail view, else Jarvis
+                            if (view === 'tutorial') {
+                                handleOpenChat(SIMULATION_DATA);
+                            } else {
+                                handleOpenChat();
+                            }
+                        }}
                     />
                 )}
-
-                {view === 'tutorial' && <div className={`min-h-screen flex flex-col animate-fade-in ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}><div className={`p-4 border-b flex gap-4 items-center sticky top-0 z-50 backdrop-blur-lg ${isDarkMode ? 'bg-gray-900/90 border-gray-800' : 'bg-white/90 border-gray-200'}`} style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}><button onClick={() => { setView('dashboard'); setIsPreviewMode(false); }} className="p-2 rounded-full hover:bg-gray-500/10"><ChevronLeft /></button><span className="font-bold">模擬模式 (東京範例)</span></div><div className="flex-grow overflow-y-auto"><TripDetail tripData={SIMULATION_DATA} user={user} isDarkMode={isDarkMode} setGlobalBg={() => { }} isSimulation={true} isPreview={false} globalSettings={globalSettings} exchangeRates={exchangeRates} weatherData={weatherData} onOpenSmartImport={() => setIsSmartImportModalOpen(true)} onOpenChat={() => handleOpenChat(SIMULATION_DATA)} isChatOpen={isChatOpen} /></div></div>}
-            </div>
-            {view !== 'tutorial' && <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} />}
-            {/* SettingsModal removed */}
-            <OnboardingModal isOpen={isOnboardingOpen} onClose={handleOnboardingComplete} isDarkMode={isDarkMode} />
-
-            {/* Global Chat / AI FAB */}
-            {(user || view === 'tutorial') && !isChatOpen && (
-                <GlobalChatFAB
+                <VersionModal isOpen={isVersionOpen} onClose={() => setIsVersionOpen(false)} isDarkMode={isDarkMode} globalSettings={globalSettings} />
+                <VersionGuardModal isOpen={isVersionGuardOpen} latestVersion={latestVersion} currentVersion={APP_VERSION} />
+                <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} isDarkMode={isDarkMode} user={user} isBanned={isBanned} />
+                <AdminFeedbackModal
+                    isOpen={isAdminFeedbackModalOpen}
+                    onClose={() => setIsAdminFeedbackModalOpen(false)}
                     isDarkMode={isDarkMode}
-                    context={view === 'detail' || view === 'tutorial' ? 'trip' : 'default'}
-                    onClick={() => {
-                        // Priority: Open Trip Chat if in detail view, else Jarvis
-                        if (view === 'tutorial') {
-                            handleOpenChat(SIMULATION_DATA);
-                        } else {
-                            handleOpenChat();
+                    adminEmails={dynamicAdminEmails}
+                    onUpdateAdminList={(newList) => setDoc(doc(db, "settings", "admin_config"), { admin_emails: newList }, { merge: true })}
+                />
+                {/* Report Center (Replaces generic feedback for logged in users eventually, but side-by-side for now) */}
+                <ReportCenterModal
+                    isOpen={isReportCenterOpen}
+                    onClose={() => setIsReportCenterOpen(false)}
+                    isDarkMode={isDarkMode}
+                    user={user}
+                    onOpenJarvis={() => { setIsReportCenterOpen(false); handleOpenChat(); }}
+                />
+                <SmartImportModal
+                    isOpen={isSmartImportModalOpen}
+                    onClose={() => setIsSmartImportModalOpen(false)}
+                    isDarkMode={isDarkMode}
+                    trips={[selectedTrip].filter(Boolean)}
+                    trip={selectedTrip}
+                    onImport={async ({ type, files, data }) => {
+                        // Just show notification - modal will handle its own closing after showing result
+                        const typeLabels = {
+                            screenshot: '行程截圖',
+                            receipt: '消費單據',
+                            memory: '回憶相片',
+                            json: 'JSON',
+                            csv: 'CSV'
+                        };
+                        sendNotification(
+                            `${typeLabels[type] || '檔案'}已接收 ✅`,
+                            `${files?.[0]?.name || '檔案'} 已上傳`,
+                            'success'
+                        );
+                    }}
+                />
+
+                {/* Universal Chat & Jarvis AI System */}
+                <UniversalChat
+                    isOpen={isChatOpen}
+                    onClose={() => setIsChatOpen(false)}
+                    user={user}
+                    trip={selectedTrip}
+                    isDarkMode={isDarkMode}
+                    activeTab={chatInitialTab}
+                    onTabChange={setChatInitialTab}
+                />
+
+                <CommandPalette
+                    isOpen={isCommandPaletteOpen}
+                    onClose={() => setIsCommandPaletteOpen(false)}
+                    trips={trips}
+                    activeTrip={selectedTrip}
+                    isDarkMode={isDarkMode}
+                    onAction={(item) => {
+                        if (item.type === 'trip') {
+                            setSelectedTrip(item.data);
+                            setView('detail');
+                        } else if (item.type === 'action') {
+                            if (item.action === 'view-map') {
+                                // If in trip, trigger view change
+                                localStorage.setItem(`tripViewMode_${selectedTrip?.id || 'global'}`, 'map');
+                                window.dispatchEvent(new CustomEvent('refreshTripView'));
+                            } else if (item.action === 'ask-jarvis') {
+                                handleOpenChat();
+                            } else if (item.action === 'view-kanban') {
+                                localStorage.setItem(`tripViewMode_${selectedTrip?.id || 'global'}`, 'kanban');
+                                window.dispatchEvent(new CustomEvent('refreshTripView'));
+                            }
+                        } else if (item.type === 'itinerary' || item.type === 'budget') {
+                            // For itinerary/budget items, we stay in detail and maybe scroll
+                            // For now just ensure we are in detail
+                            if (view !== 'detail') setView('detail');
                         }
                     }}
                 />
-            )}
-            <VersionModal isOpen={isVersionOpen} onClose={() => setIsVersionOpen(false)} isDarkMode={isDarkMode} globalSettings={globalSettings} />
-            <VersionGuardModal isOpen={isVersionGuardOpen} latestVersion={latestVersion} currentVersion={APP_VERSION} />
-            <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} isDarkMode={isDarkMode} user={user} isBanned={isBanned} />
-            <AdminFeedbackModal
-                isOpen={isAdminFeedbackModalOpen}
-                onClose={() => setIsAdminFeedbackModalOpen(false)}
-                isDarkMode={isDarkMode}
-                adminEmails={dynamicAdminEmails}
-                onUpdateAdminList={(newList) => setDoc(doc(db, "settings", "admin_config"), { admin_emails: newList }, { merge: true })}
-            />
-            {/* Report Center (Replaces generic feedback for logged in users eventually, but side-by-side for now) */}
-            <ReportCenterModal
-                isOpen={isReportCenterOpen}
-                onClose={() => setIsReportCenterOpen(false)}
-                isDarkMode={isDarkMode}
-                user={user}
-                onOpenJarvis={() => { setIsReportCenterOpen(false); handleOpenChat(); }}
-            />
-            <SmartImportModal
-                isOpen={isSmartImportModalOpen}
-                onClose={() => setIsSmartImportModalOpen(false)}
-                isDarkMode={isDarkMode}
-                trips={[selectedTrip].filter(Boolean)}
-                trip={selectedTrip}
-                onImport={async ({ type, files, data }) => {
-                    // Just show notification - modal will handle its own closing after showing result
-                    const typeLabels = {
-                        screenshot: '行程截圖',
-                        receipt: '消費單據',
-                        memory: '回憶相片',
-                        json: 'JSON',
-                        csv: 'CSV'
-                    };
-                    sendNotification(
-                        `${typeLabels[type] || '檔案'}已接收 ✅`,
-                        `${files?.[0]?.name || '檔案'} 已上傳`,
-                        'success'
-                    );
-                }}
-            />
 
-            {/* Universal Chat & Jarvis AI System */}
-            <UniversalChat
-                isOpen={isChatOpen}
-                onClose={() => setIsChatOpen(false)}
-                user={user}
-                trip={selectedTrip}
-                isDarkMode={isDarkMode}
-                initialTab={view === 'detail' ? 'trip' : 'jarvis'}
-            />
+                {/* V1.2.4: Interactive Onboarding Tour */}
+                <OnboardingTour
+                    run={showOnboardingTour}
+                    onComplete={() => {
+                        setShowOnboardingTour(false);
+                        cleanupTutorialData(); // Ensure cleanup runs
+                    }}
+                    isDarkMode={isDarkMode}
+                />
 
-            <CommandPalette
-                isOpen={isCommandPaletteOpen}
-                onClose={() => setIsCommandPaletteOpen(false)}
-                trips={trips}
-                activeTrip={selectedTrip}
-                isDarkMode={isDarkMode}
-                onAction={(item) => {
-                    if (item.type === 'trip') {
-                        setSelectedTrip(item.data);
-                        setView('detail');
-                    } else if (item.type === 'action') {
-                        if (item.action === 'view-map') {
-                            // If in trip, trigger view change
-                            localStorage.setItem(`tripViewMode_${selectedTrip?.id || 'global'}`, 'map');
-                            window.dispatchEvent(new CustomEvent('refreshTripView'));
-                        } else if (item.action === 'ask-jarvis') {
-                            handleOpenChat();
-                        } else if (item.action === 'view-kanban') {
-                            localStorage.setItem(`tripViewMode_${selectedTrip?.id || 'global'}`, 'kanban');
-                            window.dispatchEvent(new CustomEvent('refreshTripView'));
-                        }
-                    } else if (item.type === 'itinerary' || item.type === 'budget') {
-                        // For itinerary/budget items, we stay in detail and maybe scroll
-                        // For now just ensure we are in detail
-                        if (view !== 'detail') setView('detail');
-                    }
-                }}
-            />
-
-            {/* V1.2.4: Interactive Onboarding Tour */}
-            <OnboardingTour
-                run={showOnboardingTour}
-                onComplete={() => {
-                    setShowOnboardingTour(false);
-                    cleanupTutorialData(); // Ensure cleanup runs
-                }}
-                isDarkMode={isDarkMode}
-            />
-
-        </div>
+                {/* V1.3.4: Interactive Product Tour Overlay */}
+                <TourOverlay isDarkMode={isDarkMode} />
+            </div>
+        </TourProvider>
     );
 };
 
 // --- Other Components (LandingPage) ---
-const LandingPage = ({ onLogin }) => (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-        <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-[85vh]">
-            <div className="col-span-1 md:col-span-2 relative rounded-3xl overflow-hidden group min-h-[500px] md:min-h-0">
-                <ImageWithFallback
-                    src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1600"
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    alt="Travel Together Destination"
-                />
-                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-all" />
-                <div className="absolute bottom-6 left-6 md:bottom-10 md:left-10 text-white z-10 pr-6">
-                    <h1 className="text-4xl md:text-6xl font-bold mb-2 md:mb-4">Travel Together</h1>
-                    <p className="text-lg md:text-2xl opacity-90 mb-6 md:mb-8">下一站，與你同行。</p>
-                    <div className="flex flex-col gap-3 max-w-sm">
-                        <button onClick={onLogin} className="bg-white text-black px-8 py-3 md:py-4 rounded-full font-bold text-base md:text-lg hover:scale-105 transition flex flex-col items-center gap-1 w-full shadow-lg">
-                            <div className="flex items-center gap-2"><LogIn className="w-5 h-5" /> Google 登入</div>
-                            <span className="text-[10px] opacity-50 font-normal hidden sm:inline">支援 Google 帳戶註冊並安裝為 PWA 使用</span>
-                        </button>
-                        <button onClick={() => window.location.href = '/?view=tutorial'} className="bg-white/10 text-white px-8 py-3 md:py-4 rounded-full font-bold text-base md:text-lg hover:bg-white/20 transition flex items-center justify-center gap-2 w-full border border-white/10 group/demo backdrop-blur-sm">
-                            <MonitorPlay className="w-5 h-5 text-indigo-400 group-hover/demo:animate-pulse" />
-                            試用模擬模式 (免登入)
-                        </button>
+// --- Other Components (LandingPage) ---
+const LandingPage = ({ onLogin }) => {
+    const { t } = useTranslation();
+
+    return (
+        <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+            <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-[85vh]">
+                <div className="col-span-1 md:col-span-2 relative rounded-3xl overflow-hidden group min-h-[500px] md:min-h-0">
+                    <ImageWithFallback
+                        src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1600"
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        alt="Travel Together Destination"
+                    />
+                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-all" />
+                    <div className="absolute bottom-6 left-6 md:bottom-10 md:left-10 text-white z-10 pr-6">
+                        <h1 className="text-4xl md:text-6xl font-bold mb-2 md:mb-4">{t('landing.title')}</h1>
+                        <p className="text-lg md:text-2xl opacity-90 mb-6 md:mb-8">{t('landing.subtitle')}</p>
+                        <div className="flex flex-col gap-3 max-w-sm">
+                            <button onClick={onLogin} className="bg-white text-black px-8 py-3 md:py-4 rounded-full font-bold text-base md:text-lg hover:scale-105 transition flex flex-col items-center gap-1 w-full shadow-lg">
+                                <div className="flex items-center gap-2"><LogIn className="w-5 h-5" /> {t('landing.login_google')}</div>
+                                <span className="text-[10px] opacity-50 font-normal hidden sm:inline">{t('landing.login_desc')}</span>
+                            </button>
+                            <button onClick={() => window.location.href = '/?view=tutorial'} className="bg-white/10 text-white px-8 py-3 md:py-4 rounded-full font-bold text-base md:text-lg hover:bg-white/20 transition flex items-center justify-center gap-2 w-full border border-white/10 group/demo backdrop-blur-sm">
+                                <MonitorPlay className="w-5 h-5 text-indigo-400 group-hover/demo:animate-pulse" />
+                                {t('landing.demo_mode')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-rows-3 gap-4 md:gap-6">
+                    <div className="bg-indigo-600 rounded-3xl p-8 text-white flex flex-col justify-between hover:scale-[1.02] transition">
+                        <Users className="w-12 h-12 opacity-50" />
+                        <div><h3 className="text-2xl font-bold">{t('landing.features.collab_title')}</h3><p className="opacity-70">{t('landing.features.collab_desc')}</p></div>
+                    </div>
+                    <div className="bg-gray-800 rounded-3xl p-8 text-white flex flex-col justify-between hover:scale-[1.02] transition">
+                        <BrainCircuit className="w-12 h-12 text-pink-500 opacity-80" />
+                        <div><h3 className="text-2xl font-bold">{t('landing.features.ai_title')}</h3><p className="opacity-70">{t('landing.features.ai_desc')}</p></div>
+                    </div>
+                    <div className="bg-gray-800 rounded-3xl p-8 text-white flex flex-col justify-between hover:scale-[1.02] transition">
+                        <MapPinned className="w-12 h-12 text-green-500 opacity-80" />
+                        <div><h3 className="text-2xl font-bold">{t('landing.features.footprints_title')}</h3><p className="opacity-70">{t('landing.features.footprints_desc')}</p></div>
                     </div>
                 </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-rows-3 gap-4 md:gap-6">
-                <div className="bg-indigo-600 rounded-3xl p-8 text-white flex flex-col justify-between hover:scale-[1.02] transition">
-                    <Users className="w-12 h-12 opacity-50" />
-                    <div><h3 className="text-2xl font-bold">多人協作</h3><p className="opacity-70">實時同步，共同規劃。</p></div>
-                </div>
-                <div className="bg-gray-800 rounded-3xl p-8 text-white flex flex-col justify-between hover:scale-[1.02] transition">
-                    <BrainCircuit className="w-12 h-12 text-pink-500 opacity-80" />
-                    <div><h3 className="text-2xl font-bold">Jarvis 領隊</h3><p className="opacity-70">智慧推薦行程與美食。</p></div>
-                </div>
-                <div className="bg-gray-800 rounded-3xl p-8 text-white flex flex-col justify-between hover:scale-[1.02] transition">
-                    <Wallet className="w-12 h-12 text-green-500 opacity-80" />
-                    <div><h3 className="text-2xl font-bold">智慧分帳</h3><p className="opacity-70">自動計算債務，輕鬆結算。</p></div>
-                </div>
-            </div>
         </div>
-    </div>
-);
+    );
+};
 
 export default App;

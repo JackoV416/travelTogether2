@@ -21,10 +21,20 @@ const CommandPalette = ({
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef(null);
 
+    const getIconForType = (type) => {
+        switch (type) {
+            case 'flight': return <Plane className="w-4 h-4" />;
+            case 'hotel': return <Hotel className="w-4 h-4" />;
+            case 'food': return <Utensils className="w-4 h-4" />;
+            case 'shopping': return <ShoppingBag className="w-4 h-4" />;
+            default: return <MapPin className="w-4 h-4" />;
+        }
+    };
+
     // 1. Indexing & Searching
     useEffect(() => {
         if (!isOpen) {
-            setQuery('');
+            queueMicrotask(() => setQuery(''));
             return;
         }
         inputRef.current?.focus();
@@ -77,14 +87,14 @@ const CommandPalette = ({
         searchableItems.push({ id: 'action-jarvis', title: '問問 Jarvis AI', subtitle: 'Quick Action', type: 'action', icon: <Sparkles className="w-4 h-4" />, action: 'ask-jarvis' });
 
         if (!query) {
-            setResults(searchableItems.slice(0, 10)); // Show recents/actions
+            queueMicrotask(() => setResults(searchableItems.slice(0, 10))); // Show recents/actions
         } else {
             const q = query.toLowerCase();
             const filtered = searchableItems.filter(item =>
                 item.title?.toLowerCase().includes(q) ||
                 item.subtitle?.toLowerCase().includes(q)
             );
-            setResults(filtered);
+            queueMicrotask(() => setResults(filtered));
         }
     }, [query, isOpen, trips, activeTrip]);
 
@@ -107,15 +117,6 @@ const CommandPalette = ({
         onClose();
     };
 
-    const getIconForType = (type) => {
-        switch (type) {
-            case 'flight': return <Plane className="w-4 h-4" />;
-            case 'hotel': return <Hotel className="w-4 h-4" />;
-            case 'food': return <Utensils className="w-4 h-4" />;
-            case 'shopping': return <ShoppingBag className="w-4 h-4" />;
-            default: return <MapPin className="w-4 h-4" />;
-        }
-    };
 
     if (!isOpen) return null;
 
