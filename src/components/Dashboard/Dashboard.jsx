@@ -22,6 +22,8 @@ import SmartExportModal from '../Modals/SmartExportModal';
 import CreateTripModal from '../Modals/CreateTripModal';
 import DashboardHeader from './DashboardHeader';
 import TripsGrid from './TripsGrid';
+import ExploreGrid from './ExploreGrid'; // V1.3.6 Pinterest Layout
+import UniversalChat from '../Shared/UniversalChat'; // V1.3.0
 import GlobalChatFAB from '../Shared/GlobalChatFAB';
 
 // Hooks
@@ -35,13 +37,13 @@ import SearchFilterBar from './SearchFilterBar';
 
 
 
-const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSettings, setGlobalBg, globalSettings, exchangeRates, weatherData, isLoadingWeather, isBanned, onOpenCommandPalette, deferredPrompt, onInstall, shouldStartProductTour, onProductTourStarted, onOpenChat, setChatInitialTab }) => {
+const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSettings, setGlobalBg, globalSettings, exchangeRates, weatherData, isLoadingWeather, isBanned, onOpenCommandPalette, deferredPrompt, onInstall, shouldStartProductTour, onProductTourStarted, onOpenChat, setChatInitialTab, forcedViewMode, allTrips, loadingAllTrips }) => {
     const {
         trips, loadingTrips, newsData, loadingNews,
         hotels, loadingHotels, flights, loadingFlights,
         transports, loadingTransports, connectivity, loadingConnectivity,
         refreshTrigger, setRefreshTrigger, sendNotification
-    } = useDashboardData(user, globalSettings, exchangeRates);
+    } = useDashboardData(user, globalSettings, exchangeRates, allTrips, loadingAllTrips);
 
     const [form, setForm] = useState({ name: '', countries: [], cities: [], startDate: '', endDate: '', isAI: false });
     const [selectedCountryImg, setSelectedCountryImg] = useState(DEFAULT_BG_IMAGE);
@@ -52,15 +54,36 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
     const [isSmartExportOpen, setIsSmartExportOpen] = useState(false);
     const [selectedExportTrip, setSelectedExportTrip] = useState("");
     const [newCityInput, setNewCityInput] = useState('');
-    const { i18n } = useTranslation();
+    const { t, i18n } = useTranslation();
     const currentLang = i18n.language;
-
-
 
     // Search & Filter State
     const [searchQuery, setSearchQuery] = useState('');
     const [sortOption, setSortOption] = useState('nearest');
     const [filterOption, setFilterOption] = useState('all');
+
+    // V1.3.0 Dashboard Chat State
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [activeChatTab, setActiveChatTab] = useState('jarvis');
+
+    // V1.3.6: View Mode ('explore' | 'my_trips')
+    // If forcedViewMode is provided, we use it and disable internal switching
+    const [viewMode, setViewMode] = useState(() => {
+        if (forcedViewMode) return forcedViewMode;
+        const initial = sessionStorage.getItem('initialDashboardView');
+        if (initial === 'my_trips') {
+            sessionStorage.removeItem('initialDashboardView');
+            return 'my_trips';
+        }
+        return 'explore';
+    });
+
+    // Update viewMode if prop changes
+    useEffect(() => {
+        if (forcedViewMode) setViewMode(forcedViewMode);
+    }, [forcedViewMode]);
+
+    // ... (rest of logic)
 
 
 
@@ -87,6 +110,22 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
         } else if (currentStepData?.id === 'trip-card') {
             setIsCreateModalOpen(false);
         }
+
+        // Global Keyboard Shortcuts
+        const handleKeyDown = (e) => {
+            // New Trip: Shift + N
+            if (e.shiftKey && (e.key === 'N' || e.key === 'n') && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+                e.preventDefault();
+                setIsCreateModalOpen(true);
+            }
+            // Smart Import: Shift + I
+            if (e.shiftKey && (e.key === 'I' || e.key === 'i') && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+                e.preventDefault();
+                setIsSmartImportModalOpen(true);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isActive, currentStepData?.id]);
 
     const handleMultiSelect = (field, values) => {
@@ -111,62 +150,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
         }
     };
 
-    // --- Search & Filter Logic ---
-    const getTripStatus = (t) => {
-        const today = new Date().toISOString().split('T')[0];
-        if (t.endDate && t.endDate < today) return 'completed';
-        if (t.startDate && t.startDate <= today) return 'active';
-        return 'upcoming';
-    };
 
-    const sortedTrips = React.useMemo(() => {
-        let result = [...trips];
-
-        // 1. Filter
-        if (filterOption !== 'all') {
-            result = result.filter(t => getTripStatus(t) === filterOption);
-        }
-
-        // 2. Search
-        if (searchQuery) {
-            const q = searchQuery.toLowerCase();
-            result = result.filter(t =>
-                t.name?.toLowerCase().includes(q) ||
-                t.country?.toLowerCase().includes(q) ||
-                t.city?.toLowerCase().includes(q)
-            );
-        }
-
-        // 3. Sort
-        const today = new Date().toISOString().split('T')[0];
-
-        result.sort((a, b) => {
-            if (sortOption === 'nearest') {
-                const statusA = getTripStatus(a);
-                const statusB = getTripStatus(b);
-
-                // Priority: Active > Upcoming > Completed
-                const priority = { active: 1, upcoming: 2, completed: 3 };
-                if (priority[statusA] !== priority[statusB]) {
-                    return priority[statusA] - priority[statusB];
-                }
-
-                // If same status:
-                // Active: End Date ASC (Ends sooner = top?) or Start Date? Project usually: End Date ASC (closing soon)
-                if (statusA === 'active') return a.endDate.localeCompare(b.endDate);
-                // Upcoming: Start Date ASC (Soonest first)
-                if (statusA === 'upcoming') return a.startDate.localeCompare(b.startDate);
-                // Completed: End Date DESC (Most recent past first)
-                if (statusA === 'completed') return b.endDate.localeCompare(a.endDate);
-            }
-            if (sortOption === 'date_asc') return a.startDate.localeCompare(b.startDate);
-            if (sortOption === 'date_desc') return b.startDate.localeCompare(a.startDate);
-            if (sortOption === 'name_asc') return a.name.localeCompare(b.name);
-            return 0;
-        });
-
-        return result;
-    }, [trips, searchQuery, sortOption, filterOption]);
 
     const handleCreate = async () => {
         if (isBanned) return sendNotification("帳戶已鎖定", "您目前無法建立新行程。", "error");
@@ -236,7 +220,9 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                 budget: generatedBudget,
                 shoppingList: [],
                 notes: "",
-                isAI: !!form.isAI
+                // Duplicates removed
+                isAI: !!form.isAI,
+                isLocal: primaryCountry === (globalSettings?.countryCode || 'HK') // V1.5.2: Detect Staycation
             });
             sendNotification("行程已建立 ✅", `成功建立行程: ${form.name}`, 'success');
             setForm({ name: '', countries: [], cities: [], startDate: '', endDate: '', isAI: false });
@@ -484,6 +470,51 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
         }
     };
 
+    // Filter & Sort Logic
+    const sortedTrips = React.useMemo(() => {
+        if (!trips) return [];
+        let result = [...trips];
+
+        // 1. Search
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            result = result.filter(t =>
+                t.name?.toLowerCase().includes(q) ||
+                t.city?.toLowerCase().includes(q) ||
+                t.country?.toLowerCase().includes(q)
+            );
+        }
+
+        // 2. Filter (Time)
+        const now = new Date();
+        now.setHours(0, 0, 0, 0); // Compare based on day start for consistency
+
+        if (filterOption === 'upcoming') {
+            result = result.filter(t => new Date(t.startDate) > now);
+        } else if (filterOption === 'active' || filterOption === 'ongoing') {
+            result = result.filter(t => {
+                const start = new Date(t.startDate);
+                const end = new Date(t.endDate);
+                // Ensure dates are compared at midnight
+                start.setHours(0, 0, 0, 0);
+                end.setHours(0, 0, 0, 0);
+                return start <= now && end >= now;
+            });
+        } else if (filterOption === 'completed' || filterOption === 'past') {
+            result = result.filter(t => new Date(t.endDate) < now);
+        }
+
+        // 3. Sort
+        result.sort((a, b) => {
+            if (sortOption === 'nearest') return new Date(a.startDate) - new Date(b.startDate);
+            if (sortOption === 'furthest') return new Date(b.startDate) - new Date(a.startDate);
+            if (sortOption === 'name') return a.name.localeCompare(b.name);
+            return 0;
+        });
+
+        return result;
+    }, [trips, searchQuery, filterOption, sortOption]);
+
     return (
         <main className="max-w-7xl mx-auto p-4 sm:p-6 space-y-12 animate-fade-in">
             <div data-tour="dashboard-header">
@@ -495,7 +526,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                     setSelectedCountryImg={setSelectedCountryImg}
                     setIsSmartImportModalOpen={setIsSmartImportModalOpen}
                     setIsSmartExportOpen={setIsSmartExportOpen}
-                    trips={sortedTrips.slice(0, 2)}
+                    trips={sortedTrips.filter(t => new Date(t.endDate) >= new Date().setHours(0, 0, 0, 0)).slice(0, 5)} // Show top 5 upcoming/active
                     onSelectTrip={onSelectTrip}
                     onOpenCommandPalette={onOpenCommandPalette}
                 />
@@ -514,15 +545,15 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                             </div>
 
                             <div className="flex-1 text-center md:text-left">
-                                <h3 className="text-xl font-black tracking-tight mb-1">將 Travel Together 安裝到手機</h3>
-                                <p className="text-sm font-medium opacity-70 leading-relaxed max-w-2xl">獲得更流暢嘅全螢幕體驗、支援離線查看行程，仲可以收到實時旅遊資訊同系統更新添！</p>
+                                <h3 className="text-xl font-black tracking-tight mb-1">{t('pwa.install_title') || '將 Travel Together 安裝到手機'}</h3>
+                                <p className="text-sm font-medium opacity-70 leading-relaxed max-w-2xl">{t('pwa.install_desc') || '獲得更流暢嘅全螢幕體驗、支援離線查看行程，仲可以收到實時旅遊資訊同系統更新添！'}</p>
                             </div>
 
                             <button
                                 onClick={onInstall}
                                 className="group px-8 py-3.5 bg-indigo-500 hover:bg-indigo-600 text-white font-black rounded-2xl transition-all shadow-lg shadow-indigo-500/30 active:scale-95 whitespace-nowrap flex items-center gap-2"
                             >
-                                立即安裝 App
+                                {t('pwa.install_btn') || '立即安裝 App'}
                                 <Rocket className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                             </button>
                         </div>
@@ -530,32 +561,81 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                 </div>
             )}
 
-            <div data-tour="trip-card">
-                <TripsGrid
-                    trips={sortedTrips}
-                    loadingTrips={loadingTrips}
-                    isDarkMode={isDarkMode}
-                    currentLang={currentLang}
-                    onSelectTrip={onSelectTrip}
-                    setGlobalBg={setGlobalBg}
-                    weatherData={weatherData}
-                    setIsSmartImportModalOpen={setIsSmartImportModalOpen}
-                    setIsSmartExportOpen={setIsSmartExportOpen}
-                    setIsCreateModalOpen={setIsCreateModalOpen}
-                    searchFilter={
-                        <SearchFilterBar
-                            onSearch={setSearchQuery}
-                            onSort={setSortOption}
-                            onFilter={setFilterOption}
-                            currentSort={sortOption}
-                            currentFilter={filterOption}
+            {/* Dashboard Tabs & Content */}
+            <div className="animate-fade-in relative z-0 space-y-6">
+
+                {/* Tab Navigation */}
+                {!forcedViewMode && (
+                    <div className="flex items-center justify-center gap-2 mb-8">
+                        <button
+                            onClick={() => setViewMode('explore')}
+                            className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 ${viewMode === 'explore'
+                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 scale-105'
+                                : 'bg-white/10 text-gray-400 hover:bg-white/20 hover:text-white'
+                                }`}
+                        >
+                            🌍 {t('dashboard.explore_community') || 'Explore Community'}
+                        </button>
+                        <button
+                            onClick={() => setViewMode('my_trips')}
+                            className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 ${viewMode === 'my_trips'
+                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 scale-105'
+                                : 'bg-white/10 text-gray-400 hover:bg-white/20 hover:text-white'
+                                }`}
+                        >
+                            ✈️ {t('dashboard.my_trips') || 'My Trips'}
+                        </button>
+                    </div>
+                )}
+
+                {viewMode === 'explore' ? (
+                    <div className="animate-fade-in">
+                        <ExploreGrid
+                            isDarkMode={isDarkMode}
+                            onSelectTrip={(trip) => onSelectTrip(trip)}
+                            userTrips={trips}
                         />
-                    }
-                />
+                    </div>
+                ) : (
+                    <div className="animate-fade-in space-y-6" data-tour="trip-card">
+                        <TripsGrid
+                            trips={sortedTrips}
+                            loadingTrips={loadingTrips}
+                            isDarkMode={isDarkMode}
+                            currentLang={currentLang}
+                            onSelectTrip={onSelectTrip}
+                            setGlobalBg={setGlobalBg}
+                            weatherData={weatherData}
+                            setIsSmartImportModalOpen={setIsSmartImportModalOpen}
+                            setIsSmartExportOpen={setIsSmartExportOpen}
+                            setIsCreateModalOpen={setIsCreateModalOpen}
+                            searchFilter={
+                                <SearchFilterBar
+                                    onSearch={setSearchQuery}
+                                    onSort={setSortOption}
+                                    onFilter={setFilterOption}
+                                    currentSort={sortOption}
+                                    currentFilter={filterOption}
+                                />
+                            }
+                        />
+                    </div>
+                )}
             </div>
 
 
 
+            {/* V1.3.0 Universal Chat */}
+            <UniversalChat
+                isOpen={isChatOpen}
+                onClose={() => setIsChatOpen(false)}
+                trip={null} // No specific trip in dashboard
+                user={user}
+                isDarkMode={isDarkMode}
+                activeTab={activeChatTab}
+                onTabChange={setActiveChatTab}
+                mode="dashboard" // Explicit mode
+            />
             {/* Modals */}
             <CreateTripModal
                 isOpen={isCreateModalOpen}

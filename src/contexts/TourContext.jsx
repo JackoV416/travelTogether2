@@ -26,7 +26,23 @@ const TourContext = createContext(null);
 export const useTour = () => {
     const context = useContext(TourContext);
     if (!context) {
-        throw new Error('useTour must be used within a TourProvider');
+        // [DEBUG] Log the reason why valid context is missing
+        console.warn('useTour() called outside of TourProvider! Check Component Tree.');
+
+        // Return safe fallback to prevent app crash
+        return {
+            isActive: false,
+            currentStep: 0,
+            currentStepData: null,
+            isMockMode: false,
+            startTour: () => console.warn('TourProvider missing: startTour ignored'),
+            endTour: () => { },
+            nextStep: () => { },
+            prevStep: () => { },
+            goToStep: () => { },
+            skipTour: () => { },
+            steps: []
+        };
     }
     return context;
 };
@@ -298,6 +314,7 @@ export const TourProvider = ({ children, onNavigate }) => {
     const [isActive, setIsActive] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
     const [isMockMode, setIsMockMode] = useState(false);
+
 
     const currentStepData = TOUR_STEPS[currentStep];
 

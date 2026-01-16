@@ -66,27 +66,25 @@ if (API_KEYS.length === 0) {
     console.warn("[Gemini AI] No valid API keys found. Add VITE_GEMINI_API_KEY to .env");
 }
 
-// Model priority chain: Simplified for stability (Updated V1.2.9 - Verified 2.5 Flash)
-// Model priority chain: Simplified for stability (Updated V1.2.9 - Verified 2.5 Flash)
-// Model priority chain: Simplified for stability (Updated V1.2.9 - Verified 2.5 Flash)
+// V1.4.4: Model priority chain - Updated to current models
 const MODEL_CHAIN = [
     ...(getStoredModel() ? [getStoredModel()] : []), // User's custom model comes first!
-    "gemini-1.5-flash",       // STABLE: Reverted to 1.5 Flash for reliability
-    "gemini-1.5-pro",         // STABLE: High intelligence fallback
-    "gemini-1.0-pro",         // LEGACY: Ultimate backup
+    "gemini-2.5-flash",       // FAST: Current fastest model
+    "gemini-2.5-flash-lite",  // BACKUP: Lower limits but available
+    "gemini-1.5-flash",       // STABLE: Reliable fallback
+    "gemini-1.5-pro",         // HIGH-IQ: Complex tasks fallback
 ];
 
 let currentKeyIndex = 0;
 let currentModelIndex = 0;
 
-// V1.5: Avoid hammering exhausted models
-// V1.5: Strict Rate Limiting (Token Bucket / Sliding Window) - Per Model
+// V1.4.4: Enhanced MODEL_LIMITS with all current models
 const MODEL_LIMITS = {
     "default": { RPM: 2, TPM: 32000, RPD: 50 },
-    "gemini-1.5-flash": { RPM: 5, TPM: 250000, RPD: 20 }, // User Screenshot
-    "gemini-2.5-flash": { RPM: 5, TPM: 250000, RPD: 20 }, // User Screenshot
+    "gemini-2.5-flash": { RPM: 5, TPM: 250000, RPD: 20 },
+    "gemini-2.5-flash-lite": { RPM: 10, TPM: 250000, RPD: 20 },
+    "gemini-1.5-flash": { RPM: 5, TPM: 250000, RPD: 20 },
     "gemini-1.5-pro": { RPM: 2, TPM: 32000, RPD: 50 },
-    "gemini-2.0-flash-exp": { RPM: 5, TPM: 250000, RPD: 20 }
 };
 
 // Internal tracker: Map<modelName, { timestamps: [], tokens: [] }>
@@ -95,6 +93,84 @@ const USAGE_TRACKER = {};
 // Legacy Cooldown map
 const MODEL_COOLDOWNS = new Map();
 const COOLDOWN_MS = 60000;
+
+// ============================================
+// 🔑 V1.4.4: RPD (Requests Per Day) TRACKER
+// Persisted to localStorage to survive page refresh
+// ============================================
+const RPD_TRACKER_KEY = 'jarvis_rpd_tracker';
+const RPD_LIMIT_PER_KEY = 18; // Buffer under 20 limit
+
+/**
+ * 📊 Get RPD usage data from localStorage
+ */
+function getRPDUsage() {
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Hong_Kong' });
+    try {
+        const data = JSON.parse(localStorage.getItem(RPD_TRACKER_KEY) || '{}');
+        if (data.date !== today) {
+            // New day, reset all counters
+            return { date: today, keys: {} };
+        }
+        return data;
+    } catch {
+        return { date: today, keys: {} };
+    }
+}
+
+/**
+ * ➕ Record an API call for specific key index
+ */
+function recordRPDUsage(keyIndex) {
+    const data = getRPDUsage();
+    data.keys[keyIndex] = (data.keys[keyIndex] || 0) + 1;
+    localStorage.setItem(RPD_TRACKER_KEY, JSON.stringify(data));
+    console.log(`[Jarvis] 📊 Key #${keyIndex} usage: ${data.keys[keyIndex]}/${RPD_LIMIT_PER_KEY}`);
+}
+
+/**
+ * 🔍 Get next available key (least-used strategy)
+ * Returns -1 if all keys exhausted
+ */
+function getNextAvailableKeyIndex() {
+    const data = getRPDUsage();
+    let minUsage = Infinity;
+    let minIndex = 0;
+
+    for (let i = 0; i < API_KEYS.length; i++) {
+        const usage = data.keys[i] || 0;
+        if (usage < RPD_LIMIT_PER_KEY && usage < minUsage) {
+            minUsage = usage;
+            minIndex = i;
+        }
+    }
+
+    // Check if best option is still under limit
+    if ((data.keys[minIndex] || 0) >= RPD_LIMIT_PER_KEY) {
+        console.warn('[Jarvis] ⚠️ All API keys exhausted for today!');
+        return -1;
+    }
+
+    return minIndex;
+}
+
+/**
+ * 📈 Export RPD status for UI display
+ */
+export function getJarvisKeyStatus() {
+    const data = getRPDUsage();
+    return {
+        date: data.date,
+        keys: API_KEYS.map((_, i) => ({
+            index: i,
+            used: data.keys[i] || 0,
+            limit: RPD_LIMIT_PER_KEY,
+            available: (data.keys[i] || 0) < RPD_LIMIT_PER_KEY
+        })),
+        totalUsed: Object.values(data.keys).reduce((a, b) => a + (b || 0), 0),
+        totalLimit: API_KEYS.length * RPD_LIMIT_PER_KEY
+    };
+}
 
 /**
  * 🚦 checkRateLimits - Per-Model Throttling
@@ -261,12 +337,28 @@ function rotateToNextModel() {
 }
 
 /**
- * 🔑 Switch to next API key (and reset model index)
- * @returns {boolean} True if successfully switched
+ * 🔑 V1.4.4: Switch to next API key using RPD-aware selection
+ * Uses least-used key strategy instead of simple rotation
+ * @returns {boolean} True if successfully switched, false if all exhausted
  */
 function rotateToNextKey() {
-    currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
+    const nextKey = getNextAvailableKeyIndex();
+
+    if (nextKey === -1) {
+        // All keys exhausted - try to continue with current key anyway
+        console.warn('[Jarvis] ⚠️ All keys at limit, continuing with current key');
+        currentModelIndex = 0;
+        return false;
+    }
+
+    // Check if we're actually switching to a different key
+    const switched = nextKey !== currentKeyIndex;
+    currentKeyIndex = nextKey;
     currentModelIndex = 0; // Reset to first model for new key
+
+    if (switched) {
+        console.log(`[Jarvis] 🔄 Switched to Key #${nextKey}`);
+    }
 
     return true;
 }
@@ -362,8 +454,9 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
             // Success!
             if (onProgress) onProgress("完成！", 100);
 
-            // Record Usage (V1.5)
+            // Record Usage (V1.5) + V1.4.4 RPD Tracker
             recordUsage(modelNameStr, 1000); // Assume ~1k tokens per call avg if not returned
+            recordRPDUsage(currentKeyIndex); // V1.4.4: Track daily usage per key
 
             // V1.2.3: Increment Quota (Centralized)
             if (userId) {
@@ -676,6 +769,9 @@ If no travel info is visible, return { "itinerary": [], "accommodation": [] }.`;
 /**
  * Convert File to base64 string
  */
+/**
+ * Convert File to base64 string
+ */
 async function fileToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -687,6 +783,95 @@ async function fileToBase64(file) {
         reader.onerror = reject;
         reader.readAsDataURL(file);
     });
+}
+
+/**
+ * 🍱 BentoPDF Core: Extract TextClient-Side (PDF.js)
+ */
+async function extractTextFromPDF(file) {
+    try {
+        console.log("[BentoPDF] Loading PDF.js...");
+        // Dynamic import to avoid SSR issues
+        const pdfjs = await import('pdfjs-dist');
+
+        // Manual worker configuration if needed, usually Vite handles it via worker query
+        // But for pdfjs-dist 4.x+, we need to set the worker source explicitly if not bundled correctly
+        // Let's try standard array buffer loading first
+
+        // Note: For Vite, we might need to set GlobalWorkerOptions in main entry, 
+        // but let's try a localized approach first or assume it works with standard imports in Vite 5+
+        // If this fails, we might need a specific worker import pattern.
+
+        // Using the CDN for worker as safe fallback in pure client usage without complex config
+        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+
+        console.log(`[BentoPDF] PDF loaded, pages: ${pdf.numPages}`);
+        let fullText = "";
+
+        // Limit to first 5 pages to save time/memory
+        const maxPages = Math.min(pdf.numPages, 5);
+
+        for (let i = 1; i <= maxPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(' ');
+            fullText += `--- Page ${i} ---\n${pageText}\n`;
+        }
+
+        return fullText.trim();
+    } catch (e) {
+        console.warn("[BentoPDF] Text extraction failed, falling back to Vision:", e);
+        return null; // Return null to trigger fallback
+    }
+}
+
+/**
+ * 🍱 BentoPDF Core: Local OCR Fallback (Tesseract.js)
+ */
+async function extractTextFromImage(file) {
+    try {
+        console.log("[BentoPDF] Starting Local OCR (Tesseract)...");
+        const Tesseract = await import('tesseract.js');
+        const worker = await Tesseract.createWorker('chi_tra+eng'); // Traditional Chinese + English
+
+        const ret = await worker.recognize(file);
+        const text = ret.data.text;
+
+        await worker.terminate();
+        console.log("[BentoPDF] OCR Complete, length:", text.length);
+        return text;
+    } catch (e) {
+        console.warn("[BentoPDF] OCR failed:", e);
+        return null;
+    }
+}
+
+/**
+ * 🍱 BentoPDF V2.0: Smart Parse Strategy
+ * 1. Try PDF Text Extraction (Fastest, Cost: $0)
+ * 2. If valid text > 50 chars -> Process with Gemini Text Model (Cheap)
+ * 3. Else -> Use Full Vision API (Expensive but powerful)
+ */
+export async function smartParse(file, context = {}, userId = null) {
+    // 1. Check if PDF
+    if (file.type === 'application/pdf') {
+        const text = await extractTextFromPDF(file);
+        if (text && text.length > 50) {
+            console.log("[BentoPDF] valid text found, using Text Mode");
+            return await parseItineraryWithAI(text, context, userId);
+        }
+    }
+
+    // 2. Future: Local OCR for Images (Optional based on settings?)
+    // For now, let's keep Vision as primary for Images because it's much better than Tesseract
+    // unless user specifically requested "Low Data Mode".
+
+    // 3. Fallback to Vision
+    console.log("[BentoPDF] Text extraction insufficient, using Gemini Vision");
+    return await parseImageDirectly(file, context, userId);
 }
 
 

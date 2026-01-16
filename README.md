@@ -1,9 +1,21 @@
-# Travel Together (智能旅遊規劃) V1.3.1
+# Travel Together (智能旅遊規劃) V1.5.0
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.3.1-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.5.0-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-11.x-orange.svg)](https://firebase.google.com/)
+
+## 🚀 V1.5.0: Global Deep Audit (2026-01-16)
+**V1.5.0: [Audit] 圖像完整性修復與代碼大掃除！**
+徹底解決了 Mock Data 中的 "Dead Images" (404) 問題，並優化了圖像重複性與代碼健康度。
+
+### 🌟 V1.5.0 主要更新
+1.  **Image Resurrection**: 修復了 45+ 個失效的 Unsplash 鏈接，改用 Robust City Covers。
+2.  **Duplicate Check**: 針對地標圖像進行了去重優化，確保可靠性優先。
+3.  **Code Sanitization**: 移除 Zombie Logs (`console.log`) 並驗證 React Patterns。
+4.  **Stability**: 通過自動化腳本 (`fix_images.js`) 確保數據庫的長期穩定。
+
+---
 
 ## 🚀 V1.3.1: Jarvis Resurrection (2026-01-08)
 **V1.3.1: [Feature] Jarvis AI 全面回歸！**
@@ -252,17 +264,16 @@ graph TD
 
 ## 📋 版本紀錄 (History)
 
-| **V1.3.0** | **Stability & AI Pause** | 🚀 最新版 |
-| **V1.2.25** | **Desktop Sim Fix** | ✅ 已發布 |
-| **V1.2.24** | **Simulation Chat** | ✅ 已發布 |
-| **V1.2.23** | **Documentation Cleanup** | ✅ 已發布 |
-| **V1.2.22** | **Data Saver & PWA Fix** | ✅ 已發布 |
-| **V1.2.21** | **Tutorial & UX Fixes** | ✅ 已發布 |
-| **V1.2.20** | **PWA Safe Area Audit** | ✅ 已發布 |
-| **V1.2.11** | **Multi-City & Currency** | ✅ 已發布 |
+| **V1.5.2** | **Local Trip Logic** | 🚀 最新版 |
+| **V1.5.1** | **Logic & Polish** | ✅ 已發布 |
+| **V1.5.0** | **Global Deep Audit** | ✅ 已發布 |
+| **V1.4.9** | **Mock Data Hotfix** | ✅ 已發布 |
+| **V1.4.5** | **Performance Tuning** | ✅ 已發布 |
+| **V1.4.0** | **Mock Engine Upgrade** | ✅ 已發布 |
+| **V1.3.5** | **Global Shortcuts** | ✅ 已發布 |
+| **V1.3.0** | **Stability & AI Pause** | ✅ 已發布 |
 | **V1.2.6** | **The Ultimate View** | ✅ 已發布 |
-| **V1.2.4** | **Intelligent Onboarding** | ✅ 已發布 |
-| **V1.1.0** | **Ticket Style & Smart** | ✅ 已發布 |
+| **V1.1.0** | **Core Expansion** | ✅ 已發布 |
 | **V1.0.0** | **Official Release** | ✅ 已發布 |
 
 ---

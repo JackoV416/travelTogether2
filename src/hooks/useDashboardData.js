@@ -11,9 +11,14 @@ import { useNotifications } from './useNotifications';
  * @param {Object} globalSettings - User settings
  * @param {Object} exchangeRates - Current exchange rates
  */
-const useDashboardData = (user, globalSettings, exchangeRates) => {
-    const [trips, setTrips] = useState([]);
-    const [loadingTrips, setLoadingTrips] = useState(true);
+const useDashboardData = (user, globalSettings, exchangeRates, externalTrips = null, isLoadingExternalTrips = null) => {
+    const [internalTrips, setInternalTrips] = useState([]);
+    const [internalLoadingTrips, setInternalLoadingTrips] = useState(true);
+
+    // Use external data if provided, otherwise use internal state
+    const trips = externalTrips || internalTrips;
+    const loadingTrips = isLoadingExternalTrips !== null ? isLoadingExternalTrips : internalLoadingTrips;
+
     const [newsData, setNewsData] = useState([]);
     const [loadingNews, setLoadingNews] = useState(false);
 
@@ -30,23 +35,24 @@ const useDashboardData = (user, globalSettings, exchangeRates) => {
 
     const { sendNotification } = useNotifications(user);
 
-    // 1. Fetch Trips from Firestore
+    // 1. Fetch Trips from Firestore (Only if no external source)
     useEffect(() => {
-        if (!user) return;
+        if (!user || externalTrips !== null) return;
+
         const q = query(collection(db, "trips"));
         const unsub = onSnapshot(q, s => {
             // Filter trips where user is a member
             const userTrips = s.docs
                 .map(d => ({ id: d.id, ...d.data() }))
                 .filter(t => t.members?.some(m => m.id === user.uid || m.id === user.email));
-            setTrips(userTrips);
-            setLoadingTrips(false);
+            setInternalTrips(userTrips);
+            setInternalLoadingTrips(false);
         }, (err) => {
             console.error("Firestore error:", err);
-            setLoadingTrips(false);
+            setInternalLoadingTrips(false);
         });
         return () => unsub();
-    }, [user]);
+    }, [user, externalTrips]);
 
     // 2. Fetch News & Travel Info (Hotels, Flights, etc.)
     useEffect(() => {

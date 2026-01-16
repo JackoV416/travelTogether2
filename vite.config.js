@@ -9,27 +9,51 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'pwa-icon.svg'],
       manifest: {
-        name: 'Travel Together - 你的 AI 旅遊助手',
-        short_name: 'Travel Together',
-        description: 'AI 驅動的協作旅遊規劃工具',
-        theme_color: '#ffffff',
+        name: 'Travel Together - 智能旅遊規劃',
+        short_name: 'TravelTogether',
+        description: '智能旅遊規劃助手，輕鬆規劃您的完美旅程',
+        theme_color: '#020617',
+        background_color: '#020617',
         start_url: '/',
         display: 'standalone',
-        background_color: '#ffffff',
+        orientation: 'portrait',
+        categories: ['travel', 'lifestyle', 'productivity'],
         icons: [
+          {
+            src: '/pwa-icon.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
+            purpose: 'any'
+          },
           {
             src: '/pwa-icon.svg',
             sizes: '192x192',
             type: 'image/svg+xml',
-            purpose: 'any maskable'
+            purpose: 'maskable'
           },
           {
             src: '/pwa-icon.svg',
             sizes: '512x512',
             type: 'image/svg+xml',
-            purpose: 'any maskable'
+            purpose: 'maskable'
+          }
+        ],
+        shortcuts: [
+          {
+            name: "我的行程",
+            short_name: "行程",
+            description: "查看所有行程",
+            url: "/?view=dashboard",
+            icons: [{ src: "/pwa-icon.svg", sizes: "96x96", type: "image/svg+xml" }]
+          },
+          {
+            name: "新增行程",
+            short_name: "新增",
+            description: "建立新的旅程",
+            url: "/?action=create",
+            icons: [{ src: "/pwa-icon.svg", sizes: "96x96", type: "image/svg+xml" }]
           }
         ]
       },
@@ -43,7 +67,7 @@ export default defineConfig({
               cacheName: 'firebase-storage-cache',
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 Days
+                maxAgeSeconds: 60 * 60 * 24 * 30
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -57,7 +81,7 @@ export default defineConfig({
               cacheName: 'google-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -97,7 +121,7 @@ export default defineConfig({
   },
   define: {
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
-    __APP_VERSION__: JSON.stringify('V1.0.0')
+    __APP_VERSION__: JSON.stringify('V1.5.1')
   }
 })
 // Force Restart: Mon Jan 12 16:56:41 HKT 2026

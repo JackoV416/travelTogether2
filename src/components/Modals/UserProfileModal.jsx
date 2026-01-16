@@ -25,7 +25,7 @@ const UserProfileModal = ({ isOpen, onClose, user, currentUser, isAdmin, isDarkM
                         isOwnProfile={isOwnProfile}
                         isDarkMode={isDarkMode}
                         trips={trips} // Pass shared trips or all if available
-                        onEditProfile={() => console.log("Edit Profile Clicked")}
+                        onEditProfile={() => { }}
                     />
                 </div>
             </div>

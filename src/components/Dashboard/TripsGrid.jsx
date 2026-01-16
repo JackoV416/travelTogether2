@@ -69,11 +69,11 @@ const TripsGrid = ({
             ) : trips.length === 0 ? (
                 <EmptyState
                     icon={Globe}
-                    title={t('dashboard.empty.title') || '尚無行程'}
-                    description={t('dashboard.empty.desc') || '立即開始規劃您的下一趟旅程！您可以手動建立或從截圖匯入。'}
+                    title={t('empty.title') || '尚無行程'}
+                    description={t('empty.desc') || '立即開始規劃您的下一趟旅程！您可以手動建立或從截圖匯入。'}
                     isDarkMode={isDarkMode}
                     action={{
-                        label: t('dashboard.empty.action') || '立即建立行程',
+                        label: t('empty.action') || '立即建立行程',
                         onClick: () => setIsCreateModalOpen(true),
                         icon: Plus
                     }}

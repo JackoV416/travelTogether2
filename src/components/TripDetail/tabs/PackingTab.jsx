@@ -6,6 +6,7 @@ import {
 import SearchFilterBar from '../../Shared/SearchFilterBar';
 import EmptyState from '../../Shared/EmptyState';
 import { Search } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const PackingTab = ({
     trip,
@@ -18,7 +19,9 @@ const PackingTab = ({
     onClearList,
     glassCard
 }) => {
+    const { t, i18n } = useTranslation();
     const packingList = trip.packingList || [];
+    const isZh = i18n.language.includes('zh');
     const members = trip.members || [];
 
     // Default to current user's list if possible, else All
@@ -73,7 +76,7 @@ const PackingTab = ({
                     onClick={() => setActiveMemberId('all')}
                     className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all whitespace-nowrap border ${activeMemberId === 'all' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/5 border-white/10 hover:bg-white/10 dark:bg-black/30 dark:border-white/5 dark:hover:bg-white/10'}`}
                 >
-                    <Users className="w-4 h-4" /> 全部成員
+                    <Users className="w-4 h-4" /> {t('common.all_members')}
                 </button>
                 {members.map(m => (
                     <button
@@ -82,7 +85,7 @@ const PackingTab = ({
                         className={`flex items-center gap-2 px-1 py-1 pr-3 rounded-full font-bold transition-all whitespace-nowrap border ${activeMemberId === m.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/5 border-white/10 hover:bg-white/10 dark:bg-black/30 dark:border-white/5 dark:hover:bg-white/10'}`}
                     >
                         <img src={m.photoURL || m.avatar || `https://ui-avatars.com/api/?name=${m.name}`} className="w-6 h-6 rounded-full" alt={m.name} />
-                        <span className="text-xs">{m.name}</span>
+                        <span className="text-xs">{isZh && m.name_zh ? m.name_zh : m.name}</span>
                         {/* Mini Status Dot */}
                         <span className={`w-2 h-2 rounded-full ${getProgress(packingList.filter(i => (i.ownerId || i.createdBy?.id) === m.id)) === 100 ? 'bg-green-400' : 'bg-gray-400'}`}></span>
                     </button>
@@ -92,7 +95,7 @@ const PackingTab = ({
             <SearchFilterBar
                 searchValue={searchValue}
                 onSearchChange={setSearchValue}
-                placeholder={`搜尋 ${members.find(m => m.id === activeMemberId)?.name || '全部'} 的行李...`}
+                placeholder={t('trip.packing.search_placeholder', { name: activeMemberId === 'all' ? t('common.all_members') : (isZh && members.find(m => m.id === activeMemberId)?.name_zh ? members.find(m => m.id === activeMemberId).name_zh : members.find(m => m.id === activeMemberId)?.name || '') })}
                 isDarkMode={isDarkMode}
             />
 
@@ -197,7 +200,7 @@ const PackingTab = ({
                                                 </button>
                                                 <div className="flex flex-col">
                                                     <span className={`text-sm font-medium ${item.checked ? 'line-through opacity-40 text-gray-400' : ''}`}>
-                                                        {item.name}
+                                                        {isZh && item.name_zh ? item.name_zh : item.name}
                                                     </span>
                                                     <div className="flex items-center gap-2">
                                                         {item.aiSuggested && (

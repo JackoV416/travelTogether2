@@ -9,10 +9,10 @@ function ReloadPrompt({ isDarkMode }) {
         updateServiceWorker,
     } = useRegisterSW({
         onRegisteredSW(swUrl, r) {
-            console.log(`Service Worker at: ${swUrl}`);
+            // console.log(`Service Worker at: ${swUrl}`);
         },
         onRegisterError(error) {
-            console.log('SW registration error', error);
+            // console.log('SW registration error', error);
         },
     });
 

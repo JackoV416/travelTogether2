@@ -7,6 +7,7 @@ import {
 import SearchFilterBar from '../../Shared/SearchFilterBar';
 import EmptyState from '../../Shared/EmptyState';
 import { Search, BarChart3, List as ListIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import BudgetCharts from './BudgetCharts';
 
 const BudgetTab = ({
@@ -21,6 +22,8 @@ const BudgetTab = ({
     onOpenSmartExport,
     onAddItem // V1.2.6
 }) => {
+    const { t, i18n } = useTranslation();
+    const isZh = i18n.language.includes('zh');
     const [searchValue, setSearchValue] = useState("");
     const [activeFilters, setActiveFilters] = useState({ category: 'all' });
     const [viewMode, setViewMode] = useState('list'); // 'list' or 'chart'
@@ -172,7 +175,9 @@ const BudgetTab = ({
                                         </div>
                                     )}
                                     <div className="min-w-0 flex-1">
-                                        <div className="font-bold text-sm tracking-tight truncate">{b.name || b.desc}</div>
+                                        <div className="font-bold text-sm tracking-tight truncate">
+                                            {isZh && b.name_zh ? b.name_zh : (b.name || b.desc)}
+                                        </div>
                                         <div className="flex flex-wrap gap-2 mt-1">
                                             <span className="text-[10px] font-bold text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded uppercase tracking-tighter">{b.payer}</span>
                                             <span className="text-[10px] font-bold opacity-40 uppercase tracking-tighter">{b.category || 'misc'}</span>

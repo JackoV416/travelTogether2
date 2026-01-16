@@ -4,6 +4,7 @@ import SearchFilterBar from '../../Shared/SearchFilterBar';
 import EmptyState from '../../Shared/EmptyState';
 import { Search } from 'lucide-react';
 import { convertCurrency } from '../../../services/exchangeRate';
+import { useTranslation } from 'react-i18next';
 
 const ShoppingTab = ({
     trip,
@@ -19,6 +20,8 @@ const ShoppingTab = ({
     onOpenSmartExport,
     exchangeRates
 }) => {
+    const { t, i18n } = useTranslation();
+    const isZh = i18n.language.includes('zh');
     const [dragActive, setDragActive] = useState(false);
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef(null);
@@ -67,7 +70,7 @@ const ShoppingTab = ({
                     onClick={() => setActiveMemberId('all')}
                     className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all whitespace-nowrap border ${activeMemberId === 'all' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/5 border-white/10 hover:bg-white/10 dark:bg-black/30 dark:border-white/5 dark:hover:bg-white/10'}`}
                 >
-                    <Users className="w-4 h-4" /> 全部成員
+                    <Users className="w-4 h-4" /> {t('common.all_members')}
                 </button>
                 {members.map(m => (
                     <button
@@ -76,7 +79,7 @@ const ShoppingTab = ({
                         className={`flex items-center gap-2 px-1 py-1 pr-3 rounded-full font-bold transition-all whitespace-nowrap border ${activeMemberId === m.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/5 border-white/10 hover:bg-white/10 dark:bg-black/30 dark:border-white/5 dark:hover:bg-white/10'}`}
                     >
                         <img src={m.photoURL || m.avatar || `https://ui-avatars.com/api/?name=${m.name}`} className="w-6 h-6 rounded-full" alt={m.name} />
-                        <span className="text-xs">{m.name}</span>
+                        <span className="text-xs">{isZh && m.name_zh ? m.name_zh : m.name}</span>
                     </button>
                 ))}
             </div>
@@ -84,7 +87,7 @@ const ShoppingTab = ({
             <SearchFilterBar
                 searchValue={searchValue}
                 onSearchChange={setSearchValue}
-                placeholder={`搜尋 ${members.find(m => m.id === activeMemberId)?.name || '全部'} 的商品...`}
+                placeholder={t('trip.shopping.search_placeholder', { name: activeMemberId === 'all' ? t('common.all_members') : (isZh && members.find(m => m.id === activeMemberId)?.name_zh ? members.find(m => m.id === activeMemberId).name_zh : members.find(m => m.id === activeMemberId)?.name || '') })}
                 isDarkMode={isDarkMode}
             />
 
@@ -96,7 +99,7 @@ const ShoppingTab = ({
                             <div>
                                 <h3 className="text-lg font-black flex items-center gap-2">
                                     <ShoppingBag className="w-5 h-5 text-purple-500" />
-                                    預計購買 <span className="text-xs font-bold opacity-40">({filteredShopping.filter(i => !i.bought).length})</span>
+                                    {t('trip.shopping.planned')} <span className="text-xs font-bold opacity-40">({filteredShopping.filter(i => !i.bought).length})</span>
                                 </h3>
                                 <p className="text-[10px] opacity-50 font-bold uppercase tracking-widest mt-0.5">Shopping Wishlist</p>
                             </div>
@@ -147,7 +150,7 @@ const ShoppingTab = ({
                                             {activeMemberId === 'all' && (item.ownerId || item.createdBy?.id) && (
                                                 <div className="flex items-center gap-1 mt-1">
                                                     <Users className="w-2 h-2 opacity-50" />
-                                                    <span className="text-[9px] opacity-50">{members.find(m => m.id === (item.ownerId || item.createdBy?.id))?.name || 'User'}</span>
+                                                    <span className="text-[9px] opacity-50">{isZh && members.find(m => m.id === (item.ownerId || item.createdBy?.id))?.name_zh ? members.find(m => m.id === (item.ownerId || item.createdBy?.id)).name_zh : (members.find(m => m.id === (item.ownerId || item.createdBy?.id))?.name || 'User')}</span>
                                                 </div>
                                             )}
                                         </div>
@@ -173,7 +176,7 @@ const ShoppingTab = ({
                             <div>
                                 <h3 className="text-lg font-black flex items-center gap-2">
                                     <CheckSquare className="w-5 h-5 text-emerald-500" />
-                                    已購入 <span className="text-xs font-bold opacity-40">({filteredBought.length})</span>
+                                    {t('trip.shopping.bought')} <span className="text-xs font-bold opacity-40">({filteredBought.length})</span>
                                 </h3>
                                 <p className="text-[10px] opacity-50 font-bold uppercase tracking-widest mt-0.5">Purchase Records</p>
                             </div>

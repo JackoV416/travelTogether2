@@ -5,8 +5,9 @@
 import { doc, getDoc, setDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 
-// Default quota settings
-const DEFAULT_DAILY_LIMIT = 20; // V1.3.1: Adjusted to 20 RPD (Free Tier Safety Limit)
+// V1.4.5: Free tier limit (supports ~36 DAU with 10 API keys)
+// BYOK users bypass this limit entirely
+const DEFAULT_DAILY_LIMIT = 5;
 const QUOTA_COLLECTION = 'users';
 const QUOTA_DOC = 'ai_quota';
 
@@ -63,8 +64,9 @@ export async function getUserQuotaStatus(uid) {
             used,
             total: DEFAULT_DAILY_LIMIT,
             remaining,
-            customUsed: data.customCount || 0,
-            features: data.features || {}, // V1.2.5: Return feature breakdown
+            // V1.4.6: Enhanced BYOK tracking with daily reset
+            customUsed: data.customDate === today ? (data.customCount || 0) : 0,
+            features: data.features || {},
             allowed: used < DEFAULT_DAILY_LIMIT,
             resetTime: getNextMidnight()
         };
@@ -124,11 +126,12 @@ export async function incrementUserQuota(uid, feature = 'General', keyIndex = -1
         };
 
         if (isCustomKey) {
-            // Track custom usage separatedly
-            const newCustomCount = (data.customCount || 0) + 1;
+            // V1.4.6: Track BYOK usage with daily reset
+            const isNewDay = data.customDate !== today;
+            const currentCustom = isNewDay ? 0 : (data.customCount || 0);
+            const newCustomCount = currentCustom + 1;
             updates.customCount = newCustomCount;
-            // distinct breakdown for custom? optionally, but for now we mix features or keep simple
-            // Let's keep a shared feature breakdown for simplicity, or just track total custom calls.
+            updates.customDate = today;  // Track date for daily reset
         } else {
             // Track System Usage (Quota applies)
             updates.date = today;
@@ -292,3 +295,56 @@ export async function getSystemAnalytics() {
         return null;
     }
 }
+
+/**
+ * 📊 V1.4.6: Get Full Quota Status (Mode-Aware)
+ * Returns different quota info based on Free vs BYOK mode
+ * @param {string} uid - User ID
+ * @param {boolean} hasCustomKey - Whether user has BYOK key configured
+ * @returns {Promise<Object>} { mode, used, limit, remaining, allowed, selfLimit }
+ */
+export async function getFullQuotaStatus(uid, hasCustomKey = false) {
+    const status = await getUserQuotaStatus(uid);
+
+    // Get user's self-imposed limit from localStorage
+    let selfLimit = -1; // -1 = unlimited
+    try {
+        const settings = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+        if (settings.userGeminiLimit) {
+            const parsed = parseInt(settings.userGeminiLimit);
+            if (!isNaN(parsed) && parsed > 0) selfLimit = parsed;
+        }
+    } catch { /* ignore */ }
+
+    if (hasCustomKey) {
+        // BYOK Mode
+        const customUsed = status.customUsed || 0;
+        const isUnlimited = selfLimit === -1;
+
+        return {
+            mode: 'BYOK',
+            used: customUsed,
+            limit: isUnlimited ? '∞' : selfLimit,
+            limitNum: selfLimit,  // Numeric for comparisons
+            remaining: isUnlimited ? '∞' : Math.max(0, selfLimit - customUsed),
+            allowed: isUnlimited || customUsed < selfLimit,
+            selfLimit: selfLimit,
+            resetTime: status.resetTime,
+            features: status.features
+        };
+    }
+
+    // Free Mode
+    return {
+        mode: 'Free',
+        used: status.used,
+        limit: status.total,
+        limitNum: status.total,
+        remaining: status.remaining,
+        allowed: status.allowed,
+        selfLimit: null,
+        resetTime: status.resetTime,
+        features: status.features
+    };
+}
+

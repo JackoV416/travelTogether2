@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { X, GitCommit, Calendar, Bot, Monitor } from 'lucide-react';
 import { VERSION_HISTORY, JARVIS_VERSION_HISTORY, APP_VERSION, JARVIS_VERSION, APP_AUTHOR } from '../../constants/appData';
 
+import { useTranslation } from 'react-i18next';
+
 const VersionModal = ({ isOpen, onClose, isDarkMode, globalSettings }) => {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState('web'); // 'web' or 'jarvis'
     if (!isOpen) return null;
 
@@ -22,7 +25,7 @@ const VersionModal = ({ isOpen, onClose, isDarkMode, globalSettings }) => {
                     <div>
                         <h2 className="text-xl font-black flex items-center gap-2 tracking-tight">
                             <GitCommit className="w-5 h-5 text-indigo-500" />
-                            版本紀錄 (VERSION_LOG)
+                            {t('modal.version.title')} (VERSION_LOG)
                         </h2>
                         <div className={`text-[10px] mt-1 font-mono font-bold tracking-wider ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>
                             BUILD_NODE: {currentLang.toUpperCase()} | VERSION: {currentVer}
@@ -44,7 +47,7 @@ const VersionModal = ({ isOpen, onClose, isDarkMode, globalSettings }) => {
                             ? (isDarkMode ? 'bg-slate-700 text-indigo-400 shadow-lg' : 'bg-white text-indigo-600 shadow-sm border border-slate-200/50')
                             : 'opacity-40 hover:opacity-100'}`}
                     >
-                        <Monitor className="w-4 h-4" /> 網站系統
+                        <Monitor className="w-4 h-4" /> {t('modal.version.system')}
                     </button>
                     <button
                         onClick={() => setActiveTab('jarvis')}
@@ -144,7 +147,7 @@ const VersionModal = ({ isOpen, onClose, isDarkMode, globalSettings }) => {
                             ? 'bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 shadow-lg'
                             : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20'}`}
                     >
-                        唔再顯示 (DISMISS)
+                        {t('modal.version.dismiss')} (DISMISS)
                     </button>
                 </div>
             </div>

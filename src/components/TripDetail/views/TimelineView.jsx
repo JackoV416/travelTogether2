@@ -9,12 +9,23 @@ import { MapPin, AlertTriangle, Clock, ArrowRight, CalendarDays, Plane, Hotel, U
  * - Conflict detection (overlapping items)
  * - Premium Glassmorphism styling & Responsive UI
  */
-const TimelineView = ({ items, isDarkMode, onItemClick, isEditMode, homeOffset = 8, destOffset = 9 }) => {
+const TimelineView = ({ items, isDarkMode, onItemClick, isEditMode, homeOffset = 8, destOffset = 9, trip }) => {
     // Hour height: Slightly smaller for mobile to see more hours
     const HOUR_HEIGHT = typeof window !== 'undefined' && window.innerWidth < 640 ? 75 : 90;
     const SHOW_DUAL_TIME = homeOffset !== destOffset;
 
-    // 1. Time Parsing Utilities
+    // Helper to get city code
+    const getCityCode = (item) => {
+        if (item.details?.fromCode) return item.details.fromCode;
+        if (item.timezone !== undefined) {
+            if (item.timezone === destOffset) return trip?.cityCode || trip?.city?.substring(0, 3).toUpperCase() || 'LOC';
+            if (item.timezone === homeOffset) return 'HKG';
+            return `GMT${item.timezone >= 0 ? '+' : ''}${item.timezone}`;
+        }
+        return '';
+    };
+
+
     const parseTimeToMinutes = (timeStr) => {
         if (!timeStr) return null;
         const [h, m] = timeStr.trim().split(':').map(Number);
@@ -204,7 +215,7 @@ const TimelineView = ({ items, isDarkMode, onItemClick, isEditMode, homeOffset =
                                         <div className="flex items-center gap-2 text-[9px] sm:text-[10px] font-mono font-bold opacity-60">
                                             <span className="flex items-center gap-1">
                                                 <Clock className="w-2.5 h-2.5 text-indigo-500" />
-                                                {item.time}
+                                                <span>{item.time} <span className="text-[9px] opacity-70 scale-90 inline-block">{getCityCode(item)}</span></span>
                                             </span>
                                             <span className="opacity-30">|</span>
                                             <span>{item.duration}m</span>

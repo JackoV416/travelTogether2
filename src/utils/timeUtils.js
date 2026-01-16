@@ -236,42 +236,123 @@ export const calculateSmartRipple = async (items, movedIndex, bufferMins = 10) =
 };
 
 /**
- * Detect time conflicts in a list of items
+ * Detect time conflicts and human logic errors in a list of items
  * @param {array} items - Array of itinerary items
+ * @param {object} tripContext - Optional trip context (members, country, etc.)
  * @returns {array} - Array of conflict objects { index, type, message }
  */
-export const detectTimeConflicts = (items) => {
-    if (!Array.isArray(items) || items.length < 2) return [];
+export const detectTimeConflicts = (items, tripContext = {}) => {
+    if (!Array.isArray(items) || items.length === 0) return [];
+
+    // Skip all conflict checks for mock trips
+    if (tripContext?.isMock) return [];
 
     const conflicts = [];
+    const groupSize = tripContext?.members?.length || 1;
 
-    for (let i = 1; i < items.length; i++) {
-        const prevItem = items[i - 1];
-        const currItem = items[i];
+    let consecutiveTransports = 0;
+    let consecutiveSpots = 0;
 
-        const prevEndTime = getItemEndTime(prevItem) || getItemTime(prevItem);
-        const currStartTime = getItemTime(currItem);
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const prevItem = i > 0 ? items[i - 1] : null;
 
-        const prevEndMins = parseTime(prevEndTime);
-        const currStartMins = parseTime(currStartTime);
+        // 1. Basic Overlap/Gap Check (compared to previous)
+        if (prevItem) {
+            const prevEndTime = getItemEndTime(prevItem) || getItemTime(prevItem);
+            const currStartTime = getItemTime(item);
+            const prevEndMins = parseTime(prevEndTime);
+            const currStartMins = parseTime(currStartTime);
 
-        if (prevEndMins !== null && currStartMins !== null) {
-            // Check for overlap
-            if (currStartMins < prevEndMins) {
+            if (prevEndMins !== null && currStartMins !== null) {
+                if (currStartMins < prevEndMins) {
+                    conflicts.push({
+                        index: i,
+                        type: 'overlap',
+                        message: `時間重疊: ${item.details?.name || item.name || '項目'} 與前一項目時間衝突。`
+                    });
+                } else if (currStartMins - prevEndMins > 180) {
+                    conflicts.push({
+                        index: i,
+                        type: 'gap',
+                        message: `空檔過大: 發現 ${Math.floor((currStartMins - prevEndMins) / 60)} 小時空檔。`
+                    });
+                }
+            }
+        }
+
+        // 2. Human Logic: Consecutive Items
+        const isTransport = ['transport', 'flight', 'walk', 'train', 'immigration'].includes(item.type);
+        const isSpot = ['spot', 'activity', 'food', 'shopping'].includes(item.type);
+
+        if (isTransport) {
+            consecutiveTransports++;
+            consecutiveSpots = 0;
+        } else if (isSpot) {
+            consecutiveSpots++;
+            consecutiveTransports = 0;
+        } else {
+            consecutiveTransports = 0;
+            consecutiveSpots = 0;
+        }
+
+        if (consecutiveTransports >= 3) {
+            conflicts.push({
+                index: i,
+                type: 'logic',
+                message: `行程過密: 連續 ${consecutiveTransports} 個交通項目，體力消耗可能較大。`
+            });
+        }
+        if (consecutiveSpots >= 3) {
+            conflicts.push({
+                index: i,
+                type: 'logic',
+                message: `漏排交通: 連續 ${consecutiveSpots} 個景點，建議中間加入交通接駁。`
+            });
+        }
+
+        // 3. Human Logic: Operating Hours (Mocked)
+        const startTime = getItemTime(item);
+        const startMins = parseTime(startTime);
+        if (startMins !== null) {
+            const hour = Math.floor(startMins / 60);
+
+            // Graveyard hour check
+            if (hour >= 1 && hour < 6) {
                 conflicts.push({
                     index: i,
-                    type: 'overlap',
-                    message: `時間重疊: ${currItem.details?.name || currItem.name || '項目'} 開始於 ${currStartTime}，但前一項目結束於 ${prevEndTime}`
+                    type: 'logic',
+                    message: `深夜提示: ${item.name} 排在凌晨 ${hour} 點，請確認是否合適。`
                 });
             }
-            // Check for large gap (> 3 hours)
-            else if (currStartMins - prevEndMins > 180) {
-                conflicts.push({
-                    index: i,
-                    type: 'gap',
-                    message: `發現 ${Math.floor((currStartMins - prevEndMins) / 60)} 小時空檔`
-                });
+
+            // Type-specific hours check
+            if (item.type === 'spot' || item.type === 'activity') {
+                if (hour < 9 || hour > 21) {
+                    conflicts.push({
+                        index: i,
+                        type: 'logic',
+                        message: `營業時間注意: 景點通常在 09:00 - 21:00 營業。`
+                    });
+                }
+            } else if (item.type === 'shopping') {
+                if (hour < 10 || hour > 22) {
+                    conflicts.push({
+                        index: i,
+                        type: 'logic',
+                        message: `營業時間注意: 商場通常在 10:00 - 22:00 營業。`
+                    });
+                }
             }
+        }
+
+        // 4. Human Logic: Group Size Check
+        if (groupSize > 8 && (item.type === 'food' || (item.name || '').toLowerCase().includes('cafe'))) {
+            conflicts.push({
+                index: i,
+                type: 'logic',
+                message: `人數注意: ${groupSize} 人較多，餐廳/Cafe 可能需要提前預約。`
+            });
         }
     }
 

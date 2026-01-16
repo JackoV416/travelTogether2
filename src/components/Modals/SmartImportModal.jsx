@@ -3,7 +3,7 @@ import { Upload, X, Image, FileText, Receipt, Brain, FileJson, FileSpreadsheet, 
 import { doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from '../../firebase';
-import { parseImageDirectly, filterJunkItems } from '../../services/ai-parsing';
+import { smartParse, filterJunkItems } from '../../services/ai-parsing';
 import { getDaysArray, glassCard } from '../../utils/tripUtils';
 import { useTranslation } from 'react-i18next';
 
@@ -151,11 +151,11 @@ export default function SmartImportModal({ isOpen, onClose, isDarkMode, onImport
                     try {
                         // 🚀 Vision-First: Send image directly to Gemini
                         const targetTrip = trips.find(t => t.id === selectedTripId) || trip;
-                        const visionItems = await parseImageDirectly(file, {
+                        const visionItems = await smartParse(file, {
                             city: targetTrip?.city || "Unknown",
                             date: targetTrip?.startDate || new Date().toISOString().split('T')[0],
                             currency: 'HKD'
-                        });
+                        }, 'current-user-id'); // Pass user ID if available, or handle in service
 
                         // Add evidence URL for display
                         const itemsWithEvidence = visionItems.map(item => ({

@@ -210,18 +210,25 @@ export const getWalkMeta = () => {
 };
 
 export const getTransportAdvice = (item, city = "", t) => {
-    if (!item?.details?.location) return null;
+    const itemName = (item.name || "").toUpperCase();
+    const itemLocation = (item.details?.location || "").toUpperCase();
+    const airportCodes = ['HKG', 'NRT', 'HND', 'KIX', 'TPE', 'LHR', 'CDG', 'JFK', 'SFO', 'LAX', 'ICN'];
+    const isAirport = item.type === 'flight' ||
+        airportCodes.some(code => itemName.includes(code) || itemLocation.includes(code)) ||
+        itemName.includes('AIRPORT') || itemName.includes('機場');
 
     const translateApprox = (price) => t ? t('trip.transport.approx', { price }) : `約 ${price}`;
 
-    if (item.type === 'flight') return {
+    if (isAirport) return {
         mode: 'metro',
-        label: t ? t('trip.transport.airport_express') : "機場快線 / 地鐵",
+        icon: 'train', // V1.3.8: Added Icon
+        label: t ? t('trip.transport.airport_express') : "機場快線 / 地鐵 / 機場巴士",
         cost: translateApprox("$120")
     };
 
     if (item.type === 'hotel') return {
         mode: 'car',
+        icon: 'car', // V1.3.8: Added Icon
         label: t ? t('trip.transport.taxi_mins', { mins: 15 }) : "計程車約 15 分",
         cost: translateApprox("$80")
     };
@@ -230,6 +237,7 @@ export const getTransportAdvice = (item, city = "", t) => {
         const walk = getWalkMeta();
         return {
             mode: 'walk',
+            icon: 'walk', // V1.3.8: Added Icon
             label: t ? t('trip.transport.walking_mins', { mins: walk.minutes }) : `步行 ${walk.minutes} 分`,
             cost: "$0",
             meta: walk
@@ -238,15 +246,34 @@ export const getTransportAdvice = (item, city = "", t) => {
 
     if (item.type === 'transport') return {
         mode: 'bus',
+        icon: 'bus', // V1.3.8: Added Icon
         label: t ? t('trip.transport.bus_express') : "巴士 / 高速巴士",
         cost: item.cost ? `${item.currency} ${item.cost}` : (t ? t('trip.transport.fare') : "依票價")
     };
 
     return {
         mode: 'metro',
+        icon: 'train', // V1.3.8: Added Icon
         label: t ? t('trip.transport.metro_city', { city }) : `${city} 地鐵`,
         cost: translateApprox("$30")
     };
+};
+
+/**
+ * 💡 Get Nearby Attraction Hint (Mocked context-aware suggestions for V1.3.8)
+ */
+export const getNearbyAttractionHint = (location, t) => {
+    if (!location) return null;
+    const loc = location.toUpperCase();
+    const isChinese = t && (t('common.search') === '搜尋...');
+
+    if (loc.includes('NRT') || loc.includes('NARITA')) return isChinese ? "成田山新勝寺 (傳統建築)" : "Naritasan Shinshoji (Historic Temple)";
+    if (loc.includes('HKG') || loc.includes('AIRPORT')) return isChinese ? "昂坪 360 (纜車景點)" : "Ngong Ping 360 (Cable Car)";
+    if (loc.includes('SHINJUKU')) return isChinese ? "東京都廳 (免費展望台)" : "Tokyo Metro Govt Bldg (Free View)";
+    if (loc.includes('TSUMAGOI')) return isChinese ? "嬬戀牧場 (自然風光)" : "Tsumagoi Farm (Nature View)";
+    if (loc.includes('LONDON')) return isChinese ? "大英博物館 (歷史瑰寶)" : "British Museum (Historic Gem)";
+
+    return null;
 };
 
 export const buttonPrimary = `flex items-center justify-center px-6 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.05] active:scale-95 w-full cursor-pointer`;
@@ -427,6 +454,20 @@ export const formatFileSize = (bytes) => {
 export const isImageFile = (type) => type?.startsWith('image/');
 
 /**
+ * 💡 Google Maps Helpers
+ */
+export const getGoogleMapsSearchUrl = (query) => {
+    if (!query) return null;
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+};
+
+export const getGoogleMapsDirectionsUrl = (origin, destination, mode = 'transit') => {
+    if (!origin || !destination) return null;
+    const googleMode = mode === 'walk' ? 'walking' : (mode === 'car' ? 'driving' : mode);
+    return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=${googleMode}`;
+};
+
+/**
  * 💡 Get Smart Tips for a Trip
  * Uses trip data (dates, itinerary completeness) to generate relevant tips.
  */
@@ -555,5 +596,29 @@ export const getSmartTips = (trip, t) => {
     }
 
     return tips;
+};
+
+export const getTripSeasonDisplay = (dateStr, lang = 'zh-TW') => {
+    if (!dateStr) return null;
+    const date = new Date(dateStr);
+    const month = date.getMonth() + 1; // 1-12
+
+    // Logic for N. Hemisphere (Simple)
+    if (month >= 3 && month <= 5) return {
+        text: lang.includes('zh') ? '🌸 櫻花季' : '🌸 Spring',
+        bg: 'bg-pink-500/80 text-white shadow-pink-500/20'
+    };
+    if (month >= 6 && month <= 8) return {
+        text: lang.includes('zh') ? '☀️ 仲夏' : '☀️ Summer',
+        bg: 'bg-orange-500/80 text-white shadow-orange-500/20'
+    };
+    if (month >= 9 && month <= 11) return {
+        text: lang.includes('zh') ? '🍁 紅葉季' : '🍁 Autumn',
+        bg: 'bg-red-500/80 text-white shadow-red-500/20'
+    };
+    return {
+        text: lang.includes('zh') ? '❄️ 雪季' : '❄️ Winter',
+        bg: 'bg-blue-500/80 text-white shadow-blue-500/20'
+    };
 };
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Search, Filter, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const SearchFilterBar = ({
     searchValue,
@@ -11,6 +12,7 @@ const SearchFilterBar = ({
     onClearFilters,
     isDarkMode
 }) => {
+    const { t } = useTranslation();
 
     // Check if any filter is active
     const hasActiveFilters = Object.values(activeFilters).some(val => val !== 'all' && val !== '');
@@ -29,8 +31,8 @@ const SearchFilterBar = ({
                     onChange={(e) => onSearchChange(e.target.value)}
                     placeholder={placeholder}
                     className={`w-full pl-9 pr-4 py-2.5 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:outline-none transition-all text-sm font-medium border shadow-sm ${isDarkMode
-                            ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500'
-                            : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400'
+                        ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500'
+                        : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400'
                         }`}
                 />
                 {searchValue && (
@@ -57,7 +59,7 @@ const SearchFilterBar = ({
                                     : (isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50')
                                     }`}
                             >
-                                <option value="all" className={isDarkMode ? 'bg-gray-900 text-white' : ''}>{filter.label}: 全部</option>
+                                <option value="all" className={isDarkMode ? 'bg-gray-900 text-white' : ''}>{filter.label}: {t('common.all')}</option>
                                 {filter.options.map((opt) => (
                                     <option key={opt.value} value={opt.value} className={isDarkMode ? 'bg-gray-900 text-white' : ''}>
                                         {opt.label}
@@ -75,7 +77,7 @@ const SearchFilterBar = ({
                             onClick={onClearFilters}
                             className="px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-50 rounded-xl transition-colors whitespace-nowrap dark:hover:bg-red-900/20"
                         >
-                            清除篩選
+                            {t('common.clear_filter')}
                         </button>
                     )}
                 </div>

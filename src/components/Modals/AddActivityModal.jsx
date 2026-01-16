@@ -5,7 +5,7 @@ import { inputClasses, formatDate, getWeekday } from '../../utils/tripUtils';
 import { buttonPrimary } from '../../constants/styles';
 import { CURRENCIES, MODAL_LABELS } from '../../constants/appData';
 
-const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date, defaultType = 'spot', editData = null, members = [], trip = {}, language = 'zh-TW' }) => {
+const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date, defaultType = 'spot', editData = null, members = [], trip = {}, language = 'zh-TW', homeCountry = 'HK' }) => {
     // i18n helper
     const { t: i18n_t } = useTranslation();
     const t = (key) => MODAL_LABELS[key]?.[language] || MODAL_LABELS[key]?.['zh-TW'] || key;
@@ -52,6 +52,8 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
 
     if (!isOpen) return null;
 
+    const isLocal = trip?.country === homeCountry;
+
     const categories = [
         { id: 'spot', label: t('spot'), icon: MapIcon, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
         { id: 'food', label: t('food'), icon: Utensils, color: 'text-orange-500', bg: 'bg-orange-500/10' },
@@ -59,7 +61,7 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
         { id: 'transport', label: t('transport'), icon: Bus, color: 'text-blue-500', bg: 'bg-blue-500/10' },
         { id: 'flight', label: t('flight'), icon: PlaneTakeoff, color: 'text-sky-500', bg: 'bg-sky-500/10' },
         { id: 'hotel', label: t('hotel'), icon: Hotel, color: 'text-indigo-500', bg: 'bg-indigo-500/10' }
-    ];
+    ].filter(cat => !isLocal || cat.id !== 'flight');
 
     const packingCategories = [
         { id: 'clothes', label: t('clothes'), icon: Shirt },

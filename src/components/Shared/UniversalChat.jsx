@@ -9,7 +9,7 @@ import { checkInstantAnswer } from '../../services/jarvis-instant'; // V1.2.5 In
 import ImageWithFallback from './ImageWithFallback';
 import { LOCAL_FAQ, INITIAL_SUGGESTIONS } from '../../constants/cannedResponses';
 
-const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, activeTab = 'trip', onTabChange }) => {
+const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, activeTab = 'trip', onTabChange, mode = 'trip' }) => {
     // const [activeTab, setActiveTab] = useState(initialTab); // Converted to Controlled Component
     const [isMinimized, setIsMinimized] = useState(false);
     const [messages, setMessages] = useState([]);
@@ -343,8 +343,8 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, activeTab = 't
                         </div>
                     </div>
 
-                    {/* Tab Switcher - Only visible when not minimized */}
-                    {!isMinimized && (
+                    {/* Tab Switcher - Only visible when not minimized AND not in dashboard mode */}
+                    {!isMinimized && mode !== 'dashboard' && (
                         <div className="flex bg-black/20 p-1 rounded-xl mb-1">
                             {trip && (
                                 <button

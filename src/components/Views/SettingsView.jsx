@@ -22,13 +22,13 @@ import useDashboardData from '../../hooks/useDashboardData';
 
 // Widget Labels for Localization
 const WIDGET_LABELS = {
-    weather: { zh: '天氣預報', 'zh-HK': '天氣預報', en: 'Weather Forecast' },
-    news: { zh: '旅遊新聞', 'zh-HK': '旅遊新聞', en: 'Travel News' },
-    hotels: { zh: '酒店推介', 'zh-HK': '酒店推介', en: 'Hotel Deals' },
-    flights: { zh: '機票優惠', 'zh-HK': '機票優惠', en: 'Flight Deals' },
-    transport: { zh: '交通資訊', 'zh-HK': '交通資訊', en: 'Transport Info' },
-    connectivity: { zh: '網絡方案', 'zh-HK': '上網卡/WiFi', en: 'Connectivity' },
-    currency: { zh: '匯率計算', 'zh-HK': '匯率計算', en: 'Currency Converter' }
+    weather: { 'zh-TW': '天氣預報', 'zh-HK': '天氣預報', en: 'Weather Forecast' },
+    news: { 'zh-TW': '旅遊新聞', 'zh-HK': '旅遊新聞', en: 'Travel News' },
+    hotels: { 'zh-TW': '酒店推介', 'zh-HK': '酒店推介', en: 'Hotel Deals' },
+    flights: { 'zh-TW': '機票優惠', 'zh-HK': '機票優惠', en: 'Flight Deals' },
+    transport: { 'zh-TW': '交通資訊', 'zh-HK': '交通資訊', en: 'Transport Info' },
+    connectivity: { 'zh-TW': '網絡方案', 'zh-HK': '上網卡/WiFi', en: 'Connectivity' },
+    currency: { 'zh-TW': '匯率計算', 'zh-HK': '匯率計算', en: 'Currency Converter' }
 };
 
 // Default Widget Configuration (IDs only, names resolved dynamically)
@@ -796,7 +796,7 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                             <div className="space-y-6 animate-fade-in">
                                 <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 p-5 rounded-2xl border border-emerald-500/20">
                                     <h4 className="font-bold flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-2 text-lg">🎛️ {t('settings.tabs.info')} (Travel Hub)</h4>
-                                    <p className="text-sm opacity-70">{t('settings.info_desc') || "Manage your dashboard widgets here."}</p>
+                                    <p className="text-sm opacity-70">{t('settings.info_desc', { version: APP_VERSION }) || "Manage your dashboard widgets here."}</p>
                                 </div>
 
                                 {/* Action Buttons */}
