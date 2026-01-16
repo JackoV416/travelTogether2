@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, MapPin, Calculator, Calendar, ShoppingBag, Terminal, Sparkles, X, Command, Globe, Plane, Hotel, Utensils, MoveRight, ChevronRight, Brain, BrainCircuit } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * CommandPalette: Smart Global Search & Action Center (CMD+K)
@@ -20,6 +21,7 @@ const CommandPalette = ({
     const [results, setResults] = useState([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef(null);
+    const { t } = useTranslation();
 
     const getIconForType = (type) => {
         switch (type) {
@@ -82,9 +84,9 @@ const CommandPalette = ({
         });
 
         // Add Quick Actions
-        searchableItems.push({ id: 'action-map', title: '切換到地圖模式', subtitle: 'Quick Action', type: 'action', icon: <MapPin className="w-4 h-4" />, action: 'view-map' });
-        searchableItems.push({ id: 'action-kanban', title: '切換到拼貼/Kanban', subtitle: 'Quick Action', type: 'action', icon: <Calendar className="w-4 h-4" />, action: 'view-kanban' });
-        searchableItems.push({ id: 'action-jarvis', title: '問問 Jarvis AI', subtitle: 'Quick Action', type: 'action', icon: <Sparkles className="w-4 h-4" />, action: 'ask-jarvis' });
+        searchableItems.push({ id: 'action-map', title: t('dashboard.command_palette.actions.view_map'), subtitle: 'Quick Action', type: 'action', icon: <MapPin className="w-4 h-4" />, action: 'view-map' });
+        searchableItems.push({ id: 'action-kanban', title: t('dashboard.command_palette.actions.view_kanban'), subtitle: 'Quick Action', type: 'action', icon: <Calendar className="w-4 h-4" />, action: 'view-kanban' });
+        searchableItems.push({ id: 'action-jarvis', title: t('dashboard.command_palette.actions.ask_jarvis'), subtitle: 'Quick Action', type: 'action', icon: <Sparkles className="w-4 h-4" />, action: 'ask-jarvis' });
 
         if (!query) {
             queueMicrotask(() => setResults(searchableItems.slice(0, 10))); // Show recents/actions
@@ -135,14 +137,14 @@ const CommandPalette = ({
                     <input
                         ref={inputRef}
                         type="text"
-                        placeholder="搜尋行程、預算、或是落指令 (e.g. 切換地圖)..."
+                        placeholder={t('dashboard.command_palette.placeholder')}
                         className={`flex-1 bg-transparent border-none outline-none text-base font-medium ${isDarkMode ? 'text-white placeholder-gray-600' : 'text-gray-900 placeholder-gray-400'
                             }`}
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                     />
                     <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-black/5 dark:bg-white/5 border border-white/5">
-                        <span className="text-[10px] font-black opacity-40">ESC to close</span>
+                        <span className="text-[10px] font-black opacity-40">{t('dashboard.command_palette.esc_close')}</span>
                     </div>
                 </div>
 
@@ -184,8 +186,8 @@ const CommandPalette = ({
                     ) : (
                         <div className="flex flex-col items-center justify-center py-20 opacity-20">
                             <Brain className="w-12 h-12 mb-4" />
-                            <p className="font-bold">找不到相關結果</p>
-                            <p className="text-xs">試吓搜尋其他關鍵字或「問 Jarvis」</p>
+                            <p className="font-bold">{t('dashboard.command_palette.not_found')}</p>
+                            <p className="text-xs">{t('dashboard.command_palette.try_other')}</p>
                         </div>
                     )}
                 </div>
@@ -195,14 +197,14 @@ const CommandPalette = ({
                     }`}>
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1.5">
-                            <span className="px-1 py-0.5 rounded border border-current">↑↓</span> 選擇
+                            <span className="px-1 py-0.5 rounded border border-current">↑↓</span> {t('dashboard.command_palette.arrow_select')}
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <span className="px-1 py-0.5 rounded border border-current">ENTER</span> 前往
+                            <span className="px-1 py-0.5 rounded border border-current">ENTER</span> {t('dashboard.command_palette.enter_go')}
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5 text-indigo-500 opacity-100">
-                        <BrainCircuit className="w-3.5 h-3.5" /> Travel Planner Global Search
+                        <BrainCircuit className="w-3.5 h-3.5" /> Travel Planner {t('dashboard.command_palette.global_search')}
                     </div>
                 </div>
             </div>

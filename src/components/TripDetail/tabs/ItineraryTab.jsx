@@ -18,6 +18,7 @@ import TimelineView from '../views/TimelineView';
 import TransportCard from '../cards/TransportCard';
 import StandardCard from '../cards/StandardCard';
 import TransportConnector from '../cards/TransportConnector';
+import SpotConnector from '../cards/SpotConnector';
 import {
     formatDuration, getSmartItemImage, getLocalizedCityName, getLocalizedCountryName,
     formatDate, getWeekday, getWalkMeta, getTransportAdvice
@@ -378,16 +379,23 @@ const ItineraryTab = ({
             return matchesSearch && matchesFilter;
         })
         .sort((a, b) => {
-            // Helper to get time value in minutes
+            // Priority 1: Absolute Time (UTC)
+            if (a.absoluteTime && b.absoluteTime) {
+                return a.absoluteTime - b.absoluteTime;
+            }
+
+            // Priority 2: Fallback to Local Time String Logic
             const getTimeVal = (item) => {
+                // If we have absoluteTime but the other doesn't, we can't easily compare without converting.
+                // But generally, absoluteTime items should come together.
+                // If mixed, we rely on time string.
                 const timeStr = item.details?.time || item.time;
-                if (!timeStr) return 9999; // Items without time go to end
+                if (!timeStr) return 9999;
                 const [h, m] = timeStr.split(':').map(Number);
                 if (isNaN(h) || isNaN(m)) return 9999;
 
                 let mins = h * 60 + m;
                 // V1.1 Phase 5: Late Night Sorting (00:00 - 05:00) 
-                // If it's early morning, treat it as late night and put at bottom
                 if (h < 5) mins += 24 * 60;
 
                 return mins;
@@ -1156,7 +1164,7 @@ const ItineraryTab = ({
 
                     {/* V1.1 Phase 4: Time Conflict Warnings */}
                     {(() => {
-                        const conflicts = detectTimeConflicts(filteredItems);
+                        const conflicts = detectTimeConflicts(filteredItems, trip);
                         if (conflicts.length === 0) return null;
 
                         return (
@@ -1268,13 +1276,49 @@ const ItineraryTab = ({
                                                                         {/* Connector logic for gaps after transport */}
                                                                         {(() => {
                                                                             const nextItem = filteredItems[i + 1];
+                                                                            if (!nextItem || item.isVirtual) return null;
+
+                                                                            const isTransport = ['transport', 'walk', 'flight', 'immigration', 'train'].includes(item.type);
+                                                                            const nextIsTransport = ['transport', 'walk', 'flight', 'immigration', 'train'].includes(nextItem.type);
+
+                                                                            // 1. Redundancy Check: If already arrived at next spot
+                                                                            const alreadyArrived = (item.details?.arrival && nextItem.name && item.details.arrival.includes(nextItem.name)) ||
+                                                                                (item.details?.location && nextItem.name && item.details.location.split('->')[1]?.includes(nextItem.name));
+
+                                                                            if (alreadyArrived) return null;
+
+                                                                            // 2. Transport -> Transport Gap: Suggest Spot
+                                                                            if (isTransport && nextIsTransport && !isEditMode) {
+                                                                                // CRITICAL: Suppress suggestions during arrivals flow (Flight -> Immigration -> Transport)
+                                                                                const isArrivalsFlow =
+                                                                                    (item.type === "flight" && nextItem?.type === "immigration") ||
+                                                                                    (item.type === "immigration" && (nextItem?.type === "transport" || nextItem?.type === "train" || nextItem?.isSystem)) ||
+                                                                                    (item.type === "transport" && item.details?.fromCode && (nextItem?.type === "hotel" || nextItem?.type === "immigration"));
+
+                                                                                if (isArrivalsFlow) return null; // Don't show any suggestions
+
+                                                                                return (
+                                                                                    <SpotConnector
+                                                                                        city={trip?.city}
+                                                                                        isDarkMode={isDarkMode}
+                                                                                        context={null}
+                                                                                        onAdd={(newItem) => onAddItem(currentDisplayDate, newItem.type, newItem)}
+                                                                                    />
+                                                                                );
+                                                                            }
+
+                                                                            // 3. Regular Gap: Suggest Transport
+                                                                            // Skip if current item is already transport and next is hotel (e.g., Skyliner -> Hotel)
+                                                                            const isTransportToHotel = ['transport', 'train', 'walk'].includes(item.type) && nextItem?.type === 'hotel';
+                                                                            if (isTransportToHotel) return null;
+
                                                                             const isGap = nextItem && !['transport', 'walk', 'flight', 'immigration'].includes(nextItem.type);
-                                                                            if (isGap && !isEditMode && !item.isVirtual) return (
+                                                                            if (isGap && !isEditMode) return (
                                                                                 <TransportConnector
                                                                                     fromItem={item}
                                                                                     toItem={nextItem}
                                                                                     isDarkMode={isDarkMode}
-                                                                                    onAdd={(newItem) => onAddItem(newItem)}
+                                                                                    onAdd={(newItem) => onAddItem(currentDisplayDate, 'transport', newItem)}
                                                                                     trip={trip}
                                                                                 />
                                                                             );
@@ -1339,13 +1383,17 @@ const ItineraryTab = ({
                                                                     {/* Connector logic for gaps after standard spot */}
                                                                     {(() => {
                                                                         const nextItem = filteredItems[i + 1];
+                                                                        if (!nextItem || item.isVirtual) return null;
+
+                                                                        // 1. Regular Gap: Suggest Transport
                                                                         const isGap = nextItem && !['transport', 'walk', 'flight', 'immigration'].includes(nextItem.type);
-                                                                        if (isGap && !isEditMode && !item.isVirtual) return (
+
+                                                                        if (isGap && !isEditMode) return (
                                                                             <TransportConnector
                                                                                 fromItem={item}
                                                                                 toItem={nextItem}
                                                                                 isDarkMode={isDarkMode}
-                                                                                onAdd={(newItem) => onAddItem(newItem)}
+                                                                                onAdd={(newItem) => onAddItem(currentDisplayDate, 'transport', newItem)}
                                                                                 trip={trip}
                                                                             />
                                                                         );
@@ -1413,15 +1461,15 @@ const ItineraryTab = ({
                         );
                     })()}
 
-                    {/* V1.2.6 Timeline View (24h Grid) */}
                     {viewMode === 'timeline' && (
                         <TimelineView
                             items={filteredItems}
+                            trip={trip}
                             isDarkMode={isDarkMode}
                             isEditMode={isEditMode}
                             onItemClick={(item) => setActiveDetailItem(item)}
-                            homeOffset={8} // HK
-                            destOffset={9} // Japan
+                            homeOffset={8} // Default HK
+                            destOffset={trip.timezoneOffset || 9}
                         />
                     )}
 

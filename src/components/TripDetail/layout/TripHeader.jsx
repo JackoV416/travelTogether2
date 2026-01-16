@@ -97,7 +97,7 @@ const TripHeader = ({
 
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
                                     <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-[1.1] tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-white/60 drop-shadow-xl animate-fade-in-up">
-                                        {trip.name}
+                                        {(currentLang?.startsWith('zh') && trip.name_zh) ? trip.name_zh : trip.name}
                                     </h1>
 
                                     {/* Unified Premium Action Bar */}

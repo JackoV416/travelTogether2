@@ -1,19 +1,14 @@
-import { Plus, Upload, Calendar, ArrowRight, Search } from 'lucide-react';
+import { Plus, Upload, Calendar, Rocket, Search } from 'lucide-react';
 import { useTour } from '../../contexts/TourContext';
 import { useTranslation } from 'react-i18next';
 import { glassCard } from '../../utils/tripUtils';
-import { DEFAULT_BG_IMAGE } from '../../constants/appData';
+import { DEFAULT_BG_IMAGE, COUNTRIES_DATA } from '../../constants/appData';
 import SmartSummaryCard from './SmartSummaryCard';
+import Kbd from '../Shared/Kbd';
 
 /**
  * DashboardHeader - The top banner/header of the Dashboard
- * @param {boolean} isDarkMode - Dark mode state
- * @param {string} selectedCountryImg - Background image URL
- * @param {Function} setIsCreateModalOpen - Open create modal
- * @param {Function} setForm - Reset form
- * @param {Function} setSelectedCountryImg - Reset background
- * @param {Function} setIsSmartImportModalOpen - Open import modal
- * @param {Function} setIsSmartExportOpen - Open export modal
+ * V1.3.6: Compact Refactor for Pinterest Layout
  */
 const DashboardHeader = ({
     isDarkMode,
@@ -30,109 +25,157 @@ const DashboardHeader = ({
     const { t } = useTranslation();
     const { isActive, currentStepData, nextStep } = useTour();
     const hasTrips = trips.length > 0;
+
     return (
-        <div className={glassCard(isDarkMode) + " p-6 md:p-8 relative overflow-hidden transition-all duration-1000"} data-tour="dashboard-header">
-            <div className="absolute inset-0 bg-cover bg-center opacity-20 transition-all duration-1000" style={{ backgroundImage: `url(${selectedCountryImg})` }}></div>
+        <div className="space-y-6" data-tour="dashboard-header">
+            {/* Header: Compact Welcome + Actions */}
+            <div className={`p-6 rounded-3xl ${glassCard(isDarkMode)} relative flex flex-col md:flex-row justify-between items-center gap-6`}>
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 opacity-50 rounded-3xl" />
 
-            <div className="relative z-10 flex flex-col gap-6">
-
-                {/* Top Row: Title & Actions */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className="relative group">
-                            <button
-                                onClick={onOpenCommandPalette}
-                                className={`p-2.5 rounded-xl border transition-all ${isDarkMode
-                                    ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/30 hover:scale-105'
-                                    : 'bg-white border-indigo-100 text-indigo-600 hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/20 shadow-sm'}`}
-                            >
-                                <Search className="w-5 h-5" />
-                            </button>
-                            <div className="absolute left-0 top-full mt-2 w-max px-3 py-1.5 bg-black/80 backdrop-blur-md rounded-lg text-[10px] text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none shadow-xl border border-white/10">
-                                {t('dashboard.header.cmd_search') || '⌘ + K 全域搜尋'}
-                            </div>
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-bold flex items-center gap-2">
-                                {hasTrips ? (t('dashboard.header.reminders_title') || '🔔 重點行程與提醒') : (t('dashboard.header.first_trip') || '👋 開始您的第一次旅程')}
-                            </h2>
-                            <p className="opacity-80 text-sm max-w-xl mt-1">
-                                {hasTrips ? (t('dashboard.header.reminders_desc') || '關注即將開始的旅程動態，以及 Jarvis 智能建議。') : (t('dashboard.header.first_trip_desc') || '建立行程，讓 Jarvis 為您規劃完美路線。')}
-                            </p>
-                        </div>
+                <div className="relative z-10 flex items-center gap-4 w-full md:w-auto">
+                    <div className="p-3 bg-indigo-500/20 text-indigo-500 rounded-2xl">
+                        <Rocket className="w-6 h-6" />
                     </div>
-
-                    <div className="flex flex-wrap gap-2">
-                        <button
-                            onClick={() => {
-                                setIsCreateModalOpen(true);
-                                if (isActive && currentStepData?.id === 'create-trip') {
-                                    setTimeout(nextStep, 600);
-                                }
-                            }}
-                            data-tour="create-trip"
-                            className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold flex items-center gap-2 btn-hover-glow text-sm shadow-lg shadow-indigo-600/20"
-                        >
-                            <Plus className="w-4 h-4" /> {t('dashboard.header.new_trip') || '新增行程'}
-                        </button>
-                        <button
-                            onClick={() => setIsSmartImportModalOpen(true)}
-                            data-tour="smart-import"
-                            className="px-4 py-2 rounded-xl bg-emerald-600/90 text-white font-bold text-sm flex items-center gap-2 shadow-lg shadow-emerald-600/20 hover:bg-emerald-600"
-                        >
-                            <Upload className="w-4 h-4" /> {t('dashboard.header.smart_import') || '智能匯入'}
-                        </button>
+                    <div>
+                        <h2 className="text-xl font-bold flex items-center gap-2">
+                            {t('dashboard.header.welcome_back')}
+                        </h2>
+                        <p className="opacity-60 text-sm">
+                            {hasTrips
+                                ? t('dashboard.header.status_count', { count: trips.length })
+                                : t('dashboard.header.first_trip_prompt')}
+                        </p>
                     </div>
                 </div>
 
-                {/* Smart Summary Cards Area (Vertical List Mode) */}
-                {hasTrips && (
-                    <div className="w-full space-y-3 mt-2">
-                        {trips.slice(0, 3).map(trip => (
-                            <SmartSummaryCard
-                                key={trip.id}
-                                trip={trip}
-                                isDarkMode={isDarkMode}
-                                onClick={() => onSelectTrip(trip)}
-                            />
-                        ))}
+                <div className="relative z-10 flex items-center gap-3 w-full md:w-auto">
+                    {/* Command Search */}
+                    <div className="relative group flex-1 md:flex-none">
+                        <button
+                            onClick={onOpenCommandPalette}
+                            className={`w-full md:w-auto p-2.5 rounded-xl border transition-all flex items-center justify-center gap-2 ${isDarkMode
+                                ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20'
+                                : 'bg-white/50 border-indigo-100 text-indigo-600 hover:bg-white'} backdrop-blur-md`}
+                        >
+                            <Search className="w-4 h-4" />
+                            <span className="md:hidden text-xs font-bold">{t('dashboard.header.tooltips.search')}</span>
+                        </button>
+                        <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
+                            <span className="text-[10px] font-bold">{t('dashboard.header.tooltips.search')}</span>
+                            <Kbd keys={['⌘', 'K']} className="border-gray-600 bg-gray-700 text-gray-300" />
+                        </div>
+                    </div>
 
-                        {/* Create New Banner (Bottom of list) */}
+                    {/* Create Trip */}
+                    <div className="relative group flex-1 md:flex-none">
+                        <button
+                            onClick={() => setIsCreateModalOpen(true)}
+                            className="w-full md:w-auto px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all flex items-center justify-center gap-2"
+                        >
+                            <Plus className="w-4 h-4" /> <span className="hidden sm:inline">{t('dashboard.header.new_trip') || '新行程'}</span>
+                        </button>
+                        <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
+                            <span className="text-[10px] font-bold">{t('dashboard.header.tooltips.new')}</span>
+                            <Kbd keys={['⇧', 'N']} className="border-gray-600 bg-gray-700 text-gray-300" />
+                        </div>
+                    </div>
+
+                    {/* Smart Import */}
+                    <div className="relative group flex-1 md:flex-none">
+                        <button
+                            onClick={() => setIsSmartImportModalOpen(true)}
+                            className="w-full md:w-auto px-4 py-2.5 rounded-xl bg-emerald-600/90 text-white font-bold text-sm shadow-lg shadow-emerald-600/20 hover:bg-emerald-600 transition-all flex items-center justify-center gap-2"
+                        >
+                            <Upload className="w-4 h-4" /> <span className="hidden sm:inline">{t('dashboard.header.smart_import') || '匯入'}</span>
+                        </button>
+                        <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
+                            <span className="text-[10px] font-bold">{t('dashboard.header.tooltips.import')}</span>
+                            <Kbd keys={['⇧', 'I']} className="border-gray-600 bg-gray-700 text-gray-300" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Key Reminders: Horizontal Scroll (Miniature) */}
+            {hasTrips && (
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between px-2">
+                        <h3 className="text-sm font-bold opacity-50 uppercase tracking-wider flex items-center gap-2">
+                            <Calendar className="w-4 h-4" /> {t('dashboard.header.key_reminders') || '重點行程'}
+                        </h3>
                         <button
                             onClick={() => {
-                                setIsCreateModalOpen(true);
-                                if (isActive && currentStepData?.id === 'create-trip') {
-                                    setTimeout(nextStep, 200);
-                                }
+                                // V1.3.6: Open My Trips in new tab as requested
+                                window.open(window.location.origin + '?view=my_trips', '_blank');
                             }}
-                            className={`w-full py-3 rounded-2xl border border-dashed flex items-center justify-center gap-2 transition-all group ${isDarkMode ? 'border-white/5 hover:border-indigo-500/50 hover:bg-white/5' : 'border-slate-300 hover:border-indigo-500 hover:bg-slate-50'}`}
+                            className="text-xs font-bold text-indigo-500 hover:opacity-80 transition-opacity"
                         >
-                            <div className="w-6 h-6 rounded-full bg-indigo-500/10 flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-colors text-indigo-600 dark:text-indigo-400">
-                                <Plus className="w-3.5 h-3.5" />
-                            </div>
-                            <span className="text-sm font-bold opacity-60 group-hover:opacity-100 transition-opacity text-slate-900 dark:text-white">{t('dashboard.header.new_trip') || '新增行程'}</span>
+                            {t('common.view_all') || '查看全部'}
                         </button>
                     </div>
-                )}
 
-                {/* Empty State / Old Actions (Only if no trips) */}
-                {!hasTrips && (
-                    <div className="flex flex-wrap gap-3 mt-4">
+                    {/* Horizontal Scroll Container */}
+                    <div className="flex gap-4 overflow-x-auto pb-4 px-1 snap-x hide-scrollbar">
+                        {trips.slice(0, 5).map(trip => (
+                            <div
+                                key={trip.id}
+                                onClick={() => onSelectTrip(trip)}
+                                className={`min-w-[280px] p-4 rounded-2xl border transition-all cursor-pointer hover:scale-[1.02] active:scale-95 snap-start ${glassCard(isDarkMode)} flex flex-col gap-3 group`}
+                            >
+                                <div className="flex items-start justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-xl">
+                                            {COUNTRIES_DATA[trip.country]?.flag || '🌍'}
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-sm truncate max-w-[140px] group-hover:text-indigo-500 transition-colors">{trip.name}</h4>
+                                            <p className="text-xs opacity-60">{trip.startDate || 'No Date'} • {trip.city}</p>
+                                        </div>
+                                    </div>
+                                    {/* Mini Status Badge */}
+                                    <span className={`w-2 h-2 rounded-full ${new Date(trip.startDate) <= new Date() ? 'bg-emerald-500 animate-pulse' : 'bg-indigo-500'}`} />
+                                </div>
+
+                                {/* Mini Progress / Stats */}
+                                <div className="flex items-center justify-between text-xs opacity-60 mt-1">
+                                    {/* Smart Status: Days to Go or Duration */}
+                                    <span>
+                                        {(() => {
+                                            if (!trip.startDate) return (trip.days || '?') + ' ' + t('common.days_short');
+                                            const start = new Date(trip.startDate);
+                                            const end = trip.endDate ? new Date(trip.endDate) : start;
+                                            const now = new Date();
+                                            now.setHours(0, 0, 0, 0);
+                                            start.setHours(0, 0, 0, 0);
+
+                                            // If trip is in future, show Countdown
+                                            if (start > now) {
+                                                const diff = Math.ceil((start - now) / (1000 * 60 * 60 * 24));
+                                                return t('trip.status.days_to_go_fmt', { days: diff }) || `${diff} Days Left`;
+                                            }
+                                            // If trip is active/past, show Duration
+                                            const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                                            return duration + ' ' + t('common.days_short');
+                                        })()}
+                                    </span>
+                                    <span>{Object.keys(trip.itinerary || {}).length} {t('common.items_count')}</span>
+                                </div>
+                            </div>
+                        ))}
+
+                        {/* New Trip Card (Mini) */}
                         <button
-                            onClick={() => { setForm({ name: '', countries: [], cities: [], startDate: '', endDate: '' }); setSelectedCountryImg(DEFAULT_BG_IMAGE); }}
-                            className="px-4 py-3 rounded-xl border border-white/10 text-sm hover:bg-white/5 transition-all text-white/50"
+                            onClick={() => setIsCreateModalOpen(true)}
+                            className={`min-w-[100px] rounded-2xl border border-dashed flex flex-col items-center justify-center gap-2 transition-all group ${isDarkMode ? 'border-white/10 hover:bg-white/5' : 'border-slate-300 hover:bg-slate-50'}`}
                         >
-                            {t('dashboard.header.reset_preview') || '重設預覽'}
-                        </button>
-                        <button
-                            onClick={() => setIsSmartExportOpen(true)}
-                            className="px-4 py-3 rounded-xl bg-purple-500/20 text-purple-100 font-bold text-sm hover:bg-purple-500/30 transition-all"
-                        >
-                            {t('dashboard.header.export_trip') || '匯出行程'}
+                            <div className="w-8 h-8 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform">
+                                <Plus className="w-4 h-4" />
+                            </div>
+                            <span className="text-xs font-bold opacity-60">{t('common.add')}</span>
                         </button>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 };

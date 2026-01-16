@@ -39,6 +39,8 @@ import { exportToBeautifulPDF } from '../../services/pdfExport';
 import { COUNTRIES_DATA, DEFAULT_BG_IMAGE, CURRENCIES, INSURANCE_SUGGESTIONS, INSURANCE_RESOURCES, CITY_IMAGES } from '../../constants/appData';
 import { buttonPrimary } from '../../constants/styles';
 import { useTripHistory } from '../../hooks/useTripHistory'; // V1.1 Phase 7
+import Kbd from '../Shared/Kbd';
+import useGlobalShortcuts from '../../hooks/useGlobalShortcuts';
 
 const TripDetailContent = (props) => {
     const { t } = useTranslation();
@@ -77,6 +79,7 @@ const TripDetailContent = (props) => {
 };
 
 const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, isPreview, globalSettings, exchangeRates, convAmount, setConvAmount, convTo, setConvTo, onOpenSmartImport, weatherData, requestedTab, onTabHandled, requestedItemId, onItemHandled, isBanned, isAdmin, setIsFeedbackOpen, isFeedbackOpen, onOpenChat, isChatOpen, setIsChatOpen, onUserClick, onViewProfile, setChatInitialTab }) => {
+    const { i18n } = useTranslation();
     // ... UI STATE HOOKS (isChatOpen removed)
     // ... (rest of props)
 
@@ -427,7 +430,11 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
         // Check if a virtual hotel already exists in base (unlikely but safe)
         const finalHotels = injectedHotels.filter(vh => !baseItineraryItems.some(bi => bi.name === vh.name || bi.id === vh._originalId));
 
-        return [...finalHotels, ...baseItineraryItems];
+        return [...finalHotels, ...baseItineraryItems].sort((a, b) => {
+            const timeA = a.time || "00:00";
+            const timeB = b.time || "00:00";
+            return timeA.localeCompare(timeB);
+        });
     }, [trip.itinerary, currentDisplayDate, baseItineraryItems]);
     const homeHolidays = getHolidayMap(globalSettings.region || "HK");
     const destHolidays = getHolidayMap(countryInfo.tz || "Global");
@@ -435,6 +442,25 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
 
     const emergencyInfoTitle = globalSettings.region === "HK" ? "香港入境處熱線" : (globalSettings.region === "TW" ? "外交部旅外救助" : "駐外辦事處");
     const emergencyInfoContent = globalSettings.region === "HK" ? "(852) 1868" : (globalSettings.region === "TW" ? "+886-800-085-095" : "請查詢當地領事館");
+
+    // ============================================
+    // KEYBOARD SHORTCUTS
+    // ============================================
+    useGlobalShortcuts({
+        onBack: () => onBack?.(),
+        onShare: () => setIsSmartExportOpen(true),
+        onShare: () => setIsSmartExportOpen(true),
+        onTabChange: (index) => {
+            const tabs = ['itinerary', 'packing', 'shopping', 'budget', 'gallery', 'currency', 'footprints', 'insurance', 'emergency', 'visa'];
+            if (index === 0) {
+                // Cmd + 0 -> Last Tab (Visa)
+                setActiveTab(tabs[tabs.length - 1]);
+            } else if (tabs[index - 1]) {
+                // Cmd + 1..9
+                setActiveTab(tabs[index - 1]);
+            }
+        }
+    });
 
     // ============================================
     // HANDLERS
@@ -1043,6 +1069,9 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
     useEffect(() => {
         const incrementView = async () => {
             if (!trip?.id || !trip?.isPublic || isSimulation || !user) return;
+            // V1.3.6: Prevent updates for mock trips
+            if (trip.isMock || (typeof trip.id === 'string' && trip.id.startsWith('mock_'))) return;
+
             if (trip.ownerId === user.uid) return; // Don't count owner views
 
             const viewedKey = `viewed_${trip.id}`;
@@ -1629,7 +1658,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
 
                                         <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
                                             <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-[1.1] tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-white/60 drop-shadow-xl animate-fade-in-up">
-                                                {trip.name}
+                                                {i18n.language.includes('zh') && trip.name_zh ? trip.name_zh : trip.name}
                                             </h1>
 
                                             {/* Removed redundant view switcher */}
@@ -1643,7 +1672,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                                         onClick={handleUndo}
                                                         disabled={!canUndo}
                                                         className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${canUndo ? 'hover:bg-white/10 text-white active:scale-90' : 'opacity-20 cursor-not-allowed'}`}
-                                                        title="撤銷 (Undo)"
+                                                        title={t('trip.actions.undo') || '撤銷 (Undo)'}
                                                     >
                                                         <Undo className="w-4 h-4" />
                                                     </button>
@@ -1651,7 +1680,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                                         onClick={handleRedo}
                                                         disabled={!canRedo}
                                                         className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${canRedo ? 'hover:bg-white/10 text-white active:scale-90' : 'opacity-20 cursor-not-allowed'}`}
-                                                        title="重做 (Redo)"
+                                                        title={t('trip.actions.redo') || '重做 (Redo)'}
                                                     >
                                                         <Redo className="w-4 h-4" />
                                                     </button>
@@ -1662,7 +1691,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                                     <button
                                                         onClick={() => setIsTripSettingsOpen(true)}
                                                         className="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:bg-white/10 text-indigo-300 active:scale-90"
-                                                        title="編輯行程設定 (Edit)"
+                                                        title={t('trip.actions.edit_settings') || '編輯行程設定 (Edit)'}
                                                     >
                                                         <Edit3 className="w-4 h-4" />
                                                     </button>
@@ -1682,7 +1711,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                                         onClick={onOpenChat}
                                                         data-tour="chat-button"
                                                         className="w-9 h-9 rounded-xl flex items-center justify-center transition-all bg-indigo-500/80 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 active:scale-95"
-                                                        title="打開行程對話 (Chat)"
+                                                        title={t('trip.actions.open_chat') || '打開行程對話 (Chat)'}
                                                     >
                                                         <MessageCircle className="w-4 h-4" />
                                                     </button>
@@ -1796,7 +1825,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                                                 </div>
                                                             )}
                                                         </div>
-                                                        <button onClick={() => setIsMemberModalOpen(true)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all border border-white/10 hover:border-white/30 shadow-lg" title="成員管理">
+                                                        <button onClick={() => setIsMemberModalOpen(true)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all border border-white/10 hover:border-white/30 shadow-lg" title={t('trip.actions.manage_members') || '成員管理'}>
                                                             <UserPlus className="w-4 h-4 text-white" />
                                                         </button>
                                                     </div>
@@ -1810,21 +1839,35 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                                         data-tour="ask-jarvis-daily"
                                                         className="px-3 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white rounded-xl text-xs font-bold transition-all shadow-lg border border-white/20 flex justify-center items-center gap-2 active:scale-95 whitespace-nowrap backdrop-blur-md"
                                                     >
-                                                        <Newspaper className="w-4 h-4" /> <span className="hidden sm:inline">Jarvis 日報</span>
+                                                        <Newspaper className="w-4 h-4" /> <span className="hidden sm:inline">{t('trip.actions.jarvis_daily') || 'Jarvis 日報'}</span>
                                                     </button>
-                                                    <button
-                                                        onClick={onOpenSmartImport}
-                                                        data-tour="smart-import"
-                                                        className="px-3 py-2.5 bg-white/15 hover:bg-white/25 text-white rounded-xl text-xs font-bold transition-all shadow-lg border border-white/20 flex justify-center items-center gap-2 active:scale-95 whitespace-nowrap backdrop-blur-md"
-                                                    >
-                                                        <Upload className="w-4 h-4" /> <span className="hidden sm:inline">智能匯入</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setIsSmartExportOpen(true)}
-                                                        className="px-3 py-2.5 bg-white/15 hover:bg-white/25 text-white rounded-xl text-xs font-bold transition-all shadow-lg border border-white/20 flex justify-center items-center gap-2 active:scale-95 whitespace-nowrap backdrop-blur-md"
-                                                    >
-                                                        <Share2 className="w-4 h-4" /> <span className="hidden sm:inline">分享</span>
-                                                    </button>
+
+                                                    <div className="relative group">
+                                                        <button
+                                                            onClick={onOpenSmartImport}
+                                                            data-tour="smart-import"
+                                                            className="px-3 py-2.5 bg-white/15 hover:bg-white/25 text-white rounded-xl text-xs font-bold transition-all shadow-lg border border-white/20 flex justify-center items-center gap-2 active:scale-95 whitespace-nowrap backdrop-blur-md"
+                                                        >
+                                                            <Upload className="w-4 h-4" /> <span className="hidden sm:inline">{t('trip.actions.smart_import') || '智能匯入'}</span>
+                                                        </button>
+                                                        <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none items-center gap-2 z-50 whitespace-nowrap">
+                                                            <span className="text-[10px] text-gray-300">Import</span>
+                                                            <Kbd keys={['⌘', 'I']} className="bg-white/10 border-white/20 text-white" />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="relative group">
+                                                        <button
+                                                            onClick={() => setIsSmartExportOpen(true)}
+                                                            className="px-3 py-2.5 bg-white/15 hover:bg-white/25 text-white rounded-xl text-xs font-bold transition-all shadow-lg border border-white/20 flex justify-center items-center gap-2 active:scale-95 whitespace-nowrap backdrop-blur-md"
+                                                        >
+                                                            <Share2 className="w-4 h-4" /> <span className="hidden sm:inline">分享</span>
+                                                        </button>
+                                                        <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none items-center gap-2 z-50 whitespace-nowrap">
+                                                            <span className="text-[10px] text-gray-300">Share</span>
+                                                            <Kbd keys={['⇧', '⌘', 'S']} className="bg-white/10 border-white/20 text-white" />
+                                                        </div>
+                                                    </div>
 
                                                     <div className="relative">
                                                         <button
@@ -1832,20 +1875,20 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                                             data-tour="plan-trip-menu"
                                                             className="px-3 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl flex justify-center items-center gap-2 font-bold text-xs transition-all shadow-lg shadow-indigo-900/40 active:scale-95 whitespace-nowrap border border-indigo-400/30 backdrop-blur-md"
                                                         >
-                                                            <Plus className="w-4 h-4" /> 行程規劃 <ChevronDown className={`w-3.5 h-3.5 text-indigo-200 transition-transform ${isPlanMenuOpen ? 'rotate-180' : ''}`} />
+                                                            <Plus className="w-4 h-4" /> {t('trip.actions.plan_trip') || '行程規劃'} <ChevronDown className={`w-3.5 h-3.5 text-indigo-200 transition-transform ${isPlanMenuOpen ? 'rotate-180' : ''}`} />
                                                         </button>
                                                         {isPlanMenuOpen && (
                                                             <>
                                                                 <div className="fixed inset-0 z-[90]" onClick={() => setIsPlanMenuOpen(false)}></div>
                                                                 <div className="absolute right-0 top-full mt-2 w-48 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[100] transform origin-top-right animate-scale-in p-1" data-tour="add-activity-menu">
                                                                     <button onClick={() => { setAddType('spot'); setIsAddModal(true); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 text-left text-xs transition-colors rounded-lg text-white font-medium">
-                                                                        <Edit3 className="w-3.5 h-3.5 text-blue-400" /> 手動新增
+                                                                        <Edit3 className="w-3.5 h-3.5 text-blue-400" /> {t('trip.actions.manual_add') || '手動新增'}
                                                                     </button>
                                                                     <button onClick={() => { setAIMode('full'); setIsAIModal(true); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 text-left text-xs transition-colors rounded-lg text-white font-medium">
                                                                         <BrainCircuit className="w-3.5 h-3.5 text-purple-400" /> Jarvis 建議行程
                                                                     </button>
                                                                     <button onClick={() => { handleOptimizeSchedule(); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 text-left text-xs transition-colors rounded-lg text-white font-medium">
-                                                                        <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Jarvis 排程優化
+                                                                        <Sparkles className="w-3.5 h-3.5 text-amber-400" /> {t('trip.actions.jarvis_optimize') || 'Jarvis 排程優化'}
                                                                     </button>
                                                                 </div>
                                                             </>
@@ -1866,17 +1909,17 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                                                     {isOwner && (
                                                                         <>
                                                                             <button onClick={() => { setIsMemberModalOpen(true); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-left text-sm transition-colors border-b border-white/10 text-gray-200">
-                                                                                <Users className="w-4 h-4 text-blue-400" /> 成員管理
+                                                                                <Users className="w-4 h-4 text-blue-400" /> {t('trip.actions.manage_members') || '成員管理'}
                                                                             </button>
                                                                             <button onClick={() => { setIsInviteModal(true); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-left text-sm transition-colors border-b border-white/10 text-gray-200">
-                                                                                <UserPlus className="w-4 h-4 text-green-400" /> 邀請朋友
+                                                                                <UserPlus className="w-4 h-4 text-green-400" /> {t('trip.actions.invite_friends') || '邀請朋友'}
                                                                             </button>
                                                                             <button onClick={() => { handleDeleteTrip(); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 text-left text-sm text-red-400 transition-colors">
-                                                                                <Trash2 className="w-4 h-4" /> 刪除行程
+                                                                                <Trash2 className="w-4 h-4" /> {t('trip.actions.delete_trip') || '刪除行程'}
                                                                             </button>
                                                                         </>
                                                                     )}
-                                                                    {!isOwner && <div className="px-4 py-3 text-xs opacity-50 text-center text-gray-400">僅擁有者可操作</div>}
+                                                                    {!isOwner && <div className="px-4 py-3 text-xs opacity-50 text-center text-gray-400">{t('trip.actions.owner_only') || '僅擁有者可操作'}</div>}
                                                                 </div>
                                                             </>
                                                         )}
@@ -1897,16 +1940,16 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                         {/* Functional Tabs (Scrollable) */}
                         <div className="flex-1 overflow-x-auto scrollbar-hide flex gap-2 py-1 px-1" style={{ scrollbarWidth: 'none' }} data-tour="tab-nav">
                             {[
-                                { id: 'itinerary', label: '行程', icon: Calendar },
-                                { id: 'packing', label: '行李', icon: ShoppingBag },
-                                { id: 'shopping', label: '購物', icon: ShoppingBag },
-                                { id: 'budget', label: '預算', icon: Wallet },
-                                { id: 'gallery', label: '相簿', icon: Image },
-                                { id: 'currency', label: '匯率', icon: DollarSign },
-                                { id: 'footprints', label: '足跡', icon: FootprintsIcon },
-                                { id: 'insurance', label: '保險', icon: Shield },
-                                { id: 'emergency', label: '緊急', icon: Siren },
-                                { id: 'visa', label: '簽證', icon: FileCheck }
+                                { id: 'itinerary', label: t('trip.tabs.itinerary'), icon: Calendar },
+                                { id: 'packing', label: t('trip.tabs.packing'), icon: ShoppingBag },
+                                { id: 'shopping', label: t('trip.tabs.shopping'), icon: ShoppingBag },
+                                { id: 'budget', label: t('trip.tabs.budget'), icon: Wallet },
+                                { id: 'gallery', label: t('trip.tabs.gallery'), icon: Image },
+                                { id: 'currency', label: t('trip.tabs.currency'), icon: DollarSign },
+                                { id: 'footprints', label: t('trip.tabs.footprints'), icon: FootprintsIcon },
+                                { id: 'insurance', label: t('trip.tabs.insurance'), icon: Shield },
+                                { id: 'emergency', label: t('trip.tabs.emergency'), icon: Siren },
+                                { id: 'visa', label: t('trip.tabs.visa'), icon: FileCheck }
                             ].map(t => (
                                 <button
                                     key={t.id}
@@ -2200,12 +2243,12 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                         )
                     }
 
-                    <AddActivityModal isOpen={isAddModal} onClose={() => setIsAddModal(false)} onSave={handleSaveItem} onDelete={handleDeleteItineraryItem} isDarkMode={isDarkMode} date={selectDate} defaultType={addType} editData={editingItem} members={trip.members || [{ id: user?.uid || 'guest', name: user?.displayName || 'Guest' }]} trip={trip} />
+                    <AddActivityModal isOpen={isAddModal} onClose={() => setIsAddModal(false)} onSave={handleSaveItem} onDelete={handleDeleteItineraryItem} isDarkMode={isDarkMode} date={selectDate} defaultType={addType} editData={editingItem} members={trip.members || [{ id: user?.uid || 'guest', name: user?.displayName || 'Guest' }]} trip={trip} homeCountry={globalSettings?.countryCode || 'HK'} />
                     <TripSettingsModal isOpen={isTripSettingsOpen} onClose={() => setIsTripSettingsOpen(false)} trip={trip} onUpdate={(d) => !isSimulation && updateDoc(doc(db, "trips", trip.id), d)} isDarkMode={isDarkMode} />
                     <MemberSettingsModal isOpen={isMemberModalOpen} onClose={() => setIsMemberModalOpen(false)} members={trip.members || []} onUpdateRole={handleUpdateRole} isDarkMode={isDarkMode} />
                     <InviteModal isOpen={isInviteModal} onClose={() => setIsInviteModal(false)} tripId={trip.id} onInvite={handleInvite} isDarkMode={isDarkMode} />
 
-                    <AIGeminiModal isOpen={isAIModal} onClose={() => setIsAIModal(false)} onApply={handleAIApply} isDarkMode={isDarkMode} contextCity={trip.city} existingItems={itineraryItems} mode={aiMode} userPreferences={globalSettings.preferences} trip={trip} weatherData={weatherData} targetDate={selectDate} user={user} />
+                    <AIGeminiModal isOpen={isAIModal} onClose={() => setIsAIModal(false)} onApply={handleAIApply} isDarkMode={isDarkMode} contextCity={trip.city} existingItems={itineraryItems} mode={aiMode} userPreferences={globalSettings.preferences} trip={trip} weatherData={weatherData} targetDate={selectDate} user={user} homeCountry={globalSettings?.countryCode || 'HK'} />
 
                     <TripExportImportModal
                         isOpen={Boolean(sectionModalConfig)}

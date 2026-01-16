@@ -54,10 +54,12 @@ const AIGeminiModal = ({
     weatherData = null,
     mode = 'full',
     targetDate = null, // V1.1.7: Specific date for analysis
-    user = null // V1.2.3: For Quota Tracking
+    user = null, // V1.2.3: For Quota Tracking
+    homeCountry = 'HK' // V1.5.2: For Local Trip Logic
 }) => {
     // V0.22: Coming Soon removed - Full functionality restored
     const { isMockMode, startTourAt } = useTour(); // Interact with Tour Framework
+    const isLocal = React.useMemo(() => (!trip || !trip.country) ? false : (trip.country === homeCountry), [trip, homeCountry]);
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [activeTab, setActiveTab] = useState(mode === 'shopping' ? 'shopping' : (mode === 'packing' ? 'packing' : 'itinerary'));
@@ -754,12 +756,19 @@ const AIGeminiModal = ({
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold opacity-70 ml-1">✈️ 機票資訊 (選填)</label>
-                                    <textarea
-                                        value={logistics.flightInfo}
-                                        onChange={(e) => setLogistics(prev => ({ ...prev, flightInfo: e.target.value }))}
-                                        placeholder="貼上機票或酒店資訊，或利用下方「智能匯入」..."
-                                        className={`w-full h-20 p-3 rounded-xl border resize-none text-sm transition-all ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
-                                    />
+                                    {!isLocal && (
+                                        <>
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold opacity-70 ml-1">✈️ 機票資訊 (選填)</label>
+                                                <textarea
+                                                    value={logistics.flightInfo}
+                                                    onChange={(e) => setLogistics(prev => ({ ...prev, flightInfo: e.target.value }))}
+                                                    placeholder="貼上機票或酒店資訊，或利用下方「智能匯入」..."
+                                                    className={`w-full h-20 p-3 rounded-xl border resize-none text-sm transition-all ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
 
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold opacity-50 ml-1">📍 曾經去過嘅地方 (Jarvis 會避開呢度)</label>

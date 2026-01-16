@@ -19,6 +19,7 @@ import OfflineBanner from './components/Shared/OfflineBanner';
 
 import ReloadPrompt from './components/Shared/ReloadPrompt';
 import { useNotifications } from './hooks/useNotifications';
+import { getMockTripDetails } from './constants/publicTripsData'; // V1.3.6: Mock Data Generator
 import { checkAbuse } from './services/security';
 import AIGeminiModal from './components/Modals/AIGeminiModal';
 import ErrorBoundary from './components/Shared/ErrorBoundary';
@@ -38,6 +39,8 @@ import TourOverlay from './components/Tour/TourOverlay'; // V1.3.4 Interactive P
 import CommandPalette from './components/Shared/CommandPalette'; // V1.2.7 Global Search
 import SocialProfile from './components/Social/Profile/SocialProfile'; // V1.3.0 Profile
 import Footer from './components/Shared/Footer'; // V1.3.1 Clean Architecture
+import useGlobalShortcuts from './hooks/useGlobalShortcuts'; // V1.3.5 Global Shortcuts
+import Kbd from './components/Shared/Kbd'; // V1.3.5 UI Polish
 
 // --- V0.16.2 Refactored Imports ---
 import {
@@ -95,6 +98,19 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
     const [photoError, setPhotoError] = useState(false);
     const unreadCount = notifications.filter(n => !n.read).length;
 
+    // V1.3.5 Global Shortcuts Logic
+    useGlobalShortcuts({
+        onProfile: () => setHoverMenu(prev => !prev),
+        onNotifications: () => {
+            setShowNotif(prev => {
+                const next = !prev;
+                if (!next && onMarkNotificationsRead) onMarkNotificationsRead();
+                return next;
+            });
+        },
+        onHelp: startTour
+    });
+
     // Mini Profile Stats Calculation
     const stats = React.useMemo(() => {
         if (!user || !allTrips.length) return { countries: 0, trips: 0, continents: 0 };
@@ -134,28 +150,75 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
         <header className={`fixed top-0 left-0 right-0 z-[50] p-4 pt-[max(1rem,env(safe-area-inset-top))] transition-all duration-300 ${isDarkMode ? 'bg-gray-900/80 border-b border-white/5' : 'bg-gray-50/80 border-b border-gray-200/50'} shadow-sm backdrop-blur-xl supports-[backdrop-filter]:bg-gray-900/60`}>
             <div className="flex items-center justify-between max-w-7xl mx-auto">
                 <div className="flex items-center gap-3">
-                    {onBack && <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-500/10 btn-press" aria-label="返回"><ChevronLeft /></button>}
-                    <h1 className="text-lg font-bold truncate cursor-pointer" onClick={() => onViewChange && onViewChange('dashboard')}>{title}</h1>
+                    {onBack && (
+                        <div className="relative group">
+                            <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-500/10 btn-press" aria-label="返回"><ChevronLeft /></button>
+                            {/* Tooltip with Kbd */}
+                            <div className="absolute left-0 top-full mt-2 w-max px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none shadow-xl border border-white/10 flex items-center gap-2">
+                                <span className="text-[10px] font-bold">Back</span>
+                                <Kbd keys={['Esc']} className="border-gray-600 bg-gray-700 text-gray-300" />
+                            </div>
+                        </div>
+                    )}
+                    <h1 className="text-lg font-bold truncate cursor-pointer flex items-center gap-2" onClick={() => onViewChange && onViewChange('dashboard')}>
+                        <span className="text-2xl">✈️</span>
+                        <span className="hidden sm:inline">Travel Together</span>
+                    </h1>
                 </div>
+
+                {/* Desktop Navigation */}
+                <div className="hidden md:flex items-center gap-1 bg-gray-500/5 p-1 rounded-full border border-gray-500/10">
+                    <button
+                        onClick={() => onViewChange && onViewChange('dashboard')}
+                        className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${activeView === 'dashboard' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'}`}
+                    >
+                        {t('dashboard.explore_community') || '探索'}
+                    </button>
+                    <button
+                        onClick={() => onViewChange && onViewChange('my_trips')}
+                        className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${activeView === 'my_trips' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'}`}
+                    >
+                        {t('dashboard.my_trips') || '我的行程'}
+                    </button>
+                </div>
+
                 <div className="flex items-center gap-3">
                     {onTutorialStart && (
                         <>
-                            <button onClick={() => onViewChange && onViewChange('tutorial')} className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 btn-press">
-                                <MonitorPlay className="w-4 h-4" /> {t('app.menu.tutorial') || '模擬例子'}
-                            </button>
+                            <div className="relative group">
+                                <button onClick={() => onViewChange && onViewChange('tutorial')} className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 btn-press">
+                                    <MonitorPlay className="w-4 h-4" /> {t('app.menu.tutorial') || '模擬例子'}
+                                </button>
+                                <div className="hidden md:flex absolute top-full right-0 mt-2 px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none items-center gap-2 z-50 whitespace-nowrap">
+                                    <span className="text-[10px] text-gray-300">Tutorial</span>
+                                    <Kbd keys={['⇧', '⌘', 'E']} className="bg-white/10 border-white/20 text-white" />
+                                </div>
+                            </div>
                             {/* V1.3.4: Trigger Interactive Tour instead of Modal */}
-                            <button onClick={startTour} className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 btn-press">
-                                <Route className="w-4 h-4" /> {t('app.menu.guide') || '教學'}
-                            </button>
+                            <div className="relative group">
+                                <button onClick={startTour} className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 btn-press">
+                                    <Route className="w-4 h-4" /> {t('app.menu.guide') || '教學'}
+                                </button>
+                                {/* Tooltip with Kbd */}
+                                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-max px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none shadow-xl border border-white/10 flex items-center gap-2">
+                                    <span className="text-[10px] font-bold">Guide</span>
+                                    <Kbd keys={['⌘', '/']} className="border-gray-600 bg-gray-700 text-gray-300" />
+                                </div>
+                            </div>
                         </>
                     )}
 
                     {/* Notification */}
-                    <div className="relative">
+                    <div className="relative group">
                         <button onClick={handleBellClick} className="p-2 rounded-full hover:bg-gray-500/10 relative btn-press" aria-label="通知中心">
                             <Bell className="w-5 h-5" />
                             {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>}
                         </button>
+                        {/* Tooltip with Kbd */}
+                        <div className="absolute right-0 top-full mt-2 w-max px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none shadow-xl border border-white/10 flex items-center gap-2">
+                            <span className="text-[10px] font-bold">Notifs</span>
+                            <Kbd keys={['⌘', 'B']} className="border-gray-600 bg-gray-700 text-gray-300" />
+                        </div>
                         {showNotif && <div className={`absolute top-12 right-0 w-96 p-4 rounded-xl shadow-2xl border z-50 backdrop-blur-xl ${isDarkMode ? 'bg-gray-900/95 border-white/10' : 'bg-white/95 border-gray-200'}`}>
                             <div className="flex justify-between items-center border-b border-gray-500/10 pb-2 mb-2">
                                 <h4 className="font-bold text-sm">通知中心</h4>
@@ -205,7 +268,7 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
 
                     {/* Hover Menu */}
                     <div className="relative" onMouseEnter={() => setHoverMenu(true)} onMouseLeave={() => setHoverMenu(false)}>
-                        <button data-tour="profile-menu" onClick={() => setHoverMenu(!hoverMenu)} className="p-1 rounded-full border-2 border-transparent hover:border-indigo-500 transition-all btn-press" aria-label="用戶選單">
+                        <button data-tour="profile-menu" onClick={() => setHoverMenu(!hoverMenu)} className="group p-1 rounded-full border-2 border-transparent hover:border-indigo-500 transition-all btn-press" aria-label="用戶選單">
                             {user ? (
                                 user.photoURL && !photoError ? (
                                     <ImageWithFallback
@@ -222,6 +285,12 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                                 )
                             ) : <UserCircle className="w-8 h-8" />}
                             {isAdmin && adminPendingCount > 0 && <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 border-2 border-white rounded-full"></span>}
+
+                            {/* Tooltip with Kbd (Left aligned) */}
+                            <div className="absolute right-0 top-full mt-2 w-max px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none shadow-xl border border-white/10 flex items-center gap-2">
+                                <span className="text-[10px] font-bold">Menu</span>
+                                <Kbd keys={['⌘', 'M']} className="border-gray-600 bg-gray-700 text-gray-300" />
+                            </div>
                         </button>
 
                         <div className={`absolute top-10 right-0 w-64 pt-4 transition-all duration-300 origin-top-right ${hoverMenu ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible'}`}>
@@ -246,11 +315,20 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                                     </div>
                                 </div>
                                 <div className="p-2 flex flex-col gap-1">
-                                    <button onClick={() => { setHoverMenu(false); onViewChange('profile'); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><User className="w-4 h-4 text-indigo-500" /> {t('app.menu.profile')}</button>
-                                    <button onClick={() => { setHoverMenu(false); onViewChange('dashboard'); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><Home className="w-4 h-4" /> {t('app.menu.dashboard')}</button>
+                                    <button onClick={() => { setHoverMenu(false); window.open(window.location.origin + '/?view=profile', '_blank'); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition justify-between ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                                        <div className="flex items-center gap-3"><User className="w-4 h-4 text-indigo-500" /> {t('app.menu.profile')}</div>
+                                        <Kbd keys={['⇧', '⌘', 'P']} />
+                                    </button>
+                                    <button onClick={() => { setHoverMenu(false); window.open(window.location.origin + '/?view=my_trips', '_blank'); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition justify-between ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                                        <div className="flex items-center gap-3"><Home className="w-4 h-4" /> {t('app.menu.dashboard')}</div>
+                                        <Kbd keys={['⇧', '⌘', 'H']} />
+                                    </button>
                                     <button onClick={() => { setHoverMenu(false); onViewChange('tutorial'); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} md:hidden`}><MonitorPlay className="w-4 h-4 text-indigo-500" /> {t('app.menu.tutorial')}</button>
                                     <button onClick={() => { setHoverMenu(false); onTutorialStart(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} md:hidden`}><Route className="w-4 h-4 text-emerald-500" /> {t('app.menu.guide')}</button>
-                                    <button onClick={() => { setHoverMenu(false); onOpenUserSettings(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><Edit3 className="w-4 h-4" /> {t('app.menu.settings')}</button>
+                                    <button onClick={() => { setHoverMenu(false); onOpenUserSettings(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition justify-between ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                                        <div className="flex items-center gap-3"><Edit3 className="w-4 h-4" /> {t('app.menu.settings')}</div>
+                                        <Kbd keys={['⌘', ',']} />
+                                    </button>
                                     <button onClick={() => { setHoverMenu(false); onOpenFeedback(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><MessageCircle className="w-4 h-4" /> {t('app.menu.feedback')}</button>
                                     {isAdmin && (
                                         <button onClick={() => { setHoverMenu(false); onOpenAdminFeedback(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
@@ -264,18 +342,21 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                                     )}
                                     <button onClick={() => { setHoverMenu(false); onOpenVersion(); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><History className="w-4 h-4" /> 版本資訊</button>
                                     <div className="h-px bg-gray-500/10 my-1"></div>
-                                    <button onClick={toggleDarkMode} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
-                                        {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                                        切換模式
+                                    <button onClick={toggleDarkMode} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition justify-between ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                                        <div className="flex items-center gap-3">
+                                            {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                                            切換模式
+                                        </div>
+                                        <Kbd keys={['⇧', '⌘', 'L']} />
                                     </button>
                                     <button onClick={onLogout} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg text-red-500 transition ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-red-50'}`}><LogOut className="w-4 h-4" /> 登出</button>
                                 </div>
-                            </div >
-                        </div >
-                    </div >
-                </div >
-            </div >
-        </header >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
     );
 };
 
@@ -315,6 +396,16 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
         if (!tripData?.id) {
             setError("Invalid trip data");
             setIsLoading(false);
+            return;
+        }
+
+        // V1.3.6: Mock Trip Support (Public Data)
+        if (tripData.isMock || (typeof tripData.id === 'string' && tripData.id.startsWith('mock_'))) {
+            // Enrich mock trip with full details generator (Synchronous)
+            const enrichedTrip = getMockTripDetails(tripData.id, globalSettings?.language);
+            setRealTrip(enrichedTrip);
+            setIsLoading(false);
+            setError(null);
             return;
         }
 
@@ -425,8 +516,19 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
 const App = () => {
     const { t, i18n } = useTranslation();
     const [user, setUser] = useState(null);
-    const [view, setView] = useState('dashboard');
-    const [selectedTrip, setSelectedTrip] = useState(null);
+    const [view, setView] = useState(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const v = urlParams.get('view');
+        // V1.4.2: Direct state initialization to prevent race conditions
+        if (v === 'my_trips' || v === 'profile' || v === 'tutorial' || v === 'detail' || v === 'settings') return v;
+        return 'dashboard';
+    });
+    const [selectedTrip, setSelectedTrip] = useState(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
+        if (id) return { id }; // Minimal trip object for loading
+        return null;
+    });
     const [isDarkMode, setIsDarkMode] = useState(true);
     const [globalBg, setGlobalBg] = useState("https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1600&q=80"); // Default BG
     const [globalSettings, setGlobalSettings] = useState({
@@ -483,15 +585,28 @@ const App = () => {
             }
         }
 
-        // --- Handle Direct View Params (?view=tutorial) ---
+        // --- Handle Direct View Params ---
         const urlParams = new URLSearchParams(window.location.search);
         const viewParam = urlParams.get('view');
-        if (viewParam === 'tutorial') {
-            setView('tutorial');
-            // Clean up URL without reload
-            window.history.replaceState({}, '', '/');
+        const idParam = urlParams.get('id');
+
+        if (viewParam) {
+            // Already initialized in useState, but we ensure it's synced if user changed
+            if (viewParam === 'detail' && idParam && (!selectedTrip || selectedTrip.id !== idParam)) {
+                setSelectedTrip({ id: idParam });
+                setView('detail');
+            } else {
+                setView(viewParam);
+            }
+
+            // Clean up URL without reload to keep it clean
+            // We delay this slightly to ensure other effects can read it if needed
+            setTimeout(() => {
+                const cleanUrl = window.location.origin + window.location.pathname;
+                window.history.replaceState({}, '', cleanUrl);
+            }, 1000);
         }
-    }, []);
+    }, [user]); // Re-run when user state settles to ensure view persistence
 
     // Fetch Global Trips for Search (V1.2.7)
     useEffect(() => {
@@ -656,7 +771,7 @@ const App = () => {
             e.preventDefault();
             // Stash the event so it can be triggered later.
             setDeferredPrompt(e);
-            console.log('PWA: Install prompt deferred');
+            // console.log('PWA: Install prompt deferred');
         };
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -691,17 +806,21 @@ const App = () => {
 
     const isAdmin = user && (ADMIN_EMAILS.includes(user.email) || dynamicAdminEmails.includes(user.email));
 
-    // V1.2.7 Global Search listener
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-                e.preventDefault();
-                setIsCommandPaletteOpen(prev => !prev);
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    // V1.2.7 Global Search listener & V1.3.5 Global Shortcuts Logic (Centralized)
+    useGlobalShortcuts({
+        onSearch: () => setIsCommandPaletteOpen(prev => !prev),
+        onCreateTrip: () => setIsCreateModalOpen(true),
+        onImportTrip: () => setIsSmartImportModalOpen(true),
+        onSettings: () => {
+            // Open Settings View
+            setView('settings');
+            // If we have a specific tab logic, we can add it here
+        },
+        onDashboard: () => window.open(window.location.origin + '/?view=my_trips', '_blank'),
+        onToggleTheme: () => setIsDarkMode(prev => !prev),
+        onTutorial: () => setView('tutorial'), // Shift+Cmd+E
+        // onProfile, onNotifications handled in Header via internal state
+    });
 
     // Admin: Listen for open feedbacks
     useEffect(() => {
@@ -759,7 +878,7 @@ const App = () => {
     }, []);
 
     // --- Notification System Hook ---
-    const { notifications, sendNotification, setNotifications, markNotificationsRead, removeNotification } = useNotifications(user);
+    const { notifications, toasts, setToasts, sendNotification, setNotifications, markNotificationsRead, removeNotification } = useNotifications(user);
 
     // --- Version Guard & Confetti State ---
     const [latestVersion, setLatestVersion] = useState(APP_VERSION);
@@ -814,33 +933,32 @@ const App = () => {
     useEffect(() => {
         const lastSeenVersion = localStorage.getItem('app_version_cache');
 
-        // Only celebrate if:
-        // 1. User has a cached version (returning user)
-        // 2. The running code version is different from cached (means they actually got new code)
-        if (lastSeenVersion && lastSeenVersion !== APP_VERSION) {
-            const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        // Check if version changed
+        if (lastSeenVersion !== APP_VERSION) {
+            // Immediately update cache to prevent duplicate triggers
+            localStorage.setItem('app_version_cache', APP_VERSION);
 
-            setTimeout(() => {
-                const now = new Date();
-                const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            // Only celebrate if user has a cached version (returning user)
+            // If it's a fresh visit (no cache), just silent update
+            if (lastSeenVersion) {
+                const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
-                sendNotification(
-                    `已成功更新至 ${APP_VERSION}`,
-                    `${isPWA ? 'App' : '網頁'}已升級至最新版本，享受更佳體驗！`,
-                    "success",
-                    { time: timeStr }
-                );
+                setTimeout(() => {
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-                triggerConfetti();
-                // Note: Version modal is handled by Auto-show Version Modal useEffect (line ~597)
-                // Don't duplicate setIsVersionOpen(true) here
+                    sendNotification(
+                        `已成功更新至 ${APP_VERSION}`,
+                        `${isPWA ? 'App' : '網頁'}已升級至最新版本，享受更佳體驗！`,
+                        "success",
+                        { time: timeStr }
+                    );
 
-            }, 1000);
+                    triggerConfetti();
+                }, 1000);
+            }
         }
-
-        // Always save current running version to cache
-        localStorage.setItem('app_version_cache', APP_VERSION);
-    }, [sendNotification]);
+    }, []); // Run ONCE on mount, ignore prop changes to prevent loops
 
     // BYOK State
     const [userGeminiKey, setUserGeminiKey] = useState("");
@@ -1221,7 +1339,7 @@ const App = () => {
     return (
         <TourProvider onNavigate={handleTourNavigation}>
             <div className={`min-h-screen flex flex-col overflow-x-hidden transition-colors duration-500 font-sans selection:bg-indigo-500/30 ${isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-slate-50 text-gray-900'}`}>
-                <NotificationSystem notifications={notifications} setNotifications={setNotifications} isDarkMode={isDarkMode} onNotificationClick={handleNotificationNavigate} />
+                <NotificationSystem notifications={toasts} setNotifications={setToasts} isDarkMode={isDarkMode} onNotificationClick={handleNotificationNavigate} />
                 <OfflineBanner isDarkMode={isDarkMode} />
                 <ReloadPrompt isDarkMode={isDarkMode} />
                 {/* Background Image (Global) */}
@@ -1231,7 +1349,7 @@ const App = () => {
                     alt="Background"
                 />
                 {/* Fixed Header - Outside content wrapper for proper fixed positioning */}
-                {view !== 'tutorial' && <Header title="✈️ Travel Together" user={currentUser || user} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} onLogout={() => signOut(auth)} onBack={(view !== 'dashboard' && view !== 'settings') ? () => setView('dashboard') : null} onTutorialStart={() => { if (localStorage.getItem('hasSeenOnboarding')) { setView('dashboard'); setTimeout(() => setShouldStartProductTour(true), 300); } else { setIsOnboardingOpen(true); } }} onViewChange={setView} onOpenUserSettings={() => setView('settings')} onOpenFeedback={() => setIsReportCenterOpen(true)} onOpenAdminFeedback={() => setIsAdminFeedbackModalOpen(true)} isAdmin={isAdmin} adminPendingCount={openFeedbackCount} onOpenVersion={() => setIsVersionOpen(true)} notifications={notifications} onRemoveNotification={removeNotification} onMarkNotificationsRead={markNotificationsRead} onNotificationClick={handleNotificationNavigate} allTrips={trips} />}
+                {view !== 'tutorial' && <Header title="✈️ Travel Together" user={currentUser || user} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} onLogout={() => signOut(auth)} onBack={(view !== 'dashboard' && view !== 'settings' && view !== 'my_trips') ? () => setView('dashboard') : null} onTutorialStart={() => { if (localStorage.getItem('hasSeenOnboarding')) { setView('dashboard'); setTimeout(() => setShouldStartProductTour(true), 300); } else { setIsOnboardingOpen(true); } }} onViewChange={setView} onOpenUserSettings={() => setView('settings')} onOpenFeedback={() => setIsReportCenterOpen(true)} onOpenAdminFeedback={() => setIsAdminFeedbackModalOpen(true)} isAdmin={isAdmin} adminPendingCount={openFeedbackCount} onOpenVersion={() => setIsVersionOpen(true)} notifications={notifications} onRemoveNotification={removeNotification} onMarkNotificationsRead={markNotificationsRead} onNotificationClick={handleNotificationNavigate} allTrips={trips} activeView={view} />}
 
                 <div className={`relative z-10 flex-grow pb-safe`} style={{ paddingTop: view !== 'tutorial' ? 'calc(72px + env(safe-area-inset-top, 0px))' : '0px' }}>
                     {view === 'dashboard' && (
@@ -1257,6 +1375,38 @@ const App = () => {
                                     // Chat Control
                                     onOpenChat={handleOpenChat}
                                     setChatInitialTab={setChatInitialTab}
+                                    forcedViewMode="explore" // Force Explore Mode
+                                    allTrips={trips}
+                                    loadingAllTrips={loadingTrips}
+                                />
+                            </ErrorBoundary>
+                        </div>
+                    )}
+                    {view === 'my_trips' && (
+                        <div className="animate-fade-in">
+                            <ErrorBoundary fallbackMessage="我的行程載入失敗，請重新整理" onOpenFeedback={() => setIsReportCenterOpen(true)}>
+                                <Dashboard
+                                    user={user}
+                                    onSelectTrip={(t) => { setSelectedTrip(t); setView('detail'); setIsPreviewMode(false); }}
+                                    isDarkMode={isDarkMode}
+                                    setGlobalBg={setGlobalBg}
+                                    globalSettings={globalSettings}
+                                    exchangeRates={exchangeRates}
+                                    weatherData={weatherData}
+                                    isLoadingWeather={isLoadingWeather}
+                                    onViewChange={setView}
+                                    onOpenSettings={(tab) => { setSettingsInitialTab(tab || 'general'); setView('settings'); }}
+                                    isBanned={isBanned}
+                                    onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+                                    deferredPrompt={deferredPrompt}
+                                    onInstall={handleInstallClick}
+                                    shouldStartProductTour={false} // No tour on this page (or separate tour)
+                                    onProductTourStarted={() => { }}
+                                    onOpenChat={handleOpenChat}
+                                    setChatInitialTab={setChatInitialTab}
+                                    forcedViewMode="my_trips" // Force My Trips Mode
+                                    allTrips={trips}
+                                    loadingAllTrips={loadingTrips}
                                 />
                             </ErrorBoundary>
                         </div>

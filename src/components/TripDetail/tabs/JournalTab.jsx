@@ -26,12 +26,15 @@ import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../../../firebase';
 import SearchFilterBar from '../../Shared/SearchFilterBar';
 import EmptyState from '../../Shared/EmptyState';
+import { useTranslation } from 'react-i18next';
 
 /**
  * JournalTab (足跡) - Unified Travel Journal
  * Fuses Files, Memories, and Notes with a Dual-View Engine
  */
 const JournalTab = ({ trip, user, isOwner, isDarkMode, glassCard, currentLang }) => {
+    const { t, i18n } = useTranslation();
+    const isZh = i18n.language.includes('zh');
     const [viewMode, setViewMode] = useState('timeline'); // 'timeline' (Stories) or 'editor' (Notes)
     const [searchValue, setSearchValue] = useState("");
     const [activeCategory, setActiveCategory] = useState("all");
@@ -223,8 +226,14 @@ const JournalTab = ({ trip, user, isOwner, isDarkMode, glassCard, currentLang })
                                                             {m.isImage ? 'Photo' : m.memoryType}
                                                         </span>
                                                     </div>
-                                                    <h4 className="font-bold text-lg mb-2">{m.name || m.title || m.memo}</h4>
-                                                    {m.content && <p className="text-sm opacity-70 mb-4 leading-relaxed line-clamp-3 group-hover/item:line-clamp-none transition-all">{m.content}</p>}
+                                                    <h4 className="font-bold text-lg mb-2">
+                                                        {isZh && (m.name_zh || m.title_zh || m.memo_zh) ? (m.name_zh || m.title_zh || m.memo_zh) : (m.name || m.title || m.memo)}
+                                                    </h4>
+                                                    {m.content && (
+                                                        <p className="text-sm opacity-70 mb-4 leading-relaxed line-clamp-3 group-hover/item:line-clamp-none transition-all">
+                                                            {isZh && m.content_zh ? m.content_zh : m.content}
+                                                        </p>
+                                                    )}
                                                     {m.memoryType === 'file' && m.isImage && (
                                                         <div className="max-w-md rounded-xl overflow-hidden shadow-2xl border border-white/10">
                                                             <img src={m.url} alt={m.name} className="w-full hover:scale-105 transition-transform duration-700" />
@@ -333,7 +342,7 @@ const JournalTab = ({ trip, user, isOwner, isDarkMode, glassCard, currentLang })
                                                 <div>
                                                     <h3 className="text-lg font-bold flex items-center gap-2">
                                                         <StickyNote className="w-5 h-5 text-indigo-400" />
-                                                        {note.title}
+                                                        {isZh && note.title_zh ? note.title_zh : note.title}
                                                     </h3>
                                                     <div className="flex items-center gap-3 mt-1 opacity-50 text-[10px] font-mono">
                                                         <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {note.date}</span>
@@ -358,7 +367,7 @@ const JournalTab = ({ trip, user, isOwner, isDarkMode, glassCard, currentLang })
                                                 </div>
                                             </div>
                                             <div className="mt-4 whitespace-pre-wrap text-sm leading-relaxed opacity-80">
-                                                {note.content}
+                                                {isZh && note.content_zh ? note.content_zh : note.content}
                                             </div>
                                         </div>
                                     )}

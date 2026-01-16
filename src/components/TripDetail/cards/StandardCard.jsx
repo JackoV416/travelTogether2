@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import { MapPin, Utensils, ShoppingBag, Hotel, Star, Clock, Pencil, DollarSign, Heart } from 'lucide-react';
-import { getSmartItemImage, formatDuration } from '../../../utils/tripUtils';
+import { MapPin, Utensils, ShoppingBag, Hotel, Star, Clock, Pencil, DollarSign, Heart, Navigation } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { getSmartItemImage, formatDuration, getTransportAdvice, getGoogleMapsSearchUrl } from '../../../utils/tripUtils';
 
 const StandardCard = ({ item, isDarkMode, onEdit }) => {
+    const { t, i18n } = useTranslation();
+    const isChinese = i18n.language && i18n.language.includes('zh');
+    const displayTitle = (isChinese && item.name_zh) ? item.name_zh : item.name;
     const bgImage = getSmartItemImage(item);
 
     // Type-based colors
@@ -61,6 +65,14 @@ const StandardCard = ({ item, isDarkMode, onEdit }) => {
         spot: <MapPin className="w-4 h-4 text-white" />
     };
 
+    // Localization Helper
+    const getDetail = (key) => {
+        if (isChinese) {
+            return item.details?.[`${key}_zh`] || item.details?.[key];
+        }
+        return item.details?.[key];
+    };
+
     return (
         <div className={`relative w-full rounded-2xl overflow-hidden border ${theme.border} ${theme.bg} backdrop-blur-md transition-all duration-300 hover:shadow-xl group flex flex-col md:flex-row h-auto md:h-[200px]`}>
             {/* Save Button (Absolute Top Right of Card/Image) */}
@@ -106,7 +118,7 @@ const StandardCard = ({ item, isDarkMode, onEdit }) => {
                 {/* Virtual Badge */}
                 {item.isVirtual && (
                     <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-sm rounded text-[9px] font-black text-white uppercase tracking-wider border border-white/20">
-                        續住 STAY
+                        {isChinese ? '續住' : 'STAY'}
                     </div>
                 )}
             </div>
@@ -124,7 +136,7 @@ const StandardCard = ({ item, isDarkMode, onEdit }) => {
                     {/* Line 1: Localized Name */}
                     <div className="flex justify-between items-start gap-2">
                         <h3 className={`text-sm font-black truncate leading-none ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                            {item.name}
+                            {displayTitle}
                         </h3>
                         {item.cost > 0 && (
                             <div className="flex items-center gap-0.5 text-xs font-bold text-emerald-500 shrink-0">
@@ -136,24 +148,36 @@ const StandardCard = ({ item, isDarkMode, onEdit }) => {
 
                     {/* Line 2: Secondary Name (English/Local) */}
                     <div className="text-[10px] opacity-40 font-bold truncate italic leading-none">
-                        {item.details?.nameEn || item.details?.nameLocal || item.details?.secondaryName || "Explore Destination"}
+                        {getDetail('nameEn') || getDetail('nameLocal') || getDetail('secondaryName') || t('trip.card.explore_dest')}
                     </div>
 
                     {/* Line 3: Duration / Capacity / Smart Info */}
                     <div className="flex items-center gap-2 text-[9px] font-black text-indigo-400/90">
                         <Clock className="w-2.5 h-2.5" />
-                        <span>停留約 {formatDuration(item.details?.duration || 60)}</span>
+                        <span>{isChinese ? '停留約' : 'Stay approx'} {formatDuration(item.details?.duration || 60)}</span>
                         {item.details?.rating && (
                             <span className="flex items-center gap-0.5 text-yellow-500 ml-1 border-l border-white/10 pl-2">
-                                {item.details.rating} ★
+                                {Number(item.details.rating).toFixed(1)} ★
                             </span>
                         )}
+                        {/* Smart Transport Suggestion Badge */}
+                        {(() => {
+                            const advice = getTransportAdvice(item, "", t);
+                            if (!advice) return null;
+                            const isWalk = advice.mode === 'walk' || advice.mode === 'walking';
+                            return (
+                                <span className={`flex items-center gap-1 ml-1 border-l border-white/10 pl-2 px-2 py-0.5 rounded-md ${isDarkMode ? (isWalk ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400') : (isWalk ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600')}`}>
+                                    <Navigation className="w-2.5 h-2.5" />
+                                    {advice.label}
+                                </span>
+                            );
+                        })()}
                     </div>
 
                     {/* Line 4: Exit / Location / Platform */}
                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 dark:text-gray-400">
                         <MapPin className="w-2.5 h-2.5 opacity-60" />
-                        <span className="truncate">{item.details?.location || item.details?.exit || "Nearby Location"}</span>
+                        <span className="truncate">{getDetail('location') || getDetail('exit') || t('trip.card.nearby_loc')}</span>
                     </div>
 
                     {/* Line 5: Time Range & Total Duration - Matched with TransportCard */}
@@ -162,33 +186,47 @@ const StandardCard = ({ item, isDarkMode, onEdit }) => {
                             {item.details?.time || item.time || "00:00"} — {item.details?.endTime || "..."}
                         </span>
                         <span className="opacity-20">/</span>
-                        <span className="text-gray-400/60 font-medium">Est. {formatDuration(item.details?.duration || 60)}</span>
+                        <span className="text-gray-400/60 font-medium">{t('trip.card.est')} {formatDuration(item.details?.duration || 60)}</span>
                     </div>
 
                     {/* Line 6: Other Info / Notes / Insight */}
                     <p className="text-[10px] opacity-60 line-clamp-1 leading-normal italic font-medium tracking-tight">
-                        {item.details?.insight || item.details?.desc || item.details?.notes || "No extra data provided."}
+                        {getDetail('insight') || getDetail('desc') || getDetail('notes') || (isChinese ? "暫無詳細資料。" : "No extra data provided.")}
                     </p>
 
                 </div>
 
                 {/* Line 7: Tags / Badges - MOVED OUTSIDE space-y-1 */}
                 <div className="flex items-center gap-1.5 mt-auto pt-2 overflow-hidden">
-                    {item.details?.tags?.length > 0 ? (
-                        item.details.tags.slice(0, 3).map((tag, i) => (
-                            <span key={i} className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter ${theme.accent} ${theme.bg} border ${theme.border}`}>
-                                #{tag}
+                    {(() => {
+                        const tags = isChinese ? (item.details?.tags_zh || item.details?.tags) : item.details?.tags;
+                        return tags?.length > 0 ? (
+                            tags.slice(0, 3).map((tag, i) => (
+                                <span key={i} className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter ${theme.accent} ${theme.bg} border ${theme.border}`}>
+                                    #{tag}
+                                </span>
+                            ))
+                        ) : (
+                            <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter ${isDarkMode ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-indigo-50 text-indigo-500'}`}>
+                                RECOMMENDED
                             </span>
-                        ))
-                    ) : (
-                        <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter ${isDarkMode ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-indigo-50 text-indigo-500'}`}>
-                            RECOMMENDED
-                        </span>
-                    )}
+                        );
+                    })()}
                 </div>
 
                 {/* Hover Actions */}
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            const url = getGoogleMapsSearchUrl(item.details?.location || item.name);
+                            if (url) window.open(url, '_blank');
+                        }}
+                        className="p-2 bg-emerald-600 rounded-xl text-white shadow-xl shadow-emerald-500/40 hover:bg-emerald-700 transition-colors"
+                        title={t('itinerary.actions.open_maps')}
+                    >
+                        <MapPin className="w-3.5 h-3.5" />
+                    </button>
                     <button
                         onClick={(e) => { e.stopPropagation(); onEdit && onEdit(item); }}
                         className="p-2 bg-indigo-600 rounded-xl text-white shadow-xl shadow-indigo-500/40 hover:bg-indigo-700 transition-colors"

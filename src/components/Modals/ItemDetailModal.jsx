@@ -1,8 +1,10 @@
 import React from 'react';
 import { Sparkles, X, MapPin, Clock, Info, Plane, Train, Bus, Car, Ship, Ticket, Calendar, DollarSign, ExternalLink } from 'lucide-react';
 import { formatDuration, getSmartItemImage, getLocalizedCityName } from '../../utils/tripUtils';
+import { useTranslation } from 'react-i18next';
 
 const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDelete }) => {
+    const { t } = useTranslation();
     if (!isOpen || !item) return null;
 
     // V1.0.3: Helper to calculate end time from start + duration
@@ -94,7 +96,7 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
                     <div className="grid grid-cols-2 gap-3">
                         <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-gray-50 border-gray-100'}`}>
                             <div className="text-[10px] uppercase font-bold opacity-60 mb-1 flex items-center gap-1">
-                                <Clock className="w-3 h-3" /> Duration
+                                <Clock className="w-3 h-3" /> {t('modal.item_detail.duration')}
                             </div>
                             <div className="font-black text-xl">
                                 {item.details?.duration ? formatDuration(item.details.duration) : "--"}
@@ -102,10 +104,10 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
                         </div>
                         <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-gray-50 border-gray-100'}`}>
                             <div className="text-[10px] uppercase font-bold opacity-60 mb-1 flex items-center gap-1">
-                                <DollarSign className="w-3 h-3" /> Cost
+                                <DollarSign className="w-3 h-3" /> {t('modal.item_detail.cost')}
                             </div>
                             <div className="font-black text-xl">
-                                {item.cost > 0 ? `$${item.cost}` : "免費"}
+                                {item.cost > 0 ? `$${item.cost}` : t('modal.item_detail.free')}
                             </div>
                         </div>
                     </div>
@@ -122,23 +124,22 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
                                 <div className="mt-1 text-[10px] font-mono opacity-50">{item.time}</div>
                             </div>
                             <div>
-                                <div className="text-[10px] font-bold opacity-60 uppercase mb-0.5">出發</div>
+                                <div className="text-[10px] font-bold opacity-60 uppercase mb-0.5">{t('modal.item_detail.depart')}</div>
                                 <div className="font-black text-lg leading-tight">
                                     {(() => {
-                                        // Try location first
+                                        // V1.4.3: Prioritize details.from first
+                                        if (item.details?.from) return item.details.from;
+
+                                        // Try location pattern
                                         const loc = item.details?.location || '';
-                                        const locParts = loc.split(/->|to/i).map(s => s.trim());
+                                        const locParts = loc.split(/->/i).map(s => s.trim());
                                         if (locParts[0] && locParts[0] !== loc) return locParts[0];
 
-                                        // Try parsing from item.name (e.g. "CX520 (HKG -> NRT)")
-                                        const nameMatch = item.name?.match(/\((.*?)\s*(?:->|to)\s*(.*?)\)/i) || item.name?.match(/(.*?)\s*(?:->|to)\s*(.*)/i);
-                                        if (nameMatch && nameMatch[1]) return nameMatch[1].trim();
-
-                                        // Fallback
-                                        return item.details?.fromCode || loc || "Origin";
+                                        // Fallback to fromCode
+                                        return item.details?.fromCode || "Origin";
                                     })()}
                                 </div>
-                                {/* Gate / Platform / Terminal - Unified for all transport types */}
+                                {/* Gate / Platform / Terminal */}
                                 {(item.details?.gate || item.details?.terminal || item.details?.platform) && (
                                     <div className="flex flex-wrap gap-2 mt-1">
                                         {item.details.terminal && (
@@ -170,23 +171,22 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
                                 </div>
                             </div>
                             <div>
-                                <div className="text-[10px] font-bold opacity-60 uppercase mb-0.5">抵達</div>
+                                <div className="text-[10px] font-bold opacity-60 uppercase mb-0.5">{t('modal.item_detail.arrive')}</div>
                                 <div className="font-black text-lg leading-tight">
                                     {(() => {
-                                        // Try location first
-                                        const loc = item.details?.location || '';
-                                        const locParts = loc.split(/->|to/i).map(s => s.trim());
-                                        if (locParts[1]) return locParts[1];
+                                        // V1.4.3: Prioritize details.to first
+                                        if (item.details?.to) return item.details.to;
 
-                                        // Try parsing from item.name (e.g. "CX520 (HKG -> NRT)")
-                                        const nameMatch = item.name?.match(/\((.*?)\s*(?:->|to)\s*(.*?)\)/i) || item.name?.match(/(.*?)\s*(?:->|to)\s*(.*)/i);
-                                        if (nameMatch && nameMatch[2]) return nameMatch[2].trim();
+                                        // Try location pattern
+                                        const loc = item.details?.location || '';
+                                        const locParts = loc.split(/->/i).map(s => s.trim());
+                                        if (locParts[1]) return locParts[1];
 
                                         // Try details.arrival
                                         if (item.details?.arrival) return item.details.arrival;
 
-                                        // Fallback
-                                        return item.arrival || item.details?.toCode || item.details?.arrivalGate || "Destination";
+                                        // Fallback to toCode
+                                        return item.details?.toCode || "Destination";
                                     })()}
                                 </div>
                                 {/* Arrival Gate & Baggage Claim */}
@@ -211,17 +211,16 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
                         </div>
                     </div>
 
-                    {/* Insight / 百科 Section */}
+                    {/* Insight / Section */}
                     {(item.details?.insight || item.details?.desc) && (
                         <div className={`p-4 rounded-xl ${isDarkMode ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-indigo-50 border border-indigo-100'}`}>
                             <div className="flex items-center gap-2 mb-3">
                                 <Info className="w-4 h-4 text-indigo-500" />
-                                <span className="text-xs font-bold text-indigo-500 uppercase tracking-wider">知識卡 / Insight</span>
+                                <span className="text-xs font-bold text-indigo-500 uppercase tracking-wider">{t('modal.item_detail.insight')}</span>
                             </div>
                             <div className={`text-sm leading-relaxed space-y-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                                 {(() => {
                                     const text = item.details?.insight || item.details?.desc || '';
-                                    // Parse special sections 【】 and numbered points
                                     const lines = text.split(/(?=【)|(?=\d+\.\s)/).filter(Boolean);
                                     return lines.map((line, i) => {
                                         const isHeader = line.startsWith('【');
@@ -241,7 +240,7 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
 
                     {/* Actions */}
                     <button className="w-full py-4 rounded-xl font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2">
-                        <MapPin className="w-4 h-4" /> 查看路線
+                        <MapPin className="w-4 h-4" /> {t('modal.item_detail.navigate')}
                     </button>
                 </div>
             );
@@ -254,10 +253,10 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
                 <div>
                     <div className="flex items-center gap-2 mb-2 opacity-60">
                         <Sparkles className="w-4 h-4 text-emerald-500" />
-                        <span className="text-xs font-bold uppercase tracking-wider">關於此地 (About)</span>
+                        <span className="text-xs font-bold uppercase tracking-wider">{t('modal.item_detail.about')}</span>
                     </div>
                     <p className="leading-relaxed text-sm whitespace-pre-line opacity-90">
-                        {item.details?.story || item.details?.desc || "暫無詳細介紹。"}
+                        {item.details?.story || item.details?.desc || t('modal.item_detail.no_desc')}
                     </p>
                 </div>
 
@@ -267,22 +266,22 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
                         <div className="flex items-center gap-3">
                             <Clock className="w-4 h-4 opacity-50" />
                             <div className="text-sm">
-                                <span className="opacity-60 block text-[10px] uppercase font-bold">預計時間 (Time)</span>
+                                <span className="opacity-60 block text-[10px] uppercase font-bold">{t('modal.item_detail.time')}</span>
                                 <span className="font-bold">{item.time} {item.details?.duration && `(${formatDuration(item.details.duration)})`}</span>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
                             <DollarSign className="w-4 h-4 opacity-50" />
                             <div className="text-sm">
-                                <span className="opacity-60 block text-[10px] uppercase font-bold">預算 (Cost)</span>
-                                <span className="font-bold">{item.cost > 0 ? `$${item.cost}` : "免費 Free"}</span>
+                                <span className="opacity-60 block text-[10px] uppercase font-bold">{t('modal.item_detail.cost')}</span>
+                                <span className="font-bold">{item.cost > 0 ? `$${item.cost}` : t('modal.item_detail.free')}</span>
                             </div>
                         </div>
                         {item.details?.address && (
                             <div className="flex items-center gap-3">
                                 <MapPin className="w-4 h-4 opacity-50" />
                                 <div className="text-sm">
-                                    <span className="opacity-60 block text-[10px] uppercase font-bold">地址 (Address)</span>
+                                    <span className="opacity-60 block text-[10px] uppercase font-bold">{t('modal.item_detail.address')}</span>
                                     <span className="font-bold">{item.details.address}</span>
                                 </div>
                             </div>
@@ -290,12 +289,12 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
                     </div>
                 </div>
 
-                {/* V1.0.3: History/Insight Section */}
+                {/* History/Insight Section */}
                 {(item.details?.insight || item.details?.history) && (
                     <div className={`p-4 rounded-xl border ${isDarkMode ? 'bg-indigo-900/20 border-indigo-500/20' : 'bg-indigo-50 border-indigo-100'}`}>
                         <div className="flex items-center gap-2 mb-3">
                             <Info className="w-4 h-4 text-indigo-500" />
-                            <span className="text-xs font-bold text-indigo-500 uppercase tracking-wider">知識卡 / Insight</span>
+                            <span className="text-xs font-bold text-indigo-500 uppercase tracking-wider">{t('modal.item_detail.insight')}</span>
                         </div>
                         <div className="text-sm leading-relaxed opacity-90 space-y-2">
                             {(() => {
@@ -320,10 +319,10 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
                 <div className="flex gap-3 pt-2">
                     {/* External Buttons */}
                     <button className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 border transition-colors ${isDarkMode ? 'border-white/5 hover:bg-gray-800' : 'border-gray-200 hover:bg-gray-50'}`}>
-                        <ExternalLink className="w-4 h-4" /> 官方網站
+                        <ExternalLink className="w-4 h-4" /> {t('modal.item_detail.official_site')}
                     </button>
                     <button className="flex-1 py-3 rounded-xl font-bold text-sm bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
-                        <MapPin className="w-4 h-4" /> 導航
+                        <MapPin className="w-4 h-4" /> {t('modal.item_detail.navigate')}
                     </button>
                 </div>
             </div>
@@ -356,7 +355,7 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
 
                     <div className="absolute bottom-4 left-6 z-20 text-white right-6">
                         <div className="flex gap-2 mb-2 flex-wrap">
-                            {/* Type Tag - Using unified theme */}
+                            {/* Type Tag */}
                             <span className={`text-[10px] uppercase font-bold tracking-wider ${typeTheme.bg} backdrop-blur-md px-2 py-1 rounded-lg`}>
                                 {typeTheme.label}
                             </span>
@@ -377,7 +376,7 @@ const ItemDetailModal = ({ isOpen, onClose, isDarkMode, item, city, onEdit, onDe
                                 className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'}`}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
-                                編輯行程
+                                {t('modal.item_detail.edit_item')}
                             </button>
                         )}
                         {onDelete && (

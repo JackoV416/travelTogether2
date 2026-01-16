@@ -4,7 +4,9 @@ import { db } from '../firebase';
 import { v4 as uuidv4 } from 'uuid';
 
 export const useNotifications = (user) => {
-    const [notifications, setNotifications] = useState([]);
+    const [notifications, setNotifications] = useState([]); // History (Bell)
+    const [toasts, setToasts] = useState([]); // Popups (NotificationSystem)
+
     const [permission, setPermission] = useState(
         typeof Notification !== 'undefined' ? Notification.permission : 'denied'
     );
@@ -37,8 +39,8 @@ export const useNotifications = (user) => {
         };
 
         // 1. In-App Notification (Toast) - Local Fallback
-        const localNotif = { id: uuidv4(), ...notifData, timestamp };
-        setNotifications(prev => [localNotif, ...prev]);
+        const localNotif = { id: uuidv4(), ...notifData, timestamp, body: notifData.message }; // Ensure body prop exists for toast
+        setToasts(prev => [localNotif, ...prev]);
 
         // 2. Persistent Storage (Firestore)
         if (user?.uid) {
@@ -65,7 +67,7 @@ export const useNotifications = (user) => {
 
         // Auto-dismiss short-lived toast (not the persistent ones in bell)
         setTimeout(() => {
-            setNotifications(prev => prev.filter(n => n.id !== localNotif.id));
+            setToasts(prev => prev.filter(n => n.id !== localNotif.id));
         }, 8000);
 
     }, [permission, user]);
@@ -97,7 +99,8 @@ export const useNotifications = (user) => {
         }
     }, [user]);
 
-    // Firestore Sync (Simplified query to avoid composite index requirement)
+    // Firestore Sync (History Only)
+    // Toasts are handled via local optimistic update + remote changes listener
     useEffect(() => {
         if (!user?.uid) return;
 
@@ -105,29 +108,60 @@ export const useNotifications = (user) => {
         const q = query(
             collection(db, `users/${user.uid}/notifications`),
             orderBy('timestamp', 'desc'),
-            limit(30) // Fetch a bit more to account for deleted ones
+            limit(30)
         );
 
+        let isInitialLoad = true;
+
         const unsub = onSnapshot(q, (snap) => {
+            // 1. Sync History
             const notifs = snap.docs
                 .map(d => ({
                     id: d.id,
                     ...d.data(),
+                    body: d.data().message, // Ensure compatibility
                     time: formatTime(d.data().timestamp)
                 }))
-                .filter(n => !n.deleted) // Filter deleted client-side
-                .slice(0, 20); // Limit to 20 after filtering
+                .filter(n => !n.deleted);
             setNotifications(notifs);
+
+            // 2. Handle New Remote Alerts (Toasts)
+            if (!isInitialLoad) {
+                snap.docChanges().forEach(change => {
+                    if (change.type === 'added') {
+                        // Only toast if it's NOT a local pending write (avoid duplicate of optimistic toast)
+                        if (!change.doc.metadata.hasPendingWrites) {
+                            const data = change.doc.data();
+                            const newToast = {
+                                id: change.doc.id,
+                                ...data,
+                                body: data.message,
+                                time: formatTime(data.timestamp)
+                            };
+                            setToasts(prev => [newToast, ...prev]);
+
+                            // Auto dismiss remote toast
+                            setTimeout(() => {
+                                setToasts(prev => prev.filter(n => n.id !== newToast.id));
+                            }, 8000);
+                        }
+                    }
+                });
+            } else {
+                isInitialLoad = false;
+            }
+
         }, (error) => {
-            console.warn("Notification sync error (falling back to local):", error.message);
-            // Fallback: keep using local state
+            console.warn("Notification sync error:", error.message);
         });
 
         return () => unsub();
     }, [user?.uid]);
 
     return {
-        notifications,
+        notifications, // History
+        toasts,        // Active Toasts
+        setToasts,     // Toast Control
         setNotifications,
         sendNotification,
         markNotificationsRead,

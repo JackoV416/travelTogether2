@@ -6,19 +6,25 @@ import { COUNTRIES_DATA, DEFAULT_BG_IMAGE } from '../../constants/appData';
 
 const TripCard = ({ trip, currentLang, onSelect, setGlobalBg, cardWeather }) => {
     const { t } = useTranslation();
-    const displayCity = getLocalizedCityName(trip.city || (trip.cities?.[0]) || '', currentLang);
-    const countryList = (trip.countries || [trip.country]).slice(0, 3).map(c => getLocalizedCountryName(c, currentLang)).join(', ');
+    const cities = (trip.cities && trip.cities.length > 0) ? trip.cities : (trip.city ? [trip.city] : []);
+    const displayCity = cities.slice(0, 2).map(c => getLocalizedCityName(c, currentLang)).join(currentLang === 'en' ? ', ' : '、') + (cities.length > 2 ? '...' : '');
+    const countryList = (trip.countries || [trip.country]).slice(0, 3).map(c => getLocalizedCountryName(c, currentLang)).join(currentLang === 'en' ? ', ' : '、');
 
     // Countdown Calculation
     const start = new Date(trip.startDate);
+    const end = trip.endDate ? new Date(trip.endDate) : null;
+
+    // Normalize "now" to start of today for consistent day-based comparison
     const now = new Date();
-    const diffTime = start - now;
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const diffTime = start - today;
     const daysUntil = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     let countdownLabel = "";
     let badgeClass = "";
 
-    if (trip.endDate && new Date(trip.endDate) < now) {
+    if (end && end < today) {
         countdownLabel = t('trip.status.ended');
         badgeClass = "bg-gray-700/50 text-gray-400 border-gray-600";
     } else if (daysUntil > 0) {

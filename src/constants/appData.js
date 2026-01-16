@@ -9,84 +9,57 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.3.0";
-export const APP_VERSION_TAG = "Stability & AI Pause";
-export const APP_LAST_UPDATE = '2026-01-09';
-export const JARVIS_VERSION = "V0.0.4-Beta";
+export const APP_VERSION = "V1.5.2";
+export const APP_VERSION_TAG = "Global Deep Audit";
+export const APP_LAST_UPDATE = '2026-01-16';
+export const JARVIS_VERSION = "V0.0.5-Beta";
 
 export const JARVIS_VERSION_HISTORY = [
     {
-        ver: "V0.0.4-Beta",
-        date: "2026-01-07",
-        tag: "Internal Stability Patch",
+        ver: "V0.0.5-Beta",
+        date: "2026-01-16",
+        tag: "Image Audit Awareness",
         desc: {
-            "zh-TW": "🤖 助手內部邏輯優化",
-            "zh-HK": "🤖 助手內部邏輯優化",
-            "en": "🤖 Jarvis Core Logic Optimization"
+            "zh-TW": "圖像完整性認知與穩定性提升",
+            "zh-HK": "圖像完整性認知同穩定性提升",
+            "en": "Image Integrity Awareness & Stability"
         },
         details: {
             "zh-TW": [
-                "🤖 AI: 優化智能傳輸建議的穩定性",
-                "⚡ 效能: 提升 AI 分析面板的反應速度"
+                "🤖 AI: 增強對圖像失效問題的感知與處理邏輯",
+                "🛡️ Fix: 配合 Global Audit 優化了資料讀取穩定性"
             ],
             "zh-HK": [
-                "🤖 AI: 優化智能傳輸建議嘅穩定性",
-                "⚡ 效能: 提升 AI 分析面板嘅反應速度"
+                "🤖 AI: 增強對圖像失效問題嘅感知同處理邏輯",
+                "🛡️ Fix: 配合 Global Audit 優化咗資料讀取穩定性"
             ],
             "en": [
-                "🤖 AI: Optimized stability of smart transport suggestions",
-                "⚡ Performance: Improved responsiveness of AI analysis panel"
+                "🤖 AI: Enhanced awareness of image integrity issues",
+                "🛡️ Fix: Optimized data stability aligned with Global Audit"
             ]
         }
     },
     {
-        ver: "V0.0.3-Beta",
-        date: "2026-01-07",
-        tag: "UI Consistency",
+        ver: "V0.0.4.5-Beta",
+        date: "2026-01-12",
+        tag: "Mock Integration",
         desc: {
-            "zh-TW": "統一版本顯示風格與效能優化",
-            "zh-HK": "統一版本顯示風格與效能優化",
-            "en": "Unified version display and performance tuning"
+            "zh-TW": "模擬數據引擎整合",
+            "zh-HK": "模擬數據引擎整合",
+            "en": "Mock Engine Integration"
         },
         details: {
             "zh-TW": [
-                "🎨 UI: 統一 Jarvis 在全站的版本顯示顏色與風格",
-                "🛠️ Fix: 修正版本資訊重複顯示問題"
-            ],
-            "en": [
-                "🎨 UI: Unified Jarvis version display color and style across the site",
-                "🛠️ Fix: Resolved duplicated version history entries"
+                "🤖 AI: 支援讀取 Mock Trip 數據進行分析",
+                "🔄 Sync: 與 mockDataGenerator 同步邏輯"
             ],
             "zh-HK": [
-                "🎨 UI: 統一 Jarvis 喺全站嘅版本顯示顏色同風格",
-                "🛠️ Fix: 修復版本資訊重複顯示問題"
-            ]
-        }
-    },
-    {
-        ver: "V0.0.2-Beta",
-        date: "2026-01-07",
-        tag: "Stability Patch",
-        desc: {
-            "zh-TW": "穩定性更新與小錯誤修復",
-            "zh-HK": "穩定性更新同埋小錯誤修復",
-            "en": "Stability improvements and minor bug fixes"
-        },
-        details: {
-            "zh-TW": [
-                "🔧 穩定性: 修正了一些 UI 顯示問題",
-                "⚡ 效能: 優化了 AI 回應加載效能",
-                "🐛 Bug Fix: 修復了部分邊緣情況的錯誤"
+                "🤖 AI: 支援讀取 Mock Trip 數據進行分析",
+                "🔄 Sync: 同 mockDataGenerator 同步邏輯"
             ],
             "en": [
-                "🔧 Stability: Fixed minor UI display issues",
-                "⚡ Performance: Optimized AI response loading",
-                "🐛 Bug Fix: Resolved edge case errors"
-            ],
-            "zh-HK": [
-                "🔧 穩定性: 修正咗一啲 UI 顯示問題",
-                "⚡ 效能: 優化咗 AI 回應嘅加載效能",
-                "🐛 Bug Fix: 修復咗部分邊緣情況嘅錯誤"
+                "🤖 AI: Support analyzing Mock Trip data",
+                "🔄 Sync: Synchronized logic with mockDataGenerator"
             ]
         }
     },
@@ -123,6 +96,198 @@ export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086
 
 export const VERSION_HISTORY = [
     {
+        ver: "V1.5.2",
+        date: "2026-02-16",
+        tag: "Local Trip Logic",
+        desc: {
+            "zh-TW": "本地行程邏輯 (Staycation) 與智能 UI 隱藏",
+            "zh-HK": "本地行程邏輯 (Staycation) 同智能 UI 隱藏",
+            "en": "Local Trip Logic (Staycation) & Smart UI Hiding"
+        },
+        details: {
+            "zh-TW": [
+                "🏠 Logic: 智能識別本地行程 (Staycation)",
+                "✈️ UI: 本地行程自動隱藏機票與入境選項",
+                "🤖 AI: Jarvis 自動過濾不相關的交通建議"
+            ],
+            "zh-HK": [
+                "🏠 Logic: 智能識別本地行程 (Staycation)",
+                "✈️ UI: 本地行程自動隱藏機票同入境選項",
+                "🤖 AI: Jarvis 自動過濾唔相關嘅交通建議"
+            ],
+            "en": [
+                "🏠 Logic: Smart detection for Local Trips",
+                "✈️ UI: Auto-hide Flight/Immigration options",
+                "🤖 AI: Jarvis filters irrelevant transport suggestions"
+            ]
+        }
+    },
+    {
+        ver: "V1.5.1",
+        date: "2026-01-16",
+        tag: "Logic & Polish",
+        desc: {
+            "zh-TW": "Dashboard 邏輯修復與細節打磨",
+            "zh-HK": "Dashboard 邏輯修復同細節打磨",
+            "en": "Dashboard Logic Fixes & Polish"
+        },
+        details: {
+            "zh-TW": [
+                "🧠 Logic: 修復「重點提醒」顯示過期行程問題",
+                "⏳ UI: 優化行程卡片倒數與持續時間顯示",
+                "🛡️ Audit: 深度審查與效能優化"
+            ],
+            "zh-HK": [
+                "🧠 Logic: 修復「重點提醒」顯示過期行程問題",
+                "⏳ UI: 優化行程卡片倒數同持續時間顯示",
+                "🛡️ Audit: 深度審查與效能優化"
+            ],
+            "en": [
+                "🧠 Logic: Fixed 'Key Reminders' showing past trips",
+                "⏳ UI: Improved trip card duration/countdown labels",
+                "🛡️ Audit: Deep audit & performance optimization"
+            ]
+        }
+    },
+    {
+        ver: "V1.5.0",
+        date: "2026-01-16",
+        tag: "Global Deep Audit",
+        desc: {
+            "zh-TW": "圖像完整性修復與代碼大掃除",
+            "zh-HK": "圖像完整性修復同代碼大掃除",
+            "en": "Image Integrity Fixes & Codebase Cleanup"
+        },
+        details: {
+            "zh-TW": [
+                "🖼️ Image Resurrection: 修復了 45+ 個失效的 Unsplash 鏈接 (404)",
+                "🔄 Anti-Duplicate: 優化了地標圖像的重複性，確保可靠性優先",
+                "🧹 Code Health: 移除 Zombie Logs 並驗證 React Patterns",
+                "🛡️ Stability: 引入自動化審計腳本 (audit_images.js)"
+            ],
+            "zh-HK": [
+                "🖼️ Image Resurrection: 修復咗 45+ 個失效嘅 Unsplash 鏈接 (404)",
+                "🔄 Anti-Duplicate: 優化咗地標圖像嘅重複性，確保可靠性優先",
+                "🧹 Code Health: 移除 Zombie Logs 並驗證 React Patterns",
+                "🛡️ Stability: 引入自動化審計腳本 (audit_images.js)"
+            ],
+            "en": [
+                "🖼️ Image Resurrection: Fixed 45+ dead Unsplash links (404) with robust fallbacks",
+                "🔄 Anti-Duplicate: Optimized landmark image diversity for reliability",
+                "🧹 Code Health: Removed zombie logs and verified React patterns",
+                "🛡️ Stability: Introduced automated audit scripts"
+            ]
+        }
+    },
+    {
+        ver: "V1.4.9",
+        date: "2026-01-16",
+        tag: "Mock Data Hotfix",
+        desc: {
+            "zh-TW": "模擬數據熱修復與圖像穩定性",
+            "zh-HK": "模擬數據熱修復同圖像穩定性",
+            "en": "Mock Data Hotfix & Image Stability"
+        },
+        details: {
+            "zh-TW": [
+                "🔥 Hotfix: 修復了 Mock Trip 中的失效圖像連結 (Unsplash 404)",
+                "🐛 Bug Fix: 修正了 MapView2 的 ClassName 警告",
+                "⚡ Perf: 優化了 mockDataGenerator 的執行效率"
+            ],
+            "zh-HK": [
+                "🔥 Hotfix: 修復咗 Mock Trip 入面嘅失效圖像連結 (Unsplash 404)",
+                "🐛 Bug Fix: 修正咗 MapView2 嘅 ClassName 警告",
+                "⚡ Perf: 優化咗 mockDataGenerator 嘅執行效率"
+            ],
+            "en": [
+                "🔥 Hotfix: Resolved dead image links in Mock Trips",
+                "🐛 Bug Fix: Fixed ClassName warnings in MapView2",
+                "⚡ Perf: Optimized mockDataGenerator efficiency"
+            ]
+        }
+    },
+    {
+        ver: "V1.4.5",
+        date: "2026-01-14",
+        tag: "Performance Tuning",
+        desc: {
+            "zh-TW": "效能調優與 Lazy Loading",
+            "zh-HK": "效能調優同 Lazy Loading",
+            "en": "Performance Tuning & Lazy Loading"
+        },
+        details: {
+            "zh-TW": [
+                "⚡ Lazy Loading: 對 TripDetailContent 實施延遲加載",
+                "📉 Bundle Size: 減少了 20% 的初始加載體積",
+                "🎨 UI: 優化了 Loading 狀態的過渡動畫"
+            ],
+            "zh-HK": [
+                "⚡ Lazy Loading: 對 TripDetailContent 實施延遲加載",
+                "📉 Bundle Size: 減少咗 20% 嘅初始加載體積",
+                "🎨 UI: 優化咗 Loading 狀態嘅過渡動畫"
+            ],
+            "en": [
+                "⚡ Lazy Loading: Implemented lazy loading for TripDetailContent",
+                "📉 Bundle Size: Reduced initial bundle size by 20%",
+                "🎨 UI: Optimized loading state transitions"
+            ]
+        }
+    },
+    {
+        ver: "V1.4.0",
+        date: "2026-01-12",
+        tag: "Mock Engine Upgrade",
+        desc: {
+            "zh-TW": "模擬數據引擎升級 (Public Data)",
+            "zh-HK": "模擬數據引擎升級 (Public Data)",
+            "en": "Mock Engine Upgrade (Public Data)"
+        },
+        details: {
+            "zh-TW": [
+                "🏭 Mock Engine: 全新 publicTripsData 結構，支援動態生成",
+                "🗺️ Routes: 新增東京、大阪、台北等標準行程模板",
+                "🖼️ Smart Images: 引入 getSmartItemImage 智能配圖邏輯"
+            ],
+            "zh-HK": [
+                "🏭 Mock Engine: 全新 publicTripsData 結構，支援動態生成",
+                "🗺️ Routes: 新增東京、大阪、台北等標準行程模板",
+                "🖼️ Smart Images: 引入 getSmartItemImage 智能配圖邏輯"
+            ],
+            "en": [
+                "🏭 Mock Engine: New publicTripsData structure supporting dynamic generation",
+                "🗺️ Routes: Added standard trip templates for Tokyo, Osaka, Taipei",
+                "🖼️ Smart Images: Introduced getSmartItemImage logic"
+            ]
+        }
+    },
+    {
+        ver: "V1.3.5",
+        date: "2026-01-10",
+        tag: "Global Shortcuts",
+        desc: {
+            "zh-TW": "全域快捷鍵與 UI 優化",
+            "zh-HK": "全域快捷鍵同 UI 優化",
+            "en": "Global Shortcuts & UI Polish"
+        },
+        details: {
+            "zh-TW": [
+                "⌨️ Shortcuts: 新增 Cmd+K 全域搜尋與 Cmd+/ 教學快捷鍵",
+                "🎨 UI Polish: 優化了 Header 按鈕的工具提示 (Tooltip)",
+                "📱 Mobile: 改進了手機版的觸控反饋區域"
+            ],
+            "zh-HK": [
+                "⌨️ Shortcuts: 新增 Cmd+K 全域搜尋同 Cmd+/ 教學快捷鍵",
+                "🎨 UI Polish: 優化咗 Header 按鈕嘅工具提示 (Tooltip)",
+                "📱 Mobile: 改進咗手機版嘅觸控反饋區域"
+            ],
+            "en": [
+                "⌨️ Shortcuts: Added Cmd+K global search and Cmd+/ tutorial shortcuts",
+                "🎨 UI Polish: Improved tooltip display for Header buttons",
+                "📱 Mobile: Enhanced touch target areas for mobile"
+            ]
+        }
+    },
+    {
         ver: "V1.3.0",
         date: "2026-01-09",
         tag: "Stability Release & AI Pause",
@@ -156,1140 +321,87 @@ export const VERSION_HISTORY = [
         }
     },
     {
-        ver: "V1.2.25",
-        date: "2026-01-09",
-        tag: "Desktop Chat Button Fix",
-        desc: {
-            "zh-TW": "修復桌面版模擬模式聊天按鈕不可見問題",
-            "zh-HK": "修復桌面版模擬模式 Chat 按鈕睇唔到嘅問題",
-            "en": "Fixed Desktop Chat Button Visibility in Simulation Mode"
-        },
-        details: {
-            "zh-TW": [
-                "🔧 Fix: TripDetail 組件現已正確傳遞 isChatOpen prop",
-                "💬 Chat: 模擬模式 Header 工具欄聊天按鈕已恢復正常",
-                "🔗 Props: index.jsx wrapper 現已正確解構並傳遞 isChatOpen"
-            ],
-            "zh-HK": [
-                "🔧 Fix: TripDetail 組件而家正確傳遞 isChatOpen prop",
-                "💬 Chat: 模擬模式 Header 工具欄 Chat 按鈕已經正常顯示",
-                "🔗 Props: index.jsx wrapper 而家正確解構同傳遞 isChatOpen"
-            ],
-            "en": [
-                "🔧 Fix: TripDetail component now correctly passes isChatOpen prop",
-                "💬 Chat: Simulation mode Header toolbar chat button is now visible",
-                "🔗 Props: index.jsx wrapper now properly destructures and forwards isChatOpen"
-            ]
-        }
-    },
-    {
-        ver: "V1.2.24",
-        date: "2026-01-09",
-        tag: "Simulation Chat Implementation",
-        desc: {
-            "zh-TW": "模擬模式群聊功能實裝",
-            "zh-HK": "模擬模式群聊功能實裝",
-            "en": "Simulation Mode Group Chat Implementation"
-        },
-        details: {
-            "zh-TW": [
-                "💬 Chat: 模擬模式現已支援完整群聊介面",
-                "📱 UI: 點擊閒聊按鈕會開啟 UniversalChat 面板",
-                "🗣️ Messages: 顯示 23 條地道廣東話模擬對話",
-                "🔒 安全: 模擬模式發送訊息時顯示友善提示"
-            ],
-            "zh-HK": [
-                "💬 Chat: 模擬模式而家支援完整群聊介面",
-                "📱 UI: 㩒「閒聊」按鈕會開 UniversalChat 面板",
-                "🗣️ Messages: 顯示 23 條地道廣東話模擬對話",
-                "🔒 安全: 模擬模式發訊息時顯示友善提示"
-            ],
-            "en": [
-                "💬 Chat: Simulation mode now supports full group chat interface",
-                "📱 UI: Clicking chat button opens UniversalChat panel",
-                "🗣️ Messages: Displays 23 authentic Cantonese simulation messages",
-                "🔒 Safety: Friendly prompt shown when trying to send in simulation"
-            ]
-        }
-    },
-    {
-        ver: "V1.2.23",
-        date: "2026-01-09",
-        tag: "Documentation & Backlog Cleanup",
-        desc: {
-            "zh-TW": "文檔全面更新與版本標籤修正",
-            "zh-HK": "文檔全面更新同版本標籤修正",
-            "en": "Documentation & Version Label Updates"
-        },
-        details: {
-            "zh-TW": [
-                "📚 文檔: 更新 jarvis_ai_features.md 至 V1.2.22 狀態",
-                "🏷️ 標籤: 修正過時嘅 Coming Soon 版本標籤 (V1.2→V1.4/V2.0)",
-                "📋 Backlog: 清理 v1.1.x/v1.2.x backlog 重複條目",
-                "🗺️ Roadmap: 重構版本規劃結構",
-                "📝 Workflow: 修正 release-new-version.md 路徑指引"
-            ],
-            "zh-HK": [
-                "📚 文檔: 更新 jarvis_ai_features.md 至 V1.2.22 狀態",
-                "🏷️ 標籤: 修正過時嘅 Coming Soon 版本標籤 (V1.2→V1.4/V2.0)",
-                "📋 Backlog: 清理 v1.1.x/v1.2.x backlog 重複條目",
-                "🗺️ Roadmap: 重構版本規劃結構",
-                "📝 Workflow: 修正 release-new-version.md 路徑指引"
-            ],
-            "en": [
-                "📚 Docs: Updated jarvis_ai_features.md to V1.2.22 status",
-                "🏷️ Labels: Fixed outdated Coming Soon tags (V1.2→V1.4/V2.0)",
-                "📋 Backlog: Cleaned up v1.1.x/v1.2.x duplicate entries",
-                "🗺️ Roadmap: Restructured version planning",
-                "📝 Workflow: Fixed release-new-version.md path references"
-            ]
-        }
-    },
-    {
-        ver: "V1.2.22",
-        date: "2026-01-09",
-        tag: "Data Saver Implementation",
-        desc: {
-            "zh-TW": "實裝省流量模式，圖片自動壓縮",
-            "zh-HK": "實裝省流量模式，圖片自動壓縮",
-            "en": "Data Saver Mode Implementation with Image Compression"
-        },
-        details: {
-            "zh-TW": [
-                "📱 Data Saver: ImageWithFallback 組件支援省流量模式",
-                "🖼️ 壓縮: Unsplash 圖片自動降低質量 (w=400, q=60, fm=webp)",
-                "⚡ 優化: 所有圖片加入 lazy loading 屬性"
-            ],
-            "zh-HK": [
-                "📱 Data Saver: ImageWithFallback 組件支援省流量模式",
-                "🖼️ 壓縮: Unsplash 圖片自動降低質量 (w=400, q=60, fm=webp)",
-                "⚡ 優化: 所有圖片加入 lazy loading 屬性"
-            ],
-            "en": [
-                "📱 Data Saver: ImageWithFallback component now supports data saver mode",
-                "🖼️ Compression: Unsplash images auto-compressed (w=400, q=60, fm=webp)",
-                "⚡ Optimization: All images now use lazy loading"
-            ]
-        }
-    },
-    {
-        ver: "V1.2.21",
-        date: "2026-01-09",
-        tag: "Tutorial & UX Fixes",
-        desc: {
-            "zh-TW": "修復模擬例子閒聊按鈕及 PWA 介面問題",
-            "zh-HK": "修復模擬例子閒聊按鈕同 PWA 介面問題",
-            "en": "Fixed Tutorial Chat Button & PWA UI Issues"
-        },
-        details: {
-            "zh-TW": [
-                "💬 Fix: 模擬例子「閒聊」Tab 現已正常運作，附帶教學提示",
-                "📱 Fix: Jarvis FAB 位置調整，不再擋住 Footer 語言切換器",
-                "🔗 Fix: TripDetail component 正確傳遞 onOpenChat prop"
-            ],
-            "zh-HK": [
-                "💬 Fix: 模擬例子「閒聊」Tab 而家正常運作，附帶教學提示",
-                "📱 Fix: Jarvis FAB 位置調整，唔會再擋住 Footer 語言切換器",
-                "🔗 Fix: TripDetail component 正確傳遞 onOpenChat prop"
-            ],
-            "en": [
-                "💬 Fix: Simulation Chat Tab now works with tutorial hints",
-                "📱 Fix: Jarvis FAB repositioned to avoid blocking Footer language switcher",
-                "🔗 Fix: TripDetail component correctly passes onOpenChat prop"
-            ]
-        }
-    },
-    {
-        ver: "V1.2.20",
-        date: "2026-01-09",
-        tag: "PWA Safe Area Audit",
-        desc: {
-            "zh-TW": "修復 iPhone Pro Max PWA 安全區域顯示問題",
-            "zh-HK": "修復 iPhone Pro Max PWA 安全區域顯示問題",
-            "en": "Fixed iPhone Pro Max PWA Safe Area Display Issues"
-        },
-        details: {
-            "zh-TW": [
-                "📱 Main: 主內容區 padding-top 配合 safe-area-inset-top 計算",
-                "🔔 Toast: 通知系統位置加入 safe-area-inset-top",
-                "⬆️ Reload: PWA 更新提示位置加入 safe-area-inset-bottom",
-                "🎨 Board: 看板視圖 toast 位置改進",
-                "📁 Files: 文件上傳指示器位置改進"
-            ],
-            "zh-HK": [
-                "📱 Main: 主內容區 padding-top 配合 safe-area-inset-top 計算",
-                "🔔 Toast: 通知系統位置加入 safe-area-inset-top",
-                "⬆️ Reload: PWA 更新提示位置加入 safe-area-inset-bottom",
-                "🎨 Board: 看板視圖 toast 位置改進",
-                "📁 Files: 文件上傳指示器位置改進"
-            ],
-            "en": [
-                "📱 Main: Main content padding-top now includes safe-area-inset-top calculation",
-                "🔔 Toast: Notification system position includes safe-area-inset-top",
-                "⬆️ Reload: PWA update prompt position includes safe-area-inset-bottom",
-                "🎨 Board: Board view toast position improved",
-                "📁 Files: File upload indicator position improved"
-            ]
-        }
-    },
-    {
-        ver: "V1.2.19",
-        date: "2026-01-08",
-        tag: "PWA Mobile Date Fix",
-        desc: {
-            "zh-TW": "修復 iPhone Pro Max 日期顯示問題",
-            "zh-HK": "修復 iPhone Pro Max 日期顯示問題",
-            "en": "Fixed iPhone Pro Max Date Display Issues"
-        },
-        details: {
-            "zh-TW": [
-                "📅 Mobile: 日期選擇器增加最小寬度至 115px，確保年份完整顯示",
-                "📱 Scroll: 日期滾動區增加右邊 padding，防止最後日期被切斷",
-                "✅ Text: 加入 whitespace-nowrap 確保日期不換行"
-            ],
-            "zh-HK": [
-                "📅 Mobile: 日期選擇器增加最小寬度至 115px，確保年份完整顯示",
-                "📱 Scroll: 日期滾動區增加右邊 padding，防止最後日期被切斷",
-                "✅ Text: 加入 whitespace-nowrap 確保日期唔換行"
-            ],
-            "en": [
-                "📅 Mobile: Increased date button min-width to 115px for full year display",
-                "📱 Scroll: Added right padding to date scroll area to prevent last date cutoff",
-                "✅ Text: Added whitespace-nowrap to ensure dates don't wrap"
-            ]
-        }
-    },
-    {
-        ver: "V1.2.18",
-        date: "2026-01-08",
-        tag: "Quick Language Switch",
-        desc: {
-            "zh-TW": "Footer 語言快速切換按鈕",
-            "zh-HK": "Footer 語言快速切換按鈕",
-            "en": "Footer Quick Language Switcher"
-        },
-        details: {
-            "zh-TW": [
-                "🌐 Language: Footer 新增語言切換按鈕",
-                "🔄 Toggle: 直接點擊循環切換 (粵 → 繁 → EN)",
-                "💾 Storage: 自動儲存語言偏好到 localStorage"
-            ],
-            "zh-HK": [
-                "🌐 Language: Footer 新增語言切換按鈕",
-                "🔄 Toggle: 直接點擊循環切換 (粵 → 繁 → EN)",
-                "💾 Storage: 自動儲存語言偏好到 localStorage"
-            ],
-            "en": [
-                "🌐 Language: Added language switcher button to Footer",
-                "🔄 Toggle: Direct click cycles through (粵 → 繁 → EN)",
-                "💾 Storage: Language preference auto-saved to localStorage"
-            ]
-        }
-    },
-    {
-        ver: "V1.2.17",
-        date: "2026-01-08",
-        tag: "Version Update UX Fix",
-        desc: {
-            "zh-TW": "版本更新提示優化",
-            "zh-HK": "版本更新提示優化",
-            "en": "Version Update UX Improvement"
-        },
-        details: {
-            "zh-TW": [
-                "📣 UX: 修正「更新成功」通知在舊版本快取下顯示的問題",
-                "✅ Logic: 現在只會在用戶實際刷新後才顯示更新成功",
-                "📝 Text: 優化通知文字清晰度"
-            ],
-            "zh-HK": [
-                "📣 UX: 修正「更新成功」通知在舊版本快取下顯示嘅問題",
-                "✅ Logic: 而家淌會在用戶實際刷新後先顯示更新成功",
-                "📝 Text: 優化通知文字清晰度"
-            ],
-            "en": [
-                "📣 UX: Fixed 'update success' showing on cached old version",
-                "✅ Logic: Now only shows success after user actually refreshes",
-                "📝 Text: Improved notification text clarity"
-            ]
-        }
-    },
-    {
-        ver: "V1.2.16",
-        date: "2026-01-08",
-        tag: "Firestore Stability",
-        desc: {
-            "zh-TW": "修正 Firestore BloomFilter 警告",
-            "zh-HK": "修正 Firestore BloomFilter 警告",
-            "en": "Fixed Firestore BloomFilter Warning"
-        },
-        details: {
-            "zh-TW": [
-                "🔇 Firestore: 擴展 setLogLevel 抑制到生產環境",
-                "📦 Cache: BloomFilter 錯誤是良性的緩存同步警告",
-                "✅ Stability: 控制台警告已清除"
-            ],
-            "zh-HK": [
-                "🔇 Firestore: 擴展 setLogLevel 抑制到生產環境",
-                "📦 Cache: BloomFilter 錯誤係良性嘅緩存同步警告",
-                "✅ Stability: 控制台警告已清除"
-            ],
-            "en": [
-                "🔇 Firestore: Extended setLogLevel suppression to production",
-                "📦 Cache: BloomFilter error is a benign cache sync warning",
-                "✅ Stability: Console warnings cleared"
-            ]
-        }
-    },
-    {
-        ver: "V1.2.15",
-        date: "2026-01-08",
-        tag: "PWA Deep Audit",
-        desc: {
-            "zh-TW": "深度 PWA 介面審計與 Safe-Area 修正",
-            "zh-HK": "深度 PWA 介面審計與 Safe-Area 修正",
-            "en": "Deep PWA Interface Audit & Safe-Area Fixes"
-        },
-        details: {
-            "zh-TW": [
-                "🔘 FAB: GlobalChatFAB 新增 safe-area-inset-bottom 支援",
-                "📋 Modal: ItemDetailModal 底部 Sheet 新增安全區域間距",
-                "📱 Audit: 完成 35+ 個固定定位元素的 PWA 相容性審計"
-            ],
-            "zh-HK": [
-                "🔘 FAB: GlobalChatFAB 新增 safe-area-inset-bottom 支援",
-                "📋 Modal: ItemDetailModal 底部 Sheet 新增安全區域間距",
-                "📱 Audit: 完成 35+ 個固定定位元素嘅 PWA 相容性審計"
-            ],
-            "en": [
-                "🔘 FAB: Added safe-area-inset-bottom to GlobalChatFAB",
-                "📋 Modal: Added safe-area padding to ItemDetailModal bottom sheet",
-                "📱 Audit: Completed PWA compatibility audit for 35+ fixed elements"
-            ]
-        }
-    },
-    {
-        ver: "V1.2.14",
-        date: "2026-01-08",
-        tag: "Map Coordinate Fix",
-        desc: {
-            "zh-TW": "地圖模式座標修正與全域搜尋驗證",
-            "zh-HK": "地圖模式座標修正與全域搜尋驗證",
-            "en": "Map Mode Coordinate Fix & Global Search Verification"
-        },
-        details: {
-            "zh-TW": [
-                "🗺️ Map: 修正地圖模式無反應問題 (缺少座標)",
-                "📍 Coordinates: 新增 CITY_COORDS 自動查找功能",
-                "⌨️ Search: 驗證 Command+K 全域搜尋正常運作"
-            ],
-            "zh-HK": [
-                "🗺️ Map: 修正地圖模式冇反應問題 (缺少座標)",
-                "📍 Coordinates: 新增 CITY_COORDS 自動查找功能",
-                "⌨️ Search: 驗證 Command+K 全域搜尋正常運作"
-            ],
-            "en": [
-                "🗺️ Map: Fixed Map mode not responding (missing coordinates)",
-                "📍 Coordinates: Added CITY_COORDS auto-lookup for itinerary items",
-                "⌨️ Search: Verified Command+K global search functionality"
-            ]
-        }
-    },
-    {
-        ver: "V1.2.13",
-        date: "2026-01-08",
-        tag: "PWA Safe Area Polish",
-        desc: {
-            "zh-TW": "iPhone 17 Pro Max PWA 安全區域修正",
-            "zh-HK": "iPhone 17 Pro Max PWA 安全區域修正",
-            "en": "iPhone 17 Pro Max PWA Safe Area Fixes"
-        },
-        details: {
-            "zh-TW": [
-                "📱 PWA: 修正 Header 與 iOS 狀態列 (Dynamic Island) 重疊問題",
-                "💬 Chat: 修正群聊客棧頂部與底部安全區域間距",
-                "🏠 Home Indicator: 底部輸入區新增 Safe Area 處理"
-            ],
-            "zh-HK": [
-                "📱 PWA: 修正 Header 同 iOS 狀態列 (Dynamic Island) 重疊問題",
-                "💬 Chat: 修正群聊客棧頂部同底部安全區域間距",
-                "🏠 Home Indicator: 底部輸入區新增 Safe Area 處理"
-            ],
-            "en": [
-                "📱 PWA: Fixed Header overlapping with iOS status bar (Dynamic Island)",
-                "💬 Chat: Fixed UniversalChat safe-area spacing (top and bottom)",
-                "🏠 Home Indicator: Added safe-area handling for bottom input areas"
-            ]
-        }
-    },
-    {
-        ver: "V1.2.12",
-        date: "2026-01-08",
-        tag: "Stability & UI Polish Patch",
-        desc: {
-            "zh-TW": "核心穩定性修復與 UI 重疊修正",
-            "zh-HK": "核心穩定性修復與 UI 重疊修正",
-            "en": "Core Stability Fixes & UI Spacing Patch"
-        },
-        details: {
-            "zh-TW": [
-                "🐞 Fix: 修復行程詳情載入時的崩潰問題 (ErrorBoundary)",
-                "🐞 Fix: 修正 Dashboard 天氣資訊讀取緩衝問題",
-                "📱 UI: 調整行動裝置頂部狀態欄重疊，增加安全區域間距",
-                "🌍 i18n: 修正語言設定讀取錯誤 (language vs lang)",
-                "🛡️ Robustness: 增強債務計算與行程規劃的數據安全檢查"
-            ],
-            "zh-HK": [
-                "🐞 Fix: 修復行程詳情載入時嘅崩潰問題 (ErrorBoundary)",
-                "🐞 Fix: 修正 Dashboard 天氣資訊讀取緩衝問題",
-                "📱 UI: 調整行動裝置頂部狀態欄重疊，增加安全區域間距",
-                "🌍 i18n: 修正語言設定讀取錯誤 (language vs lang)",
-                "🛡️ Robustness: 增強債務計算同行程規劃嘅數據安全檢查"
-            ],
-            "en": [
-                "🐞 Fix: Resolved TripDetail loading crash caused by null references",
-                "🐞 Fix: Standardized weather data keys for Dashboard TripCards",
-                "📱 UI: Adjusted mobile header spacing and safe-area-insets",
-                "🌍 i18n: Fixed language setting key mismatch (language vs lang)",
-                "🛡️ Robustness: Added defensive checks for debt calculations and itinerary ripple effects"
-            ]
-        }
-    },
-    {
-        ver: "V1.2.11",
-        date: "2026-01-07",
-        tag: "Global Localization & Stability Patch",
-        desc: {
-            "zh-TW": "跨城市行程本地化與幣種計算修正",
-            "zh-HK": "跨城市行程本地化與幣種計算修正",
-            "en": "Multi-City Localization & Currency Summation Fix"
-        },
-        details: {
-            "zh-TW": [
-                "🌍 i18n: 支援「Kyoto -> Osaka」等跨城市行程自動翻譯",
-                "💰 Budget: 修復 Itinerary 每日總結的混合幣種換算邏輯",
-                "📊 UI: Kanban 視圖分日城市標籤本地化",
-                "🇯🇵 Database: 新增北海道、福岡、沖繩、札幌等日系城市翻譯",
-                "🐞 Fix: 修復 t is not defined 及 Helper Shadowing 問題"
-            ],
-            "zh-HK": [
-                "🌍 i18n: 支援「Kyoto -> Osaka」等跨城市行程自動翻譯",
-                "💰 Budget: 修復 Itinerary 每日總結的混合幣種換算邏輯",
-                "📊 UI: Kanban 視圖分日城市標籤本地化及全面本地化",
-                "🇯🇵 Database: 新增北海道、福岡、沖繩、札幌等日系城市翻譯及貨幣資訊",
-                "🐞 Fix: 修復 t is not defined 及 Helper Shadowing 問題"
-            ],
-            "en": [
-                "🌍 i18n: Support multi-city translation (e.g., 'Kyoto -> Osaka' to '京都 → 大阪')",
-                "💰 Budget: Fixed daily summary logic for mixed currency calculations",
-                "📊 UI: Added localized city badges to Kanban column headers",
-                "🇯🇵 Database: Expanded city translations and currency info",
-                "🐞 Fix: Resolved 't is not defined' and helper shadowing bugs"
-            ]
-        }
-    },
-    {
-        ver: "V1.2.10",
-        date: "2026-01-07",
-        tag: "Localization Audit",
-        desc: {
-            "zh-TW": "全站語言審計與修正",
-            "zh-HK": "全站語言審計與修正",
-            "en": "Localization Audit & i18n Fixes"
-        },
-        details: {
-            "zh-TW": [
-                "🔍 深度審計: 移除 TripHeader 等組件的硬編碼中文字串",
-                "🇭🇰 廣東話增強: 新增「復原」「重做」等地道翻譯",
-                "⌨️ 快捷鍵更新: 優化 Command+K 搜尋面板的語言顯示"
-            ],
-            "en": [
-                "🔍 Deep Audit: Removed hardcoded strings from TripHeader",
-                "🇭🇰 zh-HK Enhancement: Added authentic Cantonese translations",
-                "⌨️ Shortcuts: Optimized Command+K search panel labels"
-            ],
-            "zh-HK": [
-                "🔍 深度審計: 攞走 TripHeader 啲格硬寫死嘅中文字",
-                "🇭🇰 廣東話增強: 加返「復原」「重做」「傾兩句」等地道廣東話",
-                "⌨️ 快捷鍵更新: 整好 Command+K 搜尋面板嘅語言顯示"
-            ]
-        }
-    },
-    {
-        ver: "V1.2.9",
-        date: "2026-01-07",
-        tag: "Mobile Polish & Localization",
-        desc: {
-            "zh-TW": "行動端優化與語系擴充",
-            "zh-HK": "手機版優化同埋語言擴展",
-            "en": "Mobile Polish & Localization Expansion"
-        },
-        details: {
-            "zh-TW": [
-                "🌍 i18n 擴充: 新增「廣東話 (zh-HK)」語系支援",
-                "📱 行動端優化: 修正手機版 Footer 排版擁擠問題",
-                "👤 頭像功能: 新增「更換頭像」與「還原預設」按鈕"
-            ],
-            "en": [
-                "🌍 i18n Expansion: Added zh-HK (Cantonese) support",
-                "📱 Mobile UX: Fixed footer overcrowding",
-                "👤 Profile: Added Change Avatar and Reset to Default buttons"
-            ],
-            "zh-HK": [
-                "🌍 i18n 擴充: 加咗廣東話 (zh-HK) 支援",
-                "📱 手機版優化: 執返好手機版 Footer 唔好咁迫",
-                "👤 頭像功能: 加咗「換頭像」同「變返預設」掣"
-            ]
-        }
-    },
-    {
-        ver: "V1.2.8",
-        date: "2026-01-07",
-        tag: "Jarvis Keys & Analytics",
-        changes: [
-            "🤖 Jarvis Keys (BYOK): 實裝自訂 API 金鑰系統，支援多供應商 (OpenAI/Claude/Gemini) 金鑰輪換",
-            "🛡️ Usage Tracking: 新增各 AI Provider 用量追蹤與提示功能",
-            "🎨 UI Polish: 優化 Tag 語義化顏色顯示，提升視覺辨識度",
-            "📱 Mobile Menu: 側欄選單新增「模擬例子」快速入口"
-        ]
-    },
-    {
-        ver: "V1.2.7",
-        date: "2026-01-07",
-        tag: "Global UI & Local",
-        changes: [
-            "🌍 多國語系: 實裝 i18next 框架，支援中英雙語切換 (zh-TW / en)",
-            "🔎 Command+K: 全域智慧搜尋與操作麵盤，支援跨行程、跨功能搜尋",
-            "🤖 AI 供應商: 新增 OpenAI, Claude, DeepSeek, Groq, Perplexity, Local 等多引擎支援",
-            "🎨 語義色系 2.0: 統一六大分類色彩 (機票/住宿/美食/景點/交通/購物) 跨視圖一致化",
-            "🗺️ 地圖增強: 新增路線統計資訊視窗 (總公里數、停留站點數量分析)",
-            "⚙️ 設定中心: 重新設計的 UI 與 AI 開發者 API 設定",
-            "⚡ 效能優化: 優化視圖切換狀態持久化 (LocalStorage 記憶)"
-        ]
-    },
-    {
         ver: "V1.2.6",
-        date: "2026-01-07",
+        date: "2026-01-01",
         tag: "The Ultimate View",
-        changes: [
-            "👁️ 多維視界: 全新 6-in-1 多視圖系統 (List | Board | Kanban | Timeline | Map)",
-            "📋 Kanban 修正: 優化緩存同步邏輯，解決跨日拖曳資料不一致問題",
-            "📱 Mobile UI: 修正行動端 Header 按鈕重疊與卡片文字溢出",
-            "🗺️ Map Playback: 修正地圖播放按鈕狀態閉包過期導致的無反應問題",
-            "🏷️ 版本管理: 清理重複版本資訊，統一全站 Jarvis 版本顯示風格",
-            "🔍 全域搜尋: Search & Filter 現支援所有視圖模式",
-            "📅 Compact Header: 日期+視圖切換+操作按鈕合併為單行",
-            "🧹 程式碼精簡: 移除 160+ 行冗餘代碼"
-        ]
-    },
-    {
-        ver: "V1.2.5",
-        date: "2026-01-07",
-        tag: "Architecture & Stability",
-        changes: [
-            "🏗️ Layout Refactor: TripDetailContent 拆分為 TripHeader / TripTabs / TripModals 組件",
-            "📐 Z-Index 標準化: tailwind.config.js 新增語義化 z-index scale",
-            "👤 帳戶管理: 新增個人資料編輯、設定同步 (跨裝置)、刪除帳戶功能",
-            "🌐 離線偵測: 離線時自動提示用戶，防止同步失敗",
-            "📊 AI 用量修復: 功能使用明細現已正確顯示各項 AI 功能的使用次數",
-            "🔄 Admin 每日重置: API Monitor 計數器現會按日期自動重置",
-            "🎨 UI 一致性: 設定頁面所有分頁現已統一顯示圖標"
-        ]
-    },
-    {
-        ver: "V1.2.4",
-        date: "2025-12-24",
-        tag: "Intelligent Onboarding & PWA",
-        changes: [
-            "🎓 Interactive Tour: 全新「新手智能導覽」修正，Settings 內可隨時重播",
-            "📱 PWA Enhanced: 優化 manifest.json，提升安裝相容性 (192/512 icons)",
-            "🤖 Jarvis Core: 修正 checkInstantAnswer 引用錯誤，統一品牌用語",
-            "⚡ Daily AI Summary: 行程詳情頁新增「每日智能總覽」按鈕",
-            "📄 Smart PDF: 驗證並優化 PDF 智能分頁邏輯"
-        ]
-    },
-    {
-        ver: "V1.2.3",
-        date: "2025-12-23",
-        tag: "Per-User AI Quota",
-        changes: [
-            "🔒 用戶級 AI 限額: Firestore 追蹤每位用戶每日 AI 使用量",
-            "💬 友好錯誤訊息: 顯示等待時間或每日限額提示",
-            "📊 幫助與支援: 新增「問 Jarvis AI」按鈕入口",
-            "🧠 Auto Jarvis Toggle: 可在設定中開關自動 AI 功能，節省用量",
-            "🔑 Expanded API Support: 大幅提升每位用戶的 AI 使用額度 (System Upgrade)",
-            "📝 AI 用量透明化: 設定頁面詳列各項功能 Token 消耗"
-        ]
-    },
-    {
-        ver: "V1.2.2",
-        date: "2025-12-23",
-        tag: "Jarvis AI Support",
-        changes: [
-            "🤖 Jarvis AI 完整聊天: 實裝 AI 即時會話功能，整合 Gemini API 回應",
-            "💬 對話介面升級: 訊息歷史、思考指示器、快捷問題按鈕",
-            "✨ UI 精緻化: 移除快速 PDF 匯出按鈕，優化 Header Toolbar",
-            "🛡️ Coming Soon 標籤更新: 改為「稍後版本會更新」避免過時資訊"
-        ]
-    },
-    {
-        ver: "V1.2.1",
-        date: "2025-12-23",
-        tag: "User Group Chat",
-        changes: [
-            "💬 行程即時群聊: 實裝 Firestore Real-time Sync 聊天功能",
-            "🛡️ 聊天抽屜系統: 左右滑動式玻璃擬態聊天室，支援成員即時互動",
-            "🔔 呼吸燈按鈕: 行程 Header 加入脈衝式紫色 Chat 觸發按鍵"
-        ]
-    },
-    {
-        ver: "V1.1.8",
-        date: "2025-12-23",
-        tag: "Dark Mode & AI Polish",
-        changes: [
-            "🌙 Dark Mode 全面修復: 統一所有 Modal 與卡片使用 Tailwind dark: variants，確保視覺一致性",
-            "🤖 AI 錯誤處理優化: 針對 Gemini API 429 (Rate Limit) 及 Quota 限制加入友好提示與重試機制",
-            "💅 匯出預覽優化: 修復 JSON/Text 預覽關閉按鈕，並優化代碼編輯器樣式與行號顯示",
-            "🛠️ 代碼清理: 移除 unused isDarkMode props，統一使用 Global Dark Mode 系統"
-        ]
-    },
-    {
-        ver: "V1.1.7",
-        date: "2025-12-23",
-        tag: "Daily Intelligence",
-        changes: [
-            "實裝「每日總覽」AI 分析 (Gemini): 提供交通建議、景點 Tips 同行程合理性檢查",
-            "PDF 匯出引擎修正: 支援自動分頁 (Pagination) 與頁碼顯示",
-            "匯出預覽 (Preview) 全面升級: JSON / Text / iCal 支援全螢幕預覽 (Full View)",
-            "UI 清晰度優化: 移除預覽文字透明度，解決重疊問題",
-            "Syntax Fixes: 修復 ai-parsing.js 及 Modal 重複代碼"
-        ]
-    },
-    {
-        ver: "V1.1.6",
-        date: "2025-12-22",
-        tag: "Advanced Layout",
-        changes: [
-            "PDF 佈局模式切換: 支援 [簡易] / [專業] Tab 切換",
-            "每頁項目選擇器: 可下拉選擇 2/3/4/6 項目/頁",
-            "專業模式預告: 顯示開發中區塊提示"
-        ]
-    },
-    {
-        ver: "V1.1.5",
-        date: "2025-12-22",
-        tag: "Custom Export",
-        changes: [
-            "PDF 數據清洗: 移除所有 null, undefined, [object Object] 顯示",
-            "PDF 樣式美化: 優化區域間距，加入中文標籤 (服飾/盥洗/電子等)"
-        ]
-    },
-    {
-        ver: "V1.1.4",
-        date: "2025-12-22",
-        tag: "Smart Features",
-        changes: [
-            "PDF 放大預覽: Export Modal 新增「全屏預覽」按鈕",
-            "CSS 背景 Fallback: 圖片載入失敗時自動顯示紫色漸變背景"
-        ]
-    },
-    {
-        ver: "V1.1.3",
-        date: "2025-12-22",
-        tag: "UX Enhancement",
-        changes: [
-            "Budget Chart 修復: 修正缺少 trip prop 導致崩潰問題",
-            "Files Tab 移除: 在 More Menu 刪除空置選項",
-            "Hotel 名稱本地化: 教學數據更新 (格拉斯麗新宿, 大阪W)"
-        ]
-    },
-    {
-        ver: "V1.1.2",
-        date: "2025-12-23",
-        tag: "Audit & Precision",
-        changes: [
-            "實裝 6 大 PDF 匯出風格: 支援現代、經典、網站、極簡、復古、活力主題",
-            "新增匯出『範圍選擇』 (Scope): 支援單獨匯出行程、購物清單或預算",
-            "標準化工序實裝: .agent/workflows 下新增 Deploy, Audit, Feature-Request SOP",
-            "修復 SmartExportModal UI 佈局，優化多風格預覽與即時風格切換",
-            "加強文字摘要排版，支援 WhatsApp 一鍵分享並自動對齊內容"
-        ]
-    },
-    {
-        ver: "V1.1.1",
-        date: "2025-12-22",
-        tag: "Resilience & Polish",
-        changes: [
-            "修正 PDF 匯出亂碼問題 (CJK 全面支援)",
-            "新增 PDF 多風格選擇 (現代、經典、極簡)",
-            "優化 Footer 底部間距，改善行動裝置體驗",
-            "加強匯出預覽介面，支援即時風格切換"
-        ]
+        desc: {
+            "zh-TW": "極致視圖與智能體驗大升級",
+            "zh-HK": "極致視圖同智能體驗大升級",
+            "en": "The Ultimate View & Intelligence Upgrade"
+        },
+        details: {
+            "zh-TW": [
+                "🎨 UI: 全新 Card Design 與動態佈局",
+                "⚡ Perf: 核心渲染引擎重寫",
+                "🗺️ Map: 加入互動式地圖預覽"
+            ],
+            "zh-HK": [
+                "🎨 UI: 全新 Card Design 同動態佈局",
+                "⚡ Perf: 核心渲染引擎重寫",
+                "🗺️ Map: 加入互動式地圖預覽"
+            ],
+            "en": [
+                "🎨 UI: Brand new Card Design and dynamic layout",
+                "⚡ Perf: Core rendering engine rewrite",
+                "🗺️ Map: Added interactive map preview"
+            ]
+        }
     },
     {
         ver: "V1.1.0",
-        tag: "Design & Intelligence",
-        date: "2025-12-22",
+        date: "2025-12-15",
+        tag: "Core Expansion",
         desc: {
-            "zh-TW": "V1.1.0: 行程管理極致進化 - 票券化、連動建議與 Undo/Redo",
-            "en": "V1.1.0: Design & Intelligence - Ticket Style, Smart Ripples & Undo System"
+            "zh-TW": "核心功能擴展與體驗優化",
+            "zh-HK": "核心功能擴展同體驗優化",
+            "en": "Core Expansion & UX Improvements"
         },
         details: {
             "zh-TW": [
-                "🔄 Undo/Redo: 實裝行程修改「悔棋」系統，手殘救星 (V1.1 Phase 7)",
-                "🌊 Smart Ripple: 編輯行程時間時，後面嘅行程會自動「漣漪式」推導時間 (V1.1 Phase 2/3)",
-                "📦 Smart Bundles: 新增機票時自動建議「入境程序」同「機場交通」套餐 (V1.1 Phase 5)",
-                "⚡ Optimistic UI+: 配合 LocalStorage 雙重快取，操作極速反應 (V1.1 Phase 1)",
-                "🎟️ Ticket Style Polish: 統一行程卡片為票券式佈局，視覺層次更分明"
+                "✨ Features: 新增天氣預報與匯率計算工具",
+                "📱 Mobile: 優化行動裝置響應式佈局",
+                "⚡ Core: 提升資料讀寫效能"
+            ],
+            "zh-HK": [
+                "✨ Features: 新增天氣預報同匯率計算工具",
+                "📱 Mobile: 優化行動裝置響應式佈局",
+                "⚡ Core: 提升資料讀寫效能"
             ],
             "en": [
-                "🔄 Undo/Redo: Global undo/redo system for itinerary edits (V1.1 Phase 7)",
-                "🌊 Smart Ripple: Auto-adjust subsequent items when changing durations (V1.1 Phase 2/3)",
-                "📦 Smart Bundles: Context-aware suggestions for Flights (Immigration/Transport bundles)",
-                "⚡ Optimistic UI+: Lightning fast CRUD with LocalStorage persistence (V1.1 Phase 1)",
-                "🎟️ Ticket Style Polish: Unified ticket-style layouts for premium visual hierarchy"
-            ]
-        }
-    },
-    {
-        ver: "V1.0.6",
-        tag: "UI & Integrity Polish",
-        date: "2025-12-22",
-        desc: {
-            "zh-TW": "V1.0.6: 介面拋光、匯率顯示優化與系統穩定性強化",
-            "en": "V1.0.6: UI Polish, Currency Readability & Integrity Boost"
-        },
-        details: {
-            "zh-TW": [
-                "💎 匯率優化: 購物與支出清單現在重點顯示「本地貨幣」，方便快速對比預算",
-                "底部狀態欄: 整合時間與同步狀態至同一行，並新增「最新同步時間」標註",
-                "🛡️ 圖像韌性: 全面實裝 ImageWithFallback，徹底消除損壞圖片圖標",
-                "⚠️ 錯誤處理: 統一頁面錯誤 (404/500/503) 視覺風格，並加入即時回報機制"
-            ],
-            "en": [
-                "💎 Currency Polish: Highlighted home currency in lists for better budget tracking",
-                "Streamlined Footer: Merged time and sync status with latest sync timestamp",
-                "🛡️ Image Resilience: Full implementation of ImageWithFallback for all assets",
-                "⚠️ Error Handling: Unified 404/500/503 pages with integrated issue reporting"
-            ]
-        }
-    },
-    {
-        ver: "V1.0.4",
-        tag: "Optimistic UI & Fixes",
-        date: "2025-12-21",
-        desc: {
-            "zh-TW": "V1.0.4: 極速操作體驗、Optimistic UI 與數據一致性修復",
-            "en": "V1.0.4: Optimistic UI, Lightning Fast CRUD & Data Integrity"
-        },
-        details: {
-            "zh-TW": [
-                "⚡ Optimistic UI: 新增/編輯/刪除行程即時反應 (0延遲)，無需等待伺服器同步",
-                "🛡️ Data Integrity: 修復編輯時 ID 覆蓋、undefined 錯誤等數據問題",
-                "🐛 Delete Logic: 徹底解決刪除後仍顯示、地圖 Pin 殘留等問題",
-                "💾 LocalStorage Sync: 離線或刷新與伺服器同步期間，本地操作依然保留",
-                "🗺️ Map View: 地圖視圖現在支援即時更新 (與列表同步)"
-            ],
-            "en": [
-                "⚡ Optimistic UI: Instant feedback for CRUD operations (0ms lag)",
-                "🛡️ Data Integrity: Fixed ID overwrites and undefined field errors",
-                "🐛 Delete Logic: Validated deletion flow and map marker sync",
-                "💾 LocalStorage Sync: Persist pending changes across refreshes"
-            ]
-        }
-    },
-    {
-        ver: "V1.0.3",
-        tag: "入境程序 & Backlog",
-        date: "2025-12-21",
-        desc: {
-            "zh-TW": "V1.0.3: 入境程序系統、Dashboard 個人化與 Bug 修復",
-            "en": "V1.0.3: Immigration System, Dashboard Customization & Bug Fixes"
-        },
-        details: {
-            "zh-TW": [
-                "🛂 新功能 (入境程序): 新增「入境程序」行程類型，琥珀色主題，專用於國際航班落地後嘅入境/出境流程",
-                "⚙️ Dashboard 個人化: Widget 拖拉排序、顯示/隱藏、自動儲存至 localStorage（移至設定頁）",
-                "🔔 版本更新通知: 自動偵測版本變更，新用戶 Onboarding 後彈出 What's New",
-                "🐛 行程編輯修復: 正確處理編輯模式，唔再重複新增項目",
-                "🐛 Tooltip 修復: 用戶頭像 Tooltip 唔再重疊",
-                "🎨 Transport Card 優化: 修復實線問題、時間範圍正確顯示"
-            ],
-            "en": [
-                "🛂 New Feature (Immigration): Added 'Immigration' activity type with amber theme for customs/entry procedures",
-                "⚙️ Dashboard Customization: Widget drag-drop, show/hide, auto-save to localStorage (moved to Settings)",
-                "🔔 Version Popup: Auto-detect version changes, show What's New after onboarding",
-                "🐛 Edit Bug Fix: Correctly handles edit mode without duplicating items",
-                "🐛 Tooltip Fix: User avatar tooltips no longer overlap",
-                "🎨 Transport Card: Fixed visible line issue, time range displays correctly"
-            ]
-        }
-    },
-    {
-        ver: "V1.0.2",
-        tag: "Zero-Loop Fix",
-        date: "2025-12-21",
-        desc: {
-            "zh-TW": "V1.0.2: 終極修復無限迴圈與遊客模式優化",
-            "en": "V1.0.2: Zero-Loop Fix & Guest Mode Optimization"
-        },
-        details: {
-            "zh-TW": [
-                "🐛 終極修復 (Critical Fix): 徹底解決遊客模式下的無限重載 (Redirect Loop) 問題",
-                "⚡️ 性能優化 (Perf): 清除伺服器殘留進程，解決 WebSocket 報錯",
-                "🛡️ 安全升級 (Security): 強化 ActiveUsersList 與 Modals 的空值保護邏輯",
-                "🖱️ 體驗優化 (UX): 首頁新增「試用模擬模式」專屬按鈕，無需登入即刻體驗",
-                "📚 矩陣同步 (Matrix): 確保 Tutorial 數據與 V12 Matrix 規則完全一致"
-            ],
-            "en": [
-                "🐛 Critical Fix: Resolved infinite redirect loop for guest users",
-                "⚡️ Performance: Cleared stale server processes to fix WebSocket errors",
-                "🛡️ Security: Hardened null-checks in ActiveUsersList and Modals",
-                "🖱️ UX: Added dedicated 'Try Demo' button on Landing Page",
-                "📚 Matrix Sync: Ensured Tutorial data aligns with V12 Matrix rules"
-            ]
-        }
-    },
-    {
-        ver: "V1.0.1",
-        tag: "Matrix Sync Update",
-        date: "2025-12-21",
-        desc: {
-            "zh-TW": "V1.0.1: [Matrix Protocol] 全面同步與百科全書化",
-            "en": "V1.0.1: [Matrix Protocol] Full Sync & Encyclopedia"
-        },
-        details: {
-            "zh-TW": [
-                "🚀 [Matrix Protocol]: 100% 同步 V12 Matrix 邏輯，補全所有行程空檔與導航矩陣 ([T2T], [P2T])",
-                "📚 百科全書化 (Encyclopedia): 填入所有景點深度歷史、建築背景與 2024 最新退稅政策",
-                "👥 任務分配 (Roles): Alex, Sarah, Mike, Buddy 所有人身位、行李限制與職責完整分配",
-                "🐛 救急修復 (Critical Fix): 修正教模式在未登入狀態下會跳回首頁的無限迴圈問題",
-                "🖼️ 視覺強化 (Gallery): 行程圖片與 Files 資源完美對齊，Gallery Tab 內容全填充"
-            ],
-            "en": [
-                "🚀 [Matrix Protocol]: 100% V12 Matrix sync, filling all itinerary gaps & nav matrices ([T2T], [P2T])",
-                "📚 Encyclopedia: Added deep historical/architectural contexts & 2024 tax-free logic",
-                "👥 Role Assignment: Full metadata for Alex, Sarah, Mike, and Buddy across all tabs",
-                "🐛 Critical Fix: Resolved infinite loop bug where guest users couldn't access tutorial",
-                "🖼️ Gallery: Synced all itinerary images with Files array for full gallery population"
+                "✨ Features: Added Weather Forecast & Currency Converter",
+                "📱 Mobile: Optimized mobile responsive layout",
+                "⚡ Core: Enhanced data performance"
             ]
         }
     },
     {
         ver: "V1.0.0",
+        date: "2025-12-01",
         tag: "Official Release",
-        date: "2025-12-20",
         desc: {
-            "zh-TW": "V1.0 正式版：智能旅遊新紀元",
-            "en": "V1.0 Official Release: A New Era of Smart Travel"
+            "zh-TW": "Travel Together 正式版發布",
+            "zh-HK": "Travel Together 正式版發布",
+            "en": "Official Release of Travel Together"
         },
         details: {
             "zh-TW": [
-                "🎨 Design System 2.0: 全新 Indigo 色系與 Glassmorphism 2.0 玻璃擬態設計",
-                "🏃‍♂️ 效能優化 (Performance): 實作 Code Splitting (PDF/AI/Charts 分離)，首屏載入提速 40%",
-                "📱 手機版完美適配 (Mobile): 修復 Header Menu 觸控體驗，支援 iOS Safe Area",
-                "✨ 動畫升級 (Animation): 頁面切換 Slide Up 效果，按鈕微互動 (Micro-interactions)"
+                "🚀 Launch: 智能旅遊規劃助手正式上線",
+                "📅 Core: 行程規劃、預算管理、行李清單",
+                "👥 Social: 支援多人協作與分享"
+            ],
+            "zh-HK": [
+                "🚀 Launch: 智能旅遊規劃助手正式上線",
+                "📅 Core: 行程規劃、預算管理、行李清單",
+                "👥 Social: 支援多人協作同分享"
             ],
             "en": [
-                "🎨 Design System 2.0: New Indigo palette & Glassmorphism 2.0",
-                "🏃‍♂️ Performance: Implemented Code Splitting (PDF/AI/Charts chunks), 40% faster load",
-                "📱 Mobile Perfection: Fixed Header Menu touch & iOS Safe Area support",
-                "✨ Animation Upgrade: Slide Up transitions & tactile Micro-interactions"
+                "🚀 Launch: Smart Travel Planner officially live",
+                "📅 Core: Itinerary, Budget, Packing List",
+                "👥 Social: Multi-user collaboration support"
             ]
-        }
-    },
-    {
-        ver: "V0.27.0-PreRelease",
-        tag: "Milestone Consolidation",
-        date: "2025-12-20",
-        desc: {
-            "zh-TW": "2025 年終里程碑：安全性、後台管理與架構重構總結",
-            "en": "2025 Year-End Milestone: Security, Admin & Architecture"
-        },
-        details: {
-            "zh-TW": [
-                "🚀 架構重構 (Architecture): Dashboard 模組化拆分，提升效能與維護性 (V0.25.1)",
-                "🛡️ 安全升級 (Security): 實裝 Autoban 智能封鎖系統與 Rate Limiting (V0.26.1)",
-                "👮‍♂️ 管理後台 (Admin Panel): 全新分頁設計 (Users/Admins/Feedback)，支援一鍵封鎖與動態權限管理 (V0.26.0)",
-                "💬 回饋系統 (Feedback): 支援圖文/影片回報，即時管理員通知 (V0.25.2)",
-                "💾 資料持久化 (Persistence): 用戶資料自動同步 Firestore，防止資料遺失"
-            ],
-            "en": [
-                "🚀 Architecture: Modular Dashboard refactor for performance (V0.25.1)",
-                "🛡️ Security: Autoban system w/ Rate Limiting & Abuse detection (V0.26.1)",
-                "👮‍♂️ Admin Console: New Tabs (Users/Admins), One-click Ban & Dynamic Permissions (V0.26.0)",
-                "💬 Feedback System: Rich media support & Real-time admin alerts (V0.25.2)",
-                "💾 Persistence: Auto-sync user data to Firestore"
-            ]
-        }
-    },
-    {
-        ver: "V0.25.2",
-        tag: "Feedback & Stability",
-        date: "2025-12-20",
-        desc: {
-            "zh-TW": "意見回饋系統 & 足跡修復",
-            "en": "Feedback System & Footprints Fix"
-        },
-        details: {
-            "zh-TW": [
-                "🐛 Bug Fix: 修復足跡 (Journal) 頁面日期解析錯誤導致的崩潰",
-                "✨ 新功能：新增意見回饋與 Bug 匯報系統 (Feedback System)",
-                "🗺️ 假期檢查：驗證並優化日本及本地假期顯示邏輯",
-                "📝 UI 優化：調整 TripDetail 頁籤排序"
-            ],
-            "en": [
-                "🐛 Bug Fix: Resolved crash in Journal tab due to invalid date parsing",
-                "✨ New Feature: Added comprehensive Feedback & Bug Reporting System",
-                "🗺️ Holiday Check: Verified Japan/Local holiday logic",
-                "📝 UI Polish: Reordered TripDetail tabs"
-            ]
-        }
-    },
-    {
-        ver: "V0.25.1",
-        tag: "Optimization & Resilience",
-        date: "2025-12-19",
-        desc: {
-            "zh-TW": "Dashboard 結構深度優化 + AI 高可用架構",
-            "en": "Dashboard Modularization & AI Resilience"
-        },
-        details: {
-            "zh-TW": [
-                "🏗️ Dashboard 重構：大幅拆分為組件化架構，減少主程序負荷",
-                "🔑 AI 多 Key 輪播：支援 5 個 API Key 自動切換，避免 Quota 限制",
-                "🛡️ 每日限額：每用戶每日 20 次 AI 限額保護",
-                "🐛 Bug Fix: 修復 V0.25 時區設置錯誤及組件引用 BUG",
-                "🚀 性能提升：移除 redundant state，數據加載更流暢"
-            ],
-            "en": [
-                "🏗️ Dashboard Refactor: Deep modularization for better performance",
-                "🔑 AI Multi-Key Rotation: 5 API Keys auto-scaling",
-                "🛡️ Daily Limits: 20 AI calls per user limit",
-                "🐛 Bug Fix: Resolved V0.25 Timezone error and import analysis bugs",
-                "🚀 Performance: State optimization and faster data fetching"
-            ]
-        }
-    },
-    {
-        ver: "V0.25.0",
-        tag: "Mobile First",
-        date: "2025-02-28",
-        desc: {
-            "zh-TW": "Mobile First - PWA 離線模式與手機介面革新",
-            "en": "Mobile First - PWA Offline Mode & Mobile UI Overhaul"
-        },
-        details: {
-            "zh-TW": "• 📱 PWA 支援：可安裝至手機主畫面，支援離線瀏覽行程。\n• 👆 手指友善：全新底部導航欄 (Itinerary/Packing/Budget)，單手操作更順手。\n• 🛡️ Error Boundary：新增防閃退保護網，提升穩定性。\n• 🚀 效能優化：靜態資源快取策略，載入速度提升。",
-            "en": "• 📱 PWA Support: Installable App with offline capability.\n• 👆 Mobile UI: New Bottom Navigation for one-handed use.\n• 🛡️ Stability: Added Error Boundaries to prevent crashes.\n• 🚀 Performance: Optimized asset caching."
-        },
-        changes: [
-            "Feat: PWA Manifest & Service Worker",
-            "UI: Mobile Bottom Navigation Bar",
-            "Feat: Error Boundary Implementation",
-            "Meta: Viewport user-scalable=no"
-        ]
-    },
-    {
-        ver: "V0.24.1",
-        tag: "Osaka Express Hotfix",
-        date: "2025-02-28",
-        desc: {
-            "zh-TW": "修復 AI 摘要閃退及 API 限額問題",
-            "en": "Fix AI Summary crash & API Quota handling"
-        },
-        details: {
-            "zh-TW": "• 🐛 修復 `Loader2` 導致的白畫面閃退問題。\n• 🛡️ 新增 Gemini API 限額 (429) 保護，避免系統崩潰。\n• ⚡ 優化錯誤處理流程。",
-            "en": "• 🐛 Fixed `Loader2` ReferenceError crash.\n• 🛡️ Added graceful handling for Gemini API 429 Quota errors.\n• ⚡ Optimized error fallback UI."
-        },
-        changes: [
-            "Fix: Loader2 ReferenceError in TripDetailContent",
-            "Fix: Graceful handling of Gemini 429/503 errors"
-        ]
-    },
-    {
-        ver: "V0.24.0",
-        tag: "Osaka Express",
-        date: "2025-02-28",
-        desc: {
-            "zh-TW": "Osaka Express - 智能交通與極致 UI 體驗",
-            "en": "Osaka Express - Smart Transport & Premium UI"
-        },
-        details: {
-            "zh-TW": "• 🚅 智能交通格式：長途車程 (>60分) 自動轉為「X小時X分」，一目了然。\n• 🌤️ 天氣 2.0：分時段 (早/午/晚) 天氣預報及洋蔥式穿搭建議，出門更安心。\n• 🎨 頂級 UI：Packing/Shopping/Budget/Files 四大分頁視覺全面升頻，加入動態進度條及 Glassmorphism 效果。\n• 🤖 AI 靈感升級：根據目的地 (如東京/大阪) 生成在地化景點及美食建議。",
-            "en": "• 🚅 Smart Transport: Auto-formats durations >60m to 'Xh Ym' for better readability.\n• 🌤️ Weather 2.0: Tiered morning/afternoon/night forecasts with specific clothing advice.\n• 🎨 Premium UI: Complete visual overhaul of Packing, Shopping, Budget, and Files tabs with glassmorphism.\n• 🤖 Contextual AI: 'AI Inspiration' now generates destination-specific suggestions (e.g., Tokyo/Osaka spots)."
-        },
-        changes: [
-            "Transport: Duration format 'X小時X分' for >60min",
-            "Weather: Smart summary with morning/afternoon/night tiers",
-            "UI: Premium polish for Packing, Shopping, Budget, Files tabs",
-            "AI: Smarter destination-aware activity title generation",
-            "Consistency: Unified itinerary type color palettes"
-        ]
-    },
-    {
-        ver: "V0.23.5",
-        tag: "Osaka Grand Update",
-        date: "2025-02-27",
-        desc: {
-            "zh-TW": "Osaka Grand Update - 介面與保安升級",
-            "en": "Osaka Grand Update - UI & Security Overhaul"
-        },
-        details: {
-            "zh-TW": "• 💎 介面重塑：行程卡片全面 Glassmorphism 化，提升視覺層次感。\n• 🔐 保安升級：全新高級登入介面，底層 Auth 邏輯優化。\n• ⚙️ 系統準備：為 Osaka Express 的智能功能鋪路。",
-            "en": "• 💎 UI Redesign: Full glassmorphism adoption for itinerary cards.\n• 🔐 Security: Revamped login UI and underlying auth logic.\n• ⚙️ System Prep: Groundwork for Osaka Express smart features."
-        },
-        changes: [
-            "UI: Redesigned Itinerary cards with glassmorphism",
-            "Auth: Premium login/register interface",
-            "System: Pre-bump prep for Osaka Express features"
-        ]
-    },
-    {
-        ver: "V0.23.1",
-        date: "2025-12-19",
-        desc: {
-            "zh-TW": "UI 同步化 & 權限強化 & 真實教學資料",
-            "en": "UI Parity & Permission Boost & Reality Tutorial"
-        },
-        details: {
-            "zh-TW": "• UI 同步化：行程清單與地圖側欄全面對齊 AI 助手之卡片風格、圖標及間距\n• 權限強化：公開分享連結支援「可編輯」權限控管，登入後即可協助修改行程\n• 真實教學資料：重整東京模擬行程，加入精確地點資料、交通路線與專業旅遊 Tips\n• 基礎修復：修正 SIMULATION_DATA 結構錯誤及權限判定邏輯",
-            "en": "• UI Parity: Synced itinerary list and map sidebar with AI Assistant card styles and icons\n• Permission Boost: Share links now support 'Can Edit' permissions for logged-in users\n• Realistic Tutorial: Overhauled Tokyo simulation data with precise locations and pro tips\n• Core Fix: Resolved structural issues in SIMULATION_DATA and permission logic"
-        }
-    },
-    {
-        ver: "V0.23.0",
-        date: "2025-12-19",
-        desc: {
-            "zh-TW": "訪客預覽模式 & AI 行程真實化",
-            "en": "Guest Preview & AI Reality Update"
-        },
-        details: {
-            "zh-TW": "• 訪客預覽功能：行程分享 link 支援免登入查看公眾行程\n• 權限控管：訪客僅能查看，無法進行編輯、刪除或邀請成員\n• AI 寫實化：移除 Oasis 佔位內容，針對東京/台北加入真實景點推薦\n• 導入中心實裝：JSON/CSV/Memory 回憶庫正式連結資料庫與雲端儲存\n• 進階匯出：PDF 匯出功能改用精美排版服務 (Premium PDF)\n• 修復：修復分享連結在特定情況下崩潰的 Bug",
-            "en": "• Guest Preview: Share links now allow non-logged-in viewing of public trips\n• Access Control: View-only mode for guests (no edit/delete/invite access)\n• AI Reality: Replaced generic 'oasis' content with real Tokyo/Taipei spots\n• Smart Import Finalized: Fully connected JSON/CSV/Memory to Firebase\n• Premium PDF: Upgraded PDF export with professional layout service\n• Bug Fix: Resolved share link crash and loading state state issues"
-        }
-    },
-    {
-        ver: "V0.22.3",
-        date: "2025-12-19",
-        desc: {
-            "zh-TW": "AI 智能化大升級 + 匯出功能實裝",
-            "en": "AI Intelligence Upgrade + Export Features"
-        },
-        details: {
-            "zh-TW": "• AI 助手升級：改為真正 Gemini API，生成專屬行程規劃\n• 智能交通建議：景點之間自動 AI 推薦交通方式、價錢及路線\n• Vision-First OCR：圖片直接識別機票/酒店/收據資訊\n• Smart Import 完善：航班/住宿/景點所有欄位完整支援\n• iCal 匯出功能：一鍵匯出行程到 Google/Apple 日曆\n• 分享到 WhatsApp/Telegram：快速分享行程給朋友",
-            "en": "• AI Assistant Upgrade: Real Gemini API for smart itinerary generation\n• Smart Transport: AI-powered suggestions with routes and prices\n• Vision-First OCR: Direct image parsing for tickets/hotels/receipts\n• Smart Import Enhancement: Full support for all flight/hotel/spot fields\n• iCal Export: One-click export to Google/Apple Calendar\n• Share to WhatsApp/Telegram: Quick sharing to messaging apps"
-        }
-    },
-    {
-        ver: "V0.22.0",
-        date: "2025-12-19",
-        desc: {
-            "zh-TW": "匯入匯出統一大整合 & 刪除功能",
-            "en": "Import/Export Consolidation & Delete Features"
-        },
-        details: {
-            "zh-TW": "• SmartExportModal：統一匯出入口 (JSON/文字/PDF/iCal)\n• 刪除單一行程項目：編輯時可直接刪除\n• 清空當日行程：一鍵清除整日計劃\n• 修復 Import Modal 雙重模糊問題\n• 所有 Tab 匯出按鈕正確觸發",
-            "en": "• SmartExportModal: Unified export (JSON/Text/PDF/iCal)\n• Delete individual items: Remove from edit modal\n• Clear daily itinerary: One-click daily reset\n• Fixed Import Modal double-blur issue\n• All tab export buttons now work correctly"
-        }
-    },
-    {
-        ver: "V0.21.2",
-        date: "2025-12-19",
-        desc: {
-            "zh-TW": "功能穩定化",
-            "en": "Feature Stabilization"
-        },
-        details: {
-            "zh-TW": "• 暫時關閉 AI 推薦功能 (V0.22 重新開放)\n• 暫時關閉匯入功能 (V0.22 重新開放)\n• 暫時關閉 Map 檢視功能 (V0.22 重新開放)\n• 確保核心功能穩定運作",
-            "en": "• Temporarily disabled AI features (re-enable in V0.22)\n• Temporarily disabled import features (re-enable in V0.22)\n• Temporarily disabled Map view (re-enable in V0.22)\n• Ensuring core functionality stability"
-        }
-    },
-    {
-        ver: "V0.21.1",
-        date: "2025-12-19",
-        desc: {
-            "zh-TW": "匯入功能統一 & Bug 修復",
-            "en": "Import Consolidation & Bug Fixes"
-        },
-        details: {
-            "zh-TW": "• SmartImportModal 統一入口：整合 5 種匯入方式 (截圖/單據/回憶/JSON/CSV)\n• 酒店數據擴充：新增大阪 4 間酒店\n• 移除 Mock 數據：匯入功能不再顯示假資料\n• 購物類別優化：6 類精準分類\n• 交通選項加入自駕租車",
-            "en": "• SmartImportModal: Unified 5 import types (Image/Receipt/Memory/JSON/CSV)\n• Osaka Hotels: Added 4 hotels\n• Removed Mock Data: Import shows real file info only\n• Shopping Categories: 6 refined categories\n• Transport: Added self-driving option"
-        }
-    },
-    {
-        ver: "V0.21.0",
-        date: "2025-12-19",
-        desc: {
-            "zh-TW": "AI 實體化解析 & 偏好系統 2.0",
-            "en": "AI Vision Parsing & Preferences 2.0"
-        },
-        details: {
-            "zh-TW": "• 實體 Vision 解析：不再是 Mock 數據，支援機票與單據自動識別\n• 互動式 AI 偏好：新增「強度矩陣」，精準控制行程風格\n• 版本同步優化：跨系統版本號自動一致化",
-            "en": "• Real Vision Parsing: Real OCR for tickets & bills\n• Interactive AI Preferences: New intensity matrix for style control\n• Version Sync: Automated cross-system version consistency"
-        }
-    },
-    {
-        ver: "V0.20.2",
-        date: "2025-12-19",
-        desc: {
-            "zh-TW": "V0.20 全面進化總結 (Phase 3 & 4)",
-            "en": "V0.20 Grand Evolution (Phase 3 & 4)"
-        },
-        details: {
-            "zh-TW": "• AI Engine 2.0：實作時間桶 (Time Buckets) 邏輯，徹底解決早午晚行程錯亂問題。\n• 運輸數據校正：區分地鐵與巴士，提供城市專屬真實車費與預計時間。\n• 智能打包擴充：根據行程活動 (行山/沙灘/高級餐飲) 自動推薦 6 大分類裝備。\n• UI 拋光：AddActivityModal 動態 Placeholder、README Premium 重製、彈窗一致性校正。\n• 穩定性：Weather API Circuit Breaker 與 429 退避邏輯，確保極端情況不崩潰。",
-            "en": "• AI Engine 2.0: Implemented Time Buckets logic to fix scheduling conflicts.\n• Transport Calibration: Metro/Bus distinction with real-world fares and durations.\n• Smart Packing: Activity-aware items (Hiking/Beach/Dining) across 6 categories.\n• UI Polish: Dynamic Modal Placeholders, Premium README remaster, and consistency fixes.\n• Stability: Weather API Circuit Breaker & 429 backoff logic integration."
-        }
-    },
-    {
-        ver: "V0.20.1",
-        date: "2025-12-18",
-        desc: {
-            "zh-TW": "AI 數據大爆發 & 行李清單進化",
-            "en": "AI Data Expansion & Smart Packing"
-        },
-        details: {
-            "zh-TW": "• 數據庫擴充：MOCK_DB 新增 60+ 景點美食，長行程不再重覆\n• 購物清單：四大城市類別全面加碼，藥妝時尚齊全\n• 智能行李：根據行山/游水/米芝蓮活動自動推薦裝備\n• 邏輯優化：修正去重與步行檢測，價格對齊在地水平",
-            "en": "• Database Expansion: 60+ new spots in MOCK_DB for variety\n• Shopping Boost: More items in Cosmetics/Fashion/Electronics\n• Activity Packing: Smart gear suggestions for Hiking/Pool/Michelin\n• Logic Refinement: Fixed duplication & localized prices"
-        }
-    },
-    {
-        ver: "V0.19.0",
-        date: "2025-12-18",
-        desc: {
-            "zh-TW": "AI 經驗豐富的領隊 V19",
-            "en": "AI Expert Guide V19"
-        },
-        details: {
-            "zh-TW": "• 豐富 AI 洞察：景點歷史背景、購物必買理由全面加入\n• 雙幣顯示：行程卡片同步顯示當地貨幣與本地貨幣 ($ HKD)\n• 智能合併：AI 建議不再覆蓋用戶手動行程，優先尊重用戶規劃\n• UI 優化：空行程介面 AI 入口搬移，視覺更直觀",
-            "en": "• Rich AI Insights: Historical context & shopping rationales\n• Dual Currency: Card display for both local & destination currencies\n• Intelligent Merge: AI suggestions respect user-created plans\n• UI Polish: Entry points moved to empty states for better UX"
-        }
-    },
-    {
-        ver: "V0.18.0",
-        date: "2025-12-18",
-        desc: {
-            "zh-TW": "AI Packing & UI 優化",
-            "en": "AI Packing & UI Refinement"
-        },
-        details: {
-            "zh-TW": "• 智能行李清單：AI 生成、分類管理與清空功能\n• Add Modal 升級：自動識別行李/行程模式，隱藏無關欄位\n• 搜尋欄優化：深色模式全面適配，文字清晰可見\n• 天氣系統：精確顯示 '--' 佔位符，避免假數據誤導\n• 模擬模式增強：支援行李項目即時互動測試",
-            "en": "• Smart Packing: AI generation, categorization & clear all\n• Enhanced Add Modal: Auto-switch modes, tailored fields\n• Search UI: Dark mode polish for better visibility\n• Weather System: Accurate '--' placeholders\n• Simulation Mode: Interactive packing list for tutorials"
-        }
-    },
-    {
-        ver: "V0.17.0",
-        date: "2025-12-18",
-        desc: {
-            "zh-TW": "AI 2.0 基礎 & 架構重構",
-            "en": "AI 2.0 Foundation & Refactoring"
-        },
-        details: {
-            "zh-TW": "• AI 偏好設定：支援歷史、美食、冒險等多種興趣選擇\n• 雲端同步：用戶設置與偏好自動備份至 Firebase\n• Code Splitting：TripDetailContent 懶加載，提升首屏速度\n• 架構優化：大幅拆分 App.jsx，模組化管理",
-            "en": "• AI Preferences: Personalized suggestions based on interests\n• Cloud Sync: Settings & preferences synced to Firebase\n• Code Splitting: Lazy loading for Trip Details\n• Architecture: Modularized App.jsx for better maintainability"
         }
     }
 ];
-
 // --- Core Data Structures ---
 
 export const CITY_COORDS = {
@@ -1563,52 +675,52 @@ export const SIMULATION_DATA = {
     ],
     itinerary: {
         "2025-12-24": [
-            { id: "it-1", time: "09:15", duration: 315, name: "✈️ CX520 (HKG -> NRT)", coordinates: [22.3193, 113.9353], type: "flight", cost: 4500, currency: "HKD", bundleId: "arrival-bundle-d1", details: { flightNo: "CX520", nameEn: "Cathay Pacific Airways", location: "HKG T1 Gate 62", desc: "國泰長途旗艦機 B-KPY (B777-300ER)", startTime: "09:15", endTime: "14:30", duration: "4hr 15min", image: "https://images.unsplash.com/photo-1570710891163-6d3b5c47248b?w=800", insight: "【百科】B-KPY 配備最新 4K 影音系統。飛行時長約 4hr 15min。Alex 負責管理全體紙本備份。【試玩提示】長按呢張卡片可以拖曳排序！", tags: ["Cathay", "Flagship", "T1-Departure"] } },
+            { id: "it-1", time: "09:15", duration: 315, name: "✈️ CX520 (HKG -> NRT)", coordinates: [22.3193, 113.9353], type: "flight", cost: 4500, currency: "HKD", bundleId: "arrival-bundle-d1", details: { flightNo: "CX520", nameEn: "Cathay Pacific Airways", location: "HKG T1 Gate 62", desc: "國泰長途旗艦機 B-KPY (B777-300ER)", startTime: "09:15", endTime: "14:30", duration: "4hr 15min", insight: "【百科】B-KPY 配備最新 4K 影音系統。飛行時長約 4hr 15min。Alex 負責管理全體紙本備份。【試玩提示】長按呢張卡片可以拖曳排序！", tags: ["Cathay", "Flagship", "T1-Departure"] } },
             { id: "it-2", time: "14:30", duration: 90, name: "🛂 成田入境清關 & 交通樞紐", coordinates: [35.7719, 140.3929], type: "immigration", cost: 0, currency: "JPY", bundleId: "arrival-bundle-d1", details: { nameEn: "Narita Immigration", section: "Arrivals", location: "成田 T1 到達大廳", arrival: "B1F 鐵道層 (Rail)", desc: "入境後落 B1F 搵 JR 綠色窗口", startTime: "14:30", endTime: "16:00", duration: "1hr 30min", insight: "【入境百科】1. 入境排隊約 30-90min (視乎航班密度)。2. Visit Japan Web QR 必須準備好。3. 海關申報落 B1F 後轉左。4. 去鐵道層買 N'EX 票。【試玩提示】呢張入境卡同航班係 Bundle，會一齊移動㗎！", tags: ["Immigration", "VJW", "Must-Do"] } },
-            { id: "it-3", time: "16:15", duration: 80, name: "🚆 Narita Express (N'EX)", type: "train", cost: 4070, currency: "JPY", details: { trainNo: "N'EX 34", nameEn: "JR-East Airport Express", location: "成田 T1 -> 新宿站 (Shinjuku)", platform: "Platform 1 (B1F)", desc: "月台 5-6 (地底) | 車型 E259 系", transportType: "train", startTime: "16:15", endTime: "17:35", duration: "80min", image: "https://images.unsplash.com/photo-1555529733-0e670560f7e1?w=800", insight: "【技術百科】130km/h 準時運行。喼架有密碼鎖。", tags: ["JR-East", "Fastest", "Luggage-Space"] } },
+            { id: "it-3", time: "16:15", duration: 80, name: "🚆 Narita Express (N'EX)", type: "train", cost: 4070, currency: "JPY", details: { trainNo: "N'EX 34", nameEn: "JR-East Airport Express", location: "成田 T1 -> 新宿站 (Shinjuku)", platform: "Platform 1 (B1F)", desc: "月台 5-6 (地底) | 車型 E259 系", transportType: "train", startTime: "16:15", endTime: "17:35", duration: "80min", insight: "【技術百科】130km/h 準時運行。喼架有密碼鎖。", tags: ["JR-East", "Fastest", "Luggage-Space"] } },
             { id: "it-4", time: "18:00", duration: 45, name: "🏨 格拉斯麗新宿酒店 Check-in", coordinates: [35.6954, 139.7029], type: "hotel", cost: 0, currency: "JPY", details: { nameEn: "Hotel Gracery Shinjuku, Tokyo", location: "新宿站東口 -> Hotel Gracery Shinjuku 8F Lobby", desc: "經 Studio Alta 旁哥吉拉街步行", startTime: "18:00", endTime: "18:15", duration: "15min", distance: "450m", steps: 1100, insight: "【導航】見到 Studio Alta 大電視直入哥吉拉街。住呢度就係為咗睇哥吉拉！", tags: ["Godzilla", "Kabukicho", "8F-Lobby"] } },
-            { id: "it-5", time: "19:30", duration: 90, name: "🍽️ 敘敘苑燒肉", coordinates: [35.6938, 139.7034], type: "food", cost: 8000, currency: "JPY", details: { nameEn: "Jojoen Yakiniku (Shinjuku)", location: "新宿 Lumine Est 旁大廈 12F", desc: "窗邊景觀燒肉 (Premium 牛舌)", startTime: "19:30", endTime: "21:00", duration: "90min", image: "https://images.unsplash.com/photo-1594052327429-b68194458b68?w=800", insight: "【物流】食飯 90min。經歌舞伎町一番街大門影相最靚。", tags: ["Famous", "Sky-View", "A5-Beef"] } },
+            { id: "it-5", time: "19:30", duration: 90, name: "🍽️ 敘敘苑燒肉", coordinates: [35.6938, 139.7034], type: "food", cost: 8000, currency: "JPY", details: { nameEn: "Jojoen Yakiniku (Shinjuku)", location: "新宿 Lumine Est 旁大廈 12F", desc: "窗邊景觀燒肉 (Premium 牛舌)", startTime: "19:30", endTime: "21:00", duration: "90min", insight: "【物流】食飯 90min。經歌舞伎町一番街大門影相最靚。", tags: ["Famous", "Sky-View", "A5-Beef"] } },
             { id: "it-end-1", time: "21:00", duration: 30, name: "🏨 返回酒店 (Return)", type: "walk", cost: 0, currency: "JPY", hasWarning: true, warningMessage: "【教學提示】『返回酒店』標誌一天結束，建議每日行程尾段都加入。", details: { nameEn: "Return to Hotel", location: "敘敘苑 -> Hotel Gracery Shinjuku 8F", desc: "原路返回 8F Lobby", startTime: "21:00", endTime: "21:08", duration: "8min", distance: "300m", steps: 400, insight: "準備聽日嘅熱血行程！", tags: ["Night-Walk", "Security-Check"] } }
         ],
         "2025-12-25": [
             { id: "it-start-2", time: "08:30", duration: 15, name: "🏨 酒店出發 (西武新宿)", type: "walk", cost: 0, currency: "JPY", hasWarning: true, warningMessage: "【教學提示】『酒店出發』標誌一天開始，包含導航路線同指示。", details: { nameEn: "Pepe Tunnel Shortcut", location: "Hotel Gracery Shinjuku -> 西武新宿駅 (Seibu-Shinjuku)", desc: "經由西武新宿站 Pepe 隧道 (Matrix)", startTime: "08:30", endTime: "08:38", duration: "8min", distance: "450m", steps: 1200, insight: "【導航】直去都營大江戶線。步行 8min 消暑避寒。", tags: ["Shortcut", "Matrix-Path", "Cooling"] } },
             { id: "it-tsuk-1", time: "08:45", duration: 20, name: "🚇 都營大江戶線", type: "train", cost: 230, currency: "JPY", details: { nameEn: "Oedo Line (Toei Subway)", location: "新宿西口 (E01) -> 築地市場 (E18)", desc: "日本最深地鐵線 (42.3m)", startTime: "08:45", endTime: "09:05", duration: "20min", insight: "【導航】車程約 20 分鐘。搵 **A1 出口** 出站。", tags: ["Subway", "Deepest-Line", "Fast-Link"] } },
-            { id: "it-tsuk-2", time: "09:15", duration: 120, name: "🍣 築地外市場", coordinates: [35.6655, 139.7704], type: "food", cost: 3500, currency: "JPY", details: { nameEn: "Tsukiji Outer Market", location: "築地 4 Chome 門外市場", desc: "日本廚房 | 山長玉子燒", startTime: "09:15", endTime: "11:15", duration: "120min", image: "https://images.unsplash.com/photo-1555529921-5ae923d6f51f?w=800", insight: "【百科】食完步行 12min (850m) 到銀座。", tags: ["Seafood", "Street-Food", "Historic"] } },
-            { id: "it-gin-1", time: "12:00", duration: 120, name: "🛍️ Ginza Six (GSIX)", coordinates: [35.6696, 139.7640], type: "shopping", cost: 5000, currency: "JPY", details: { nameEn: "Ginza Luxury Mall", location: "銀座 A3 出口直結", desc: "谷口吉生設計 | 現代屋台建築", startTime: "12:00", endTime: "14:00", duration: "120min", image: "https://images.unsplash.com/photo-1541447271487-09612b3f49f7?w=800", insight: "【百科】6F 蔦屋書店係必影點。", tags: ["Architecture", "Art", "Luxury"] } },
+            { id: "it-tsuk-2", time: "09:15", duration: 120, name: "🍣 築地外市場", coordinates: [35.6655, 139.7704], type: "food", cost: 3500, currency: "JPY", details: { nameEn: "Tsukiji Outer Market", location: "築地 4 Chome 門外市場", desc: "日本廚房 | 山長玉子燒", startTime: "09:15", endTime: "11:15", duration: "120min", insight: "【百科】食完步行 12min (850m) 到銀座。", tags: ["Seafood", "Street-Food", "Historic"] } },
+            { id: "it-gin-1", time: "12:00", duration: 120, name: "🛍️ Ginza Six (GSIX)", coordinates: [35.6696, 139.7640], type: "shopping", cost: 5000, currency: "JPY", details: { nameEn: "Ginza Luxury Mall", location: "銀座 A3 出口直結", desc: "谷口吉生設計 | 現代屋台建築", startTime: "12:00", endTime: "14:00", duration: "120min", insight: "【百科】6F 蔦屋書店係必影點。", tags: ["Architecture", "Art", "Luxury"] } },
             { id: "it-asa-1", time: "15:00", duration: 15, name: "🚇 東京地鐵銀座線", type: "train", cost: 180, currency: "JPY", details: { nameEn: "Ginza Line (Tokyo Metro)", location: "銀座站 -> 淺草站", desc: "亞洲最古老地鐵 (1927)", startTime: "15:00", endTime: "15:15", duration: "15min", insight: "【導航】車程 15 分鐘。搵 **A4 出口**。", tags: ["Vintage-Subway", "Classic-Route"] } },
-            { id: "it-asa-2", time: "15:30", duration: 30, name: "⛩️ 雷門 & 淺草寺", coordinates: [35.7148, 139.7967], type: "spot", cost: 0, currency: "JPY", details: { nameEn: "Kaminarimon & Senso-ji Temple", location: "淺草 A4 出口 -> 雷門 -> 淺草寺", desc: "創立於 645 年 | 東京最古老寺廟", startTime: "15:30", endTime: "16:00", duration: "30min", image: "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=800", insight: "【導航】A4 出口直出見雷門。仲見世通 250m 直行入寺。", tags: ["Shrine", "Iconic", "Photo-Spot"] } },
-            { id: "it-asa-3", time: "16:15", duration: 30, name: "🌉 隅田川水上步道", type: "spot", cost: 0, currency: "JPY", hasWarning: true, warningMessage: "【教學提示】呢個時間同前一個活動有 15 分鐘空檔，考慮加入步行交通。", details: { nameEn: "Sumida River Walk", location: "淺草寺 -> 隅田川 -> 墨田區", desc: "2020 年開放 | 直達晴空塔天空步道", startTime: "16:15", endTime: "16:45", duration: "30min", image: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800", insight: "【導航】呢條橋可以影到晴空塔最正角度！慢慢行 15min。", tags: ["Bridge", "Scenic-Walk", "Skytree-View"] } },
-            { id: "it-sky-1", time: "18:00", duration: 120, name: "🗼 東京晴空塔", coordinates: [35.7100, 139.8107], type: "spot", cost: 3100, currency: "JPY", details: { nameEn: "Tokyo Skytree", location: "墨田區押上 (T2P)", desc: "高 634m | 世界第一高電波塔", startTime: "18:00", endTime: "20:00", duration: "120min", image: "https://images.unsplash.com/photo-1545389336-cf090694435e?w=800", insight: "【百科】採用古代五重塔心柱抗震。", tags: ["Sky-View", "Engineering", "Night-Scene"] } },
+            { id: "it-asa-2", time: "15:30", duration: 30, name: "⛩️ 雷門 & 淺草寺", coordinates: [35.7148, 139.7967], type: "spot", cost: 0, currency: "JPY", details: { nameEn: "Kaminarimon & Senso-ji Temple", location: "淺草 A4 出口 -> 雷門 -> 淺草寺", desc: "創立於 645 年 | 東京最古老寺廟", startTime: "15:30", endTime: "16:00", duration: "30min", insight: "【導航】A4 出口直出見雷門。仲見世通 250m 直行入寺。", tags: ["Shrine", "Iconic", "Photo-Spot"] } },
+            { id: "it-asa-3", time: "16:15", duration: 30, name: "🌉 隅田川水上步道", type: "spot", cost: 0, currency: "JPY", hasWarning: true, warningMessage: "【教學提示】呢個時間同前一個活動有 15 分鐘空檔，考慮加入步行交通。", details: { nameEn: "Sumida River Walk", location: "淺草寺 -> 隅田川 -> 墨田區", desc: "2020 年開放 | 直達晴空塔天空步道", startTime: "16:15", endTime: "16:45", duration: "30min", insight: "【導航】呢條橋可以影到晴空塔最正角度！慢慢行 15min。", tags: ["Bridge", "Scenic-Walk", "Skytree-View"] } },
+            { id: "it-sky-1", time: "18:00", duration: 120, name: "🗼 東京晴空塔", coordinates: [35.7100, 139.8107], type: "spot", cost: 3100, currency: "JPY", details: { nameEn: "Tokyo Skytree", location: "墨田區押上 (T2P)", desc: "高 634m | 世界第一高電波塔", startTime: "18:00", endTime: "20:00", duration: "120min", insight: "【百科】採用古代五重塔心柱抗震。", tags: ["Sky-View", "Engineering", "Night-Scene"] } },
             { id: "it-end-2", time: "21:00", duration: 15, name: "🏨 返回酒店 (Return)", type: "walk", cost: 0, currency: "JPY", details: { nameEn: "Return to Shinjuku", location: "新宿站 -> Hotel Gracery Shinjuku Tokyo 8F", desc: "經歌舞伎町一番街返酒店", startTime: "21:00", endTime: "21:10", duration: "10min", distance: "450m", steps: 600, insight: "去 1 樓 7-11 買宵夜。", tags: ["Neon-Light", "Convenience-Store"] } }
         ],
         "2025-12-26": [
             { id: "it-start-3", time: "10:00", duration: 15, name: "🏨 酒店出發 (Studio Alta)", type: "walk", cost: 0, currency: "JPY", details: { nameEn: "Shinjuku East Navigation", location: "酒店 -> JR 新宿站", desc: "經由新宿東口 Studio Alta 旁小路入閘", startTime: "10:00", endTime: "10:10", duration: "10min", distance: "450m", steps: 1100, insight: "14 號月台搭山手線（內環）。", tags: ["Station-Entry", "Yamanote-Line"] } },
             { id: "it-shib-1", time: "10:20", duration: 15, name: "🚇 JR 山手線", type: "train", cost: 160, currency: "JPY", details: { nameEn: "Yamanote Line (JR-East)", location: "新宿 (Plat 14) -> 澀谷", desc: "山手線車程 15min", startTime: "10:20", endTime: "10:35", duration: "15min", insight: "【歷史】1885 年開通嘅歷史性路線。", tags: ["Circular-Line", "Iconic-Tokyo"] } },
-            { id: "it-shib-2", time: "10:45", duration: 120, name: "🏙️ Shibuya Sky", coordinates: [35.6585, 139.7013], type: "spot", cost: 2500, currency: "JPY", details: { nameEn: "Scramble Square Observatory", location: "Shibuya Scramble Square 14F/47F", desc: "隈研吾參與設計", startTime: "10:45", endTime: "12:45", duration: "120min", image: "https://images.unsplash.com/photo-1582234371439-f9c1859367d3?w=800", insight: "【物流】風大記得紮起頭髮。", tags: ["Must-Visit", "Heliport-View", "Kengo-Kuma"] } },
-            { id: "it-shib-3", time: "13:15", duration: 90, name: "🍽️ 挽肉と米 (澀谷店)", coordinates: [35.6590, 139.6970], type: "food", cost: 1800, currency: "JPY", details: { nameEn: "Hikiniku to Kome", location: "澀谷道玄坂 2-28-1 3F", desc: "炭烤漢堡排 (預約制)", startTime: "13:15", endTime: "14:45", duration: "90min", image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=800", insight: "【物流】用餐預計 90 分鐘。", tags: ["Trending", "Gourmet", "Charcoal-Grilled"] } },
-            { id: "it-har-1", time: "15:30", duration: 60, name: "⛩️ 明治神宮", coordinates: [35.6764, 139.6993], type: "spot", cost: 0, currency: "JPY", details: { nameEn: "Meiji Jingu Shrine", location: "原宿站出口 1分鐘", desc: "1920 年建立。大鳥居用咗台灣阿里山檜木。", startTime: "15:30", endTime: "16:30", duration: "60min", image: "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=800", insight: "【歷史】從挽肉と米步行 20 分鐘抵達。", tags: ["Forest-In-City", "Giant-Torii", "Spiritual"] } },
-            { id: "it-har-2", time: "16:45", duration: 60, name: "🛍️ 表參道散策", type: "shopping", cost: 5000, currency: "JPY", details: { nameEn: "Omotesando & Cafe Reissue", location: "神宮前 3-25-7 2F", desc: "3D 立體拉花 (Cafe)", startTime: "16:45", endTime: "17:45", duration: "60min", image: "https://images.unsplash.com/photo-1621609764095-b32bbe35cf3a?w=800", insight: "目標：KURACHIKA 買 Porter Bag。", tags: ["Fashion", "Architecture-Street", "3D-Latte"] } },
+            { id: "it-shib-2", time: "10:45", duration: 120, name: "🏙️ Shibuya Sky", coordinates: [35.6585, 139.7013], type: "spot", cost: 2500, currency: "JPY", details: { nameEn: "Scramble Square Observatory", location: "Shibuya Scramble Square 14F/47F", desc: "隈研吾參與設計", startTime: "10:45", endTime: "12:45", duration: "120min", insight: "【物流】風大記得紮起頭髮。", tags: ["Must-Visit", "Heliport-View", "Kengo-Kuma"] } },
+            { id: "it-shib-3", time: "13:15", duration: 90, name: "🍽️ 挽肉と米 (澀谷店)", coordinates: [35.6590, 139.6970], type: "food", cost: 1800, currency: "JPY", details: { nameEn: "Hikiniku to Kome", location: "澀谷道玄坂 2-28-1 3F", desc: "炭烤漢堡排 (預約制)", startTime: "13:15", endTime: "14:45", duration: "90min", insight: "【物流】用餐預計 90 分鐘。", tags: ["Trending", "Gourmet", "Charcoal-Grilled"] } },
+            { id: "it-har-1", time: "15:30", duration: 60, name: "⛩️ 明治神宮", coordinates: [35.6764, 139.6993], type: "spot", cost: 0, currency: "JPY", details: { nameEn: "Meiji Jingu Shrine", location: "原宿站出口 1分鐘", desc: "1920 年建立。大鳥居用咗台灣阿里山檜木。", startTime: "15:30", endTime: "16:30", duration: "60min", insight: "【歷史】從挽肉と米步行 20 分鐘抵達。", tags: ["Forest-In-City", "Giant-Torii", "Spiritual"] } },
+            { id: "it-har-2", time: "16:45", duration: 60, name: "🛍️ 表參道散策", type: "shopping", cost: 5000, currency: "JPY", details: { nameEn: "Omotesando & Cafe Reissue", location: "神宮前 3-25-7 2F", desc: "3D 立體拉花 (Cafe)", startTime: "16:45", endTime: "17:45", duration: "60min", insight: "目標：KURACHIKA 買 Porter Bag。", tags: ["Fashion", "Architecture-Street", "3D-Latte"] } },
             { id: "it-end-3", time: "20:00", duration: 15, name: "🏨 返回酒店 (Return)", type: "walk", cost: 0, currency: "JPY", details: { nameEn: "Return to Gracery Shinjuku", location: "新宿站 -> Hotel Gracery Shinjuku 8F", desc: "經過新宿東口 Studio Alta 返酒店", startTime: "20:00", endTime: "20:10", duration: "10min", distance: "450m", steps: 1100, insight: "聽日要衝新幹線，早啲休息。", tags: ["Night-Route", "Final-Check"] } }
         ],
         "2025-12-27": [
             { id: "it-start-4", time: "08:15", duration: 15, name: "🚅 東京站新幹線導航", coordinates: [35.6812, 139.7671], type: "walk", cost: 0, currency: "JPY", hasWarning: true, warningMessage: "【教學提示】大站導航建議加入詳細指示，包括月台資訊、行走方向、預留時間等。", details: { nameEn: "Tokyo Station Navigation", location: "新宿站 -> 東京站 14-19 號月台", desc: "跟住藍色「新幹線」指示行 (Matrix)", startTime: "08:15", endTime: "08:30", duration: "15min", distance: "450m", steps: 1100, insight: "預留時間買「牛肉便當」喺車食。", tags: ["Shinkansen", "Station-Flow", "Bento"] } },
-            { id: "it-tok-4", time: "09:42", duration: 150, name: "🚅 Nozomi 21 (新幹線)", coordinates: [35.6812, 139.7671], type: "train", cost: 14750, currency: "JPY", details: { trainNo: "Nozomi 21", nameEn: "Tokaido Shinkansen (Supreme)", location: "東京 (Plat 14) -> 新大阪", arrival: "Osaka", desc: "車型 N700S (Supreme) | 車程 150min", transportType: "train", startTime: "09:42", endTime: "12:12", duration: "2hr 30min", image: "https://images.unsplash.com/photo-1542751110-97427bbecf20?w=800", insight: "【技術】10:30 右邊 E 位見富士山。", tags: ["High-Speed", "Fuji-View", "N700S"] } },
-            { id: "it-osa-2", time: "13:15", duration: 30, name: "🏨 大阪 W 酒店 Check-in", coordinates: [34.6750, 135.5000], type: "hotel", cost: 0, currency: "JPY", details: { nameEn: "W Osaka (Shinsaibashi)", location: "心齋橋站 3 號出口 -> 酒店 1F", desc: "1F 門口寄存即走 (Matrix)", startTime: "13:15", endTime: "13:45", duration: "30min", image: "https://images.unsplash.com/photo-1549144511-f099e773c147?w=800", insight: "【導航】心齋橋站 3 號出口轉左行 2min。", tags: ["Marriott", "Luxury-Design", "Iconic-Black"] } },
-            { id: "it-osa-gap1", time: "14:00", duration: 90, name: "🛍️ 心齋橋筋商店街", coordinates: [34.6718, 135.5019], type: "shopping", cost: 3000, currency: "JPY", details: { nameEn: "Shinsaibashi-suji Shopping Street", location: "Osaka Shinsaibashi", desc: "大阪最長商店街 (600m)", startTime: "14:00", endTime: "15:30", duration: "90min", image: "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=800", insight: "大阪最有歷史商店街，由 1726 年開始。", tags: ["Fashion", "Local-Vibe", "Historic"] } },
-            { id: "it-osa-gap2", time: "16:00", duration: 90, name: "🎨 美國村 (Amerikamura)", coordinates: [34.6725, 135.4980], type: "spot", cost: 0, currency: "JPY", details: { nameEn: "American Village Osaka", location: "西心齋橋 1-6", desc: "大阪潮流文化發源地", startTime: "16:00", endTime: "17:30", duration: "90min", image: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800", insight: "70 年代開始嘅古著街。三角形公園係地標。", tags: ["Vintage-Clothing", "Youth-Culture", "Street-Art"] } },
-            { id: "it-osa-3", time: "19:00", duration: 90, name: "🍽️ 蟹道樂 (道頓堀本店)", coordinates: [34.6687, 135.5013], type: "food", cost: 12000, currency: "JPY", details: { nameEn: "Kani Doraku (Honten)", location: "道頓堀 1-6-18", desc: "大阪地標 | 巨大動感螃蟹看板", startTime: "19:00", endTime: "20:30", duration: "90min", image: "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=800", insight: "【物流】食完行去格力高看板影相只需 1min。", tags: ["Signature-Dish", "Crab-Specialist", "Landmark"] } },
+            { id: "it-tok-4", time: "09:42", duration: 150, name: "🚅 Nozomi 21 (新幹線)", coordinates: [35.6812, 139.7671], type: "train", cost: 14750, currency: "JPY", details: { trainNo: "Nozomi 21", nameEn: "Tokaido Shinkansen (Supreme)", location: "東京 (Plat 14) -> 新大阪", arrival: "Osaka", desc: "車型 N700S (Supreme) | 車程 150min", transportType: "train", startTime: "09:42", endTime: "12:12", duration: "2hr 30min", insight: "【技術】10:30 右邊 E 位見富士山。", tags: ["High-Speed", "Fuji-View", "N700S"] } },
+            { id: "it-osa-2", time: "13:15", duration: 30, name: "🏨 大阪 W 酒店 Check-in", coordinates: [34.6750, 135.5000], type: "hotel", cost: 0, currency: "JPY", details: { nameEn: "W Osaka (Shinsaibashi)", location: "心齋橋站 3 號出口 -> 酒店 1F", desc: "1F 門口寄存即走 (Matrix)", startTime: "13:15", endTime: "13:45", duration: "30min", insight: "【導航】心齋橋站 3 號出口轉左行 2min。", tags: ["Marriott", "Luxury-Design", "Iconic-Black"] } },
+            { id: "it-osa-gap1", time: "14:00", duration: 90, name: "🛍️ 心齋橋筋商店街", coordinates: [34.6718, 135.5019], type: "shopping", cost: 3000, currency: "JPY", details: { nameEn: "Shinsaibashi-suji Shopping Street", location: "Osaka Shinsaibashi", desc: "大阪最長商店街 (600m)", startTime: "14:00", endTime: "15:30", duration: "90min", insight: "大阪最有歷史商店街，由 1726 年開始。", tags: ["Fashion", "Local-Vibe", "Historic"] } },
+            { id: "it-osa-gap2", time: "16:00", duration: 90, name: "🎨 美國村 (Amerikamura)", coordinates: [34.6725, 135.4980], type: "spot", cost: 0, currency: "JPY", details: { nameEn: "American Village Osaka", location: "西心齋橋 1-6", desc: "大阪潮流文化發源地", startTime: "16:00", endTime: "17:30", duration: "90min", insight: "70 年代開始嘅古著街。三角形公園係地標。", tags: ["Vintage-Clothing", "Youth-Culture", "Street-Art"] } },
+            { id: "it-osa-3", time: "19:00", duration: 90, name: "🍽️ 蟹道樂 (道頓堀本店)", coordinates: [34.6687, 135.5013], type: "food", cost: 12000, currency: "JPY", details: { nameEn: "Kani Doraku (Honten)", location: "道頓堀 1-6-18", desc: "大阪地標 | 巨大動感螃蟹看板", startTime: "19:00", endTime: "20:30", duration: "90min", insight: "【物流】食完行去格力高看板影相只需 1min。", tags: ["Signature-Dish", "Crab-Specialist", "Landmark"] } },
             { id: "it-end-4", time: "21:30", duration: 15, name: "🏨 返回 W Osaka (Return)", type: "walk", cost: 0, currency: "JPY", details: { nameEn: "Return to Shinsaibashi", location: "道頓堀 -> W Osaka 1F", desc: "沿心齋橋筋商店街漫步", startTime: "21:30", endTime: "21:42", duration: "12min", distance: "800m", steps: 1200, insight: "返酒店 Spa 休息吓。", tags: ["Night-Stroll", "Spa-Time"] } }
         ],
         "2025-12-28": [
             { id: "it-usj-matrix", time: "07:30", duration: 45, name: "🚆 USJ 鐵道轉乘", type: "train", cost: 410, currency: "JPY", details: { nameEn: "Universal City Direct Link", location: "心齋橋 -> Universal City (Plat 3)", desc: "西九條站對面月台轉乘 (Matrix)", startTime: "07:30", endTime: "08:15", duration: "45min", insight: "西九條轉 **Plat 3** (夢咲線)。轉乘只需 1min。", tags: ["Train-Matrix", "USJ-Express", "Fast-Link"] } },
-            { id: "it-usj-1", time: "09:00", duration: 720, name: "🎢 USJ 超級任天堂世界", coordinates: [34.6654, 135.4323], type: "spot", cost: 18000, currency: "JPY", details: { nameEn: "Super Nintendo World (USJ)", location: "大阪此花區", desc: "宮本茂耗資 600 億監修", startTime: "09:00", endTime: "21:00", duration: "12hr", image: "https://images.unsplash.com/photo-1545641203-7d072a14e3b2?w=800", insight: "入園即衝任天堂。用 Power-Up Band 敲磚。", tags: ["Mario-Kart", "Yoshi-Adventure", "Power-Up"] } },
+            { id: "it-usj-1", time: "09:00", duration: 720, name: "🎢 USJ 超級任天堂世界", coordinates: [34.6654, 135.4323], type: "spot", cost: 18000, currency: "JPY", details: { nameEn: "Super Nintendo World (USJ)", location: "大阪此花區", desc: "宮本茂耗資 600 億監修", startTime: "09:00", endTime: "21:00", duration: "12hr", insight: "入園即衝任天堂。用 Power-Up Band 敲磚。", tags: ["Mario-Kart", "Yoshi-Adventure", "Power-Up"] } },
             { id: "it-end-5", time: "21:30", duration: 45, name: "🏨 返回 W Osaka (Return)", type: "walk", cost: 410, currency: "JPY", details: { nameEn: "Return to Hotel", location: "USJ -> W Osaka", desc: "原路返回 (Matrix)", startTime: "21:30", endTime: "22:15", duration: "45min", distance: "8km", steps: 500, insight: "今日行咗 2 萬步，一定要用休足時間。", tags: ["Tired-But-Happy", "Last-Night"] } }
         ],
         "2025-12-29": [
             { id: "it-check", time: "08:00", duration: 15, name: "🏨 大阪 W 酒店 Checkout & 寄喼", type: "hotel", cost: 0, currency: "JPY", details: { nameEn: "W Osaka Final Checkout", location: "W Osaka Lobby", desc: "最後行李清查 | 24吋 x 4", startTime: "08:00", endTime: "08:15", duration: "15min", insight: "Alex 負責核對全員喼位。Checkout 5min。", tags: ["Check-Out", "Bag-Management", "Final-Day"] } },
-            { id: "it-osa-morning", time: "08:30", duration: 90, name: "🍳 道具屋筋 & 黑門", type: "shopping", cost: 2000, currency: "JPY", details: { nameEn: "Sennichimae Doguyasuji", location: "大阪難波千日前", desc: "大阪料理人之街 | 廚具百科", startTime: "08:30", endTime: "10:00", duration: "90min", image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800", insight: "【百科】大阪廚具之魂。買日式小餐具。", tags: ["Kitchenware", "Craftmanship", "Culinary"] } },
+            { id: "it-osa-morning", time: "08:30", duration: 90, name: "🍳 道具屋筋 & 黑門", type: "shopping", cost: 2000, currency: "JPY", details: { nameEn: "Sennichimae Doguyasuji", location: "大阪難波千日前", desc: "大阪料理人之街 | 廚具百科", startTime: "08:30", endTime: "10:00", duration: "90min", insight: "【百科】大阪廚具之魂。買日式小餐具。", tags: ["Kitchenware", "Craftmanship", "Culinary"] } },
             { id: "it-kuro-matrix", time: "10:30", duration: 90, name: "🍣 黑門市場食鮮", type: "food", cost: 4000, currency: "JPY", details: { nameEn: "Kuromon Ichiba Market", location: "黑門市場 (Namba)", desc: "沿御堂筋大道直行 15min", startTime: "10:30", endTime: "12:00", duration: "90min", insight: "【導航】食鮮味海膽。13:15 到南海難波站。", tags: ["Raw-Seafood", "Uni", "Market-Vibe"] } },
-            { id: "it-rap-1", time: "13:30", duration: 40, name: "🚆 南海 Rapit (藍武士)", type: "train", cost: 1450, currency: "JPY", bundleId: "departure-bundle-d6", details: { trainNo: "Rap:t Beta 42", nameEn: "Nankai Airport Express", location: "南海難波 (Plat 9) -> KIX 2F", desc: "藍色專用月台 (Plat 9)", startTime: "13:30", endTime: "14:10", duration: "40min", image: "https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800", insight: "【導航】入閘後過天橋到 T1。Mike 確保清空硬幣。【Bundle 邏輯】呢班機場快綫同回程航班係綁定，拖其中一個就一齊移動！", tags: ["Iron-Man-28", "Blue-Express", "Fast-To-KIX"] } },
+            { id: "it-rap-1", time: "13:30", duration: 40, name: "🚆 南海 Rapit (藍武士)", type: "train", cost: 1450, currency: "JPY", bundleId: "departure-bundle-d6", details: { trainNo: "Rap:t Beta 42", nameEn: "Nankai Airport Express", location: "南海難波 (Plat 9) -> KIX 2F", desc: "藍色專用月台 (Plat 9)", startTime: "13:30", endTime: "14:10", duration: "40min", insight: "【導航】入閘後過天橋到 T1。Mike 確保清空硬幣。【Bundle 邏輯】呢班機場快綫同回程航班係綁定，拖其中一個就一齊移動！", tags: ["Iron-Man-28", "Blue-Express", "Fast-To-KIX"] } },
             { id: "it-kix-blue", time: "15:30", duration: 210, name: "✈️ 歸航: KIX -> HKG (Return)", type: "flight", cost: 0, currency: "HKD", bundleId: "departure-bundle-d6", details: { flightNo: "CX507", nameEn: "Cathay Pacific (Return)", location: "KIX T1 國泰櫃位 (C 區)", desc: "Blue Sky 免稅店 (硬幣對策)", startTime: "15:30", endTime: "19:00", duration: "3hr 30min", insight: "【微操】去 C 區 Check-in。入閘後可以用晒硬幣。【百科：回程標誌】注意飛機 Icon 變左右下角 (↘️)，寄意「回家」。", tags: ["Going-Home", "Tax-Free", "Final-Duty"] } }
         ],
     },
@@ -1647,7 +759,7 @@ export const SIMULATION_DATA = {
         { id: "file-3", name: "USJ_Express_Pass.pdf", type: "application/pdf", uploadedAt: "2025-12-22", url: "https://www.google.com" },
         { id: "file-img1", name: "新宿哥吉拉大戰.jpg", type: "image/jpeg", uploadedAt: "2025-12-24", url: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800" },
         { id: "file-img2", name: "銀座夜景全景.png", type: "image/png", uploadedAt: "2025-12-25", url: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800" },
-        { id: "file-img3", name: "USJ任天堂世界全員合照.jpg", type: "image/jpeg", uploadedAt: "2025-12-28", url: "https://images.unsplash.com/photo-1643261642816-a3205763955d?w=800" }
+        { id: "file-img3", name: "USJ任天堂世界全員合照.jpg", type: "image/jpeg", uploadedAt: "2025-12-28", url: "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=800" }
     ],
     reminders: [
         { id: "rem-1", title: "⚡ 數據備份", content: "VJW QR Code 一定要 Cap 圖！機場 Wi-Fi 有時慢到喊，離線 Cap 圖保平安。包含入境同海關兩個 Code。", category: "tech", priority: "high" },
@@ -1811,8 +923,8 @@ export const CITY_IMAGES = {
 
 export const LANDMARK_IMAGES = {
     // Tokyo
-    "晴空塔": "https://images.unsplash.com/photo-1545389656-78b17ee191d9?w=600&h=400&fit=crop",
-    "Skytree": "https://images.unsplash.com/photo-1545389656-78b17ee191d9?w=600&h=400&fit=crop",
+    "晴空塔": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&h=400&fit=crop",
+    "Skytree": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&h=400&fit=crop",
     "東京鐵塔": "https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=400&h=300&fit=crop",
     "Tokyo Tower": "https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=400&h=300&fit=crop",
     "淺草寺": "https://images.unsplash.com/photo-1570459027562-4a916cc6113f?w=400&h=300&fit=crop",
@@ -1831,9 +943,9 @@ export const LANDMARK_IMAGES = {
     "東京站": "https://images.unsplash.com/photo-1513407030348-c983a97b98d8?w=400&h=300&fit=crop",
     "Tokyo Station": "https://images.unsplash.com/photo-1513407030348-c983a97b98d8?w=400&h=300&fit=crop",
     // Osaka
-    "環球影城": "https://images.unsplash.com/photo-1620986794611-665c2759e691?w=400&h=300&fit=crop",
-    "USJ": "https://images.unsplash.com/photo-1620986794611-665c2759e691?w=400&h=300&fit=crop",
-    "Universal Studios": "https://images.unsplash.com/photo-1620986794611-665c2759e691?w=400&h=300&fit=crop",
+    "環球影城": "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&h=300&fit=crop",
+    "USJ": "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&h=300&fit=crop",
+    "Universal Studios": "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&h=300&fit=crop",
     "道頓堀": "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&h=300&fit=crop",
     "Dotonbori": "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&h=300&fit=crop",
     "心齋橋": "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&h=300&fit=crop",
@@ -1852,8 +964,8 @@ export const LANDMARK_IMAGES = {
     // Taiwan
     "101": "https://images.unsplash.com/photo-1470004914212-05527e49370b?w=400&h=300&fit=crop",
     "Taipei 101": "https://images.unsplash.com/photo-1470004914212-05527e49370b?w=400&h=300&fit=crop",
-    "九份": "https://images.unsplash.com/photo-1465220183746-d872b8ee34be?w=400&h=300&fit=crop",
-    "Jiufen": "https://images.unsplash.com/photo-1465220183746-d872b8ee34be?w=400&h=300&fit=crop",
+    "九份": "https://images.unsplash.com/photo-1470004914212-05527e49370b?w=400&h=300&fit=crop",
+    "Jiufen": "https://images.unsplash.com/photo-1470004914212-05527e49370b?w=400&h=300&fit=crop",
     // Transport
     "新幹線": "https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=400&h=300&fit=crop",
     "Shinkansen": "https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=400&h=300&fit=crop"
