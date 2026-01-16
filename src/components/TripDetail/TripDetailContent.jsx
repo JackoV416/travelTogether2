@@ -41,6 +41,7 @@ import { buttonPrimary } from '../../constants/styles';
 import { useTripHistory } from '../../hooks/useTripHistory'; // V1.1 Phase 7
 import Kbd from '../Shared/Kbd';
 import useGlobalShortcuts from '../../hooks/useGlobalShortcuts';
+import { SEO } from '../Shared/SEO';
 
 const TripDetailContent = (props) => {
     const { t } = useTranslation();
@@ -1605,6 +1606,11 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
 
     return (
         <>
+            <SEO
+                title={trip.name}
+                description={`Trip to ${trip.city || trip.country} - ${trip.startDate ? formatDate(trip.startDate) : ''}`}
+                image={currentHeaderImage}
+            />
             <div id="trip-detail-content" className="max-w-7xl mx-auto p-4 pb-36 md:pb-20 animate-fade-in">
                 {/* Unified Hero Header Card */}
                 <div className={`${glassCard(isDarkMode)} relative mb-8 z-40 group hover:shadow-2xl transition-all duration-500`}>
@@ -1825,7 +1831,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                                                 </div>
                                                             )}
                                                         </div>
-                                                        <button onClick={() => setIsMemberModalOpen(true)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all border border-white/10 hover:border-white/30 shadow-lg" title={t('trip.actions.manage_members') || '成員管理'}>
+                                                        <button data-tour="invite-members" onClick={() => setIsMemberModalOpen(true)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all border border-white/10 hover:border-white/30 shadow-lg" title={t('trip.actions.manage_members') || '成員管理'}>
                                                             <UserPlus className="w-4 h-4 text-white" />
                                                         </button>
                                                     </div>

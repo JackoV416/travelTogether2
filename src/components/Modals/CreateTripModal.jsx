@@ -166,7 +166,7 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
                     </div>
 
                     {/* Dynamic Destinations Section */}
-                    <div className="md:col-span-2 space-y-6">
+                    <div className="md:col-span-2 space-y-6" data-tour="create-trip-country">
                         <div className="flex justify-between items-center px-1">
                             <label className="text-xs font-bold opacity-70 uppercase tracking-wider">{t('trip.create_modal.destinations')}</label>
                             <button

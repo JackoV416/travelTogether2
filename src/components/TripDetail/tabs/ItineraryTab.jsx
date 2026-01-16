@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import SearchFilterBar from '../../Shared/SearchFilterBar';
 import EmptyState from '../../Shared/EmptyState';
-import { Search } from 'lucide-react';
+// Duplicate Search removed
 import {
     Map as MapIcon, MapPinned, List, Navigation, PlaneTakeoff, Hotel, Utensils, Plane,
     Bus, ShoppingBag, Clock, CalendarDays, GripVertical, MapPin, Car, Route, Train, Wand2,
@@ -1202,18 +1202,16 @@ const ItineraryTab = ({
                                         {filteredItems.length === 0 ? (
                                             <EmptyState
                                                 icon={searchValue ? Search : CalendarDays}
-                                                title={searchValue ? "找不到相關行程" : "今日尚未安排行程"}
-                                                description={searchValue ? `找不到與「${searchValue}」相關的項目。` : "開始規劃今天的精彩旅程，或者試試 Jarvis 智能生成。"}
+                                                title={searchValue ? t('itinerary.empty_search_title', "找不到相關行程") : t('itinerary.empty_day_title', "今日尚未安排行程")}
+                                                description={searchValue ? t('itinerary.empty_search_desc', `找不到與「${searchValue}」相關的項目。`) : t('itinerary.empty_day_desc', "開始規劃今天的精彩旅程，或者試試 Jarvis 智能生成。")}
                                                 isDarkMode={isDarkMode}
-                                                action={!searchValue ? {
-                                                    label: "Jarvis 智能生成",
-                                                    onClick: () => onOpenAIModal('full'),
-                                                    icon: BrainCircuit
-                                                } : {
-                                                    label: "清除搜尋",
-                                                    onClick: () => { setSearchValue(""); setActiveFilters({ type: 'all' }); },
-                                                    icon: Search
-                                                }}
+                                                actionLabel={!searchValue ? t('itinerary.action_jarvis', "Jarvis 智能生成") : t('itinerary.action_clear', "清除搜尋")}
+                                                onAction={!searchValue
+                                                    ? () => onOpenAIModal('full')
+                                                    : () => { setSearchValue(""); setActiveFilters({ type: 'all' }); }
+                                                }
+                                                secondaryActionLabel={!searchValue ? t('itinerary.action_add', "新增項目") : null}
+                                                onSecondaryAction={!searchValue ? () => onAddItem(currentDisplayDate, 'spot') : null}
                                             />
                                         ) : (
                                             <>

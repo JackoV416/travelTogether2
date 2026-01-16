@@ -679,6 +679,10 @@ const resources = {
                 "title": "Trip Card",
                 "desc": "Each trip shows as a card. Click to view details and start planning."
             },
+            "invite_members": {
+                "title": "Invite Friends",
+                "desc": "Travel is better together! Invite friends to collaborate in real-time."
+            },
             "tab_nav": {
                 "title": "Tab Navigation",
                 "desc": "Switch between different sections: Itinerary, Budget, Packing, and more."
@@ -2218,6 +2222,10 @@ const resources = {
                 "trip_card": {
                     "title": "行程卡片",
                     "desc": "每個行程用卡片顯示。撳入去睇詳情開始規劃。"
+                },
+                "invite_members": {
+                    "title": "邀請朋友",
+                    "desc": "獨樂樂不如眾樂樂！邀請朋友一齊實時協作規劃行程啦。"
                 },
                 "tab_nav": {
                     "title": "分頁導航",

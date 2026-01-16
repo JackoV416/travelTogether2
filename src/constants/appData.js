@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.5.2";
-export const APP_VERSION_TAG = "Global Deep Audit";
+export const APP_VERSION = "V1.6.0";
+export const APP_VERSION_TAG = "Advanced Performance & Polish";
 export const APP_LAST_UPDATE = '2026-01-16';
 export const JARVIS_VERSION = "V0.0.5-Beta";
 
@@ -95,6 +95,33 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.6.0",
+        date: "2026-01-16",
+        tag: "Advanced Performance & Polish",
+        desc: {
+            "zh-TW": "網站效能優化與 PWA 體驗升級",
+            "zh-HK": "網站效能優化同 PWA 體驗升級",
+            "en": "Website Performance Optimization & PWA Polish"
+        },
+        details: {
+            "zh-TW": [
+                "⚡ Perf: 實施 Code Splitting (Modals) 減少首屏體積",
+                "📈 SEO: 引入 react-helmet-async 動態 Meta Tags",
+                "🪜 UX: 新增互動式教學 (Tutorial) 與 Loading Skeletons"
+            ],
+            "zh-HK": [
+                "⚡ Perf: 實施 Code Splitting (Modals) 減少首屏體積",
+                "📈 SEO: 引入 react-helmet-async 動態 Meta Tags",
+                "🪜 UX: 新增互動式教學 (Tutorial) 同 Loading Skeletons"
+            ],
+            "en": [
+                "⚡ Perf: Implemented Code Splitting (Modals) for faster load",
+                "📈 SEO: Added react-helmet-async for dynamic Meta Tags",
+                "🪜 UX: Added Interactive Tutorial & Loading Skeletons"
+            ]
+        }
+    },
     {
         ver: "V1.5.2",
         date: "2026-02-16",

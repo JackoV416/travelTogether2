@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { HelmetProvider } from 'react-helmet-async';
 import App from './App.jsx'
 import './index.css'
 import './i18n';
@@ -7,6 +8,8 @@ import 'leaflet/dist/leaflet.css'; // Fix Leaflet Map UI
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>
   </React.StrictMode>,
 )

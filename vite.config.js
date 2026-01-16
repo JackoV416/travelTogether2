@@ -9,7 +9,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'pwa-icon.svg'],
+      includeAssets: ['pwa-icon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'Travel Together - 智能旅遊規劃',
         short_name: 'TravelTogether',

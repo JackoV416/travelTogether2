@@ -12,24 +12,26 @@ import {
 import { getExchangeRates, convertCurrency } from './services/exchangeRate';
 import { getWeather, getWeatherInfo } from './services/weather';
 import { exportToBeautifulPDF, exportToJSON, exportToImage } from './services/pdfExport';
-import TripExportImportModal from './components/Modals/TripExportImportModal';
-import SmartImportModal from './components/Modals/SmartImportModal';
+// Lazy Load Heavy Modals
+const CreateTripModal = lazy(() => import('./components/Modals/CreateTripModal'));
+const TripExportImportModal = lazy(() => import('./components/Modals/TripExportImportModal')); // Check usage
+const SmartImportModal = lazy(() => import('./components/Modals/SmartImportModal'));
+const AIGeminiModal = lazy(() => import('./components/Modals/AIGeminiModal')); // Check usage
+const UniversalOnboarding = lazy(() => import('./components/Modals/UniversalOnboarding'));
+const FeedbackModal = lazy(() => import('./components/Modals/FeedbackModal'));
+const VersionModal = lazy(() => import('./components/Modals/VersionModal'));
+const VersionGuardModal = lazy(() => import('./components/Modals/VersionGuardModal'));
+const ReportCenterModal = lazy(() => import('./components/Modals/ReportCenterModal'));
+const AdminFeedbackModal = lazy(() => import('./components/Modals/AdminFeedbackModal'));
+const SettingsView = lazy(() => import('./components/Views/SettingsView'));
+
 import NotificationSystem from './components/Shared/NotificationSystem';
 import OfflineBanner from './components/Shared/OfflineBanner';
-
 import ReloadPrompt from './components/Shared/ReloadPrompt';
 import { useNotifications } from './hooks/useNotifications';
 import { getMockTripDetails } from './constants/publicTripsData'; // V1.3.6: Mock Data Generator
 import { checkAbuse } from './services/security';
-import AIGeminiModal from './components/Modals/AIGeminiModal';
 import ErrorBoundary from './components/Shared/ErrorBoundary';
-import UniversalOnboarding from './components/Modals/UniversalOnboarding';
-import FeedbackModal from './components/Modals/FeedbackModal';
-import VersionModal from './components/Modals/VersionModal'; // Imported
-import VersionGuardModal from './components/Modals/VersionGuardModal'; // V1.1.8
-import ReportCenterModal from './components/Modals/ReportCenterModal'; // V1.1.8
-import AdminFeedbackModal from './components/Modals/AdminFeedbackModal';
-import SettingsView from './components/Views/SettingsView'; // New View
 import GlobalChatFAB from './components/Shared/GlobalChatFAB'; // V1.2.2 Global FAB
 import UniversalChat from './components/Shared/UniversalChat'; // V1.2.1-Globalized
 import OnboardingTour from './components/Shared/OnboardingTour'; // V1.2.4 Interactive Tutorial
@@ -40,7 +42,10 @@ import CommandPalette from './components/Shared/CommandPalette'; // V1.2.7 Globa
 import SocialProfile from './components/Social/Profile/SocialProfile'; // V1.3.0 Profile
 import Footer from './components/Shared/Footer'; // V1.3.1 Clean Architecture
 import useGlobalShortcuts from './hooks/useGlobalShortcuts'; // V1.3.5 Global Shortcuts
+// Duplicate removed
 import Kbd from './components/Shared/Kbd'; // V1.3.5 UI Polish
+import { SEO } from './components/Shared/SEO'; // V1.6.0 SEO
+import TripDetailSkeleton from './components/Loaders/TripDetailSkeleton'; // V1.6.0 Skeleton
 
 // --- V0.16.2 Refactored Imports ---
 import {
@@ -58,10 +63,11 @@ import {
 import { suggestTransportBetweenSpots, checkAIUsageLimit } from './services/ai-parsing';
 
 import Dashboard from './components/Dashboard/Dashboard';
-import CreateTripModal from './components/Modals/CreateTripModal';
+// CreateTripModal is lazy loaded above
 import DashboardSkeleton from './components/Loaders/DashboardSkeleton';
 import ImageWithFallback from './components/Shared/ImageWithFallback';
 import HttpStatusPage from './components/Shared/HttpStatusPage';
+import LandingPage from './components/Landing/LandingPage'; // V1.6.0 Refactor
 
 
 
@@ -1331,6 +1337,9 @@ const App = () => {
     };
 
     if (isLoading) {
+        if (view === 'detail' || view === 'tutorial' || (window.location.search.includes('view=detail'))) {
+            return <TripDetailSkeleton isDarkMode={isDarkMode} />;
+        }
         return <DashboardSkeleton isDarkMode={isDarkMode} />;
     }
 
@@ -1338,6 +1347,10 @@ const App = () => {
 
     return (
         <TourProvider onNavigate={handleTourNavigation}>
+            {/* Default Internal SEO (Dashboard) - Overridden by TripDetail */}
+            {view === 'dashboard' && <SEO title={t('dashboard.title', 'Dashboard')} />}
+            {view === 'my_trips' && <SEO title={t('dashboard.my_trips', 'My Trips')} />}
+
             <div className={`min-h-screen flex flex-col overflow-x-hidden transition-colors duration-500 font-sans selection:bg-indigo-500/30 ${isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-slate-50 text-gray-900'}`}>
                 <NotificationSystem notifications={toasts} setNotifications={setToasts} isDarkMode={isDarkMode} onNotificationClick={handleNotificationNavigate} />
                 <OfflineBanner isDarkMode={isDarkMode} />
@@ -1520,70 +1533,73 @@ const App = () => {
                     /></div></div>}
                 </div>
                 {view !== 'tutorial' && <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} onLanguageChange={(lang) => setGlobalSettings(prev => ({ ...prev, language: lang }))} />}
-                {/* SettingsModal removed */}
-                <UniversalOnboarding
-                    isOpen={isOnboardingOpen}
-                    onClose={handleOnboardingComplete}
-                    isDarkMode={isDarkMode}
-                    onStartDemo={() => setView('tutorial')}
-                    onStepChange={handleOnboardingStepChange}
-                />
 
-                {/* Global Chat / AI FAB */}
-                {(user || view === 'tutorial') && !isChatOpen && (
-                    <GlobalChatFAB
+                <Suspense fallback={null}>
+
+                    <UniversalOnboarding
+                        isOpen={isOnboardingOpen}
+                        onClose={handleOnboardingComplete}
                         isDarkMode={isDarkMode}
-                        context={view === 'detail' || view === 'tutorial' ? 'trip' : 'default'}
-                        onClick={() => {
-                            // Priority: Open Trip Chat if in detail view, else Jarvis
-                            if (view === 'tutorial') {
-                                handleOpenChat(SIMULATION_DATA);
-                            } else {
-                                handleOpenChat();
-                            }
+                        onStartDemo={() => setView('tutorial')}
+                        onStepChange={handleOnboardingStepChange}
+                    />
+
+                    {/* Global Chat / AI FAB */}
+                    {(user || view === 'tutorial') && !isChatOpen && (
+                        <GlobalChatFAB
+                            isDarkMode={isDarkMode}
+                            context={view === 'detail' || view === 'tutorial' ? 'trip' : 'default'}
+                            onClick={() => {
+                                // Priority: Open Trip Chat if in detail view, else Jarvis
+                                if (view === 'tutorial') {
+                                    handleOpenChat(SIMULATION_DATA);
+                                } else {
+                                    handleOpenChat();
+                                }
+                            }}
+                        />
+                    )}
+                    <VersionModal isOpen={isVersionOpen} onClose={() => setIsVersionOpen(false)} isDarkMode={isDarkMode} globalSettings={globalSettings} />
+                    <VersionGuardModal isOpen={isVersionGuardOpen} latestVersion={latestVersion} currentVersion={APP_VERSION} />
+                    <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} isDarkMode={isDarkMode} user={user} isBanned={isBanned} />
+                    <AdminFeedbackModal
+                        isOpen={isAdminFeedbackModalOpen}
+                        onClose={() => setIsAdminFeedbackModalOpen(false)}
+                        isDarkMode={isDarkMode}
+                        adminEmails={dynamicAdminEmails}
+                        onUpdateAdminList={(newList) => setDoc(doc(db, "settings", "admin_config"), { admin_emails: newList }, { merge: true })}
+                    />
+                    {/* Report Center (Replaces generic feedback for logged in users eventually, but side-by-side for now) */}
+                    <ReportCenterModal
+                        isOpen={isReportCenterOpen}
+                        onClose={() => setIsReportCenterOpen(false)}
+                        isDarkMode={isDarkMode}
+                        user={user}
+                        onOpenJarvis={() => { setIsReportCenterOpen(false); handleOpenChat(); }}
+                    />
+                    <SmartImportModal
+                        isOpen={isSmartImportModalOpen}
+                        onClose={() => setIsSmartImportModalOpen(false)}
+                        isDarkMode={isDarkMode}
+                        trips={[selectedTrip].filter(Boolean)}
+                        trip={selectedTrip}
+                        onImport={async ({ type, files, data }) => {
+                            // Just show notification - modal will handle its own closing after showing result
+                            const typeLabels = {
+                                screenshot: '行程截圖',
+                                receipt: '消費單據',
+                                memory: '回憶相片',
+                                json: 'JSON',
+                                csv: 'CSV'
+                            };
+                            sendNotification(
+                                `${typeLabels[type] || '檔案'}已接收 ✅`,
+                                `${files?.[0]?.name || '檔案'} 已上傳`,
+                                'success'
+                            );
                         }}
                     />
-                )}
-                <VersionModal isOpen={isVersionOpen} onClose={() => setIsVersionOpen(false)} isDarkMode={isDarkMode} globalSettings={globalSettings} />
-                <VersionGuardModal isOpen={isVersionGuardOpen} latestVersion={latestVersion} currentVersion={APP_VERSION} />
-                <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} isDarkMode={isDarkMode} user={user} isBanned={isBanned} />
-                <AdminFeedbackModal
-                    isOpen={isAdminFeedbackModalOpen}
-                    onClose={() => setIsAdminFeedbackModalOpen(false)}
-                    isDarkMode={isDarkMode}
-                    adminEmails={dynamicAdminEmails}
-                    onUpdateAdminList={(newList) => setDoc(doc(db, "settings", "admin_config"), { admin_emails: newList }, { merge: true })}
-                />
-                {/* Report Center (Replaces generic feedback for logged in users eventually, but side-by-side for now) */}
-                <ReportCenterModal
-                    isOpen={isReportCenterOpen}
-                    onClose={() => setIsReportCenterOpen(false)}
-                    isDarkMode={isDarkMode}
-                    user={user}
-                    onOpenJarvis={() => { setIsReportCenterOpen(false); handleOpenChat(); }}
-                />
-                <SmartImportModal
-                    isOpen={isSmartImportModalOpen}
-                    onClose={() => setIsSmartImportModalOpen(false)}
-                    isDarkMode={isDarkMode}
-                    trips={[selectedTrip].filter(Boolean)}
-                    trip={selectedTrip}
-                    onImport={async ({ type, files, data }) => {
-                        // Just show notification - modal will handle its own closing after showing result
-                        const typeLabels = {
-                            screenshot: '行程截圖',
-                            receipt: '消費單據',
-                            memory: '回憶相片',
-                            json: 'JSON',
-                            csv: 'CSV'
-                        };
-                        sendNotification(
-                            `${typeLabels[type] || '檔案'}已接收 ✅`,
-                            `${files?.[0]?.name || '檔案'} 已上傳`,
-                            'success'
-                        );
-                    }}
-                />
+                </Suspense>
 
                 {/* Universal Chat & Jarvis AI System */}
                 <UniversalChat
@@ -1644,51 +1660,6 @@ const App = () => {
 
 // --- Other Components (LandingPage) ---
 // --- Other Components (LandingPage) ---
-const LandingPage = ({ onLogin }) => {
-    const { t } = useTranslation();
-
-    return (
-        <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-            <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-[85vh]">
-                <div className="col-span-1 md:col-span-2 relative rounded-3xl overflow-hidden group min-h-[500px] md:min-h-0">
-                    <ImageWithFallback
-                        src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1600"
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        alt="Travel Together Destination"
-                    />
-                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-all" />
-                    <div className="absolute bottom-6 left-6 md:bottom-10 md:left-10 text-white z-10 pr-6">
-                        <h1 className="text-4xl md:text-6xl font-bold mb-2 md:mb-4">{t('landing.title')}</h1>
-                        <p className="text-lg md:text-2xl opacity-90 mb-6 md:mb-8">{t('landing.subtitle')}</p>
-                        <div className="flex flex-col gap-3 max-w-sm">
-                            <button onClick={onLogin} className="bg-white text-black px-8 py-3 md:py-4 rounded-full font-bold text-base md:text-lg hover:scale-105 transition flex flex-col items-center gap-1 w-full shadow-lg">
-                                <div className="flex items-center gap-2"><LogIn className="w-5 h-5" /> {t('landing.login_google')}</div>
-                                <span className="text-[10px] opacity-50 font-normal hidden sm:inline">{t('landing.login_desc')}</span>
-                            </button>
-                            <button onClick={() => window.location.href = '/?view=tutorial'} className="bg-white/10 text-white px-8 py-3 md:py-4 rounded-full font-bold text-base md:text-lg hover:bg-white/20 transition flex items-center justify-center gap-2 w-full border border-white/10 group/demo backdrop-blur-sm">
-                                <MonitorPlay className="w-5 h-5 text-indigo-400 group-hover/demo:animate-pulse" />
-                                {t('landing.demo_mode')}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-rows-3 gap-4 md:gap-6">
-                    <div className="bg-indigo-600 rounded-3xl p-8 text-white flex flex-col justify-between hover:scale-[1.02] transition">
-                        <Users className="w-12 h-12 opacity-50" />
-                        <div><h3 className="text-2xl font-bold">{t('landing.features.collab_title')}</h3><p className="opacity-70">{t('landing.features.collab_desc')}</p></div>
-                    </div>
-                    <div className="bg-gray-800 rounded-3xl p-8 text-white flex flex-col justify-between hover:scale-[1.02] transition">
-                        <BrainCircuit className="w-12 h-12 text-pink-500 opacity-80" />
-                        <div><h3 className="text-2xl font-bold">{t('landing.features.ai_title')}</h3><p className="opacity-70">{t('landing.features.ai_desc')}</p></div>
-                    </div>
-                    <div className="bg-gray-800 rounded-3xl p-8 text-white flex flex-col justify-between hover:scale-[1.02] transition">
-                        <MapPinned className="w-12 h-12 text-green-500 opacity-80" />
-                        <div><h3 className="text-2xl font-bold">{t('landing.features.footprints_title')}</h3><p className="opacity-70">{t('landing.features.footprints_desc')}</p></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
+// LandingPage moved to components/Landing/LandingPage.jsx
 
 export default App;

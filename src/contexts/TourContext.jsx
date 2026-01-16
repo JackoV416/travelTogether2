@@ -14,7 +14,8 @@ import {
     Map,
     AlertTriangle,
     Sparkles,
-    MessageCircle
+    MessageCircle,
+    Users
 } from 'lucide-react';
 
 /**
@@ -104,93 +105,18 @@ export const TOUR_STEPS = [
         icon: Layers,
         type: 'navigation'
     },
-    // Step 3: Tab Navigation
+    // Step 3: Invite Members (NEW)
     {
-        id: 'tab-nav',
-        target: '[data-tour="tab-nav"]',
-        titleKey: 'tour.tab_nav.title',
-        descKey: 'tour.tab_nav.desc',
+        id: 'invite-members',
+        target: '[data-tour="invite-members"]',
+        titleKey: 'tour.invite_members.title',
+        descKey: 'tour.invite_members.desc',
         page: 'trip-detail',
-        position: 'top',
-        icon: Navigation,
-        type: 'navigation'
-    },
-    // Step 4: Add Activity / Plan Menu
-    {
-        id: 'plan-trip-menu',
-        target: '[data-tour="plan-trip-menu"]',
-        titleKey: 'tour.add_activity.title',
-        descKey: 'tour.add_activity.desc',
-        page: 'trip-detail',
-        tab: 'itinerary',
-        position: 'left',
-        icon: PlusCircle,
-        type: 'action'
-    },
-    // Step 4.1: Add Activity Menu (Dropdown)
-    {
-        id: 'add-activity-menu',
-        target: '[data-tour="add-activity-menu"]',
-        titleKey: 'tour.add_activity_menu.title',
-        descKey: 'tour.add_activity_menu.desc',
-        page: 'trip-detail',
-        tab: 'itinerary',
-        position: 'left',
-        icon: Plus,
-        type: 'action'
-    },
-    // Step 4.2: Add Activity Modal - Select Type
-    {
-        id: 'add-activity-types',
-        target: '[data-tour="add-activity-types"]',
-        titleKey: 'tour.add_activity_types.title',
-        descKey: 'tour.add_activity_types.desc',
-        page: 'trip-detail',
-        tab: 'itinerary',
         position: 'bottom',
-        icon: Layers,
-        type: 'action'
-    },
-    // Step 4.3: Add Activity Modal - Fill Form
-    {
-        id: 'add-activity-form',
-        target: '[data-tour="add-activity-form"]',
-        titleKey: 'tour.add_activity_form.title',
-        descKey: 'tour.add_activity_form.desc',
-        page: 'trip-detail',
-        tab: 'itinerary',
-        position: 'top',
-        icon: Plus,
-        type: 'action'
-    },
-
-    // Step 5: Activity Card (Itinerary Item)
-    {
-        id: 'activity-card',
-        target: '[data-tour="activity-card"]',
-        titleKey: 'tour.activity_card.title',
-        descKey: 'tour.activity_card.desc',
-        page: 'trip-detail',
-        tab: 'itinerary',
-        position: 'right',
-        icon: Layers,
+        icon: Users,
         type: 'feature'
     },
-    // Step 6: View Switcher
-    {
-        id: 'view-switcher',
-        target: '[data-tour="view-switcher"]',
-        titleKey: 'tour.view_switcher.title',
-        descKey: 'tour.view_switcher.desc',
-        page: 'trip-detail',
-        tab: 'itinerary',
-        position: 'top',
-        icon: Settings2,
-        type: 'feature'
-    },
-
-
-    // Step 7: Ask Jarvis (Button)
+    // Step 4: Ask Jarvis (AI)
     {
         id: 'ask-jarvis',
         target: '[data-tour="ask-jarvis-daily"]',
@@ -201,44 +127,7 @@ export const TOUR_STEPS = [
         icon: BrainCircuit,
         type: 'ai'
     },
-    // Step 7.1: Jarvis Smart Guide Interface (Bento Menu)
-    // Step 7.1: Jarvis Smart Guide Interface (Bento Menu)
-    {
-        id: 'jarvis-smart-guide',
-        target: '[data-tour="jarvis-smart-guide"]',
-        titleKey: 'tour.jarvis_smart_guide.title',
-        descKey: 'tour.jarvis_smart_guide.desc',
-        page: 'trip-detail',
-        position: 'bottom',
-        icon: Sparkles,
-        type: 'ai'
-    },
-    // Step 7.2: Jarvis Chat Dialog
-    {
-        id: 'jarvis-chat',
-        target: '[data-tour="chat-window"]',
-        titleKey: 'tour.jarvis_chat.title',
-        descKey: 'tour.jarvis_chat.desc',
-        page: 'trip-detail',
-        position: 'left',
-        icon: MessageCircle,
-        type: 'ai'
-    },
-
-
-    // Step 7.2: Group Chat
-    {
-        id: 'group-chat',
-        target: '[data-tour="chat-window"]',
-        titleKey: 'tour.group_chat.title',
-        descKey: 'tour.group_chat.desc',
-        page: 'trip-detail',
-        position: 'left',
-        icon: MessageCircle,
-        type: 'feature'
-    },
-    // Step 8: Budget Tracking
-
+    // Step 5: Budget (Brief Mention)
     {
         id: 'budget-content',
         target: '[data-tour="budget-content"]',
@@ -250,55 +139,7 @@ export const TOUR_STEPS = [
         icon: Wallet,
         type: 'budget'
     },
-    // Step 9: Add Expense
-    {
-        id: 'add-expense',
-        target: '[data-tour="add-expense"]',
-        titleKey: 'tour.add_expense.title',
-        descKey: 'tour.add_expense.desc',
-        page: 'trip-detail',
-        tab: 'budget',
-        position: 'top',
-        icon: Plus,
-        type: 'action'
-    },
-    // Step 10: Packing List
-    {
-        id: 'packing-content',
-        target: '[data-tour="packing-content"]',
-        titleKey: 'tour.packing_tab.title',
-        descKey: 'tour.packing_tab.desc',
-        page: 'trip-detail',
-        tab: 'packing',
-        position: 'top',
-        icon: Backpack,
-        type: 'packing'
-    },
-    // Step 11: Route Map
-    {
-        id: 'map-content',
-        target: '[data-tour="map-content"]',
-        titleKey: 'tour.map_tab.title',
-        descKey: 'tour.map_tab.desc',
-        page: 'trip-detail',
-        tab: 'footprints',
-        position: 'bottom',
-        icon: Map,
-        type: 'map'
-    },
-    // Step 12: Emergency Info
-    {
-        id: 'emergency-content',
-        target: '[data-tour="emergency-content"]',
-        titleKey: 'tour.emergency_tab.title',
-        descKey: 'tour.emergency_tab.desc',
-        page: 'trip-detail',
-        tab: 'emergency',
-        position: 'bottom',
-        icon: AlertTriangle,
-        type: 'emergency'
-    },
-    // Step 13: Finish
+    // Step 6: Finish
     {
         id: 'finish',
         target: null,
