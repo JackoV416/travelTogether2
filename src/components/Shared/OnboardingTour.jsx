@@ -1,142 +1,63 @@
 import React, { useMemo } from 'react';
 import Joyride, { STATUS } from 'react-joyride';
 import { useTranslation } from 'react-i18next';
+import { TOUR_STEPS } from '../../contexts/TourContext';
 
 /**
- * V1.2.5: OnboardingTour Component (Localized)
- * Interactive step-by-step tutorial using react-joyride
+ * V1.6.1: OnboardingTour Component (Unified with TourContext)
+ * Dynamically generates Joyride steps from the single source of truth: TOUR_STEPS
  */
 
 const OnboardingTour = ({ run = false, onComplete, isDarkMode = true }) => {
     const { t } = useTranslation();
 
-    const steps = useMemo(() => [
-        {
-            target: 'body',
-            content: (
-                <div className="text-center p-2">
-                    <div className="text-4xl mb-3">👋</div>
-                    <h3 className="font-bold text-lg mb-2">{t('tour.welcome.title')}</h3>
-                    <p className="text-sm opacity-80">{t('tour.welcome.desc')}</p>
-                </div>
-            ),
-            placement: 'center',
-            disableBeacon: true,
-        },
-        {
-            target: '[data-tour="dashboard-header"]',
-            content: (
-                <div className="p-2">
-                    <h3 className="font-bold text-base mb-2">🕹️ {t('tour.dashboard.title')}</h3>
-                    <p className="text-sm opacity-80">{t('tour.dashboard.desc')}</p>
-                </div>
-            ),
-            placement: 'bottom',
-        },
-        {
-            target: '[data-tour="sync-status"]',
-            content: (
-                <div className="p-2">
-                    <h3 className="font-bold text-base mb-2">☁️ {t('tour.sync.title')}</h3>
-                    <p className="text-sm opacity-80">
-                        {t('tour.sync.desc').split('<0>')[0]}
-                        <span className="font-bold text-emerald-500">{t('tour.sync.desc').split('<0>')[1]?.split('</0>')[0] || "auto-saved"}</span>
-                        {t('tour.sync.desc').split('</0>')[1]}
-                    </p>
-                </div>
-            ),
-            placement: 'top',
-        },
-        {
-            target: '[data-tour="app-version"]',
-            content: (
-                <div className="p-2">
-                    <h3 className="font-bold text-base mb-2">🚀 {t('tour.version.title')}</h3>
-                    <p className="text-sm opacity-80">{t('tour.version.desc')}</p>
-                </div>
-            ),
-            placement: 'top',
-        },
-        {
-            target: '[data-tour="create-trip"]',
-            content: (
-                <div className="p-2">
-                    <h3 className="font-bold text-base mb-2">🎒 {t('tour.create.title')}</h3>
-                    <p className="text-sm opacity-80">{t('tour.create.desc')}</p>
-                </div>
-            ),
-            placement: 'bottom',
-            spotlightClicks: true,
-        },
-        {
-            target: '[data-tour="smart-import"]',
-            content: (
-                <div className="p-2">
-                    <h3 className="font-bold text-base mb-2">📥 {t('tour.smart_import.title')}</h3>
-                    <p className="text-sm opacity-80">{t('tour.smart_import.desc')}</p>
-                </div>
-            ),
-            placement: 'bottom',
-        },
-        {
-            target: '[data-tour="trip-card"]',
-            content: (
-                <div className="p-2">
-                    <h3 className="font-bold text-base mb-2">🎫 {t('tour.trip_card.title')}</h3>
-                    <p className="text-sm opacity-80">{t('tour.trip_card.desc')}</p>
-                </div>
-            ),
-            placement: 'auto',
-        },
-        {
-            target: '[data-tour="widgets-section"]',
-            content: (
-                <div className="p-2">
-                    <h3 className="font-bold text-base mb-2">📊 {t('tour.widgets.title')}</h3>
-                    <p className="text-sm opacity-80">{t('tour.widgets.desc')}</p>
-                </div>
-            ),
-            placement: 'top',
-        },
-        {
-            target: '[data-tour="jarvis-chat"]',
-            content: (
-                <div className="p-2">
-                    <h3 className="font-bold text-base mb-2">🤖 {t('tour.jarvis.title')}</h3>
-                    <p className="text-sm opacity-80">{t('tour.jarvis.desc')}</p>
-                </div>
-            ),
-            placement: 'top',
-            spotlightClicks: true,
-        },
-        {
-            target: '[data-tour="profile-menu"]',
-            content: (
-                <div className="p-2">
-                    <h3 className="font-bold text-base mb-2">👤 {t('tour.profile.title')}</h3>
-                    <p className="text-sm opacity-80">{t('tour.profile.desc')}</p>
-                </div>
-            ),
-            placement: 'bottom-end',
-        },
-        {
-            target: 'body',
-            content: (
-                <div className="text-center p-2">
-                    <div className="text-4xl mb-3">🎉</div>
-                    <h3 className="font-bold text-lg mb-2">{t('tour.ready.title')}</h3>
-                    <p className="text-sm opacity-80">{t('tour.ready.desc')}</p>
-                </div>
-            ),
-            placement: 'center',
-            disableBeacon: true,
-        },
-    ], [t]);
+    // Convert TOUR_STEPS to Joyride-compatible format
+    const steps = useMemo(() => {
+        return TOUR_STEPS.map((step) => {
+            // Determine placement based on step.position or use sensible defaults
+            let placement = step.position || 'auto';
+            if (step.isWelcome || step.isFinish) {
+                placement = 'center';
+            }
+
+            // Determine target: null means 'body' (centered modal)
+            const target = step.target || 'body';
+
+            // Emoji mapping for step types
+            const emojiMap = {
+                general: step.isWelcome ? '👋' : '🎉',
+                action: '🎒',
+                navigation: '🎫',
+                feature: '👥',
+                ai: '🤖',
+                budget: '💰',
+            };
+            const emoji = emojiMap[step.type] || '✨';
+
+            return {
+                target,
+                content: (
+                    <div className={step.isWelcome || step.isFinish ? 'text-center p-2' : 'p-2'}>
+                        {(step.isWelcome || step.isFinish) && <div className="text-4xl mb-3">{emoji}</div>}
+                        <h3 className={`font-bold ${step.isWelcome || step.isFinish ? 'text-lg' : 'text-base'} mb-2`}>
+                            {!step.isWelcome && !step.isFinish && `${emoji} `}
+                            {t(step.titleKey)}
+                        </h3>
+                        <p className="text-sm opacity-80">{t(step.descKey)}</p>
+                    </div>
+                ),
+                placement,
+                disableBeacon: step.isWelcome || step.isFinish,
+                spotlightClicks: step.type === 'action',
+            };
+        });
+    }, [t]);
 
     const handleCallback = (data) => {
         const { status } = data;
         if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
             localStorage.setItem('travelTogether_onboardingComplete', 'true');
+            localStorage.setItem('hasSeenTour', 'true');
             onComplete?.();
         }
     };

@@ -11,7 +11,7 @@ export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
 export const APP_VERSION = "V1.6.0";
 export const APP_VERSION_TAG = "Advanced Performance & Polish";
-export const APP_LAST_UPDATE = '2026-01-16';
+export const APP_LAST_UPDATE = '2026-01-21';
 export const JARVIS_VERSION = "V0.0.5-Beta";
 
 export const JARVIS_VERSION_HISTORY = [

@@ -43,7 +43,8 @@ export const useNotifications = (user) => {
         setToasts(prev => [localNotif, ...prev]);
 
         // 2. Persistent Storage (Firestore)
-        if (user?.uid) {
+        // Check if persist is explicitly set to false in context
+        if (user?.uid && context?.persist !== false) {
             try {
                 // Sanitize data for Firestore (remove functions)
                 const firestoreData = { ...notifData };

@@ -957,7 +957,7 @@ const App = () => {
                         `已成功更新至 ${APP_VERSION}`,
                         `${isPWA ? 'App' : '網頁'}已升級至最新版本，享受更佳體驗！`,
                         "success",
-                        { time: timeStr }
+                        { time: timeStr, persist: false }
                     );
 
                     triggerConfetti();
