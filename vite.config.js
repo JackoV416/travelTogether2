@@ -105,14 +105,15 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
-          icons: ['lucide-react'],
-          pdf: ['html2canvas', 'jspdf'],
-          ai: ['@google/generative-ai', 'tesseract.js'],
-          charts: ['recharts']
-        },
+        /* manualChunks: {
+          'react-core': ['react', 'react-dom', 'react-router-dom', 'react-i18next'],
+          'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+          'icons': ['lucide-react'],
+          'export-libs': ['html2canvas', 'jspdf'],
+          'ai-engine': ['@google/generative-ai', 'tesseract.js'],
+          'charts': ['recharts'],
+          'editor': ['@tiptap/react', '@tiptap/starter-kit', '@tiptap/extension-underline', '@tiptap/extension-link']
+        }, */
         entryFileNames: `assets/[name]-[hash].js`,
         chunkFileNames: `assets/[name]-[hash].js`,
         assetFileNames: `assets/[name]-[hash].[ext]`

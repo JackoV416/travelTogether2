@@ -8,13 +8,11 @@ const LandingPage = ({ onLogin }) => {
     const { t } = useTranslation();
 
     return (
-        <div className="min-h-screen bg-gray-900 flex flex-col items-center p-4 overflow-y-auto">
+        <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4 overflow-y-auto">
             <SEO
                 title={t('landing.seo_title', 'Travel Together - Smart Group Travel Planner')}
                 description={t('landing.seo_desc', 'Plan group trips effortlessly with AI itineraries, shared budgets, and real-time collaboration.')}
-            >
-                <link rel="preload" as="image" href="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1600" />
-            </SEO>
+            />
 
             {/* Hero Section */}
             <div className="max-w-7xl w-full grid grid-cols-1 md:grid-cols-3 gap-6 h-auto min-h-[85vh] mb-20">

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Download, Upload, FileText, Image, Copy, FileJson, Check, Sparkles, Loader2 } from 'lucide-react';
+import { X, Download, Upload, FileText, Image, Copy, FileJson, Check, Sparkles, Loader2, Eye } from 'lucide-react';
 import { exportToBeautifulPDF, exportToJSON, exportToImage } from '../../services/pdfExport';
 import { glassCard, inputClasses } from '../../utils/tripUtils.jsx';
 import { parseTripImage } from '../../services/ai';
+import PDFPreviewModal from './PDFPreviewModal';
 
 /**
  * Unified Export/Import Modal
@@ -39,7 +40,8 @@ const TripExportImportModal = ({
     const [inputValue, setInputValue] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
     const [selectedData, setSelectedData] = useState(null);
-    const [scanLoading, setScanLoading] = useState(false); // NEW: AI Scan Loading
+    const [scanLoading, setScanLoading] = useState(false); // AI Scan Loading
+    const [isPDFPreviewOpen, setIsPDFPreviewOpen] = useState(false); // V1.7.0: PDF Preview
 
     // Initial Setup
     useEffect(() => {
@@ -211,10 +213,10 @@ const TripExportImportModal = ({
                         <div className="space-y-6">
                             {(selectedTripId || sourceType === 'section') && (
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <button onClick={handleExportPDF} className="p-4 rounded-xl border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 flex flex-col items-center gap-2 transition-all group text-center">
-                                        <FileText className="w-8 h-8 text-indigo-500 group-hover:scale-110 transition-transform" />
-                                        <span className="font-bold text-indigo-500">精美 PDF</span>
-                                        <span className="text-xs opacity-60">完整格式 (V14.2)</span>
+                                    <button onClick={() => setIsPDFPreviewOpen(true)} className="p-4 rounded-xl border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 flex flex-col items-center gap-2 transition-all group text-center">
+                                        <Eye className="w-8 h-8 text-indigo-500 group-hover:scale-110 transition-transform" />
+                                        <span className="font-bold text-indigo-500">PDF 預覽 & 匯出</span>
+                                        <span className="text-xs opacity-60">V1.7.0 新功能</span>
                                     </button>
 
                                     <button onClick={handleExportImage} className={`p-4 rounded-xl border border-pink-500/30 bg-pink-500/10 hover:bg-pink-500/20 flex flex-col items-center gap-2 transition-all group text-center ${sourceType === 'trip' ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -334,6 +336,14 @@ const TripExportImportModal = ({
                 </div>
 
             </div>
+
+            {/* V1.7.0: PDF Preview Modal */}
+            <PDFPreviewModal
+                isOpen={isPDFPreviewOpen}
+                onClose={() => setIsPDFPreviewOpen(false)}
+                trip={selectedData}
+                isDarkMode={isDarkMode}
+            />
         </div>
     );
 };

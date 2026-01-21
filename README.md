@@ -1,9 +1,44 @@
-# Travel Together (智能旅遊規劃) V1.6.0
+# Travel Together (智能旅遊規劃) V1.8.1
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.6.0-indigo.svg)](https://github.com/JackoV416/travelTogether2)
+[![TravelTogether](https://img.shields.io/badge/Version-V1.8.1-indigo.svg)](https://github.com/JackoV416/travelTogether2)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.x-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-11.x-orange.svg)](https://firebase.google.com/)
+
+## 🚀 V1.8.1: Export Modal & UI Polish (2026-01-21)
+**V1.8.1: [Stability & UI] 執位器功能完善與登入頁優化！**
+專注於 Export Modal 的頁碼準確度、穩定性，以及 Landing Page 的視覺呈現。
+
+### 🌟 V1.8.1 主要更新
+1.  **Dynamic Pagination**: 跨分頁（含附錄）實作動態頁碼追踪，確保 PDF 預覽與匯出頁碼絕對準確。
+2.  **UI Polish**: 修正 Landing Page 垂直居中問題，視覺更平衡。
+3.  **Stability Fix**: 解決 `pagedItems` 初始化時序導致的 ReferenceError 崩潰。
+4.  **Indicator Cleanup**: 移除冗餘的浮動頁碼，僅保留專業級頁腳與狀態欄同步顯示。
+
+---
+
+## 🚀 V1.8.0: Performance Audit & Optimization (2026-01-21)
+**V1.8.0: [Optimization] 全面效能審計與懶載入架構！**
+專注於渲染效能優化與資源載入策略。
+
+### 🌟 V1.8.0 主要更新
+1.  **Global Lazy Loading**: 實施全域延遲加載策略，進一步優化 LCP。
+2.  **Vite Chunk Optimization**: 優化 Build 策略，提升快取命中率。
+3.  **Render Stability**: 修復 `App.jsx` 渲染結構，解決邏輯回歸問題。
+
+---
+
+## 🚀 V1.7.6: Pro Editor Robustness (2026-01-21)
+**V1.7.6: [Fix] 執位器穩定性與 UI 優化！**
+修復 SmartExportModal 500 錯誤，引入智能配圖。
+
+---
+
+## 🚀 V1.7.0: PDF Preview & Feature Expansion (2026-01-21)
+**V1.7.0: [Feature] PDF 預覽編輯與功能擴展！**
+新增 5 種 PDF 樣式預覽、Word-like 行內編輯與拖拽排序。
+
+---
 
 ## 🚀 V1.6.0: Advanced Performance & Polish (2026-01-16)
 **V1.6.0: [Optimization] 網站效能與體驗的極致打磨！**
@@ -264,17 +299,12 @@ graph TD
 
 ## 📋 版本紀錄 (History)
 
-| **V1.5.2** | **Local Trip Logic** | 🚀 最新版 |
-| **V1.5.1** | **Logic & Polish** | ✅ 已發布 |
-| **V1.5.0** | **Global Deep Audit** | ✅ 已發布 |
-| **V1.4.9** | **Mock Data Hotfix** | ✅ 已發布 |
-| **V1.4.5** | **Performance Tuning** | ✅ 已發布 |
-| **V1.4.0** | **Mock Engine Upgrade** | ✅ 已發布 |
-| **V1.3.5** | **Global Shortcuts** | ✅ 已發布 |
-| **V1.3.0** | **Stability & AI Pause** | ✅ 已發布 |
-| **V1.2.6** | **The Ultimate View** | ✅ 已發布 |
-| **V1.1.0** | **Core Expansion** | ✅ 已發布 |
-| **V1.0.0** | **Official Release** | ✅ 已發布 |
+| **V1.8.1** | **Export Modal & UI Polish** | 🚀 最新版 |
+| **V1.8.0** | **Performance Audit** | ✅ 已發布 |
+| **V1.7.6** | **Pro Editor Robustness** | ✅ 已發布 |
+| **V1.7.0** | **PDF Preview & Edit** | ✅ 已發布 |
+| **V1.6.0** | **Advanced Performance** | ✅ 已發布 |
+| **V1.5.2** | **Local Trip Logic** | ✅ 已發布 |
 
 ---
 
@@ -291,4 +321,4 @@ graph TD
 ---
 
 **Author**: [Jamie Kwok](https://github.com/JackoV416)
-**Last Updated**: 2026-01-09
+**Last Updated**: 2026-01-21

@@ -1,7 +1,7 @@
 {
   "name": "travel-together-2",
   "private": true,
-  "version": "1.6.0",
+  "version": "1.8.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -17,7 +17,15 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@google/generative-ai": "^0.24.1",
     "@hello-pangea/dnd": "^18.0.1",
+    "@tiptap/extension-image": "^3.16.0",
+    "@tiptap/extension-link": "^3.16.0",
+    "@tiptap/extension-placeholder": "^3.16.0",
+    "@tiptap/extension-text-align": "^3.16.0",
+    "@tiptap/extension-underline": "^3.16.0",
+    "@tiptap/react": "^3.16.0",
+    "@tiptap/starter-kit": "^3.16.0",
     "canvas-confetti": "^1.9.4",
+    "clsx": "^2.1.1",
     "crypto-js": "^4.2.0",
     "date-fns": "^3.6.0",
     "firebase": "^12.7.0",
@@ -43,6 +51,7 @@
     "react-router-dom": "^6.28.2",
     "react-simple-maps": "^3.0.0",
     "recharts": "^3.6.0",
+    "tailwind-merge": "^3.4.0",
     "tesseract.js": "^7.0.0",
     "uuid": "^13.0.0"
   },

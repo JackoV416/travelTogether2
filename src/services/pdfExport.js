@@ -26,6 +26,28 @@ const renderIf = (value, renderFn) => {
 };
 
 /**
+ * Robust image URL resolver (v1.7.5)
+ * Checks multiple possible data paths for item images
+ */
+const resolveImageUrl = (item) => {
+    if (!item) return '';
+    // Priority order for image paths
+    const img =
+        item.details?.image ||
+        item.image ||
+        item.details?.imageUrl ||
+        item.details?.imgUrl;
+
+    if (!img) return '';
+
+    // If it's a relative path starting with / or something local, return as is
+    // If it's an Unsplash URL with placeholder text, return null to show gradient
+    if (typeof img === 'string' && img.includes('placeholder')) return '';
+
+    return img;
+};
+
+/**
  * Export trip to a beautiful PDF using html2canvas for CJK support
  * @param {Object} trip The trip object
  * @param {Object} options { template: 'modern' | 'classic' | 'compact', returnBlob: boolean }
@@ -47,13 +69,22 @@ export const exportToBeautifulPDF = async (trip, options = { template: 'modern' 
     // Helper to generate HTML based on template
     const renderContent = () => {
         const { scope = 'full', itemsPerPage = 4 } = options; // V1.1.6: itemsPerPage layout control
-        const sortedDates = (trip.itinerary && (scope === 'full' || scope === 'itinerary')) ? Object.keys(trip.itinerary).sort() : [];
-        const showShopping = (trip.shoppingList?.length > 0 && (scope === 'full' || scope === 'shopping'));
-        const showItinerary = (sortedDates.length > 0 && (scope === 'full' || scope === 'itinerary'));
-        const showPacking = (trip.packingList?.length > 0 && (scope === 'full' || scope === 'packing'));
-        const showEmergency = (scope === 'full' || scope === 'emergency');
-        const showInsurance = (trip.insurance && (scope === 'full' || scope === 'insurance'));
-        const showJournal = (trip.journal?.length > 0 && (scope === 'full' || scope === 'journal'));
+
+        // Helper to check scope inclusion (supports string 'full'/'single' or array ['itinerary', 'shopping'])
+        const isIncluded = (key) => {
+            if (scope === 'full') return true;
+            if (Array.isArray(scope)) return scope.includes(key);
+            return scope === key;
+        };
+
+        const sortedDates = (trip.itinerary && isIncluded('itinerary')) ? Object.keys(trip.itinerary).sort() : [];
+        const showShopping = (trip.shoppingList?.length > 0 && isIncluded('shopping'));
+        const showItinerary = (sortedDates.length > 0 && isIncluded('itinerary'));
+        const showPacking = (trip.packingList?.length > 0 && isIncluded('packing'));
+        const showEmergency = (trip.emergency && isIncluded('emergency'));
+        const showInsurance = (trip.insurance && isIncluded('insurance'));
+        const showJournal = (trip.journal?.length > 0 && isIncluded('journal'));
+        const showBudget = (trip.budget?.length > 0 && isIncluded('budget')); // Added Budget explicit support
 
         const headerStyles = {
             modern: 'bg-indigo-700 text-white p-12 shadow-inner',
@@ -143,7 +174,9 @@ export const exportToBeautifulPDF = async (trip, options = { template: 'modern' 
                                             <div class="${itemStyles[template]}" style="position: relative; height: 200px; display: flex; flex-direction: row; border-radius: 24px; overflow: hidden;">
                                                 <!-- Desktop Image Section (33%) with CSS Gradient Fallback -->
                                                 <div style="width: 33.33%; height: 100%; position: relative; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);">
-                                                    <img src="${item.details?.image || 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600'}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'" />
+                                                    ${resolveImageUrl(item) ? `
+                                                        <img src="${resolveImageUrl(item)}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentNode.style.background='linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)'; this.style.display='none';" />
+                                                    ` : ''}
                                                     <div style="position: absolute; inset: 0; background: linear-gradient(to right, rgba(0,0,0,0.4), transparent);"></div>
                                                     <div style="absolute inset-0 border-r border-white/10 z-10"></div>
                                                 </div>
@@ -157,11 +190,20 @@ export const exportToBeautifulPDF = async (trip, options = { template: 'modern' 
                                                 <!-- Desktop Content Section -->
                                                 <div style="flex: 1; padding: 24px; display: flex; flex-direction: column; justify-content: space-between; min-width: 0;">
                                                     <div style="space-y: 2px;">
-                                                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 2px;">
-                                                            <h3 style="font-weight: 900; font-size: 19px; margin: 0; color: ${template === 'glass' || template === 'vibrant' ? '#fff' : '#111827'}; line-height: 1.1; font-family: sans-serif;">${sanitize(item.name, '未命名項目')}</h3>
-                                                            ${item.cost > 0 ? `<div style="color: #10b981; font-weight: 950; font-size: 14px;">$${item.cost}</div>` : ''}
+                                                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 2px; gap: 12px;">
+                                                            <div style="flex: 1; min-width: 0;">
+                                                                <h3 style="font-weight: 900; font-size: 19px; margin: 0; color: ${template === 'glass' || template === 'vibrant' ? '#fff' : '#111827'}; line-height: 1.1; font-family: sans-serif; overflow: hidden; text-overflow: ellipsis;">
+                                                                    ${(() => {
+                        if (['flight', 'train', 'transport', 'walk', 'immigration'].includes(item.type) && item.arrival) {
+                            return `${sanitize(item.name, '未命名')} <span style="font-weight: 400; opacity: 0.5; margin: 0 4px;">➔</span> ${sanitize(item.arrival)}`;
+                        }
+                        return sanitize(item.name, '未命名項目');
+                    })()}
+                                                                </h3>
+                                                                ${sanitize(item.details?.nameEn || item.details?.nameLocal) ? `<p style="font-size: 11px; font-weight: 800; opacity: 0.4; margin: 2px 0 10px; font-family: serif;">${sanitize(item.details?.nameEn || item.details?.nameLocal)}</p>` : ''}
+                                                            </div>
+                                                            ${item.cost > 0 ? `<div style="color: #10b981; font-weight: 950; font-size: 14px; shrink-0;">$${item.cost}</div>` : ''}
                                                         </div>
-                                                        ${sanitize(item.details?.nameEn || item.details?.nameLocal) ? `<p style="font-size: 11px; font-weight: 800; opacity: 0.4; margin: 2px 0 10px; font-family: serif;">${sanitize(item.details?.nameEn || item.details?.nameLocal)}</p>` : ''}
                                                         
                                                         <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px;">
                                                             ${sanitize(item.details?.duration) ? `<div style="display: flex; items-center; gap: 4px; font-size: 10px; font-weight: 900; color: #818cf8;">
@@ -175,7 +217,27 @@ export const exportToBeautifulPDF = async (trip, options = { template: 'modern' 
 
                                                         <div style="display: inline-flex; items-center; gap: 8px; font-size: 11px; font-weight: 950; text-transform: uppercase;">
                                                             <span style="background: ${template === 'glass' || template === 'vibrant' ? 'rgba(255,255,255,0.1)' : '#f1f5f9'}; border: 1px solid ${template === 'glass' || template === 'vibrant' ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}; padding: 4px 12px; border-radius: 8px; color: ${template === 'glass' || template === 'vibrant' ? '#818cf8' : '#4f46e5'};">
-                                                                ${sanitize(item.time, '—')}${sanitize(item.details?.endTime) ? ` — ${sanitize(item.details?.endTime)}` : ''}
+                                                                ${(() => {
+                        const startTime = sanitize(item.time, '—');
+                        const endTime = sanitize(item.arrivalTime || item.details?.endTime);
+                        let durationStr = '';
+
+                        if (startTime !== '—' && endTime) {
+                            try {
+                                const [h1, m1] = startTime.split(':').map(Number);
+                                const [h2, m2] = endTime.split(':').map(Number);
+                                if (!isNaN(h1) && !isNaN(h2)) {
+                                    let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+                                    if (diff < 0) diff += 24 * 60;
+                                    const h = Math.floor(diff / 60);
+                                    const m = diff % 60;
+                                    durationStr = h > 0 ? ` (${h}h ${m}m)` : ` (${m}m)`;
+                                }
+                            } catch (e) { }
+                        }
+
+                        return `${startTime}${endTime ? ` — ${endTime}` : ''}${durationStr}`;
+                    })()}
                                                             </span>
                                                         </div>
                                                     </div>

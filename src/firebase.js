@@ -35,18 +35,14 @@ if (globalThis._firestore_db) {
   db = globalThis._firestore_db;
 } else {
   try {
-    db = initializeFirestore(app, {
-      localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager()
-      })
-    });
-    globalThis._firestore_db = db;
-    // Firestore initialized (Multi-tab Persistence Enabled)
-  } catch (error) {
-    // Silently handle known HMR/multi-tab lock scenarios
+    // FORCE MEMORY CACHE TO PREVENT HANGS
+    // Persistence removed due to loading issues
     db = getFirestore(app);
     globalThis._firestore_db = db;
-    // No console warning - this is expected during HMR
+  } catch (error) {
+    console.error('[Firebase] Init Error:', error);
+    db = getFirestore(app);
+    globalThis._firestore_db = db;
   }
 }
 

@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.6.0";
-export const APP_VERSION_TAG = "Advanced Performance & Polish";
+export const APP_VERSION = "V1.8.1";
+export const APP_VERSION_TAG = "Export Modal & UI Polish";
 export const APP_LAST_UPDATE = '2026-01-21';
 export const JARVIS_VERSION = "V0.0.5-Beta";
 
@@ -95,6 +95,123 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.8.1",
+        date: "2026-01-21",
+        tag: "Export Modal & UI Polish",
+        desc: {
+            "zh-TW": "執位器頁碼與登入頁置中修復",
+            "zh-HK": "執位器頁碼同登入頁置中修復",
+            "en": "Export Modal Pagination & Landing UI Polish"
+        },
+        details: {
+            "zh-TW": [
+                "📄 PDF: 實作跨分頁（含附錄）動態頁碼追踪",
+                "🎯 UI: 修正登入頁 (Landing Page) 垂直居中問題",
+                "🔧 Fix: 解決 pagedItems 讀取時序產生的 ReferenceError 崩潰",
+                "🎨 Polish: 簡化執位器頁碼顯示，僅保留專業頁腳與狀態欄同步"
+            ],
+            "zh-HK": [
+                "📄 PDF: 實作跨分頁（含附錄）動態頁碼追踪",
+                "🎯 UI: 修正登入頁 (Landing Page) 垂直居中問題",
+                "🔧 Fix: 解決 pagedItems 讀取時序產生嘅 ReferenceError 崩潰",
+                "🎨 Polish: 簡化執位器頁碼顯示，僅保留專業頁腳同狀態欄同步"
+            ],
+            "en": [
+                "📄 PDF: Implemented continuous dynamic pagination across itineraries and appendices",
+                "🎯 UI: Fixed Landing Page vertical alignment (centered layout)",
+                "🔧 Fix: Resolved critical ReferenceError crash (pagedItems initialization timing)",
+                "🎨 Polish: Simplified Export Modal indicators to professional footer and synced status bar"
+            ]
+        }
+    },
+    {
+        ver: "V1.8.0",
+        date: "2026-01-21",
+        tag: "Performance Audit & Optimization",
+        desc: {
+            "zh-TW": "性能優化與懶載入架構",
+            "zh-HK": "性能優化同懶載入架構",
+            "en": "Performance Optimization & Lazy Loading"
+        },
+        details: {
+            "zh-TW": [
+                "⚡ Perf: 實施全域懶加載 (Lazy Loading) 策略",
+                "📦 Build: 優化 Vite Chunks 分拆，提升快取命中率",
+                "穩定性提升: 修復 App.jsx 渲染結構與邏輯回歸"
+            ],
+            "zh-HK": [
+                "⚡ Perf: 實施全域懶加載 (Lazy Loading) 策略",
+                "📦 Build: 優化 Vite Chunks 分拆，提升快取命中率",
+                "穩定性提升: 修復 App.jsx 渲染結構同埋邏輯回歸"
+            ],
+            "en": [
+                "⚡ Perf: Implemented Global Lazy Loading strategy",
+                "📦 Build: Optimized Vite Chunks for better caching",
+                "Stability: Fixed App.jsx rendering structure & logic regressions"
+            ]
+        }
+    },
+    {
+        ver: "V1.7.6",
+        date: "2026-01-21",
+        tag: "Pro Editor Robustness & UI Polish",
+        desc: {
+            "zh-TW": "執位器穩定性與 UI 優化",
+            "zh-HK": "執位器穩定性同 UI 優化",
+            "en": "Pro Editor Stability & UI Polish"
+        },
+        details: {
+            "zh-TW": [
+                "🔧 Fix: 修復 SmartExportModal 500 錯誤與語法缺失",
+                "🖼️ Image: 引入 getSmartItemImage 智能配圖，解決白底問題",
+                "🎨 UI: 解決 MenuBar 與儲存按鈕重疊問題，優化 Header 間距",
+                "🧹 TipTap: 移除重複 Extension，解決 Link/Underline 衝突警告"
+            ],
+            "zh-HK": [
+                "🔧 Fix: 修復 SmartExportModal 500 錯誤同埋語法缺失",
+                "🖼️ Image: 引入 getSmartItemImage 智能配圖，解決白底問題",
+                "🎨 UI: 解決 MenuBar 同埋儲存按鈕重疊問題，優化 Header 間距",
+                "🧹 TipTap: 移除重複 Extension，解決 Link/Underline 衝突警告"
+            ],
+            "en": [
+                "🔧 Fix: Resolved SmartExportModal 500 error & syntax glitches",
+                "🖼️ Image: Integrated getSmartItemImage for consistent visuals",
+                "🎨 UI: Fixed overlap between MenuBar and Global Actions",
+                "🧹 TipTap: Resolved duplicate extension warnings (Link/Underline)"
+            ]
+        }
+    },
+    {
+        ver: "V1.7.0",
+        date: "2026-01-21",
+        tag: "PDF Preview & Feature Expansion",
+        desc: {
+            "zh-TW": "PDF 預覽編輯與功能擴展",
+            "zh-HK": "PDF 預覽編輯同功能擴展",
+            "en": "PDF Preview & Edit with Feature Expansion"
+        },
+        details: {
+            "zh-TW": [
+                "📄 PDF: 新增預覽模式，可選樣式、範圍、每頁項目數",
+                "🎨 Template: 支援 Modern/Glass/Retro/Compact/Vibrant 五種風格",
+                "✋ Pro Editor: 拖拽排序 + Word-like 編輯 (修改名稱/時間/描述)",
+                "🔧 Refactor: Tutorial 邏輯統一至 TourContext"
+            ],
+            "zh-HK": [
+                "📄 PDF: 新增預覽模式，可揀樣式、範圍、每頁項目數",
+                "🎨 Template: 支援 Modern/Glass/Retro/Compact/Vibrant 五種風格",
+                "✋ Pro Editor: 拖拽排序 + Word-like 編輯 (改名稱/時間/描述)",
+                "🔧 Refactor: Tutorial 邏輯統一至 TourContext"
+            ],
+            "en": [
+                "📄 PDF: New Preview Mode with template, scope, items per page",
+                "🎨 Template: 5 styles - Modern/Glass/Retro/Compact/Vibrant",
+                "✋ Pro Editor: Drag-and-drop + Word-like inline editing (name/time/desc)",
+                "🔧 Refactor: Unified Tutorial logic into TourContext"
+            ]
+        }
+    },
     {
         ver: "V1.6.0",
         date: "2026-01-16",
