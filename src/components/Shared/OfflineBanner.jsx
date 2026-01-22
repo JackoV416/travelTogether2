@@ -29,7 +29,7 @@ const OfflineBanner = ({ isDarkMode }) => {
 
     return (
         <div
-            className={`fixed top-[calc(80px+env(safe-area-inset-top,0px))] left-1/2 -translate-x-1/2 z-[100] w-full max-w-md px-4 pointer-events-none animate-slide-down`}
+            className={`fixed top-[calc(4rem+env(safe-area-inset-top))] left-1/2 -translate-x-1/2 z-[100] w-full max-w-md px-4 pointer-events-none animate-slide-down`}
             role="alert"
             aria-live="polite"
         >

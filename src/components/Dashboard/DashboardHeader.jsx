@@ -2,6 +2,7 @@ import { Plus, Upload, Calendar, Rocket, Search } from 'lucide-react';
 import { useTour } from '../../contexts/TourContext';
 import { useTranslation } from 'react-i18next';
 import { glassCard } from '../../utils/tripUtils';
+import { buttonPrimary, buttonSecondary } from '../../constants/styles';
 import { DEFAULT_BG_IMAGE, COUNTRIES_DATA } from '../../constants/appData';
 import SmartSummaryCard from './SmartSummaryCard';
 import Kbd from '../Shared/Kbd';
@@ -54,8 +55,8 @@ const DashboardHeader = ({
                         <button
                             onClick={onOpenCommandPalette}
                             className={`w-full md:w-auto p-2.5 rounded-xl border transition-all flex items-center justify-center gap-2 ${isDarkMode
-                                ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20'
-                                : 'bg-white/50 border-indigo-100 text-indigo-600 hover:bg-white'} backdrop-blur-md`}
+                                ? 'bg-indigo-500/10 border-white/5 text-indigo-400 hover:bg-indigo-500/20 shadow-lg shadow-indigo-500/5'
+                                : 'bg-white/50 border-indigo-100 text-indigo-600 hover:bg-white'} backdrop-blur-xl`}
                         >
                             <Search className="w-4 h-4" />
                             <span className="md:hidden text-xs font-bold">{t('dashboard.header.tooltips.search')}</span>
@@ -70,7 +71,7 @@ const DashboardHeader = ({
                     <div className="relative group flex-1 md:flex-none">
                         <button
                             onClick={() => setIsCreateModalOpen(true)}
-                            className="w-full md:w-auto px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all flex items-center justify-center gap-2"
+                            className={`${buttonPrimary} !px-4 !py-2.5 !text-sm`}
                         >
                             <Plus className="w-4 h-4" /> <span className="hidden sm:inline">{t('dashboard.header.new_trip') || '新行程'}</span>
                         </button>
@@ -84,7 +85,7 @@ const DashboardHeader = ({
                     <div className="relative group flex-1 md:flex-none">
                         <button
                             onClick={() => setIsSmartImportModalOpen(true)}
-                            className="w-full md:w-auto px-4 py-2.5 rounded-xl bg-emerald-600/90 text-white font-bold text-sm shadow-lg shadow-emerald-600/20 hover:bg-emerald-600 transition-all flex items-center justify-center gap-2"
+                            className={`${buttonSecondary} !px-4 !py-2.5 !text-sm !bg-emerald-600/20 !border-emerald-500/30 !text-emerald-400 hover:!bg-emerald-600/30 !shadow-none`}
                         >
                             <Upload className="w-4 h-4" /> <span className="hidden sm:inline">{t('dashboard.header.smart_import') || '匯入'}</span>
                         </button>

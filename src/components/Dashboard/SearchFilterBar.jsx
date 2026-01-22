@@ -19,22 +19,22 @@ const SearchFilterBar = ({ onSearch, onSort, onFilter, currentSort, currentFilte
             {/* Search Input */}
             <div className="relative flex-1 max-w-md group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search className="h-4 w-4 text-gray-400 group-focus-within:text-indigo-400 transition-colors" />
+                    <Search className="h-4 w-4 text-indigo-400 group-focus-within:text-white transition-colors" />
                 </div>
                 <input
                     type="text"
                     className="block w-full pl-10 pr-12 py-2.5 rounded-xl leading-5 
-                             bg-white/80 dark:bg-white/5 
-                             border border-gray-200/50 dark:border-transparent 
-                             text-gray-900 dark:text-gray-100 placeholder-gray-400 
-                             focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 
-                             transition-all shadow-sm hover:shadow-md hover:bg-white dark:hover:bg-white/10"
+                             bg-slate-900/40 dark:bg-slate-900/60 
+                             border border-white/5 
+                             text-gray-900 dark:text-gray-100 placeholder-gray-500 
+                             focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/30 
+                             transition-all backdrop-blur-2xl shadow-xl hover:bg-slate-900/50"
                     placeholder={t('dashboard.search_placeholder') || '搜尋行程名稱、地點...'}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none opacity-40">
-                    <span className="text-[10px] font-black border border-current px-1 rounded-md">⌘ K</span>
+                    <span className="text-[10px] font-black border border-current px-1 rounded-md text-slate-400">⌘ K</span>
                 </div>
             </div>
 
@@ -46,18 +46,18 @@ const SearchFilterBar = ({ onSearch, onSort, onFilter, currentSort, currentFilte
                         value={currentSort}
                         onChange={(e) => onSort(e.target.value)}
                         className="appearance-none pl-9 pr-8 py-2.5 rounded-xl 
-                                 bg-white/80 dark:bg-white/5 
-                                 border border-gray-200/50 dark:border-transparent 
-                                 text-sm font-medium text-gray-700 dark:text-gray-200 
-                                 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 
-                                 cursor-pointer hover:bg-white dark:hover:bg-white/10 transition-colors shadow-sm"
+                                 bg-slate-900/40 dark:bg-slate-900/60 
+                                 border border-white/5 
+                                 text-sm font-bold text-slate-300
+                                 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 
+                                 cursor-pointer hover:bg-slate-900/50 transition-colors backdrop-blur-2xl shadow-xl"
                     >
-                        <option value="nearest">🕒 {t('sort.nearest') || '最近出發 (默認)'}</option>
-                        <option value="date_asc">📅 {t('sort.date_asc') || '日期 (舊→新)'}</option>
-                        <option value="date_desc">📅 {t('sort.date_desc') || '日期 (新→舊)'}</option>
-                        <option value="name_asc">🔤 {t('sort.name_asc') || '名稱 (A-Z)'}</option>
+                        <option value="nearest">🕒 {t('sort.nearest') || '最近出發'}</option>
+                        <option value="date_asc">📅 {t('sort.date_asc') || '日期 ⬆️'}</option>
+                        <option value="date_desc">📅 {t('sort.date_desc') || '日期 ⬇️'}</option>
+                        <option value="name_asc">🔤 {t('sort.name_asc') || '名稱 A-Z'}</option>
                     </select>
-                    <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400 pointer-events-none" />
                 </div>
 
                 {/* Filter Dropdown */}
@@ -66,18 +66,18 @@ const SearchFilterBar = ({ onSearch, onSort, onFilter, currentSort, currentFilte
                         value={currentFilter}
                         onChange={(e) => onFilter(e.target.value)}
                         className="appearance-none pl-9 pr-8 py-2.5 rounded-xl 
-                                 bg-white/80 dark:bg-white/5 
-                                 border border-gray-200/50 dark:border-transparent 
-                                 text-sm font-medium text-gray-700 dark:text-gray-200 
-                                 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 
-                                 cursor-pointer hover:bg-white dark:hover:bg-white/10 transition-colors shadow-sm"
+                                 bg-slate-900/40 dark:bg-slate-900/60 
+                                 border border-white/5 
+                                 text-sm font-bold text-slate-300
+                                 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 
+                                 cursor-pointer hover:bg-slate-900/50 transition-colors backdrop-blur-2xl shadow-xl"
                     >
                         <option value="all">🌐 {t('filter.all') || '全部行程'}</option>
                         <option value="upcoming">🚀 {t('filter.upcoming') || '即將開始'}</option>
                         <option value="active">✈️ {t('filter.active') || '進行中'}</option>
                         <option value="completed">🏁 {t('filter.completed') || '已結束'}</option>
                     </select>
-                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400 pointer-events-none" />
                 </div>
             </div>
         </div>

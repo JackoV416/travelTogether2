@@ -122,7 +122,7 @@ export default defineConfig({
   },
   define: {
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
-    __APP_VERSION__: JSON.stringify('V1.5.1')
+    __APP_VERSION__: JSON.stringify('V1.8.3')
   }
 })
 // Force Restart: Mon Jan 12 16:56:41 HKT 2026

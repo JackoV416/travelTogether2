@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTranslation } from 'react-i18next';
@@ -237,10 +237,12 @@ const FootprintsLeafletMap = ({ isDarkMode, markers = [], initialCenter = [20, 0
             <MapContainer
                 center={[initialCenter[1], initialCenter[0]]} // Swap to [lat, lon]
                 zoom={initialZoom}
+                zoomControl={false}
                 style={{ height: '100%', width: '100%' }}
                 scrollWheelZoom={true}
                 className="z-0"
             >
+                <ZoomControl position="bottomright" />
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url={isDarkMode

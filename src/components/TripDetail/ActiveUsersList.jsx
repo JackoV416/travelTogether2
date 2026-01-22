@@ -52,6 +52,8 @@ const ActiveUsersList = ({ tripId, user, activeTab, language = "zh-TW", onUserCl
                 return b.lastActive - a.lastActive;
             });
             setActiveUsers(users);
+        }, (err) => {
+            console.warn("Presence sync failed (likely permission):", err.message);
         });
 
         return () => {

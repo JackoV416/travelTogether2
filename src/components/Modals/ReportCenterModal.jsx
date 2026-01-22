@@ -119,6 +119,8 @@ const ReportCenterModal = ({ isOpen, onClose, isDarkMode, user, onOpenJarvis }) 
             const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
             setTickets(list);
+        }, (err) => {
+            console.warn("Report Center tickets listener error:", err.message);
         });
         return () => unsub();
     }, [user?.uid, isOpen]);
@@ -140,6 +142,8 @@ const ReportCenterModal = ({ isOpen, onClose, isDarkMode, user, onOpenJarvis }) 
                 setMessages(fetched);
             }
             scrollToBottom();
+        }, (err) => {
+            console.warn("Report Center chat listener error:", err.message);
         });
         return () => unsub();
     }, [view, activeTicket?.id]);

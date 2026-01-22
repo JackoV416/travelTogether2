@@ -48,7 +48,7 @@ const useDashboardData = (user, globalSettings, exchangeRates, externalTrips = n
             setInternalTrips(userTrips);
             setInternalLoadingTrips(false);
         }, (err) => {
-            console.error("Firestore error:", err);
+            console.error("Dashboard trips sync error:", err.message);
             setInternalLoadingTrips(false);
         });
         return () => unsub();

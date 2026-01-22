@@ -43,11 +43,11 @@
 
   <title>Travel Together | 智能旅遊規劃</title>
   <style>
-    /* 初始 Loading 畫面樣式 - 美化版 */
+    /* 初始 Loading 畫面樣式 - 終極 Indigo 版 */
     #initial-loading {
       position: fixed;
       inset: 0;
-      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+      background: #020617;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -57,24 +57,27 @@
       overflow: hidden;
     }
 
-    /* 背景動畫粒子 */
+    /* 背景流動發光 */
     #initial-loading::before {
       content: '';
       position: absolute;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle, rgba(129, 140, 248, 0.1) 1px, transparent 1px);
-      background-size: 50px 50px;
-      animation: moveBackground 20s linear infinite;
+      top: -10%;
+      left: -10%;
+      width: 40%;
+      height: 40%;
+      background: rgba(79, 70, 229, 0.1);
+      filter: blur(100px);
+      border-radius: 50%;
+      animation: drift 10s infinite alternate;
     }
 
-    @keyframes moveBackground {
-      0% {
+    @keyframes drift {
+      from {
         transform: translate(0, 0);
       }
 
-      100% {
-        transform: translate(50px, 50px);
+      to {
+        transform: translate(100%, 50%);
       }
     }
 
@@ -83,136 +86,88 @@
       pointer-events: none;
     }
 
-    /* 多層旋轉環 */
+    /* 科技感旋轉環 */
     .loading-rings {
       position: relative;
-      width: 120px;
-      height: 120px;
+      width: 100px;
+      height: 100px;
     }
 
     .loading-ring {
       position: absolute;
+      inset: 0;
       border-radius: 50%;
-      border: 3px solid transparent;
-    }
-
-    .loading-ring:nth-child(1) {
-      width: 120px;
-      height: 120px;
-      border-top-color: #818cf8;
-      border-right-color: #818cf8;
-      animation: spin 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+      border: 2px solid transparent;
+      border-top-color: #6366f1;
+      animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
     }
 
     .loading-ring:nth-child(2) {
-      width: 90px;
-      height: 90px;
-      top: 15px;
-      left: 15px;
-      border-bottom-color: #a78bfa;
-      border-left-color: #a78bfa;
-      animation: spin 2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite reverse;
+      inset: 10px;
+      border-top-color: #818cf8;
+      animation-delay: -0.3s;
     }
 
     .loading-ring:nth-child(3) {
-      width: 60px;
-      height: 60px;
-      top: 30px;
-      left: 30px;
-      border-top-color: #c4b5fd;
-      border-right-color: #c4b5fd;
-      animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+      inset: 20px;
+      border-top-color: #a5b4fc;
+      animation-delay: -0.6s;
     }
 
-    /* 中心圖標 */
     .loading-icon {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 2rem;
-      animation: pulse 2s ease-in-out infinite;
+      font-size: 1.5rem;
+      filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.5));
     }
 
     .loading-text {
       color: white;
-      font-family: system-ui, -apple-system, sans-serif;
-      font-size: 1.5rem;
-      font-weight: 600;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
       margin-top: 2rem;
-      opacity: 0.95;
-      letter-spacing: 0.5px;
-      animation: fadeInOut 2s ease-in-out infinite;
+      letter-spacing: 2px;
+      text-transform: uppercase;
     }
 
-    .loading-subtext {
-      color: rgba(255, 255, 255, 0.7);
-      font-family: system-ui, -apple-system, sans-serif;
-      font-size: 0.9rem;
-      margin-top: 0.75rem;
-      animation: fadeInOut 2s ease-in-out infinite 0.5s;
-    }
-
-    /* 進度條 */
     .loading-progress {
-      width: 200px;
-      height: 4px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 2px;
+      width: 160px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
       margin-top: 1.5rem;
       overflow: hidden;
     }
 
     .loading-progress-bar {
       height: 100%;
-      background: linear-gradient(90deg, #818cf8, #a78bfa, #c4b5fd);
-      border-radius: 2px;
-      animation: progressAnimation 2s ease-in-out infinite;
+      background: #6366f1;
+      width: 0%;
+      border-radius: 10px;
+      animation: progress 2.5s ease-in-out infinite;
     }
 
     @keyframes spin {
-      0% {
+      from {
         transform: rotate(0deg);
       }
 
-      100% {
+      to {
         transform: rotate(360deg);
       }
     }
 
-    @keyframes pulse {
-
-      0%,
-      100% {
-        transform: translate(-50%, -50%) scale(1);
-        opacity: 1;
-      }
-
-      50% {
-        transform: translate(-50%, -50%) scale(1.1);
-        opacity: 0.8;
-      }
-    }
-
-    @keyframes fadeInOut {
-
-      0%,
-      100% {
-        opacity: 0.95;
-      }
-
-      50% {
-        opacity: 0.6;
-      }
-    }
-
-    @keyframes progressAnimation {
+    @keyframes progress {
       0% {
         width: 0%;
+        left: -100%;
       }
 
       50% {
-        width: 70%;
+        width: 50%;
       }
 
       100% {
@@ -232,7 +187,6 @@
       <div class="loading-icon">✈️</div>
     </div>
     <div class="loading-text">Travel Together</div>
-    <div class="loading-subtext">正在為您準備完美旅程...</div>
     <div class="loading-progress">
       <div class="loading-progress-bar"></div>
     </div>

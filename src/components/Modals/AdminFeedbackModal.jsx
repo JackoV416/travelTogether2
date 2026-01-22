@@ -59,11 +59,15 @@ const AdminFeedbackModal = ({ isOpen, onClose, isDarkMode, adminEmails = [], onU
         const q = query(collection(db, "feedback"), orderBy("createdAt", "desc"));
         const unsubFeedback = onSnapshot(q, (snapshot) => {
             setFeedbacks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        }, (err) => {
+            console.warn("Admin Feedback listener error:", err.message);
         });
 
         // 2. Users (Real-time or One-off? Real-time is better for ban status updates)
         const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
             setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        }, (err) => {
+            console.warn("Admin Users listener error:", err.message);
         });
 
         // 3. Dynamic Admins
@@ -73,6 +77,8 @@ const AdminFeedbackModal = ({ isOpen, onClose, isDarkMode, adminEmails = [], onU
             } else {
                 setDynamicAdmins([]);
             }
+        }, (err) => {
+            console.warn("Admin Config listener error:", err.message);
         });
 
         setLoading(false);
@@ -117,6 +123,8 @@ const AdminFeedbackModal = ({ isOpen, onClose, isDarkMode, adminEmails = [], onU
                 setMessages(fetchedMessages);
             }
             setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+        }, (err) => {
+            console.warn("Feedback chat listener error:", err.message);
         });
         return () => unsub();
     }, [activeFeedback?.id, activeFeedback?.message, activeFeedback?.imageUrl, activeFeedback?.createdAt]);

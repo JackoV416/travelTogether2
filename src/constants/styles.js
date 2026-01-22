@@ -1,5 +1,5 @@
-// === Unified Button Styles (V1.0 Design System) ===
-export const buttonPrimary = "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-95 rounded-xl font-bold";
-export const buttonSecondary = "border border-gray-300 dark:border-gray-600 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 rounded-xl font-bold";
-export const buttonDanger = "bg-red-500 hover:bg-red-600 text-white shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-95 rounded-xl font-bold";
-export const buttonGhost = "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-all duration-300 rounded-xl";
+// === Unified Button Styles (V1.8.3 Indigo Glass Edition) ===
+export const buttonPrimary = "bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-600/20 px-6 py-2.5 rounded-xl font-bold transition-all duration-300 transform hover:scale-[1.02] active:scale-95 border border-white/10 flex items-center justify-center gap-2";
+export const buttonSecondary = "bg-slate-800/40 hover:bg-slate-800/60 border border-white/5 text-slate-200 backdrop-blur-xl px-6 py-2.5 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2";
+export const buttonDanger = "bg-rose-600 hover:bg-rose-500 text-white shadow-xl shadow-rose-600/20 px-6 py-2.5 rounded-xl font-bold transition-all duration-300 transform hover:scale-[1.02] active:scale-95 border border-white/10 flex items-center justify-center gap-2";
+export const buttonGhost = "bg-transparent hover:bg-white/5 text-slate-400 hover:text-white px-4 py-2 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 font-bold";

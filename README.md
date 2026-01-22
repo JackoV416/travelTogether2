@@ -1,9 +1,20 @@
-# Travel Together (智能旅遊規劃) V1.8.1
+# Travel Together V2 <kbd>V1.8.3</kbd>
 
-[![TravelTogether](https://img.shields.io/badge/Version-V1.8.1-indigo.svg)](https://github.com/JackoV416/travelTogether2)
-[![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-6.x-purple.svg)](https://vitejs.dev/)
-[![Firebase](https://img.shields.io/badge/Firebase-11.x-orange.svg)](https://firebase.google.com/)
+[![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://travel-together-v2.vercel.app/)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
+
+> **智能旅遊規劃助手** - 專為多人協作設計。支援即時同步、AI 行程建議與 PWA 離線使用。
+
+### 📄 V1.8.3 特性更新 (Documentation & PWA)
+- **文檔全面升級**：新增 `FAQ` 至 6 大項，涵蓋 PWA 安裝、安全性與協作上限。
+- **技術架構文檔**：新增 `.agent/docs/` 目錄，包含架構圖與開發規範。
+- **PWA 安裝指引**：在 README 中加入詳細的安裝與離線使用教學。
+
+### 🛡️ V1.8.2 特性更新 (Aesthetic Unification)
+- **Indigo Glass 視覺統一**：全域應用最新設計語言，優化按鈕、卡片與背景質感。
+- **PWA 體驗強化**：同步 Slate-950 主題色，優化啟動頁面 (Splash) 與 Loading 動畫。
+- **Firebase 安全優化**：修復元數據同步報錯，增強應用程式穩定性。
 
 ## 🚀 V1.8.1: Export Modal & UI Polish (2026-01-21)
 **V1.8.1: [Stability & UI] 執位器功能完善與登入頁優化！**
@@ -11,9 +22,10 @@
 
 ### 🌟 V1.8.1 主要更新
 1.  **Dynamic Pagination**: 跨分頁（含附錄）實作動態頁碼追踪，確保 PDF 預覽與匯出頁碼絕對準確。
-2.  **UI Polish**: 修正 Landing Page 垂直居中問題，視覺更平衡。
-3.  **Stability Fix**: 解決 `pagedItems` 初始化時序導致的 ReferenceError 崩潰。
-4.  **Indicator Cleanup**: 移除冗餘的浮動頁碼，僅保留專業級頁腳與狀態欄同步顯示。
+2.  **Premium Landing Page**: 全面重構登入前頁面，新增 **Comparison (舊做法 vs 新做法)**、**Pricing (資費方案)** 及 **FAQ (常見問題)**，大幅提升視覺質感與轉換率。
+3.  **UI Polish**: 修正登入頁垂直居中問題，視覺更平衡。
+4.  **Stability Fix**: 解決 `pagedItems` 初始化時序導致的 ReferenceError 崩潰。
+5.  **Vercel Deployment**: 優化 `.npmrc` 配置，解決 `npm ci` 在 Vercel 環境下的依賴衝突問題。
 
 ---
 
@@ -114,7 +126,17 @@ Jarvis 帶著更強大的功能回歸！重啟了全域對話、智能匯入與�
 - **📱 Mobile UX**: 優化手機版選單，新增「模擬例子」快捷入口。
 - **🎨 Tag UI**: 全面翻新行程分類 Tag 視覺，根據各類別主題色自動渲染，提升視覺層次感。
 
-## 🚀 V1.2.7: Global UI Overhaul & Localization (2026-01-07)
+## 🚀 V1.8.4: Audit Fixes & Polish (2026-01-22)
+**V1.8.4: [Quality] 代碼審計修復與 PWA 優化！**
+修復了深層代碼問題，移除遺留日誌，並修正了 PWA 介面在不同裝置上的顯示問題。
+
+### ✨ V1.8.4 核心更新 (Updates)
+- **🛠️ Code Hygiene**: 移除大量 `console.log`，提升生產環境潔淨度。
+- **📱 UI Polish**: 修復 `TourOverlay` Z-Index 過高與 `OfflineBanner` 位置寫死問題。
+- **🛡️ Audit Fixes**: 修正 i18n JSON 語法錯誤，確保翻譯檔結構正確。
+- **🇭🇰 i18n**: 完善 zh-HK 翻譯文件結構。
+
+## 🚀 V1.8.3: Aesthetic Unification & Docs (2026-01-22)
 **V1.2.7: [UI/UX] 跨視境全域搜尋與多國語系版本正式上線！**
 強化了應用的全球化能力，引入 Command+K 全域搜尋與多引擎 AI 支援。
 
@@ -320,5 +342,33 @@ graph TD
 
 ---
 
+## 📱 PWA 功能與安裝指引 (Installable App)
+
+Travel Together 2 採用 PWA 技術，您可以將網站安裝至手機主畫面，獲得接近原生 App 的體驗：
+
+1. **iOS (Safari)**: 點擊瀏覽器下方的「分享」按鈕，選擇「加入主畫面」。
+2. **Android (Chrome)**: 點擊網址列右側的「安裝」圖示，或在選單中選擇「安裝應用程式」。
+3. **Desktop (Chrome/Edge)**: 網址列右側會出現安裝圖示。
+
+### PWA 優勢：
+- **離線查看**：即使在飛機上或沒有 SIM 卡的地區，也能查看已同步的行程。
+- **快速啟動**：無需經由 App Store，秒開即用。
+- **沉浸式體驗**：無網址列遮擋，全螢幕設計。
+
+## 🛡️ 安全性與穩定性 (Security & Hardening)
+
+我們非常重視您的數據安全：
+- **SafeChat™ 端對端身份保護**：基於 Firebase 的訊息傳輸均經過加密處理。
+- **Firestore 鐵壁規則**：嚴格的 Security Rules 確保只有行程成員能存取數據。
+- **Listener Hardening**：V1.8.2/1.8.3 引入了全域監聽器加固，徹底解決 HMR 崩潰與權限報錯問題。
+
+## 📖 技術文檔 (Developer Docs)
+
+- [System Architecture](file:///Users/jamiekwok/Documents/GitHub/travelTogether2/.agent/docs/architecture.md)
+- [Coding Conventions](file:///Users/jamiekwok/Documents/GitHub/travelTogether2/.agent/docs/conventions.md)
+- [Version History](file:///Users/jamiekwok/Documents/GitHub/travelTogether2/.agent/backlog/version_roadmap.md)
+
+---
+
 **Author**: [Jamie Kwok](https://github.com/JackoV416)
-**Last Updated**: 2026-01-21
+**Last Updated**: 2026-01-22

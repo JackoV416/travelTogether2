@@ -83,7 +83,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
         if (forcedViewMode) setViewMode(forcedViewMode);
     }, [forcedViewMode]);
 
-    // ... (rest of logic)
+
 
 
 
@@ -566,21 +566,21 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
 
                 {/* Tab Navigation */}
                 {!forcedViewMode && (
-                    <div className="flex items-center justify-center gap-2 mb-8">
+                    <div className="flex items-center justify-center gap-2 mb-10">
                         <button
                             onClick={() => setViewMode('explore')}
-                            className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 ${viewMode === 'explore'
-                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 scale-105'
-                                : 'bg-white/10 text-gray-400 hover:bg-white/20 hover:text-white'
+                            className={`px-8 py-3 rounded-full font-black text-xs tracking-widest uppercase transition-all duration-500 transform ${viewMode === 'explore'
+                                ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-xl shadow-indigo-500/30 scale-105 border border-indigo-400/20'
+                                : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/60 hover:text-white border border-white/5 backdrop-blur-md'
                                 }`}
                         >
                             🌍 {t('dashboard.explore_community') || 'Explore Community'}
                         </button>
                         <button
                             onClick={() => setViewMode('my_trips')}
-                            className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 ${viewMode === 'my_trips'
-                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 scale-105'
-                                : 'bg-white/10 text-gray-400 hover:bg-white/20 hover:text-white'
+                            className={`px-8 py-3 rounded-full font-black text-xs tracking-widest uppercase transition-all duration-500 transform ${viewMode === 'my_trips'
+                                ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-xl shadow-indigo-500/30 scale-105 border border-indigo-400/20'
+                                : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/60 hover:text-white border border-white/5 backdrop-blur-md'
                                 }`}
                         >
                             ✈️ {t('dashboard.my_trips') || 'My Trips'}

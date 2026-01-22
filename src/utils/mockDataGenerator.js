@@ -52,7 +52,7 @@ const MOCK_AUTHORS = [
 ];
 
 export const seedMockTrips = async (count = 50) => {
-    console.log(`🚀 Starting to seed ${count} mock trips...`);
+
     let createdDetails = [];
 
     for (let i = 0; i < count; i++) {
@@ -132,6 +132,6 @@ export const seedMockTrips = async (count = 50) => {
         }
     }
 
-    console.log(`✅ Successfully seeded ${createdDetails.length} trips!`);
+
     alert(`Done! ${createdDetails.length} trips added.`);
 };

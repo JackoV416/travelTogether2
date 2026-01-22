@@ -69,13 +69,13 @@ const VersionModal = ({ isOpen, onClose, isDarkMode, globalSettings }) => {
                         const accentColor = activeTab === 'web' ? 'indigo' : 'purple';
 
                         // Harmonized data access for zh-TW, zh-HK, en
-                        const description = (typeof ver.desc === 'object' ? (ver.desc[currentLang] || ver.desc?.['zh-TW'] || ver.desc['en']) : ver.desc) || ver.tag;
-                        const logLines = Array.isArray(ver.details?.[currentLang] || ver.details?.['zh-TW'] || ver.details?.['en'])
-                            ? (ver.details[currentLang] || ver.details?.['zh-TW'] || ver.details['en'])
+                        const description = (typeof ver.desc === 'object' ? (ver.desc[currentLang] || ver.desc?.['zh-TW'] || ver.desc?.['zh-HK'] || ver.desc?.['en']) : ver.desc) || ver.tag || "Update Details";
+                        const logLines = Array.isArray(ver.details?.[currentLang] || ver.details?.['zh-TW'] || ver.details?.['zh-HK'] || ver.details?.['en'])
+                            ? (ver.details[currentLang] || ver.details?.['zh-TW'] || ver.details?.['zh-HK'] || ver.details?.['en'])
                             : (ver.changes || []);
 
                         return (
-                            <div key={ver.ver} className="relative pl-10 animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
+                            <div key={ver.ver || `ver-${i}`} className="relative pl-10 animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
                                 {/* Timeline Line */}
                                 <div className={`absolute left-[7.5px] top-8 bottom-[-40px] w-[2px] ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'} last:hidden`} />
 

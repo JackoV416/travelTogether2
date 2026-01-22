@@ -81,8 +81,7 @@ const TripDetailContent = (props) => {
 
 const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, isPreview, globalSettings, exchangeRates, convAmount, setConvAmount, convTo, setConvTo, onOpenSmartImport, weatherData, requestedTab, onTabHandled, requestedItemId, onItemHandled, isBanned, isAdmin, setIsFeedbackOpen, isFeedbackOpen, onOpenChat, isChatOpen, setIsChatOpen, onUserClick, onViewProfile, setChatInitialTab }) => {
     const { i18n } = useTranslation();
-    // ... UI STATE HOOKS (isChatOpen removed)
-    // ... (rest of props)
+
 
     // ============================================
     // UI STATE HOOKS
@@ -1498,12 +1497,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
 
     const closeSectionModal = () => setSectionModalConfig(null);
 
-    // COMMENTED OUT: Unused in TripDetailContent context (Logic for creating new trips in Dashboard)
-    /*
-    const handleDashboardImport = async (inputData, mode, targetTripId) => {
-        // ... (See App.jsx)
-    };
-    */
+
 
     const handleSectionImport = async (section, raw) => {
         if (isSimulation) return alert("模擬模式");
@@ -1634,7 +1628,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                 ))}
                             </div>
                         )}
-                        <div className={`absolute inset-0 bg-gradient-to-t ${isDarkMode ? 'from-gray-900/90 via-gray-900/40 to-black/20' : 'from-indigo-900/60 via-indigo-900/20 to-black/10'}`} />
+                        <div className={`absolute inset-0 bg-gradient-to-t ${isDarkMode ? 'from-slate-950 via-slate-950/60 to-transparent' : 'from-indigo-900/60 via-indigo-900/20 to-black/10'}`} />
                     </div>
 
                     {/* Content Grid - Centered Container */}
@@ -1647,10 +1641,10 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                         <div className="text-[10px] text-indigo-300 uppercase font-black tracking-widest mb-2">行程概覽</div>
                                         <div className="flex items-center gap-2 mb-4">
                                             <span className="bg-indigo-500/80 text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur-md uppercase tracking-wider font-bold shadow-lg shadow-indigo-500/20">{displayCountry} {displayCity}</span>
-                                            <div className="px-2.5 py-1 bg-white/10 rounded-full backdrop-blur-md border border-white/10 text-[10px] font-black whitespace-nowrap shadow-sm flex items-center gap-1.5">
-                                                <span className="text-indigo-300">DAY {getDaysArray(trip.startDate, trip.endDate).findIndex(d => d === currentDisplayDate) + 1 || '-'}</span>
-                                                <span className="opacity-30">/</span>
-                                                <span className="text-white/90">{getDaysArray(trip.startDate, trip.endDate).length} DAYS</span>
+                                            <div className="px-2.5 py-1 bg-white/5 rounded-full backdrop-blur-xl border border-white/5 text-[10px] font-black whitespace-nowrap shadow-sm flex items-center gap-1.5 ring-1 ring-white/5">
+                                                <span className="text-indigo-400">DAY {getDaysArray(trip.startDate, trip.endDate).findIndex(d => d === currentDisplayDate) + 1 || '-'}</span>
+                                                <span className="opacity-20">/</span>
+                                                <span className="text-white/70">{getDaysArray(trip.startDate, trip.endDate).length} DAYS</span>
                                             </div>
                                             {trip.isPublic && <span className="bg-emerald-500/80 text-white text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-emerald-500/20"><Globe2 className="w-3 h-3" /> 公開</span>}
                                             {trip.forkedFrom && (
@@ -1671,7 +1665,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
 
 
                                             {/* Unified Premium Action Bar */}
-                                            <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-black/30 backdrop-blur-2xl border border-white/10 shadow-2xl self-start sm:ml-4 group/toolbar transition-all hover:bg-black/40">
+                                            <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-900/60 backdrop-blur-3xl border border-white/5 shadow-2xl self-start sm:ml-4 group/toolbar transition-all hover:bg-slate-900/80 ring-1 ring-white/5 shadow-black/60">
                                                 {/* History Actions */}
                                                 <div className="flex items-center gap-1 px-1 border-r border-white/10 pr-2">
                                                     <button
@@ -1831,7 +1825,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                                                 </div>
                                                             )}
                                                         </div>
-                                                        <button data-tour="invite-members" onClick={() => setIsMemberModalOpen(true)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all border border-white/10 hover:border-white/30 shadow-lg" title={t('trip.actions.manage_members') || '成員管理'}>
+                                                        <button data-tour="invite-members" onClick={() => setIsMemberModalOpen(true)} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center transition-all border border-white/5 hover:border-white/20 shadow-lg ring-1 ring-white/5" title={t('trip.actions.manage_members') || '成員管理'}>
                                                             <UserPlus className="w-4 h-4 text-white" />
                                                         </button>
                                                     </div>
@@ -1879,14 +1873,14 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                                         <button
                                                             onClick={() => { setIsPlanMenuOpen(!isPlanMenuOpen); setIsManageMenuOpen(false); }}
                                                             data-tour="plan-trip-menu"
-                                                            className="px-3 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl flex justify-center items-center gap-2 font-bold text-xs transition-all shadow-lg shadow-indigo-900/40 active:scale-95 whitespace-nowrap border border-indigo-400/30 backdrop-blur-md"
+                                                            className="px-3 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl flex justify-center items-center gap-2 font-black text-xs transition-all shadow-xl shadow-indigo-900/40 active:scale-95 whitespace-nowrap border border-indigo-400/20 backdrop-blur-xl"
                                                         >
                                                             <Plus className="w-4 h-4" /> {t('trip.actions.plan_trip') || '行程規劃'} <ChevronDown className={`w-3.5 h-3.5 text-indigo-200 transition-transform ${isPlanMenuOpen ? 'rotate-180' : ''}`} />
                                                         </button>
                                                         {isPlanMenuOpen && (
                                                             <>
                                                                 <div className="fixed inset-0 z-[90]" onClick={() => setIsPlanMenuOpen(false)}></div>
-                                                                <div className="absolute right-0 top-full mt-2 w-48 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[100] transform origin-top-right animate-scale-in p-1" data-tour="add-activity-menu">
+                                                                <div className="absolute right-0 top-full mt-2 w-48 bg-slate-900/90 backdrop-blur-3xl border border-white/5 rounded-2xl shadow-2xl overflow-hidden z-[100] transform origin-top-right animate-scale-in p-1.5 shadow-black/80" data-tour="add-activity-menu">
                                                                     <button onClick={() => { setAddType('spot'); setIsAddModal(true); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 text-left text-xs transition-colors rounded-lg text-white font-medium">
                                                                         <Edit3 className="w-3.5 h-3.5 text-blue-400" /> {t('trip.actions.manual_add') || '手動新增'}
                                                                     </button>
@@ -1961,7 +1955,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                     key={t.id}
                                     onClick={() => setActiveTab(t.id)}
                                     data-tour={`${t.id}-tab`}
-                                    className={`flex items-center px-4 py-2 rounded-full font-bold transition-all duration-300 whitespace-nowrap transform hover:scale-105 active:scale-95 ${activeTab === t.id ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl scale-105' : (isDarkMode ? 'bg-gray-800/60 text-gray-300 hover:bg-gray-700' : 'bg-gray-100/80 text-gray-600 hover:bg-gray-100')}`}
+                                    className={`flex items-center px-4 py-2 rounded-full font-black tracking-tighter text-xs transition-all duration-300 whitespace-nowrap transform hover:scale-105 active:scale-95 ${activeTab === t.id ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-xl shadow-indigo-600/30 scale-105' : (isDarkMode ? 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/60 border border-white/5' : 'bg-gray-100/80 text-gray-600 hover:bg-gray-100')}`}
                                 >
                                     <t.icon className="w-4 h-4 mr-2" />{t.label}
                                 </button>
@@ -2206,7 +2200,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                 onClick={() => setIsMobileMoreOpen(false)}
                             >
                                 <div
-                                    className={`fixed bottom-[88px] left-4 right-4 ${isDarkMode ? 'bg-gray-800/90 border-gray-700' : 'bg-white/90 border-white/20'} border backdrop-blur-xl rounded-3xl p-6 shadow-2xl animate-slide-up ring-1 ring-black/5`}
+                                    className={`fixed bottom-[88px] left-4 right-4 ${isDarkMode ? 'bg-slate-900/90 border-white/5' : 'bg-white/90 border-white/20'} border backdrop-blur-3xl rounded-[32px] p-6 shadow-2xl animate-slide-up ring-1 ring-black/20 shadow-black/60`}
                                     onClick={e => e.stopPropagation()}
                                 >
                                     {/* Header */}

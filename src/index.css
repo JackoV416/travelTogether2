@@ -22,39 +22,53 @@
   --color-bg-body: #f8fafc;
   --color-text-main: #0f172a;
   --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-border: rgba(255, 255, 255, 0.2);
   --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --glass-highlight: rgba(255, 255, 255, 0.5);
+  --selection-bg: rgba(79, 70, 229, 0.2);
 }
 
 .dark {
-  --color-bg-body: #020617; /* Dark Slate 950 - Softer than pure black */
+  --color-bg-body: #020617; /* Slate 950 - Match Landing Page Exactly */
   --color-text-main: #f8fafc;
-  --glass-bg: rgba(15, 23, 42, 0.6); /* Slate 900 base for glass */
-  --glass-border: transparent; /* Fix white border issue by making it transparent */
-  --glass-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-  --glass-highlight: rgba(255, 255, 255, 0.03);
+  --glass-bg: rgba(15, 23, 42, 0.6); /* Slate 900 base with high transparency */
+  --glass-border: rgba(255, 255, 255, 0.05); /* Very thin, subtle border */
+  --glass-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.6); /* Deeper shadow for elevation */
+  --glass-highlight: rgba(255, 255, 255, 0.01);
+  --selection-bg: rgba(99, 102, 241, 0.3);
 }
 
-/* SearchFilterBar Dark Mode Override (Legacy) */
+::selection {
+  background-color: var(--selection-bg);
+}
+
+/* SearchFilterBar Dark Mode Override */
 .dark input[type="text"].search-dark-input,
 input[type="text"].search-dark-override {
-  background-color: rgba(255, 255, 255, 0.03) !important;
+  background-color: rgba(15, 23, 42, 0.4) !important;
   border-color: rgba(255, 255, 255, 0.05) !important;
   color: #ffffff !important;
+  backdrop-filter: blur(8px);
 }
 input[type="text"].search-dark-override::placeholder {
-  color: rgba(255, 255, 255, 0.3) !important;
+  color: rgba(255, 255, 255, 0.4) !important;
 }
 
 @layer utilities {
   /* Premium Glass Utilities */
   .glass-card {
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow); /* Removed inset highlight */
+    box-shadow: var(--glass-shadow);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-card:hover {
+    border-color: rgba(99, 102, 241, 0.2); /* Indigo highlight on hover */
+    background: rgba(15, 23, 42, 0.7);
+    transform: translateY(-2px);
   }
 
   .glass-effect {

@@ -468,6 +468,13 @@ const App = () => {
             if (!mounted) return;
             try {
                 setUser(u);
+                // Hide initial loading screen if it exists
+                const loader = document.getElementById('initial-loading');
+                if (loader) {
+                    loader.classList.add('fade-out');
+                    setTimeout(() => loader.remove(), 500);
+                }
+
                 if (u) {
                     const userRef = doc(db, "users", u.uid);
                     await setDoc(userRef, {
@@ -526,6 +533,9 @@ const App = () => {
                     setView('detail');
                 }
             }
+        }, (err) => {
+            console.error("Trips sync error:", err.message);
+            setLoadingTrips(false);
         });
     }, [user]);
 
@@ -548,6 +558,8 @@ const App = () => {
                     setIsVersionGuardOpen(true);
                 }
             }
+        }, (err) => {
+            console.warn("Metadata sync failed (likely permission):", err.message);
         });
         return unsub;
     }, []);

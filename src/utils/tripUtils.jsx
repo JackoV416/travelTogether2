@@ -21,8 +21,10 @@ import {
 } from '../constants/countries';
 import { convertCurrency } from '../services/exchangeRate';
 
-// Glassmorphism 2.0 - Premium Effect (Uses CSS Variables in index.css)
+// Glassmorphism 2.0 - Premium Effect (V1.8.3 Indigo Glass Edition)
 export const glassCard = () => `glass-card rounded-2xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10 hover:border-indigo-500/30 group relative isolate`;
+
+export const buttonPrimaryStyle = `inline-flex items-center justify-center px-6 py-2.5 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-xl shadow-indigo-600/20 transition-all duration-300 transform hover:scale-[1.02] active:scale-95 cursor-pointer border border-white/10 gap-2`;
 
 export const getHolidayMap = (region) => HOLIDAYS_BY_REGION[region] || HOLIDAYS_BY_REGION.Global;
 
@@ -276,7 +278,7 @@ export const getNearbyAttractionHint = (location, t) => {
     return null;
 };
 
-export const buttonPrimary = `flex items-center justify-center px-6 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.05] active:scale-95 w-full cursor-pointer`;
+export const buttonPrimary = `flex items-center justify-center px-6 py-3 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition-all duration-300 transform hover:scale-[1.05] active:scale-95 w-full cursor-pointer border border-white/10`;
 
 // ============================================
 // TIME CALCULATIONS (V1.1 Smart Scheduler)

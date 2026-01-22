@@ -215,6 +215,13 @@ const resources = {
                     "Budget": "Budget",
                     "Standard": "Standard",
                     "Luxury": "Luxury"
+                },
+                "season": "Season",
+                "seasons": {
+                    "spring": "Sakura Season",
+                    "summer": "Midsummer",
+                    "autumn": "Red Leaves",
+                    "winter": "Snow Season"
                 }
             },
             "themes": {
@@ -589,18 +596,64 @@ const resources = {
             "notebook": "Notebook"
         },
         "landing": {
-            "title": "Your Journey, Perfectly Planned",
-            "subtitle": "AI-powered trip planning with real-time collaboration",
-            "login_google": "Sign in with Google",
+            "nav": {
+                "features": "Features",
+                "pricing": "Pricing",
+                "faq": "FAQ",
+                "login": "Login"
+            },
+            "title": "Travel Smarter,\nTogether.",
+            "subtitle": "The all-in-one platform for collaborative trip planning. AI itineraries, real-time budgets, and shared memories.",
+            "login_google": "Start Planning Free",
             "login_desc": "Sync across all devices",
-            "demo_mode": "Try Demo Mode",
+            "demo_mode": "Try Demo",
             "features": {
-                "collab_title": "Real-time Collaboration",
-                "collab_desc": "Plan together with friends and family",
-                "ai_title": "AI Assistant Jarvis",
-                "ai_desc": "Smart itinerary suggestions powered by AI",
-                "footprints_title": "Travel Footprints",
-                "footprints_desc": "Track your journey around the world"
+                "collab_title": "Real-time Collab",
+                "collab_desc": "Plan with friends in real-time. Sync instantly.",
+                "ai_title": "AI Power",
+                "ai_desc": "Generate smart itineraries with Gemini AI.",
+                "footprints_title": "Visual Memories",
+                "footprints_desc": "Track your footprints and visualize your journey."
+            },
+            "comparison": {
+                "title": "Stop planning like it's 2005",
+                "subtitle": "Why switch from spreadsheets and messy chats?",
+                "old_title": "The Old Way",
+                "new_title": "The Travel Together Way",
+                "old_1": "Scattered Excel files",
+                "new_1": "Single unified itinerary",
+                "old_2": "Endless WhatsApp debates",
+                "new_2": "Built-in group voting & chat",
+                "old_3": "Manual budget tracking",
+                "new_3": "Real-time expense splitting",
+                "old_4": "Static PDF exports",
+                "new_4": "Interactive A4 editor"
+            },
+            "pricing": {
+                "title": "Simple Pricing",
+                "free_title": "Individual",
+                "free_price": "$0",
+                "free_desc": "Perfect for solo travelers and small groups",
+                "free_features": ["Unlimited Trips", "AI Basic Assistant", "Offline Access", "Shared Budget"],
+                "pro_title": "Pro Explorer",
+                "pro_price": "$9",
+                "pro_desc": "For power users and expert planners",
+                "pro_features": ["Pro A4 Editor", "Advanced AI (Gemini Flash)", "Priority Support", "Custom Templates"]
+            },
+            "faq": {
+                "title": "Got Questions?",
+                "q1": "Is it really free?",
+                "a1": "Yes! All core features are free. We only charge for advanced AI and professional export tools.",
+                "q2": "Does it work offline?",
+                "a2": "Absolutely. Your trips are cached locally so you can check your schedule even without a SIM card.",
+                "q3": "How do I install the App (PWA)?",
+                "a3": "On iOS, tap 'Share' then 'Add to Home Screen'. On Android/Chrome, tap the 'Install' icon in the address bar. No App Store needed!",
+                "q4": "Is my data secure?",
+                "a4": "Yes, we use industry-standard encryption. Chat messages are end-to-end encrypted with SafeChat™ technology.",
+                "q5": "How many friends can join?",
+                "a5": "Up to 50 members per trip! Perfect for school groups, company retreats, or big family reunions.",
+                "q6": "Can I import existing plans?",
+                "a6": "Yes, our Smart Import tool can read screenshots of itineraries and receipts from other apps."
             }
         },
         "onboarding": {
@@ -987,6 +1040,13 @@ const resources = {
                     "Budget": "經濟",
                     "Standard": "標準",
                     "Luxury": "豪華"
+                },
+                "season": "季節",
+                "seasons": {
+                    "spring": "櫻花季",
+                    "summer": "仲夏",
+                    "autumn": "紅葉季",
+                    "winter": "雪季"
                 }
             },
             "themes": {
@@ -1664,6 +1724,13 @@ const resources = {
                     "Budget": "平遊",
                     "Standard": "標準",
                     "Luxury": "豪華"
+                },
+                "season": "季節",
+                "seasons": {
+                    "spring": "櫻花季",
+                    "summer": "仲夏",
+                    "autumn": "紅葉季",
+                    "winter": "雪季"
                 }
             },
             "sort": {
@@ -2103,6 +2170,14 @@ const resources = {
                     "gallery": "相簿",
                     "badges": "勳章"
                 },
+                "badges_list": {
+                    "early_adopter": { "name": "早鳥先鋒", "desc": "喺 Travel Together 早期就加入咗。" },
+                    "jetsetter": { "name": "空中飛人", "desc": "開咗 5 個以上嘅行程。" },
+                    "explorer": { "name": "探險家", "desc": "去過 3 個以上唔同嘅國家。" },
+                    "contributor": { "name": "熱心貢獻", "desc": "有份參與社群協作或者報料。" },
+                    "influencer": { "name": "旅遊 KOL", "desc": "行程攞到 10 個 Like。" },
+                    "globetrotter": { "name": "環球旅行家", "desc": "足跡跨越咗 3 個以上嘅大洲。" }
+                },
                 "badges_title": "勳章同成就",
                 "badges_unlocked": "{{count}} / {{total}} 解鎖咗",
                 "map": {
@@ -2133,18 +2208,64 @@ const resources = {
                 "notebook": "手記"
             },
             "landing": {
+                "nav": {
+                    "features": "特色功能",
+                    "pricing": "計劃與價格",
+                    "faq": "常見問題",
+                    "login": "登入"
+                },
                 "title": "完美規劃你嘅旅程",
-                "subtitle": "AI 幫你規劃行程，實時同步",
-                "login_google": "用 Google 登入",
+                "subtitle": "AI 幫你規劃行程，實時同步，預算管理一Take過。",
+                "login_google": "免費開始規劃",
                 "login_desc": "同步晒所有裝置",
                 "demo_mode": "試玩模式",
                 "features": {
                     "collab_title": "即時協作",
-                    "collab_desc": "同親友一齊諗行程",
+                    "collab_desc": "同親友一齊諗行程，實時同步唔使等。",
                     "ai_title": "AI 助手 Jarvis",
-                    "ai_desc": "智能行程建議，AI 幫你諗",
+                    "ai_desc": "智能行程建議，AI 幫你諗埋度埋。",
                     "footprints_title": "旅遊足跡",
-                    "footprints_desc": "記錄你去過邊啲地方"
+                    "footprints_desc": "記錄你去過邊，用地圖視覺化你嘅人生旅程。"
+                },
+                "comparison": {
+                    "title": "仲用緊舊方法排行程？",
+                    "subtitle": "點解你要由 Excel 轉用 Travel Together？",
+                    "old_title": "傳統做法",
+                    "new_title": "Travel Together 做法",
+                    "old_1": "散亂嘅 Excel 檔案",
+                    "new_1": "一個 App 睇晒所有行程",
+                    "old_2": "WhatsApp 傾到亂晒龍",
+                    "new_2": "內建群組對話同投票",
+                    "old_3": "手動記住使咗幾多錢",
+                    "new_3": "自動實時拆數管理",
+                    "old_4": "普通 PDF 匯出",
+                    "new_4": "視覺化 A4 執位編輯器"
+                },
+                "pricing": {
+                    "title": "簡單透明嘅價格",
+                    "free_title": "個人玩家",
+                    "free_price": "$0",
+                    "free_desc": "適合個人遊或者小組旅行",
+                    "free_features": ["無限建立行程", "AI 基礎助手", "離線存取", "共享預算"],
+                    "pro_title": "專業旅人",
+                    "pro_price": "$9",
+                    "pro_desc": "適合重度使用者同排隊大師",
+                    "pro_features": ["Pro A4 執位器", "進階 AI 演算", "優先技術支援", "自訂匯出模板"]
+                },
+                "faq": {
+                    "title": "有問題想問？",
+                    "q1": "真係免費㗎？",
+                    "a1": "係！所有核心功能都係免費。我哋只會對進階 AI 同專業導出工具收費。",
+                    "q2": "冇網絡用唔用到？",
+                    "a2": "絕對用到。你嘅行程會儲存在本地，冇 SIM 卡都睇到個 Schedule。",
+                    "q3": "點樣安裝成 App (PWA)？",
+                    "a3": "iOS 用戶撳「分享」再「加入主畫面」；Android/Chrome 用戶撳網址欄一邊嘅「安裝」圖示。唔使經 App Store 直接玩！",
+                    "q4": "我啲資料安唔安全？",
+                    "a4": "絕對安全。我哋用業界標準加密，對話紀錄更有 SafeChat™ 端對端身份保護。",
+                    "q5": "最多可以幾多人一齊玩？",
+                    "a5": "一個行程支援最多 50 個成員！無論係班行、公司 Trip 定大家族旅行都一 Take 過。",
+                    "q6": "可以匯入現有行程嗎？",
+                    "a6": "可以，我哋嘅智能匯入工具可以讀取截圖嚟自動識別行程同收據。"
                 }
             },
             "onboarding": {

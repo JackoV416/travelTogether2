@@ -40,7 +40,7 @@ export async function getExchangeRates(baseCurrency = 'HKD') {
 
         // 2. 調用 API (ExchangeRate-API 免費版)
         // 註：免費版支援標準 HTTP 請求，無須 API Key (v4版)
-        console.log("Fetching new exchange rates for", baseCurrency);
+        // console.log("Fetching new exchange rates for", baseCurrency);
         const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${baseCurrency}`);
 
         if (!response.ok) {

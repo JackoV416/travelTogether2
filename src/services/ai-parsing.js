@@ -125,7 +125,7 @@ function recordRPDUsage(keyIndex) {
     const data = getRPDUsage();
     data.keys[keyIndex] = (data.keys[keyIndex] || 0) + 1;
     localStorage.setItem(RPD_TRACKER_KEY, JSON.stringify(data));
-    console.log(`[Jarvis] 📊 Key #${keyIndex} usage: ${data.keys[keyIndex]}/${RPD_LIMIT_PER_KEY}`);
+    // console.log(`[Jarvis] 📊 Key #${keyIndex} usage: ${data.keys[keyIndex]}/${RPD_LIMIT_PER_KEY}`);
 }
 
 /**
@@ -357,7 +357,7 @@ function rotateToNextKey() {
     currentModelIndex = 0; // Reset to first model for new key
 
     if (switched) {
-        console.log(`[Jarvis] 🔄 Switched to Key #${nextKey}`);
+        // console.log(`[Jarvis] 🔄 Switched to Key #${nextKey}`);
     }
 
     return true;
@@ -790,7 +790,7 @@ async function fileToBase64(file) {
  */
 async function extractTextFromPDF(file) {
     try {
-        console.log("[BentoPDF] Loading PDF.js...");
+        // console.log("[BentoPDF] Loading PDF.js...");
         // Dynamic import to avoid SSR issues
         const pdfjs = await import('pdfjs-dist');
 
@@ -808,7 +808,7 @@ async function extractTextFromPDF(file) {
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
 
-        console.log(`[BentoPDF] PDF loaded, pages: ${pdf.numPages}`);
+        // console.log(`[BentoPDF] PDF loaded, pages: ${pdf.numPages}`);
         let fullText = "";
 
         // Limit to first 5 pages to save time/memory
@@ -833,7 +833,7 @@ async function extractTextFromPDF(file) {
  */
 async function extractTextFromImage(file) {
     try {
-        console.log("[BentoPDF] Starting Local OCR (Tesseract)...");
+        // console.log("[BentoPDF] Starting Local OCR (Tesseract)...");
         const Tesseract = await import('tesseract.js');
         const worker = await Tesseract.createWorker('chi_tra+eng'); // Traditional Chinese + English
 
@@ -841,7 +841,7 @@ async function extractTextFromImage(file) {
         const text = ret.data.text;
 
         await worker.terminate();
-        console.log("[BentoPDF] OCR Complete, length:", text.length);
+        // console.log("[BentoPDF] OCR Complete, length:", text.length);
         return text;
     } catch (e) {
         console.warn("[BentoPDF] OCR failed:", e);
@@ -860,7 +860,7 @@ export async function smartParse(file, context = {}, userId = null) {
     if (file.type === 'application/pdf') {
         const text = await extractTextFromPDF(file);
         if (text && text.length > 50) {
-            console.log("[BentoPDF] valid text found, using Text Mode");
+            // console.log("[BentoPDF] valid text found, using Text Mode");
             return await parseItineraryWithAI(text, context, userId);
         }
     }
@@ -870,7 +870,7 @@ export async function smartParse(file, context = {}, userId = null) {
     // unless user specifically requested "Low Data Mode".
 
     // 3. Fallback to Vision
-    console.log("[BentoPDF] Text extraction insufficient, using Gemini Vision");
+    // console.log("[BentoPDF] Text extraction insufficient, using Gemini Vision");
     return await parseImageDirectly(file, context, userId);
 }
 

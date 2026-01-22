@@ -18,7 +18,8 @@ service cloud.firestore {
 
     // --- Users Collection ---
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId);
       
       // 🔒 AI Quota Tracking (V1.2.3)
       match /usage/ai_quota {
@@ -74,6 +75,19 @@ service cloud.firestore {
     match /settings/{docId} {
       allow read: if true; 
       allow write: if isAdmin();
+    }
+
+    // --- Metadata (V1.8.2+) ---
+    match /metadata/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // --- Feedback ---
+    match /feedback/{docId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated();
+      allow update: if isAdmin();
     }
 
     // --- Default Deny ---

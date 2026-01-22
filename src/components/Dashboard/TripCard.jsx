@@ -4,7 +4,7 @@ import { MapPin as MapIcon, Calendar, Shirt, Sun, Moon, CheckCircle2, Cloud, Fil
 import { getLocalizedCountryName, getLocalizedCityName, formatDate, getTripSummary, glassCard, getSmartTips } from '../../utils/tripUtils';
 import { COUNTRIES_DATA, DEFAULT_BG_IMAGE } from '../../constants/appData';
 
-const TripCard = ({ trip, currentLang, onSelect, setGlobalBg, cardWeather }) => {
+const TripCard = ({ trip, currentLang, onSelect, setGlobalBg, cardWeather, isDarkMode }) => {
     const { t } = useTranslation();
     const cities = (trip.cities && trip.cities.length > 0) ? trip.cities : (trip.city ? [trip.city] : []);
     const displayCity = cities.slice(0, 2).map(c => getLocalizedCityName(c, currentLang)).join(currentLang === 'en' ? ', ' : '、') + (cities.length > 2 ? '...' : '');
@@ -55,7 +55,7 @@ const TripCard = ({ trip, currentLang, onSelect, setGlobalBg, cardWeather }) => 
     return (
         <div
             onClick={() => { setGlobalBg(COUNTRIES_DATA[trip.country]?.image || DEFAULT_BG_IMAGE); onSelect(trip); }}
-            className="h-64 relative overflow-hidden group cursor-pointer hover:scale-[1.02] flex flex-col justify-end transition-all duration-500 rounded-2xl border border-slate-200 dark:border-white/5 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl shadow-lg"
+            className={`h-64 relative overflow-hidden group cursor-pointer ${glassCard(isDarkMode)} border-white/5 bg-slate-900/40 backdrop-blur-3xl shadow-2xl shadow-black/40`}
         >
             <div
                 className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"

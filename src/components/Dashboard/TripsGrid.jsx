@@ -2,6 +2,7 @@ import React from 'react';
 import { Plus, Globe, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { glassCard, getWeatherForecast } from '../../utils/tripUtils';
+import { buttonPrimary, buttonSecondary } from '../../constants/styles';
 import TripCard from './TripCard';
 import SkeletonLoader from '../Shared/SkeletonLoader';
 import EmptyState from '../Shared/EmptyState';
@@ -40,19 +41,19 @@ const TripsGrid = ({
                 <div className="flex gap-2">
                     <button
                         onClick={() => setIsSmartImportModalOpen(true)}
-                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm flex items-center gap-2 btn-hover-glow"
+                        className={`${buttonSecondary} !px-4 !py-2 text-sm text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/10`}
                     >
                         <Upload className="w-4 h-4" /> {t('dashboard.import') || '匯入'}
                     </button>
                     <button
                         onClick={() => setIsSmartExportOpen(true)}
-                        className="px-4 py-2 rounded-xl border border-purple-500/20 text-sm hover:bg-purple-500/10 transition-colors"
+                        className={`${buttonSecondary} !px-4 !py-2 text-sm border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10`}
                     >
                         {t('dashboard.export') || '匯出'}
                     </button>
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm flex items-center gap-2 btn-hover-glow"
+                        className={`${buttonPrimary} !px-4 !py-2 text-sm`}
                     >
                         <Plus className="w-4 h-4" /> {t('dashboard.create') || '建立'}
                     </button>
@@ -98,11 +99,13 @@ const TripsGrid = ({
                         </div>
                     ))}
                     <div
-                        className={`${glassCard(isDarkMode)} h-60 flex flex-col items-center justify-center text-center opacity-60 hover:opacity-100 cursor-pointer border-dashed hover:border-indigo-500 transition-all`}
+                        className={`${glassCard(isDarkMode)} h-64 flex flex-col items-center justify-center text-center opacity-40 hover:opacity-100 cursor-pointer border-dashed border-white/20 hover:border-indigo-500/50 transition-all`}
                         onClick={() => setIsCreateModalOpen(true)}
                     >
-                        <Plus className="w-10 h-10 mb-2 text-indigo-400" />
-                        <p className="font-bold">{t('dashboard.create_more') || '建立更多行程'}</p>
+                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                            <Plus className="w-6 h-6 text-indigo-400" />
+                        </div>
+                        <p className="font-bold text-slate-400 group-hover:text-white transition-colors">{t('dashboard.create_more') || '建立更多行程'}</p>
                     </div>
                 </div>
             )}

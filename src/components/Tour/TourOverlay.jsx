@@ -110,7 +110,7 @@ const TourOverlay = ({ isDarkMode }) => {
     // Welcome Screen (Step 0)
     if (currentStepData?.isWelcome) {
         return (
-            <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/70 backdrop-blur-xl animate-fade-in">
+            <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/70 backdrop-blur-xl animate-fade-in">
                 <div className={`max-w-lg mx-4 p-8 rounded-3xl shadow-2xl text-center ${isDarkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
                     {/* Icon */}
                     <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
@@ -152,7 +152,7 @@ const TourOverlay = ({ isDarkMode }) => {
     // Finish Screen
     if (currentStepData?.isFinish) {
         return (
-            <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/70 backdrop-blur-xl animate-fade-in">
+            <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/70 backdrop-blur-xl animate-fade-in">
                 <div className={`max-w-lg mx-4 p-8 rounded-3xl shadow-2xl text-center ${isDarkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
                     {/* Success Icon */}
                     <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-lg">

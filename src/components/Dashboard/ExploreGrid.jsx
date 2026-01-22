@@ -18,6 +18,7 @@ const ExploreGrid = ({ isDarkMode, onSelectTrip, userTrips }) => {
     const [selectedBudget, setSelectedBudget] = React.useState('All');
     const [selectedThemes, setSelectedThemes] = React.useState([]);
     const [selectedRating, setSelectedRating] = React.useState('All');
+    const [selectedSeason, setSelectedSeason] = React.useState(null);
 
     // Data State
     const [realTrips, setRealTrips] = React.useState([]);
@@ -106,7 +107,7 @@ const ExploreGrid = ({ isDarkMode, onSelectTrip, userTrips }) => {
     // Smart Recommendation & Filtering Engine
     React.useEffect(() => {
         let filtered = combinedData.filter(trip => {
-            // ... (Filter logic matches exactly logic from 94-119, assumed managed by React ref/deps or kept generic here)
+
             // 1. Search
             const matchesSearch = !searchQuery || (
                 (trip.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -120,13 +121,25 @@ const ExploreGrid = ({ isDarkMode, onSelectTrip, userTrips }) => {
             const matchesTheme = selectedThemes.length === 0 || (trip.tags && trip.tags.some(tag => selectedThemes.includes(tag)));
             const matchesRating = selectedRating === 'All' || (trip.rating || 0) >= selectedRating;
 
+            // Season Filter
+            const matchSeason = !selectedSeason || (() => {
+                if (!trip.startDate) return false;
+                const date = new Date(trip.startDate);
+                const month = date.getMonth() + 1;
+                if (selectedSeason === 'spring') return month >= 3 && month <= 5;
+                if (selectedSeason === 'summer') return month >= 6 && month <= 8;
+                if (selectedSeason === 'autumn') return month >= 9 && month <= 11;
+                if (selectedSeason === 'winter') return month === 12 || month <= 2;
+                return false;
+            })();
+
             let matchesBudget = true;
             const cost = trip.estimatedCost || 0;
             if (selectedBudget === 'Cheap') matchesBudget = cost < 5000;
             if (selectedBudget === 'Moderate') matchesBudget = cost >= 5000 && cost <= 15000;
             if (selectedBudget === 'Luxury') matchesBudget = cost > 15000;
 
-            return matchesSearch && matchesCountry && matchesCity && matchesTheme && matchesBudget && matchesRating;
+            return matchesSearch && matchesCountry && matchesCity && matchesTheme && matchesBudget && matchesRating && matchSeason;
         });
 
         // 3. Smart Ranking (Randomized)
@@ -192,7 +205,10 @@ const ExploreGrid = ({ isDarkMode, onSelectTrip, userTrips }) => {
         city: selectedCities,       // Now Array
         budget: selectedBudget,
         theme: selectedThemes,      // Now Array
-        rating: selectedRating
+        budget: selectedBudget,
+        theme: selectedThemes,
+        rating: selectedRating,
+        season: selectedSeason
     };
 
     const handleFilterChange = (key, value) => {
@@ -220,12 +236,14 @@ const ExploreGrid = ({ isDarkMode, onSelectTrip, userTrips }) => {
             else setSelectedThemes(prev => prev.includes(value) ? prev.filter(t => t !== value) : [...prev, value]);
         }
         else if (key === 'rating') setSelectedRating(value);
+        else if (key === 'season') setSelectedSeason(value);
         else if (key === 'clear') {
             setSelectedCountries([]);
             setSelectedCities([]);
             setSelectedBudget('All');
             setSelectedThemes([]);
             setSelectedRating('All');
+            setSelectedSeason(null);
         }
     };
 
@@ -276,30 +294,30 @@ const ExploreGrid = ({ isDarkMode, onSelectTrip, userTrips }) => {
                     <div
                         key={trip.id}
                         onClick={() => onSelectTrip && onSelectTrip(trip)}
-                        className={`break-inside-avoid mb-4 rounded-2xl overflow-hidden border transition-all duration-300 hover:scale-[1.02] cursor-pointer group relative ${glassCard(isDarkMode)} animate-fade-in`}
+                        className={`break-inside-avoid mb-4 rounded-3xl overflow-hidden border transition-all duration-500 hover:scale-[1.03] cursor-pointer group relative ${glassCard(isDarkMode)} border-white/5 shadow-2xl shadow-black/40 animate-fade-in`}
                     >
                         {/* Image Cover */}
                         <div className="relative aspect-[3/4] overflow-hidden">
                             <img
                                 src={trip.coverImage}
                                 alt={trip.name}
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-115"
                                 loading="lazy"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-80" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent opacity-90" />
 
                             {/* Top Badges */}
-                            <div className="absolute top-3 left-3 flex flex-wrap gap-1 max-w-[70%]">
+                            <div className="absolute top-4 left-4 flex flex-wrap gap-2 max-w-[85%]">
                                 {/* City Badge */}
-                                <span className="px-2 py-1 rounded-full bg-black/40 backdrop-blur-md text-white text-[10px] font-bold border border-white/10 flex items-center gap-1">
-                                    <MapPin className="w-3 h-3" /> {getLocalizedCityName(trip.city, i18n.language) || trip.city}
+                                <span className="px-2.5 py-1 rounded-full bg-slate-950/60 backdrop-blur-xl text-white text-[10px] font-black tracking-widest border border-white/10 flex items-center gap-1.5 shadow-lg">
+                                    <MapPin className="w-3 h-3 text-indigo-400" /> {getLocalizedCityName(trip.city, i18n.language) || trip.city}
                                 </span>
 
                                 {/* Season Badge */}
                                 {(() => {
                                     const season = getTripSeasonDisplay(trip.startDate, i18n.language);
                                     return season && (
-                                        <span className={`px-2 py-1 rounded-full backdrop-blur-md text-[10px] font-bold border border-white/10 flex items-center gap-1 ${season.bg}`}>
+                                        <span className={`px-2.5 py-1 rounded-full backdrop-blur-xl text-[10px] font-black tracking-widest border border-white/10 flex items-center gap-1.5 shadow-lg ${season.bg}`}>
                                             {season.text}
                                         </span>
                                     );
@@ -307,32 +325,32 @@ const ExploreGrid = ({ isDarkMode, onSelectTrip, userTrips }) => {
                             </div>
                         </div>
 
-                        <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                            <h4 className="font-bold text-lg leading-tight mb-2 drop-shadow-md">
+                        <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
+                            <h4 className="font-black text-xl leading-tight mb-3 drop-shadow-2xl group-hover:text-indigo-300 transition-colors">
                                 {((i18n.language?.includes('zh')) && trip.name_zh) ? trip.name_zh : trip.name}
                             </h4>
 
-                            <div className="flex items-center justify-between text-xs opacity-90 mb-2">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-full overflow-hidden border border-white/20 bg-white/10">
-                                        <img src={trip.author.avatar} alt={trip.author.name} className="w-full h-full object-cover" />
+                            <div className="flex items-center justify-between text-[11px] opacity-90 mb-4">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-7 h-7 rounded-full overflow-hidden border-2 border-white/20 bg-indigo-500/10 p-0.5">
+                                        <img src={trip.author.avatar} alt={trip.author.name} className="w-full h-full object-cover rounded-full" />
                                     </div>
-                                    <span className="font-medium truncate max-w-[80px]">{trip.author.name}</span>
+                                    <span className="font-black tracking-tight truncate max-w-[100px]">{trip.author.name}</span>
                                 </div>
-                                <div className="flex items-center gap-1 font-bold text-yellow-400">
-                                    <span>★</span> {Number(trip.rating).toFixed(1)} <span className="text-white/60 font-normal">({trip.reviews})</span>
+                                <div className="flex items-center gap-1 bg-black/40 px-2 py-1 rounded-lg backdrop-blur-md border border-white/5">
+                                    <span className="text-yellow-400">★</span> <span className="font-black">{Number(trip.rating).toFixed(1)}</span> <span className="text-white/40 font-bold ml-1">({trip.reviews})</span>
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-between text-[10px] text-white/70 border-t border-white/10 pt-2">
+                            <div className="flex items-center justify-between text-[10px] text-white/50 border-t border-white/5 pt-4">
                                 <div className="flex gap-2">
                                     {trip.tags?.slice(0, 2).map(tag => (
-                                        <span key={tag} className="bg-white/10 px-1.5 py-0.5 rounded">{t('themes.' + tag) || tag}</span>
+                                        <span key={tag} className="bg-indigo-500/10 text-indigo-300 px-2 py-0.5 rounded-md font-black tracking-widest uppercase border border-indigo-500/10">{t('themes.' + tag) || tag}</span>
                                     ))}
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="flex items-center gap-0.5"><Eye className="w-3 h-3" /> {trip.views > 1000 ? (trip.views / 1000).toFixed(1) + 'k' : trip.views}</span>
-                                    <span className="font-bold text-emerald-400">
+                                <div className="flex items-center gap-3">
+                                    <span className="flex items-center gap-1 font-bold"><Eye className="w-3.5 h-3.5 opacity-60" /> {trip.views > 1000 ? (trip.views / 1000).toFixed(1) + 'k' : trip.views}</span>
+                                    <span className="font-black text-emerald-400 text-xs">
                                         {trip.estimatedCost < 5000 ? '$' : trip.estimatedCost > 15000 ? '$$$' : '$$'}
                                     </span>
                                 </div>

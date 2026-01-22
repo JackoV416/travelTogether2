@@ -9,9 +9,9 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.8.1";
-export const APP_VERSION_TAG = "Export Modal & UI Polish";
-export const APP_LAST_UPDATE = '2026-01-21';
+export const APP_VERSION = "V1.8.4";
+export const APP_VERSION_TAG = "Audit Fixes";
+export const APP_LAST_UPDATE = "2026-01-22";
 export const JARVIS_VERSION = "V0.0.5-Beta";
 
 export const JARVIS_VERSION_HISTORY = [
@@ -95,6 +95,87 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.8.4",
+        date: "2026-01-22",
+        tag: "Audit Fixes & Polish",
+        desc: {
+            "zh-TW": "代碼審計修復與 PWA 優化",
+            "zh-HK": "代碼審計修復同 PWA 優化",
+            "en": "Code Audit Fixes & PWA Polish"
+        },
+        details: {
+            "zh-TW": [
+                "🛠️ Core: 移除大量遺留 Console Log，提升生產環境潔淨度",
+                "📱 UI: 修復 TourOverlay Z-Index 過高與 OfflineBanner 寫死位置問題",
+                "🛡️ Audit: 修正 i18n 語法錯誤與 PWA 相關配置"
+            ],
+            "zh-HK": [
+                "🛠️ Core: 移除大量遺留 Console Log，提升生產環境潔淨度",
+                "📱 UI: 修復 TourOverlay Z-Index 過高同 OfflineBanner 寫死位置問題",
+                "🛡️ Audit: 修正 i18n 語法錯誤同 PWA 相關配置"
+            ],
+            "en": [
+                "🛠️ Core: Cleaned up legacy Console Logs for production hygiene",
+                "📱 UI: Fixed TourOverlay Z-Index and OfflineBanner positioning logic",
+                "🛡️ Audit: Resolved i18n syntax errors and PWA configuration"
+            ]
+        }
+    },
+    {
+        ver: "V1.8.3",
+        date: "2026-01-22",
+        tag: "Docs & PWA Expansion",
+        desc: {
+            "zh-TW": "文檔全面升級與 PWA 強化",
+            "zh-HK": "文檔全面升級同 PWA 強化",
+            "en": "Comprehensive Docs & PWA Upgrade"
+        },
+        details: {
+            "zh-TW": [
+                "📄 FAQ: 擴充至 6 大項（安全性、PWA、協作上限）",
+                "📖 Docs: 新增架構圖與開發規範文檔 (.agent/docs/)",
+                "📱 PWA: 在 README 增加詳細安裝指引與離線優勢說明"
+            ],
+            "zh-HK": [
+                "📄 FAQ: 擴充至 6 大項（安全性、PWA、協作上限）",
+                "📖 Docs: 新增架構圖同開發規範文檔 (.agent/docs/)",
+                "📱 PWA: 喺 README 增加詳細安裝指引同離線優勢說明"
+            ],
+            "en": [
+                "📄 FAQ: Expanded to 6 items (Security, PWA, Collab)",
+                "📖 Docs: Added architecture and convention guides",
+                "📱 PWA: Detailed installation guide in README"
+            ]
+        }
+    },
+    {
+        ver: "V1.8.2",
+        date: "2026-01-22",
+        tag: "Aesthetic Unification",
+        desc: {
+            "zh-TW": "全局視覺統一與穩定性加固",
+            "zh-HK": "全局視覺統一同穩定性加固",
+            "en": "Global Aesthetic Unification & Hardening"
+        },
+        details: {
+            "zh-TW": [
+                "🎨 UI: 全局對齊 Indigo Glass 設計語言",
+                "🛡️ Firebase: 加固 Firestore 監聽器，解決權限報錯問題",
+                "🚀 PWA: 同步 Slate-950 主題色並優化 Splash Screen"
+            ],
+            "zh-HK": [
+                "🎨 UI: 全局對齊 Indigo Glass 設計語言",
+                "🛡️ Firebase: 加固 Firestore 監聽器，解決權限報錯問題",
+                "🚀 PWA: 同步 Slate-950 主題色同優化 Splash Screen"
+            ],
+            "en": [
+                "🎨 UI: Aligned all components to Indigo Glass design",
+                "🛡️ Firebase: Hardened Firestore listeners to prevent permission errors",
+                "🚀 PWA: Synced theme color and optimized splash screen"
+            ]
+        }
+    },
     {
         ver: "V1.8.1",
         date: "2026-01-21",
