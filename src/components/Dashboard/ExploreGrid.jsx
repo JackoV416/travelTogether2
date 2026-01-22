@@ -205,8 +205,6 @@ const ExploreGrid = ({ isDarkMode, onSelectTrip, userTrips }) => {
         city: selectedCities,       // Now Array
         budget: selectedBudget,
         theme: selectedThemes,      // Now Array
-        budget: selectedBudget,
-        theme: selectedThemes,
         rating: selectedRating,
         season: selectedSeason
     };

@@ -550,6 +550,7 @@ const App = () => {
 
     // --- Version Guard Listener ---
     useEffect(() => {
+        if (!user) return; // V1.8.4 Fix: Ensure auth before listening to protected metadata
         const unsub = onSnapshot(doc(db, "metadata", "app_info"), (d) => {
             if (d.exists()) {
                 const remote = d.data().latest_version;
@@ -562,7 +563,7 @@ const App = () => {
             console.warn("Metadata sync failed (likely permission):", err.message);
         });
         return unsub;
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         if (isDarkMode) document.documentElement.classList.add('dark');
@@ -626,7 +627,17 @@ const App = () => {
                             user={currentUser}
                             isDarkMode={isDarkMode}
                             toggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-                            onLogout={() => signOut(auth)}
+                            onLogout={async () => {
+                                try {
+                                    // Optional: Clear FCM token or other private data BEFORE signing out
+                                    // await clearUserTokens(user.uid); 
+                                    await signOut(auth);
+                                    // Force reload to clear memory states
+                                    window.location.reload();
+                                } catch (error) {
+                                    console.error("Logout error:", error);
+                                }
+                            }}
                             onTutorialStart={() => setView('tutorial')}
                             onBack={view !== 'dashboard' ? () => setView('dashboard') : null}
                             onViewChange={setView}

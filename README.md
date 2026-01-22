@@ -126,6 +126,16 @@ Jarvis 帶著更強大的功能回歸！重啟了全域對話、智能匯入與�
 - **📱 Mobile UX**: 優化手機版選單，新增「模擬例子」快捷入口。
 - **🎨 Tag UI**: 全面翻新行程分類 Tag 視覺，根據各類別主題色自動渲染，提升視覺層次感。
 
+## 🚀 V1.8.5: UX Hotfixes (2026-01-22)
+**V1.8.5: [Stability] 登入穩定性與交互修復！**
+緊急修復了 Landing Page 無反應按鈕，以及優化了登出時的權限處理機制。
+
+### ✨ V1.8.5 核心更新 (Updates)
+- **🔧 COOP Headers**: 修正 `vite.config.js` Header 設定，解決 Google Login Popup 被瀏覽器攔截問題。
+- **🖱️ Landing UX**: 修復 Dashboard Mockup Play Button 無法點擊的問題。
+- **🛡️ Auth Logic**: 修正 `Logout` 流程中的 Permission Denied 錯誤，增加 Auth Guard 與 Memory Clean 機制。
+- **⚡ Core Optimization**: 優化 Metadata Listener 觸發條件，減少不必要的讀取請求。
+
 ## 🚀 V1.8.4: Audit Fixes & Polish (2026-01-22)
 **V1.8.4: [Quality] 代碼審計修復與 PWA 優化！**
 修復了深層代碼問題，移除遺留日誌，並修正了 PWA 介面在不同裝置上的顯示問題。

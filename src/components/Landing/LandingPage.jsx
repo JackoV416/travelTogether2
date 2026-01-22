@@ -112,7 +112,11 @@ const LandingPage = ({ onLogin }) => {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent" />
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <button className="w-16 h-16 md:w-20 md:h-20 bg-white/10 backdrop-blur-2xl rounded-full flex items-center justify-center border border-white/20 hover:scale-110 transition-all group/play">
+                                <button
+                                    onClick={() => window.location.href = '/?view=tutorial'}
+                                    className="w-16 h-16 md:w-20 md:h-20 bg-white/10 backdrop-blur-2xl rounded-full flex items-center justify-center border border-white/20 hover:scale-110 transition-all group/play cursor-pointer z-20"
+                                    aria-label="Start Demo"
+                                >
                                     <MonitorPlay className="w-8 h-8 md:w-10 md:h-10 text-white group-hover/play:text-indigo-400 transition-colors" />
                                 </button>
                             </div>

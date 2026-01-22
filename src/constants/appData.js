@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.8.4";
-export const APP_VERSION_TAG = "Audit Fixes";
+export const APP_VERSION = "V1.8.5";
+export const APP_VERSION_TAG = "Hotfix & Polish";
 export const APP_LAST_UPDATE = "2026-01-22";
 export const JARVIS_VERSION = "V0.0.5-Beta";
 
@@ -95,6 +95,36 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.8.5",
+        date: "2026-01-22",
+        tag: "UX Hotfixes",
+        desc: {
+            "zh-TW": "登入穩定性與介面修復",
+            "zh-HK": "登入穩定性同介面修復",
+            "en": "Auth Stability & UX Fixes"
+        },
+        details: {
+            "zh-TW": [
+                "🛡️ Auth: 修復登出時的權限錯誤 (Permission Denied) 與 Race Condition",
+                "🔧 Config: 修正 COOP/COEP Headers 導致 Google Login Popup 無法自動關閉的問題",
+                "🖱️ Landing: 修復 Dashboard Mockup Play 按鈕無反應問題",
+                "⚡ Core: 優化版本檢查機制的觸發時機"
+            ],
+            "zh-HK": [
+                "🛡️ Auth: 修復登出嗰陣嘅權限錯誤 (Permission Denied) 同 Race Condition",
+                "🔧 Config: 修正 COOP/COEP Headers 導致 Google Login Popup 閂唔到嘅問題",
+                "🖱️ Landing: 修復 Dashboard Mockup Play 按鈕無反應問題",
+                "⚡ Core: 優化版本檢查機制嘅觸發時機"
+            ],
+            "en": [
+                "🛡️ Auth: Fixed permission errors and race conditions during logout",
+                "🔧 Config: Fixed COOP/COEP headers blocking Google Login Popup auto-close",
+                "🖱️ Landing: Fixed unresponsive Play button on Dashboard Mockup",
+                "⚡ Core: Optimized trigger timing for version checks"
+            ]
+        }
+    },
     {
         ver: "V1.8.4",
         date: "2026-01-22",
