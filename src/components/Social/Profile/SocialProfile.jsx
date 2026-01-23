@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Map, Image, Award, Share2, Grid, UserPlus, Settings } from 'lucide-react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../../../firebase';
+import React, { useState, useRef } from 'react';
+import { Map, Image, Award, Share2, Grid, UserPlus, Settings, Upload, Move, Check, X, Loader2, Camera } from 'lucide-react';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../../../firebase';
 import FootprintsLeafletMap from './FootprintsLeafletMap';
 import PhotoGallery from './PhotoGallery';
 import BadgesDisplay from './BadgesDisplay';
@@ -12,6 +13,91 @@ const SocialProfile = ({ user, currentUser, isOwnProfile, trips = [], isDarkMode
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState('footprints');
     const [enrichedTrips, setEnrichedTrips] = useState(trips);
+
+    // Banner Editor State
+    const [isEditingBanner, setIsEditingBanner] = useState(false);
+    const [bannerPosition, setBannerPosition] = useState(user.bannerPosition || 50); // 0-100 vertical position
+    const [uploadingBanner, setUploadingBanner] = useState(false);
+    const [tempBannerURL, setTempBannerURL] = useState(null);
+    const [copied, setCopied] = useState(false);
+    const bannerInputRef = useRef(null);
+
+    // Share Profile Handler
+    const handleShare = async () => {
+        const profileUrl = `${window.location.origin}/profile/${user.uid || user.id}`;
+        try {
+            await navigator.clipboard.writeText(profileUrl);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = profileUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
+
+    // Banner Upload Handler
+    const handleBannerUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            alert('請選擇圖片檔案');
+            return;
+        }
+
+        // Preview immediately
+        const previewUrl = URL.createObjectURL(file);
+        setTempBannerURL(previewUrl);
+        setIsEditingBanner(true);
+
+        // Upload to Firebase Storage
+        setUploadingBanner(true);
+        try {
+            const storageRef = ref(storage, `banners/${user.uid || user.id}/${Date.now()}_${file.name}`);
+            await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(storageRef);
+            setTempBannerURL(downloadURL);
+        } catch (err) {
+            console.error('Banner upload failed:', err);
+            alert('上傳失敗，請稍後再試');
+            setTempBannerURL(null);
+            setIsEditingBanner(false);
+        } finally {
+            setUploadingBanner(false);
+        }
+    };
+
+    // Save Banner Changes
+    const handleSaveBanner = async () => {
+        if (!tempBannerURL || !user.uid) return;
+
+        try {
+            await updateDoc(doc(db, 'users', user.uid), {
+                bannerURL: tempBannerURL,
+                bannerPosition: bannerPosition
+            });
+            setIsEditingBanner(false);
+            // Force refresh by updating local user object (parent should listen to changes)
+        } catch (err) {
+            console.error('Failed to save banner:', err);
+            alert('儲存失敗');
+        }
+    };
+
+    // Cancel Banner Edit
+    const handleCancelBanner = () => {
+        setTempBannerURL(null);
+        setIsEditingBanner(false);
+        setBannerPosition(user.bannerPosition || 50);
+    };
 
     // Sync props to local state
     React.useEffect(() => {
@@ -171,22 +257,105 @@ const SocialProfile = ({ user, currentUser, isOwnProfile, trips = [], isDarkMode
             <div className={`relative overflow-hidden rounded-3xl border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-xl`}>
                 {/* Cover Image - Use user.bannerURL if available */}
                 <div className="h-48 sm:h-64 bg-gray-200 relative overflow-hidden group">
-                    {user.bannerURL ? (
-                        <img src={user.bannerURL} alt="Cover" className="w-full h-full object-cover" />
+                    {/* Hidden File Input */}
+                    <input
+                        type="file"
+                        ref={bannerInputRef}
+                        onChange={handleBannerUpload}
+                        accept="image/*"
+                        className="hidden"
+                    />
+
+                    {/* Banner Image */}
+                    {(tempBannerURL || user.bannerURL) ? (
+                        <img
+                            src={tempBannerURL || user.bannerURL}
+                            alt="Cover"
+                            className="w-full h-full object-cover transition-all duration-300"
+                            style={{ objectPosition: `center ${bannerPosition}%` }}
+                        />
                     ) : (
                         <div className="w-full h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
                     )}
                     <div className="absolute inset-0 bg-black/20" />
 
-                    {/* Actions */}
-                    <div className="absolute top-4 right-4 flex gap-2">
-                        <button className="p-2 rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm transition-all">
-                            <Share2 className="w-5 h-5" />
+                    {/* Banner Edit Mode UI */}
+                    {isEditingBanner && (
+                        <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-4 z-20 animate-fade-in">
+                            {uploadingBanner ? (
+                                <div className="flex items-center gap-2 text-white">
+                                    <Loader2 className="w-6 h-6 animate-spin" />
+                                    <span className="font-bold">上傳中...</span>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="text-white text-center mb-2">
+                                        <Move className="w-8 h-8 mx-auto mb-2 opacity-80" />
+                                        <p className="text-sm font-bold">拖動調整相片位置</p>
+                                    </div>
+
+                                    {/* Position Slider */}
+                                    <div className="w-64 flex items-center gap-3">
+                                        <span className="text-white text-xs">上</span>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            value={bannerPosition}
+                                            onChange={(e) => setBannerPosition(Number(e.target.value))}
+                                            className="flex-1 h-2 bg-white/30 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-lg"
+                                        />
+                                        <span className="text-white text-xs">下</span>
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div className="flex gap-3 mt-2">
+                                        <button
+                                            onClick={handleCancelBanner}
+                                            className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-full font-bold text-sm flex items-center gap-2 transition-all"
+                                        >
+                                            <X className="w-4 h-4" /> 取消
+                                        </button>
+                                        <button
+                                            onClick={handleSaveBanner}
+                                            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-bold text-sm flex items-center gap-2 transition-all shadow-lg"
+                                        >
+                                            <Check className="w-4 h-4" /> 儲存
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Actions (Normal Mode) */}
+                    <div className={`absolute top-4 right-4 flex gap-2 transition-opacity ${isEditingBanner ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                        <button
+                            onClick={handleShare}
+                            className="p-2 rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm transition-all relative"
+                            title="分享個人檔案"
+                        >
+                            {copied ? <Check className="w-5 h-5 text-emerald-400" /> : <Share2 className="w-5 h-5" />}
+                            {copied && (
+                                <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-black/80 text-white text-xs rounded whitespace-nowrap">
+                                    已複製連結!
+                                </span>
+                            )}
                         </button>
+                        {isOwnProfile && (
+                            <button
+                                onClick={() => bannerInputRef.current?.click()}
+                                className="p-2 rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm transition-all"
+                                title="更換封面相片"
+                            >
+                                <Camera className="w-5 h-5" />
+                            </button>
+                        )}
                         {isOwnProfile && onEditProfile && (
                             <button
                                 onClick={onEditProfile}
                                 className="p-2 rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm transition-all"
+                                title="編輯個人資料"
                             >
                                 <Settings className="w-5 h-5" />
                             </button>
@@ -196,9 +365,9 @@ const SocialProfile = ({ user, currentUser, isOwnProfile, trips = [], isDarkMode
 
                 {/* Profile Info */}
                 <div className="px-6 pb-6 relative">
-                    <div className="flex flex-col sm:flex-row items-end -mt-12 sm:-mt-16 gap-6 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_auto] items-center md:items-end -mt-12 sm:-mt-16 gap-4 sm:gap-6 mb-6">
                         {/* Avatar */}
-                        <div className="relative group">
+                        <div className="relative group mx-auto md:mx-0">
                             <div className={`w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 ${isDarkMode ? 'border-gray-800' : 'border-white'} shadow-2xl overflow-hidden bg-white`}>
                                 <img
                                     src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(targetName)}&background=6366f1&color=fff`}
@@ -206,34 +375,34 @@ const SocialProfile = ({ user, currentUser, isOwnProfile, trips = [], isDarkMode
                                     className="w-full h-full object-cover"
                                 />
                             </div>
-                            {/* Level Badge (Mock for now) */}
-                            <div className="absolute bottom-0 right-0 w-8 h-8 bg-emerald-500 rounded-full border-4 border-white dark:border-gray-800 flex items-center justify-center text-[10px] text-white font-bold" title={t('profile.level') + " 5"}>
-                                5
+                            {/* Level Badge (Dynamic) */}
+                            <div className="absolute bottom-0 right-0 w-8 h-8 bg-emerald-500 rounded-full border-4 border-white dark:border-gray-800 flex items-center justify-center text-[10px] text-white font-bold shadow-lg" title={t('profile.level') + " " + (Math.min(10, Math.floor(stats.trips / 2) + 1))}>
+                                {Math.min(10, Math.floor(stats.trips / 2) + 1)}
                             </div>
                         </div>
 
                         {/* Text Info */}
-                        <div className="flex-1 text-center sm:text-left pt-2 sm:pt-0">
+                        <div className="text-center md:text-left pt-2 md:pt-0">
                             <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-1">{targetName}</h1>
-                            <p className="text-sm opacity-60 flex items-center justify-center sm:justify-start gap-2">
+                            <p className="text-sm opacity-60 flex items-center justify-center md:justify-start gap-2">
                                 <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 font-bold text-xs">{user.region || "Hong Kong"}</span>
                                 <span>{t('profile.joined')} {user.metadata?.creationTime ? new Date(user.metadata.creationTime).getFullYear() : '2024'}</span>
                             </p>
                         </div>
 
-                        {/* Stats */}
-                        <div className="flex gap-6 sm:gap-8 justify-center sm:justify-end py-4 sm:py-0 border-t sm:border-t-0 border-gray-100 dark:border-gray-700 w-full sm:w-auto mt-4 sm:mt-0">
-                            <div className="text-center">
-                                <div className="text-xl font-black">{stats.countries}</div>
-                                <div className="text-xs opacity-50 font-bold uppercase tracking-wider">{t('profile.stats.countries')}</div>
+                        {/* Stats - Avatar Menu Style */}
+                        <div className={`flex justify-around md:justify-end items-end gap-2 md:gap-8 py-4 md:py-0 px-4 md:px-0 rounded-xl md:rounded-none w-full md:w-auto mt-2 md:mt-0 ${isDarkMode ? 'bg-black/20 md:bg-transparent' : 'bg-gray-50/50 md:bg-transparent'}`}>
+                            <div className="flex flex-col items-center md:items-end min-w-[3rem]">
+                                <div className="text-xl font-black text-indigo-500 leading-none">{stats.countries}</div>
+                                <div className="text-[10px] opacity-40 font-bold uppercase tracking-tighter md:tracking-widest mt-1">{t('profile.stats.countries')}</div>
                             </div>
-                            <div className="text-center">
-                                <div className="text-xl font-black">{stats.trips}</div>
-                                <div className="text-xs opacity-50 font-bold uppercase tracking-wider">{t('profile.stats.trips')}</div>
+                            <div className="flex flex-col items-center md:items-end min-w-[3rem]">
+                                <div className="text-xl font-black text-purple-500 leading-none">{stats.trips}</div>
+                                <div className="text-[10px] opacity-40 font-bold uppercase tracking-tighter md:tracking-widest mt-1">{t('profile.stats.trips')}</div>
                             </div>
-                            <div className="text-center">
-                                <div className="text-xl font-black">{stats.continents}</div>
-                                <div className="text-xs opacity-50 font-bold uppercase tracking-wider">{t('profile.stats.continents')}</div>
+                            <div className="flex flex-col items-center md:items-end min-w-[3rem]">
+                                <div className="text-xl font-black text-emerald-500 leading-none">{stats.continents}</div>
+                                <div className="text-[10px] opacity-40 font-bold uppercase tracking-tighter md:tracking-widest mt-1">{t('profile.stats.continents')}</div>
                             </div>
                         </div>
                     </div>

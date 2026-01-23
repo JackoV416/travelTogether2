@@ -9,9 +9,9 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "V1.8.5";
-export const APP_VERSION_TAG = "Hotfix & Polish";
-export const APP_LAST_UPDATE = "2026-01-22";
+export const APP_VERSION = "1.9.0";
+export const APP_VERSION_TAG = "Social Revolution";
+export const APP_LAST_UPDATE = "2026-01-23";
 export const JARVIS_VERSION = "V0.0.5-Beta";
 
 export const JARVIS_VERSION_HISTORY = [
@@ -96,6 +96,50 @@ export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086
 
 export const VERSION_HISTORY = [
     {
+        ver: "V1.9.0",
+        date: "2026-01-23",
+        tag: "Social Revolution & UX Evolution",
+        desc: {
+            "zh-TW": "社交功能革命性升級與介面優化",
+            "zh-HK": "社交功能革命性升級同介面優化",
+            "en": "Social Revolution & UX Evolution"
+        },
+        details: {
+            "zh-TW": [
+                "🎨 Profile: 全新 Grid 佈局個人頁面，完美對齊足跡、相簿與勳章",
+                "🔗 Fork: 實裝「複製行程」功能，一鍵 Deep Clone 公開行程",
+                "🏅 Level: 動態等級系統上線，根據行程數量自動升級",
+                "🌍 i18n: 全面修復 Budget Chart 翻譯，支援中英雙語切換",
+                "✨ Footer: 全面重構為 Premium 玻璃感介面，優化資訊佈局",
+                "📤 Share: 整合分享連結至行程設定中的「公開行程」開關",
+                "🔎 Nav: 修復 PWA 底部導航搜尋按鈕，觸發全域指令集 (Command Palette)",
+                "📱 UI: 優化手機版檔案頁面，頭像居中並對齊視覺比例"
+            ],
+            "zh-HK": [
+                "🎨 Profile: 全新 Grid 佈局個人頁面，完美對齊足跡、相簿同勳章",
+                "🔗 Fork: 實裝「複製行程」功能，一鍵 Deep Clone 公開行程",
+                "🏅 Level: 動態等級系統上線，根據行程數量自動升級",
+                "🌍 i18n: 全面修復 Budget Chart 翻譯，支援中英雙語切換",
+                "✨ Footer: 全面重構為 Premium 玻璃感介面，優化資訊佈局",
+                "📤 Share: 整合分享連結至行程設定入面嘅「公開行程」開關",
+                "🔎 Nav: 修復 PWA 底部導航搜尋按鈕，觸發全域指令集 (Command Palette)",
+                "📱 UI: 優化手機版檔案頁面，頭像居中並對齊視覺比例"
+            ],
+            "en": [
+                "🎨 Profile: Brand new Grid layout for perfect alignment of footprints & badges",
+                "🔗 Fork: Implemented 'Fork Trip' to deep clone public itineraries",
+                "🏅 Level: Dynamic leveling system based on trip count",
+                "🌍 i18n: Full localization audit for Budget Charts",
+                "✨ Footer: Reconstructed premium glassmorphic layout for better info balance",
+                "📤 Share: Integrated 'Copy Link' directly into Public/Private toggle",
+                "🔎 Nav: Fixed PWA bottom nav search to trigger Command Palette",
+                "📱 UI: Centered mobile profile avatar and optimized layout proportions"
+            ]
+        }
+    },
+
+
+    {
         ver: "V1.8.5",
         date: "2026-01-22",
         tag: "UX Hotfixes",
@@ -108,551 +152,17 @@ export const VERSION_HISTORY = [
             "zh-TW": [
                 "🛡️ Auth: 修復登出時的權限錯誤 (Permission Denied) 與 Race Condition",
                 "🔧 Config: 修正 COOP/COEP Headers 導致 Google Login Popup 無法自動關閉的問題",
-                "🖱️ Landing: 修復 Dashboard Mockup Play 按鈕無反應問題",
-                "⚡ Core: 優化版本檢查機制的觸發時機"
+                "🖱️ Landing: 修復 Dashboard Mockup Play 按鈕無反應問題"
             ],
             "zh-HK": [
                 "🛡️ Auth: 修復登出嗰陣嘅權限錯誤 (Permission Denied) 同 Race Condition",
                 "🔧 Config: 修正 COOP/COEP Headers 導致 Google Login Popup 閂唔到嘅問題",
-                "🖱️ Landing: 修復 Dashboard Mockup Play 按鈕無反應問題",
-                "⚡ Core: 優化版本檢查機制嘅觸發時機"
+                "🖱️ Landing: 修復 Dashboard Mockup Play 按鈕無反應問題"
             ],
             "en": [
                 "🛡️ Auth: Fixed permission errors and race conditions during logout",
                 "🔧 Config: Fixed COOP/COEP headers blocking Google Login Popup auto-close",
-                "🖱️ Landing: Fixed unresponsive Play button on Dashboard Mockup",
-                "⚡ Core: Optimized trigger timing for version checks"
-            ]
-        }
-    },
-    {
-        ver: "V1.8.4",
-        date: "2026-01-22",
-        tag: "Audit Fixes & Polish",
-        desc: {
-            "zh-TW": "代碼審計修復與 PWA 優化",
-            "zh-HK": "代碼審計修復同 PWA 優化",
-            "en": "Code Audit Fixes & PWA Polish"
-        },
-        details: {
-            "zh-TW": [
-                "🛠️ Core: 移除大量遺留 Console Log，提升生產環境潔淨度",
-                "📱 UI: 修復 TourOverlay Z-Index 過高與 OfflineBanner 寫死位置問題",
-                "🛡️ Audit: 修正 i18n 語法錯誤與 PWA 相關配置"
-            ],
-            "zh-HK": [
-                "🛠️ Core: 移除大量遺留 Console Log，提升生產環境潔淨度",
-                "📱 UI: 修復 TourOverlay Z-Index 過高同 OfflineBanner 寫死位置問題",
-                "🛡️ Audit: 修正 i18n 語法錯誤同 PWA 相關配置"
-            ],
-            "en": [
-                "🛠️ Core: Cleaned up legacy Console Logs for production hygiene",
-                "📱 UI: Fixed TourOverlay Z-Index and OfflineBanner positioning logic",
-                "🛡️ Audit: Resolved i18n syntax errors and PWA configuration"
-            ]
-        }
-    },
-    {
-        ver: "V1.8.3",
-        date: "2026-01-22",
-        tag: "Docs & PWA Expansion",
-        desc: {
-            "zh-TW": "文檔全面升級與 PWA 強化",
-            "zh-HK": "文檔全面升級同 PWA 強化",
-            "en": "Comprehensive Docs & PWA Upgrade"
-        },
-        details: {
-            "zh-TW": [
-                "📄 FAQ: 擴充至 6 大項（安全性、PWA、協作上限）",
-                "📖 Docs: 新增架構圖與開發規範文檔 (.agent/docs/)",
-                "📱 PWA: 在 README 增加詳細安裝指引與離線優勢說明"
-            ],
-            "zh-HK": [
-                "📄 FAQ: 擴充至 6 大項（安全性、PWA、協作上限）",
-                "📖 Docs: 新增架構圖同開發規範文檔 (.agent/docs/)",
-                "📱 PWA: 喺 README 增加詳細安裝指引同離線優勢說明"
-            ],
-            "en": [
-                "📄 FAQ: Expanded to 6 items (Security, PWA, Collab)",
-                "📖 Docs: Added architecture and convention guides",
-                "📱 PWA: Detailed installation guide in README"
-            ]
-        }
-    },
-    {
-        ver: "V1.8.2",
-        date: "2026-01-22",
-        tag: "Aesthetic Unification",
-        desc: {
-            "zh-TW": "全局視覺統一與穩定性加固",
-            "zh-HK": "全局視覺統一同穩定性加固",
-            "en": "Global Aesthetic Unification & Hardening"
-        },
-        details: {
-            "zh-TW": [
-                "🎨 UI: 全局對齊 Indigo Glass 設計語言",
-                "🛡️ Firebase: 加固 Firestore 監聽器，解決權限報錯問題",
-                "🚀 PWA: 同步 Slate-950 主題色並優化 Splash Screen"
-            ],
-            "zh-HK": [
-                "🎨 UI: 全局對齊 Indigo Glass 設計語言",
-                "🛡️ Firebase: 加固 Firestore 監聽器，解決權限報錯問題",
-                "🚀 PWA: 同步 Slate-950 主題色同優化 Splash Screen"
-            ],
-            "en": [
-                "🎨 UI: Aligned all components to Indigo Glass design",
-                "🛡️ Firebase: Hardened Firestore listeners to prevent permission errors",
-                "🚀 PWA: Synced theme color and optimized splash screen"
-            ]
-        }
-    },
-    {
-        ver: "V1.8.1",
-        date: "2026-01-21",
-        tag: "Export Modal & UI Polish",
-        desc: {
-            "zh-TW": "執位器頁碼與登入頁置中修復",
-            "zh-HK": "執位器頁碼同登入頁置中修復",
-            "en": "Export Modal Pagination & Landing UI Polish"
-        },
-        details: {
-            "zh-TW": [
-                "📄 PDF: 實作跨分頁（含附錄）動態頁碼追踪",
-                "🎯 UI: 修正登入頁 (Landing Page) 垂直居中問題",
-                "🔧 Fix: 解決 pagedItems 讀取時序產生的 ReferenceError 崩潰",
-                "🎨 Polish: 簡化執位器頁碼顯示，僅保留專業頁腳與狀態欄同步"
-            ],
-            "zh-HK": [
-                "📄 PDF: 實作跨分頁（含附錄）動態頁碼追踪",
-                "🎯 UI: 修正登入頁 (Landing Page) 垂直居中問題",
-                "🔧 Fix: 解決 pagedItems 讀取時序產生嘅 ReferenceError 崩潰",
-                "🎨 Polish: 簡化執位器頁碼顯示，僅保留專業頁腳同狀態欄同步"
-            ],
-            "en": [
-                "📄 PDF: Implemented continuous dynamic pagination across itineraries and appendices",
-                "🎯 UI: Fixed Landing Page vertical alignment (centered layout)",
-                "🔧 Fix: Resolved critical ReferenceError crash (pagedItems initialization timing)",
-                "🎨 Polish: Simplified Export Modal indicators to professional footer and synced status bar"
-            ]
-        }
-    },
-    {
-        ver: "V1.8.0",
-        date: "2026-01-21",
-        tag: "Performance Audit & Optimization",
-        desc: {
-            "zh-TW": "性能優化與懶載入架構",
-            "zh-HK": "性能優化同懶載入架構",
-            "en": "Performance Optimization & Lazy Loading"
-        },
-        details: {
-            "zh-TW": [
-                "⚡ Perf: 實施全域懶加載 (Lazy Loading) 策略",
-                "📦 Build: 優化 Vite Chunks 分拆，提升快取命中率",
-                "穩定性提升: 修復 App.jsx 渲染結構與邏輯回歸"
-            ],
-            "zh-HK": [
-                "⚡ Perf: 實施全域懶加載 (Lazy Loading) 策略",
-                "📦 Build: 優化 Vite Chunks 分拆，提升快取命中率",
-                "穩定性提升: 修復 App.jsx 渲染結構同埋邏輯回歸"
-            ],
-            "en": [
-                "⚡ Perf: Implemented Global Lazy Loading strategy",
-                "📦 Build: Optimized Vite Chunks for better caching",
-                "Stability: Fixed App.jsx rendering structure & logic regressions"
-            ]
-        }
-    },
-    {
-        ver: "V1.7.6",
-        date: "2026-01-21",
-        tag: "Pro Editor Robustness & UI Polish",
-        desc: {
-            "zh-TW": "執位器穩定性與 UI 優化",
-            "zh-HK": "執位器穩定性同 UI 優化",
-            "en": "Pro Editor Stability & UI Polish"
-        },
-        details: {
-            "zh-TW": [
-                "🔧 Fix: 修復 SmartExportModal 500 錯誤與語法缺失",
-                "🖼️ Image: 引入 getSmartItemImage 智能配圖，解決白底問題",
-                "🎨 UI: 解決 MenuBar 與儲存按鈕重疊問題，優化 Header 間距",
-                "🧹 TipTap: 移除重複 Extension，解決 Link/Underline 衝突警告"
-            ],
-            "zh-HK": [
-                "🔧 Fix: 修復 SmartExportModal 500 錯誤同埋語法缺失",
-                "🖼️ Image: 引入 getSmartItemImage 智能配圖，解決白底問題",
-                "🎨 UI: 解決 MenuBar 同埋儲存按鈕重疊問題，優化 Header 間距",
-                "🧹 TipTap: 移除重複 Extension，解決 Link/Underline 衝突警告"
-            ],
-            "en": [
-                "🔧 Fix: Resolved SmartExportModal 500 error & syntax glitches",
-                "🖼️ Image: Integrated getSmartItemImage for consistent visuals",
-                "🎨 UI: Fixed overlap between MenuBar and Global Actions",
-                "🧹 TipTap: Resolved duplicate extension warnings (Link/Underline)"
-            ]
-        }
-    },
-    {
-        ver: "V1.7.0",
-        date: "2026-01-21",
-        tag: "PDF Preview & Feature Expansion",
-        desc: {
-            "zh-TW": "PDF 預覽編輯與功能擴展",
-            "zh-HK": "PDF 預覽編輯同功能擴展",
-            "en": "PDF Preview & Edit with Feature Expansion"
-        },
-        details: {
-            "zh-TW": [
-                "📄 PDF: 新增預覽模式，可選樣式、範圍、每頁項目數",
-                "🎨 Template: 支援 Modern/Glass/Retro/Compact/Vibrant 五種風格",
-                "✋ Pro Editor: 拖拽排序 + Word-like 編輯 (修改名稱/時間/描述)",
-                "🔧 Refactor: Tutorial 邏輯統一至 TourContext"
-            ],
-            "zh-HK": [
-                "📄 PDF: 新增預覽模式，可揀樣式、範圍、每頁項目數",
-                "🎨 Template: 支援 Modern/Glass/Retro/Compact/Vibrant 五種風格",
-                "✋ Pro Editor: 拖拽排序 + Word-like 編輯 (改名稱/時間/描述)",
-                "🔧 Refactor: Tutorial 邏輯統一至 TourContext"
-            ],
-            "en": [
-                "📄 PDF: New Preview Mode with template, scope, items per page",
-                "🎨 Template: 5 styles - Modern/Glass/Retro/Compact/Vibrant",
-                "✋ Pro Editor: Drag-and-drop + Word-like inline editing (name/time/desc)",
-                "🔧 Refactor: Unified Tutorial logic into TourContext"
-            ]
-        }
-    },
-    {
-        ver: "V1.6.0",
-        date: "2026-01-16",
-        tag: "Advanced Performance & Polish",
-        desc: {
-            "zh-TW": "網站效能優化與 PWA 體驗升級",
-            "zh-HK": "網站效能優化同 PWA 體驗升級",
-            "en": "Website Performance Optimization & PWA Polish"
-        },
-        details: {
-            "zh-TW": [
-                "⚡ Perf: 實施 Code Splitting (Modals) 減少首屏體積",
-                "📈 SEO: 引入 react-helmet-async 動態 Meta Tags",
-                "🪜 UX: 新增互動式教學 (Tutorial) 與 Loading Skeletons"
-            ],
-            "zh-HK": [
-                "⚡ Perf: 實施 Code Splitting (Modals) 減少首屏體積",
-                "📈 SEO: 引入 react-helmet-async 動態 Meta Tags",
-                "🪜 UX: 新增互動式教學 (Tutorial) 同 Loading Skeletons"
-            ],
-            "en": [
-                "⚡ Perf: Implemented Code Splitting (Modals) for faster load",
-                "📈 SEO: Added react-helmet-async for dynamic Meta Tags",
-                "🪜 UX: Added Interactive Tutorial & Loading Skeletons"
-            ]
-        }
-    },
-    {
-        ver: "V1.5.2",
-        date: "2026-02-16",
-        tag: "Local Trip Logic",
-        desc: {
-            "zh-TW": "本地行程邏輯 (Staycation) 與智能 UI 隱藏",
-            "zh-HK": "本地行程邏輯 (Staycation) 同智能 UI 隱藏",
-            "en": "Local Trip Logic (Staycation) & Smart UI Hiding"
-        },
-        details: {
-            "zh-TW": [
-                "🏠 Logic: 智能識別本地行程 (Staycation)",
-                "✈️ UI: 本地行程自動隱藏機票與入境選項",
-                "🤖 AI: Jarvis 自動過濾不相關的交通建議"
-            ],
-            "zh-HK": [
-                "🏠 Logic: 智能識別本地行程 (Staycation)",
-                "✈️ UI: 本地行程自動隱藏機票同入境選項",
-                "🤖 AI: Jarvis 自動過濾唔相關嘅交通建議"
-            ],
-            "en": [
-                "🏠 Logic: Smart detection for Local Trips",
-                "✈️ UI: Auto-hide Flight/Immigration options",
-                "🤖 AI: Jarvis filters irrelevant transport suggestions"
-            ]
-        }
-    },
-    {
-        ver: "V1.5.1",
-        date: "2026-01-16",
-        tag: "Logic & Polish",
-        desc: {
-            "zh-TW": "Dashboard 邏輯修復與細節打磨",
-            "zh-HK": "Dashboard 邏輯修復同細節打磨",
-            "en": "Dashboard Logic Fixes & Polish"
-        },
-        details: {
-            "zh-TW": [
-                "🧠 Logic: 修復「重點提醒」顯示過期行程問題",
-                "⏳ UI: 優化行程卡片倒數與持續時間顯示",
-                "🛡️ Audit: 深度審查與效能優化"
-            ],
-            "zh-HK": [
-                "🧠 Logic: 修復「重點提醒」顯示過期行程問題",
-                "⏳ UI: 優化行程卡片倒數同持續時間顯示",
-                "🛡️ Audit: 深度審查與效能優化"
-            ],
-            "en": [
-                "🧠 Logic: Fixed 'Key Reminders' showing past trips",
-                "⏳ UI: Improved trip card duration/countdown labels",
-                "🛡️ Audit: Deep audit & performance optimization"
-            ]
-        }
-    },
-    {
-        ver: "V1.5.0",
-        date: "2026-01-16",
-        tag: "Global Deep Audit",
-        desc: {
-            "zh-TW": "圖像完整性修復與代碼大掃除",
-            "zh-HK": "圖像完整性修復同代碼大掃除",
-            "en": "Image Integrity Fixes & Codebase Cleanup"
-        },
-        details: {
-            "zh-TW": [
-                "🖼️ Image Resurrection: 修復了 45+ 個失效的 Unsplash 鏈接 (404)",
-                "🔄 Anti-Duplicate: 優化了地標圖像的重複性，確保可靠性優先",
-                "🧹 Code Health: 移除 Zombie Logs 並驗證 React Patterns",
-                "🛡️ Stability: 引入自動化審計腳本 (audit_images.js)"
-            ],
-            "zh-HK": [
-                "🖼️ Image Resurrection: 修復咗 45+ 個失效嘅 Unsplash 鏈接 (404)",
-                "🔄 Anti-Duplicate: 優化咗地標圖像嘅重複性，確保可靠性優先",
-                "🧹 Code Health: 移除 Zombie Logs 並驗證 React Patterns",
-                "🛡️ Stability: 引入自動化審計腳本 (audit_images.js)"
-            ],
-            "en": [
-                "🖼️ Image Resurrection: Fixed 45+ dead Unsplash links (404) with robust fallbacks",
-                "🔄 Anti-Duplicate: Optimized landmark image diversity for reliability",
-                "🧹 Code Health: Removed zombie logs and verified React patterns",
-                "🛡️ Stability: Introduced automated audit scripts"
-            ]
-        }
-    },
-    {
-        ver: "V1.4.9",
-        date: "2026-01-16",
-        tag: "Mock Data Hotfix",
-        desc: {
-            "zh-TW": "模擬數據熱修復與圖像穩定性",
-            "zh-HK": "模擬數據熱修復同圖像穩定性",
-            "en": "Mock Data Hotfix & Image Stability"
-        },
-        details: {
-            "zh-TW": [
-                "🔥 Hotfix: 修復了 Mock Trip 中的失效圖像連結 (Unsplash 404)",
-                "🐛 Bug Fix: 修正了 MapView2 的 ClassName 警告",
-                "⚡ Perf: 優化了 mockDataGenerator 的執行效率"
-            ],
-            "zh-HK": [
-                "🔥 Hotfix: 修復咗 Mock Trip 入面嘅失效圖像連結 (Unsplash 404)",
-                "🐛 Bug Fix: 修正咗 MapView2 嘅 ClassName 警告",
-                "⚡ Perf: 優化咗 mockDataGenerator 嘅執行效率"
-            ],
-            "en": [
-                "🔥 Hotfix: Resolved dead image links in Mock Trips",
-                "🐛 Bug Fix: Fixed ClassName warnings in MapView2",
-                "⚡ Perf: Optimized mockDataGenerator efficiency"
-            ]
-        }
-    },
-    {
-        ver: "V1.4.5",
-        date: "2026-01-14",
-        tag: "Performance Tuning",
-        desc: {
-            "zh-TW": "效能調優與 Lazy Loading",
-            "zh-HK": "效能調優同 Lazy Loading",
-            "en": "Performance Tuning & Lazy Loading"
-        },
-        details: {
-            "zh-TW": [
-                "⚡ Lazy Loading: 對 TripDetailContent 實施延遲加載",
-                "📉 Bundle Size: 減少了 20% 的初始加載體積",
-                "🎨 UI: 優化了 Loading 狀態的過渡動畫"
-            ],
-            "zh-HK": [
-                "⚡ Lazy Loading: 對 TripDetailContent 實施延遲加載",
-                "📉 Bundle Size: 減少咗 20% 嘅初始加載體積",
-                "🎨 UI: 優化咗 Loading 狀態嘅過渡動畫"
-            ],
-            "en": [
-                "⚡ Lazy Loading: Implemented lazy loading for TripDetailContent",
-                "📉 Bundle Size: Reduced initial bundle size by 20%",
-                "🎨 UI: Optimized loading state transitions"
-            ]
-        }
-    },
-    {
-        ver: "V1.4.0",
-        date: "2026-01-12",
-        tag: "Mock Engine Upgrade",
-        desc: {
-            "zh-TW": "模擬數據引擎升級 (Public Data)",
-            "zh-HK": "模擬數據引擎升級 (Public Data)",
-            "en": "Mock Engine Upgrade (Public Data)"
-        },
-        details: {
-            "zh-TW": [
-                "🏭 Mock Engine: 全新 publicTripsData 結構，支援動態生成",
-                "🗺️ Routes: 新增東京、大阪、台北等標準行程模板",
-                "🖼️ Smart Images: 引入 getSmartItemImage 智能配圖邏輯"
-            ],
-            "zh-HK": [
-                "🏭 Mock Engine: 全新 publicTripsData 結構，支援動態生成",
-                "🗺️ Routes: 新增東京、大阪、台北等標準行程模板",
-                "🖼️ Smart Images: 引入 getSmartItemImage 智能配圖邏輯"
-            ],
-            "en": [
-                "🏭 Mock Engine: New publicTripsData structure supporting dynamic generation",
-                "🗺️ Routes: Added standard trip templates for Tokyo, Osaka, Taipei",
-                "🖼️ Smart Images: Introduced getSmartItemImage logic"
-            ]
-        }
-    },
-    {
-        ver: "V1.3.5",
-        date: "2026-01-10",
-        tag: "Global Shortcuts",
-        desc: {
-            "zh-TW": "全域快捷鍵與 UI 優化",
-            "zh-HK": "全域快捷鍵同 UI 優化",
-            "en": "Global Shortcuts & UI Polish"
-        },
-        details: {
-            "zh-TW": [
-                "⌨️ Shortcuts: 新增 Cmd+K 全域搜尋與 Cmd+/ 教學快捷鍵",
-                "🎨 UI Polish: 優化了 Header 按鈕的工具提示 (Tooltip)",
-                "📱 Mobile: 改進了手機版的觸控反饋區域"
-            ],
-            "zh-HK": [
-                "⌨️ Shortcuts: 新增 Cmd+K 全域搜尋同 Cmd+/ 教學快捷鍵",
-                "🎨 UI Polish: 優化咗 Header 按鈕嘅工具提示 (Tooltip)",
-                "📱 Mobile: 改進咗手機版嘅觸控反饋區域"
-            ],
-            "en": [
-                "⌨️ Shortcuts: Added Cmd+K global search and Cmd+/ tutorial shortcuts",
-                "🎨 UI Polish: Improved tooltip display for Header buttons",
-                "📱 Mobile: Enhanced touch target areas for mobile"
-            ]
-        }
-    },
-    {
-        ver: "V1.3.0",
-        date: "2026-01-09",
-        tag: "Stability Release & AI Pause",
-        desc: {
-            "zh-TW": "穩定性更新與 Jarvis AI 暫時維護",
-            "zh-HK": "穩定性更新同 Jarvis AI 暫時維護",
-            "en": "Stability Release & Temporary AI Pause"
-        },
-        details: {
-            "zh-TW": [
-                "⏸️ AI Pause: 為進行核心邏輯升級，Jarvis 功能 (聊天/生成) 暫時停用，將於下個版本回歸",
-                "👤 Profile: 社交檔案頁面顯示優化與連結修復",
-                "🔧 Fix: 修復多個核心組件的潛在崩潰問題",
-                "⚡ Perf: 提升整體應用加載速度與穩定性",
-                "💰 Global: 修復匯率計算機顯示 0.0000 的問題 (API Fallback)"
-            ],
-            "zh-HK": [
-                "⏸️ AI Pause: 為咗做核心邏輯升級，Jarvis 功能 (聊天/生成) 暫時停用，下個版本會加返",
-                "👤 Profile: 社交檔案頁面顯示優化同埋連結修復",
-                "🔧 Fix: 修復自多個核心組件嘅潛在崩潰問題",
-                "⚡ Perf: 提升整體 App 加載速度同穩定性",
-                "💰 Global: 修復匯率計算機顯示 0.0000 嘅問題 (API Fallback)"
-            ],
-            "en": [
-                "⏸️ AI Pause: Jarvis features (Chat/Gen) temporarily disabled for core upgrades, returning in next minor version",
-                "👤 Profile: Improved Social Profile display and fixed links",
-                "🔧 Fix: Resolved potential crashes in core components",
-                "⚡ Perf: Improved overall application loading speed and stability",
-                "💰 Global: Fixed Currency Converter showing 0.0000 (Robust Fallback)"
-            ]
-        }
-    },
-    {
-        ver: "V1.2.6",
-        date: "2026-01-01",
-        tag: "The Ultimate View",
-        desc: {
-            "zh-TW": "極致視圖與智能體驗大升級",
-            "zh-HK": "極致視圖同智能體驗大升級",
-            "en": "The Ultimate View & Intelligence Upgrade"
-        },
-        details: {
-            "zh-TW": [
-                "🎨 UI: 全新 Card Design 與動態佈局",
-                "⚡ Perf: 核心渲染引擎重寫",
-                "🗺️ Map: 加入互動式地圖預覽"
-            ],
-            "zh-HK": [
-                "🎨 UI: 全新 Card Design 同動態佈局",
-                "⚡ Perf: 核心渲染引擎重寫",
-                "🗺️ Map: 加入互動式地圖預覽"
-            ],
-            "en": [
-                "🎨 UI: Brand new Card Design and dynamic layout",
-                "⚡ Perf: Core rendering engine rewrite",
-                "🗺️ Map: Added interactive map preview"
-            ]
-        }
-    },
-    {
-        ver: "V1.1.0",
-        date: "2025-12-15",
-        tag: "Core Expansion",
-        desc: {
-            "zh-TW": "核心功能擴展與體驗優化",
-            "zh-HK": "核心功能擴展同體驗優化",
-            "en": "Core Expansion & UX Improvements"
-        },
-        details: {
-            "zh-TW": [
-                "✨ Features: 新增天氣預報與匯率計算工具",
-                "📱 Mobile: 優化行動裝置響應式佈局",
-                "⚡ Core: 提升資料讀寫效能"
-            ],
-            "zh-HK": [
-                "✨ Features: 新增天氣預報同匯率計算工具",
-                "📱 Mobile: 優化行動裝置響應式佈局",
-                "⚡ Core: 提升資料讀寫效能"
-            ],
-            "en": [
-                "✨ Features: Added Weather Forecast & Currency Converter",
-                "📱 Mobile: Optimized mobile responsive layout",
-                "⚡ Core: Enhanced data performance"
-            ]
-        }
-    },
-    {
-        ver: "V1.0.0",
-        date: "2025-12-01",
-        tag: "Official Release",
-        desc: {
-            "zh-TW": "Travel Together 正式版發布",
-            "zh-HK": "Travel Together 正式版發布",
-            "en": "Official Release of Travel Together"
-        },
-        details: {
-            "zh-TW": [
-                "🚀 Launch: 智能旅遊規劃助手正式上線",
-                "📅 Core: 行程規劃、預算管理、行李清單",
-                "👥 Social: 支援多人協作與分享"
-            ],
-            "zh-HK": [
-                "🚀 Launch: 智能旅遊規劃助手正式上線",
-                "📅 Core: 行程規劃、預算管理、行李清單",
-                "👥 Social: 支援多人協作同分享"
-            ],
-            "en": [
-                "🚀 Launch: Smart Travel Planner officially live",
-                "📅 Core: Itinerary, Budget, Packing List",
-                "👥 Social: Multi-user collaboration support"
+                "🖱️ Landing: Fixed unresponsive Play button on Dashboard Mockup"
             ]
         }
     }

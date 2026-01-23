@@ -46,7 +46,7 @@ import { SEO } from '../Shared/SEO';
 const TripDetailContent = (props) => {
     const { t } = useTranslation();
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-    const { trip, isDarkMode, isAdmin, user, onBack, isChatOpen, setIsChatOpen, onUserClick, setChatInitialTab } = props;
+    const { trip, isDarkMode, isAdmin, user, onBack, isChatOpen, setIsChatOpen, onUserClick, setChatInitialTab, onOpenCommandPalette } = props;
 
     // Internal error handling if trip is missing
     if (!trip) {
@@ -79,7 +79,7 @@ const TripDetailContent = (props) => {
     );
 };
 
-const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, isPreview, globalSettings, exchangeRates, convAmount, setConvAmount, convTo, setConvTo, onOpenSmartImport, weatherData, requestedTab, onTabHandled, requestedItemId, onItemHandled, isBanned, isAdmin, setIsFeedbackOpen, isFeedbackOpen, onOpenChat, isChatOpen, setIsChatOpen, onUserClick, onViewProfile, setChatInitialTab }) => {
+const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, setGlobalBg, isSimulation, isPreview, globalSettings, exchangeRates, convAmount, setConvAmount, convTo, setConvTo, onOpenSmartImport, weatherData, requestedTab, onTabHandled, requestedItemId, onItemHandled, isBanned, isAdmin, setIsFeedbackOpen, isFeedbackOpen, onOpenChat, isChatOpen, setIsChatOpen, onUserClick, onViewProfile, setChatInitialTab, onOpenCommandPalette }) => {
     const { i18n } = useTranslation();
 
 
@@ -2190,6 +2190,8 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                         onMoreClick={() => setIsMobileMoreOpen(!isMobileMoreOpen)}
                         onChatClick={() => onOpenChat && onOpenChat()}
                         isDarkMode={isDarkMode}
+                        currentView="detail"
+                        onSearch={onOpenCommandPalette}
                     />
 
                     {/* Mobile More Menu Overlay - V2.0 Premium Glassmorphic Sheet */}

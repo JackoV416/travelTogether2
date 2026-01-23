@@ -43,7 +43,7 @@
 
   <title>Travel Together | 智能旅遊規劃</title>
   <style>
-    /* 初始 Loading 畫面樣式 - 終極 Indigo 版 */
+    /* 初始 Loading 畫面樣式 - 終極 Indigo Premium 版 */
     #initial-loading {
       position: fixed;
       inset: 0;
@@ -53,31 +53,30 @@
       align-items: center;
       justify-content: center;
       z-index: 9999;
-      transition: opacity 0.5s ease-out;
+      transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
       overflow: hidden;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
 
-    /* 背景流動發光 */
-    #initial-loading::before {
-      content: '';
+    /* 背景流動發光效果 */
+    .bg-glow {
       position: absolute;
-      top: -10%;
-      left: -10%;
-      width: 40%;
-      height: 40%;
-      background: rgba(79, 70, 229, 0.1);
-      filter: blur(100px);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(79, 70, 229, 0.15) 0%, transparent 70%);
+      filter: blur(80px);
       border-radius: 50%;
-      animation: drift 10s infinite alternate;
+      z-index: -1;
+      animation: float-glow 20s infinite alternate linear;
     }
 
-    @keyframes drift {
-      from {
-        transform: translate(0, 0);
+    @keyframes float-glow {
+      0% {
+        transform: translate(-30%, -30%) scale(1);
       }
 
-      to {
-        transform: translate(100%, 50%);
+      100% {
+        transform: translate(30%, 30%) scale(1.2);
       }
     }
 
@@ -89,8 +88,9 @@
     /* 科技感旋轉環 */
     .loading-rings {
       position: relative;
-      width: 100px;
-      height: 100px;
+      width: 120px;
+      height: 120px;
+      margin-bottom: 2rem;
     }
 
     .loading-ring {
@@ -103,15 +103,16 @@
     }
 
     .loading-ring:nth-child(2) {
-      inset: 10px;
+      inset: 12px;
       border-top-color: #818cf8;
-      animation-delay: -0.3s;
+      animation-duration: 0.8s;
+      animation-direction: reverse;
     }
 
     .loading-ring:nth-child(3) {
-      inset: 20px;
+      inset: 24px;
       border-top-color: #a5b4fc;
-      animation-delay: -0.6s;
+      animation-duration: 1.5s;
     }
 
     .loading-icon {
@@ -119,35 +120,82 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 1.5rem;
-      filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.5));
+      font-size: 2rem;
+      filter: drop-shadow(0 0 15px rgba(99, 102, 241, 0.6));
+      animation: pulse-icon 2s infinite ease-in-out;
     }
 
-    .loading-text {
+    @keyframes pulse-icon {
+
+      0%,
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.8;
+      }
+
+      50% {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 1;
+      }
+    }
+
+    .brand-title {
       color: white;
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 1.25rem;
-      font-weight: 800;
-      margin-top: 2rem;
-      letter-spacing: 2px;
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(to right, #fff, #a5b4fc, #fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-size: 200% auto;
+      animation: shine 3s linear infinite;
+    }
+
+    @keyframes shine {
+      to {
+        background-position: 200% center;
+      }
+    }
+
+    .loading-status {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.4);
+      font-weight: 500;
+      letter-spacing: 1px;
+      height: 1.2rem;
+      margin-bottom: 1.5rem;
       text-transform: uppercase;
     }
 
-    .loading-progress {
-      width: 160px;
-      height: 2px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 10px;
-      margin-top: 1.5rem;
-      overflow: hidden;
+    .progress-container {
+      width: 200px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 100px;
+      padding: 3px;
+      position: relative;
     }
 
-    .loading-progress-bar {
-      height: 100%;
-      background: #6366f1;
+    .progress-bar-inner {
+      height: 4px;
+      background: linear-gradient(90deg, #6366f1, #a855f7);
       width: 0%;
-      border-radius: 10px;
-      animation: progress 2.5s ease-in-out infinite;
+      border-radius: 100px;
+      transition: width 0.3s ease-out;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+    }
+
+    .progress-percentage {
+      position: absolute;
+      right: -40px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.7rem;
+      color: #6366f1;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
     }
 
     @keyframes spin {
@@ -159,36 +207,24 @@
         transform: rotate(360deg);
       }
     }
-
-    @keyframes progress {
-      0% {
-        width: 0%;
-        left: -100%;
-      }
-
-      50% {
-        width: 50%;
-      }
-
-      100% {
-        width: 100%;
-      }
-    }
   </style>
 </head>
 
 <body>
   <!-- 美化的初始 Loading 畫面 -->
   <div id="initial-loading">
+    <div class="bg-glow"></div>
     <div class="loading-rings">
       <div class="loading-ring"></div>
       <div class="loading-ring"></div>
       <div class="loading-ring"></div>
       <div class="loading-icon">✈️</div>
     </div>
-    <div class="loading-text">Travel Together</div>
-    <div class="loading-progress">
-      <div class="loading-progress-bar"></div>
+    <div class="brand-title">Travel Together</div>
+    <div id="loading-status" class="loading-status">System Checking...</div>
+    <div class="progress-container">
+      <div id="progress-bar" class="progress-bar-inner"></div>
+      <div id="progress-val" class="progress-percentage">0%</div>
     </div>
   </div>
 
@@ -196,20 +232,60 @@
   <script type="module" src="/src/main.jsx"></script>
 
   <script>
-    // 當 React 應用載入完成後，隱藏 Loading 畫面
-    window.addEventListener('load', function () {
-      setTimeout(function () {
-        var loader = document.getElementById('initial-loading');
-        if (loader) {
-          loader.classList.add('fade-out');
-          setTimeout(function () {
-            loader.remove();
-          }, 500);
+    (function () {
+      const statusText = document.getElementById('loading-status');
+      const progressBar = document.getElementById('progress-bar');
+      const progressVal = document.getElementById('progress-val');
+
+      const bootMessages = [
+        "Jarvis Engine Initializing...",
+        "Connecting to Neural Network...",
+        "Fetching Travel Data...",
+        "Optimizing UI Components...",
+        "Securing Authentication Layer...",
+        "Preparing Your Journey..."
+      ];
+
+      let progress = 0;
+      let msgIdx = 0;
+
+      function updateProgress() {
+        if (progress >= 100) return;
+
+        // Dynamic speed: starts fast, slows down at 90%
+        const inc = progress > 85 ? (100 - progress) * 0.1 : Math.random() * 15;
+        progress = Math.min(progress + inc, 99);
+
+        progressBar.style.width = progress + '%';
+        progressVal.innerText = Math.floor(progress) + '%';
+
+        if (progress > (msgIdx + 1) * (100 / bootMessages.length)) {
+          msgIdx = Math.min(msgIdx + 1, bootMessages.length - 1);
+          statusText.innerText = bootMessages[msgIdx];
         }
-      }, 300);
-    });
 
+        setTimeout(updateProgress, 100 + Math.random() * 400);
+      }
 
+      updateProgress();
+
+      window.addEventListener('load', function () {
+        progress = 100;
+        progressBar.style.width = '100%';
+        progressVal.innerText = '100%';
+        statusText.innerText = "Ready to Fly";
+
+        setTimeout(function () {
+          var loader = document.getElementById('initial-loading');
+          if (loader) {
+            loader.classList.add('fade-out');
+            setTimeout(function () {
+              loader.remove();
+            }, 800);
+          }
+        }, 300);
+      });
+    })();
   </script>
 </body>
 

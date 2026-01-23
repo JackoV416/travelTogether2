@@ -262,7 +262,27 @@ const resources = {
                 }
             }
         },
+        "budget": {
+            "category": {
+                "food": "Food",
+                "transport": "Transport",
+                "shopping": "Shopping",
+                "hotel": "Hotel",
+                "flight": "Flight",
+                "spot": "Tickets/Spot",
+                "misc": "Misc"
+            },
+            "chart": {
+                "category": "Spending by Category",
+                "payer": "Spending by Member",
+                "daily": "Daily Trend"
+            }
+        },
         "trip": {
+            "fork_trip": "Fork Trip",
+            "forking": "Forking...",
+            "fork_success": "Trip forked successfully!",
+            "public_view": "Public Itinerary",
             "tabs": {
                 "itinerary": "Itinerary",
                 "packing": "Packing",
@@ -477,7 +497,6 @@ const resources = {
                 "ready": "Ready to Go",
                 "pending": "TBD",
                 "today": "Today!",
-                "upcoming_fmt": "{{days}} days away"
             }
         },
         "smartImport": {
@@ -560,11 +579,25 @@ const resources = {
             },
             "badges_list": {
                 "early_adopter": { "name": "Early Adopter", "desc": "Joined during the early days." },
+                "journey_beginner": { "name": "Journey Beginner", "desc": "Completed your first trip!" },
                 "jetsetter": { "name": "Jetsetter", "desc": "Created 5+ trips." },
+                "world_traveler": { "name": "World Traveler", "desc": "Created 20+ trips." },
                 "explorer": { "name": "Explorer", "desc": "Visited 3+ unique countries." },
-                "contributor": { "name": "Contributor", "desc": "Contributed to community content." },
-                "influencer": { "name": "Influencer", "desc": "Received 10+ likes on trips." },
-                "globetrotter": { "name": "Globetrotter", "desc": "Visited 3+ continents." }
+                "country_collector": { "name": "Country Collector", "desc": "Visited 10+ unique countries." },
+                "globetrotter": { "name": "Globetrotter", "desc": "Visited 3+ continents." },
+                "social_butterfly": { "name": "Social Butterfly", "desc": "Planned 3+ trips with friends." },
+                "popular_buddy": { "name": "Popular Buddy", "desc": "Joined 10+ shared trips." },
+                "budget_master": { "name": "Budget Master", "desc": "Tracked expenses in 5+ trips." },
+                "packing_expert": { "name": "Packing Expert", "desc": "Used packing lists in 5+ trips." },
+                "jarvis_fan": { "name": "Jarvis Fan", "desc": "Requested AI help 50+ times." },
+                "aesthetic_planner": { "name": "Aesthetic Planner", "desc": "Added 20+ photos to footprints." },
+                "night_owl": { "name": "Night Owl", "desc": "Planned midnight adventures." },
+                "early_bird": { "name": "Early Bird", "desc": "Always first to see the sunrise." },
+                "asia_lover": { "name": "Asia Lover", "desc": "Visited 5+ Asian countries." },
+                "europe_expert": { "name": "Europe Expert", "desc": "Visited 5+ European countries." },
+                "foodie": { "name": "Foodie", "desc": "Added 20+ restaurant spots." },
+                "culture_buff": { "name": "Culture Buff", "desc": "Visited 20+ museums/temples." },
+                "achievement_king": { "name": "Achievement King", "desc": "Unlocked 15+ badges." }
             },
             "badges_title": "Badges & Achievements",
             "badges_unlocked": "{{count}} / {{total}} Unlocked",
@@ -1097,7 +1130,27 @@ const resources = {
                 }
             }
         },
+        "budget": {
+            "category": {
+                "food": "餐飲",
+                "transport": "交通",
+                "shopping": "購物",
+                "hotel": "住宿",
+                "flight": "機票",
+                "spot": "門票/景點",
+                "misc": "其他"
+            },
+            "chart": {
+                "category": "支出類別分佈",
+                "payer": "各成員墊支總額",
+                "daily": "每日支出趨勢"
+            }
+        },
         "trip": {
+            "fork_trip": "複製此行程",
+            "forking": "複製中...",
+            "fork_success": "成功複製行程！",
+            "public_view": "公開行程預覽",
             "tabs": {
                 "itinerary": "行程",
                 "packing": "行李",
@@ -1557,12 +1610,26 @@ const resources = {
                 "badges": "成就"
             },
             "badges_list": {
-                "early_adopter": { "name": "早鳥先鋒", "desc": "在早期階段加入 Travel Together。" },
-                "jetsetter": { "name": "空中飛人", "desc": "建立了 5 個以上的行程。" },
-                "explorer": { "name": "探險家", "desc": "造訪了 3 個以上不同的國家。" },
-                "contributor": { "name": "熱心貢獻", "desc": "參與社群協作或回報問題。" },
-                "influencer": { "name": "旅遊達人", "desc": "行程獲得了 10 個以上的讚。" },
-                "globetrotter": { "name": "環球旅行家", "desc": "足跡跨越了 3 個以上的大洲。" }
+                "early_adopter": { "name": "早期開拓者", "desc": "在平台初期就加入的高級玩家。" },
+                "journey_beginner": { "name": "冒險起點", "desc": "完成你的第一個精彩行程！" },
+                "jetsetter": { "name": "空中飛人", "desc": "累計策劃超過 5 個行程。" },
+                "world_traveler": { "name": "世界旅人", "desc": "累計策劃超過 20 個行程。" },
+                "explorer": { "name": "探索者", "desc": "足跡遍佈超過 3 個國家。" },
+                "country_collector": { "name": "國家收藏家", "desc": "足跡遍佈超過 10 個國家。" },
+                "globetrotter": { "name": "環球冒險家", "desc": "跨越超過 3 個大洲。" },
+                "social_butterfly": { "name": "社交達人", "desc": "與 3 位以上好友共同策劃行程。" },
+                "popular_buddy": { "name": "人氣夥伴", "desc": "參與超過 10 個共享行程。" },
+                "budget_master": { "name": "理財大師", "desc": "在 5 個行程中精確記錄預算。" },
+                "packing_expert": { "name": "收納專家", "desc": "使用行李清單超過 5 次。" },
+                "jarvis_fan": { "name": "Jarvis 狂粉", "desc": "請求 AI 指南超過 50 次。" },
+                "aesthetic_planner": { "name": "美學規劃師", "desc": "在足跡中上傳超過 20 張相片。" },
+                "night_owl": { "name": "深夜貓頭鷹", "desc": "策劃過多個深夜冒險行程。" },
+                "early_bird": { "name": "晨之美", "desc": "總是第一個看見日出的旅人。" },
+                "asia_lover": { "name": "亞洲通", "desc": "造訪過 5 個以上亞洲國家。" },
+                "europe_expert": { "name": "歐洲專家", "desc": "造訪過 5 個以上歐洲國家。" },
+                "foodie": { "name": "美食評論家", "desc": "新增超過 20 個餐廳景點。" },
+                "culture_buff": { "name": "文化愛好者", "desc": "參觀超過 20 個博物館或古蹟。" },
+                "achievement_king": { "name": "成就之王", "desc": "解鎖超過 15 個勛章。" }
             },
             "badges_title": "成就與徽章",
             "badges_unlocked": "{{count}} / {{total}} 已解鎖",
@@ -1600,14 +1667,141 @@ const resources = {
             "login_desc": "同步所有裝置",
             "demo_mode": "試玩模式",
             "features": {
-                "collab_title": "實時協作",
-                "collab_desc": "與親友一起規劃行程",
-                "ai_title": "AI 助手 Jarvis",
-                "ai_desc": "智能行程建議，由 AI 驅動",
-                "footprints_title": "旅遊足跡",
-                "footprints_desc": "追蹤您的全球旅程"
+            },
+            "smartImport": {
+                "types": {
+                    "memory": { "label": "回憶 / 靈感", "desc": "相片或文件存檔" },
+                    "plaintext": { "label": "純文字", "desc": "貼上/輸入行程文字" },
+                    "json": { "label": "JSON 匯入", "desc": "完整行程資料結構" },
+                    "csv": { "label": "CSV 匯入", "desc": "表格格式匯入" }
+                }
+            },
+            "app": {
+                "menu": {
+                    "profile": "個人檔案",
+                    "dashboard": "儀表板",
+                    "tutorial": "模擬例子",
+                    "guide": "教學",
+                    "settings": "設定",
+                    "feedback": "意見回饋"
+                }
+            },
+            "footer": {
+                "version_updates": "版本更新內容",
+                "design_by": "以愛設計 ❤️",
+                "select_lang": "選擇語言",
+                "items": "項目",
+                "sync": {
+                    "offline": "已儲存 (離線)",
+                    "syncing": "同步中...",
+                    "synced": "已同步",
+                    "last_sync": "最新同步"
+                }
+            },
+            "itinerary": {
+                "weekdays": {
+                    "sun": "週日",
+                    "mon": "週一",
+                    "tue": "週二",
+                    "wed": "週三",
+                    "thu": "週四",
+                    "fri": "週五",
+                    "sat": "週六"
+                },
+                "filters": {
+                    "type": "類型",
+                    "all": "全部",
+                    "food": "美食",
+                    "spot": "景點",
+                    "hotel": "住宿",
+                    "shopping": "購物",
+                    "transport": "交通",
+                    "flight": "航班"
+                }
+            },
+            "profile": {
+                "default_name": "旅人",
+                "login_prompt": "請先登入以查看您的個人檔案",
+                "level": "等級",
+                "joined": "加入於",
+                "xp": "經驗值",
+                "stats": {
+                    "countries": "國家",
+                    "trips": "行程",
+                    "continents": "洲別"
+                },
+                "tabs": {
+                    "footprints": "足跡",
+                    "gallery": "相簿",
+                    "badges": "成就"
+                },
+                "badges_list": {
+                    "early_adopter": { "name": "早期開拓者", "desc": "在平台初期就加入的高級玩家。" },
+                    "journey_beginner": { "name": "冒險起點", "desc": "完成你的第一個精彩行程！" },
+                    "jetsetter": { "name": "空中飛人", "desc": "累計策劃超過 5 個行程。" },
+                    "world_traveler": { "name": "世界旅人", "desc": "累計策劃超過 20 個行程。" },
+                    "explorer": { "name": "探索者", "desc": "足跡遍佈超過 3 個國家。" },
+                    "country_collector": { "name": "國家收藏家", "desc": "足跡遍佈超過 10 個國家。" },
+                    "globetrotter": { "name": "環球冒險家", "desc": "跨越超過 3 個大洲。" },
+                    "social_butterfly": { "name": "社交達人", "desc": "與 3 位以上好友共同策劃行程。" },
+                    "popular_buddy": { "name": "人氣夥伴", "desc": "參與超過 10 個共享行程。" },
+                    "budget_master": { "name": "理財大師", "desc": "在 5 個行程中精確記錄預算。" },
+                    "packing_expert": { "name": "收納專家", "desc": "使用行李清單超過 5 次。" },
+                    "jarvis_fan": { "name": "Jarvis 狂粉", "desc": "請求 AI 指南超過 50 次。" },
+                    "aesthetic_planner": { "name": "美學規劃師", "desc": "在足跡中上傳超過 20 張相片。" },
+                    "night_owl": { "name": "深夜貓頭鷹", "desc": "策劃過多個深夜冒險行程。" },
+                    "early_bird": { "name": "晨之美", "desc": "總是第一個看見日出的旅人。" },
+                    "asia_lover": { "name": "亞洲通", "desc": "造訪過 5 個以上亞洲國家。" },
+                    "europe_expert": { "name": "歐洲專家", "desc": "造訪過 5 個以上歐洲國家。" },
+                    "foodie": { "name": "美食評論家", "desc": "新增超過 20 個餐廳景點。" },
+                    "culture_buff": { "name": "文化愛好者", "desc": "參觀超過 20 個博物館或古蹟。" },
+                    "achievement_king": { "name": "成就之王", "desc": "解鎖超過 15 個勛章。" }
+                },
+                "badges_title": "成就與徽章",
+                "badges_unlocked": "{{count}} / {{total}} 已解鎖",
+                "map": {
+                    "title": "我的足跡",
+                    "stats_desc": "您已造訪 {{count}} 個國家 (佔全球 {{percent}}%)",
+                    "search_placeholder": "搜尋城市...",
+                    "pins": "地標",
+                    "continents": {
+                        "asia": "亞洲",
+                        "europe": "歐洲",
+                        "americas": "美洲",
+                        "africa": "非洲",
+                        "oceania": "大洋洲"
+                    },
+                    "filter": {
+                        "type_all": "類型: 全部",
+                        "type_city": "城市",
+                        "type_attraction": "景點",
+                        "photo_all": "相片: 全部",
+                        "photo_has": "有相片",
+                        "photo_none": "無相片"
+                    }
+                }
+            },
+            "footprints": {
+                "map": "地圖",
+                "timeline": "時間軸",
+                "notebook": "手記"
+            },
+            "landing": {
+                "title": "完美規劃您的旅程",
+                "subtitle": "AI 驅動的行程規劃，實時協作",
+                "login_google": "使用 Google 登入",
+                "login_desc": "同步所有裝置",
+                "demo_mode": "試玩模式",
+                "features": {
+                    "collab_title": "實時協作",
+                    "collab_desc": "與親友一起規劃行程",
+                    "ai_title": "AI 助手 Jarvis",
+                    "ai_desc": "智能行程建議，由 AI 驅動",
+                    "footprints_title": "旅遊足跡",
+                    "footprints_desc": "追蹤您的全球旅程"
+                }
             }
-        },
+        }
     },
     "zh-HK": {
         translation: {
@@ -1780,7 +1974,27 @@ const resources = {
                 "Beaches": "陽光海灘",
                 "Party": "派對"
             },
+            "budget": {
+                "category": {
+                    "food": "餐飲",
+                    "transport": "交通",
+                    "shopping": "購物",
+                    "hotel": "住宿",
+                    "flight": "機票",
+                    "spot": "門票/景點",
+                    "misc": "其他"
+                },
+                "chart": {
+                    "category": "支出類別分佈",
+                    "payer": "各成員墊支總額",
+                    "daily": "每日支出趨勢"
+                }
+            },
             "trip": {
+                "fork_trip": "複製此行程",
+                "forking": "複製緊...",
+                "fork_success": "成功複製行程！",
+                "public_view": "公開行程預覽",
                 "tabs": {
                     "itinerary": "行程",
                     "packing": "行李",
@@ -2455,3 +2669,4 @@ i18n
     });
 
 export default i18n;
+

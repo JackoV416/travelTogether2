@@ -49,17 +49,17 @@ const DashboardHeader = ({
                     </div>
                 </div>
 
-                <div className="relative z-10 flex items-center gap-3 w-full md:w-auto">
+                <div className="relative z-10 flex items-center gap-2 sm:gap-3 w-full md:w-auto">
                     {/* Command Search */}
                     <div className="relative group flex-1 md:flex-none">
                         <button
                             onClick={onOpenCommandPalette}
-                            className={`w-full md:w-auto p-2.5 rounded-xl border transition-all flex items-center justify-center gap-2 ${isDarkMode
+                            className={`w-full md:w-auto px-4 py-2.5 rounded-xl border transition-all flex items-center justify-center gap-2 ${isDarkMode
                                 ? 'bg-indigo-500/10 border-white/5 text-indigo-400 hover:bg-indigo-500/20 shadow-lg shadow-indigo-500/5'
-                                : 'bg-white/50 border-indigo-100 text-indigo-600 hover:bg-white'} backdrop-blur-xl`}
+                                : 'bg-white/50 border-indigo-100 text-indigo-600 hover:bg-white'} backdrop-blur-xl group`}
                         >
                             <Search className="w-4 h-4" />
-                            <span className="md:hidden text-xs font-bold">{t('dashboard.header.tooltips.search')}</span>
+                            <span className="hidden sm:inline text-xs font-black">{t('dashboard.header.tooltips.search') || '搜尋'}</span>
                         </button>
                         <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
                             <span className="text-[10px] font-bold">{t('dashboard.header.tooltips.search')}</span>
@@ -71,9 +71,10 @@ const DashboardHeader = ({
                     <div className="relative group flex-1 md:flex-none">
                         <button
                             onClick={() => setIsCreateModalOpen(true)}
-                            className={`${buttonPrimary} !px-4 !py-2.5 !text-sm`}
+                            className={`${buttonPrimary} !px-4 !py-2.5 !text-sm flex items-center justify-center gap-2`}
                         >
-                            <Plus className="w-4 h-4" /> <span className="hidden sm:inline">{t('dashboard.header.new_trip') || '新行程'}</span>
+                            <Plus className="w-4 h-4" />
+                            <span className="hidden sm:inline font-black">{t('dashboard.header.new_trip') || '新行程'}</span>
                         </button>
                         <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
                             <span className="text-[10px] font-bold">{t('dashboard.header.tooltips.new')}</span>
@@ -85,9 +86,10 @@ const DashboardHeader = ({
                     <div className="relative group flex-1 md:flex-none">
                         <button
                             onClick={() => setIsSmartImportModalOpen(true)}
-                            className={`${buttonSecondary} !px-4 !py-2.5 !text-sm !bg-emerald-600/20 !border-emerald-500/30 !text-emerald-400 hover:!bg-emerald-600/30 !shadow-none`}
+                            className={`${buttonSecondary} !px-4 !py-2.5 !text-sm !bg-emerald-600/20 !border-emerald-500/30 !text-emerald-400 hover:!bg-emerald-600/30 !shadow-none flex items-center justify-center gap-2`}
                         >
-                            <Upload className="w-4 h-4" /> <span className="hidden sm:inline">{t('dashboard.header.smart_import') || '匯入'}</span>
+                            <Upload className="w-4 h-4" />
+                            <span className="hidden sm:inline font-black">{t('dashboard.header.smart_import') || '匯入'}</span>
                         </button>
                         <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
                             <span className="text-[10px] font-bold">{t('dashboard.header.tooltips.import')}</span>

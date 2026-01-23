@@ -25,6 +25,7 @@ import {
 } from '../../../utils/tripUtils';
 import { formatTime, parseTime, detectTimeConflicts } from '../../../utils/timeUtils';
 import { generateDailyAnalysis, suggestTransportBetweenSpots } from '../../../services/ai-parsing';
+import { useTour } from '../../../contexts/TourContext'; // Fix: Import useTour
 import ItemDetailModal from '../../Modals/ItemDetailModal';
 
 
@@ -80,9 +81,12 @@ const ItineraryTab = ({
     onUndo,
     onRedo,
     canUndo = false,
-    canRedo = false
+    canRedo = false,
+    readOnly = false // V1.9.0 Public View Support
 }) => {
     const { t } = useTranslation();
+    const { startTour } = useTour(); // V1.6.0 Tour
+    const mapRef = useRef(null);
     // Local UI State
     const [mapScope, setMapScope] = useState('daily'); // 'daily' or 'full'
     const [isEditMode, setIsEditMode] = useState(false);
@@ -804,28 +808,30 @@ const ItineraryTab = ({
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setIsEditMode(!isEditMode)}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-bold ${isEditMode ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg' : (isDarkMode ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50')}`}
-                            >
-                                {isEditMode ? <CheckSquare className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
-                                {isEditMode ? '完成編輯' : '編輯行程'}
-                            </button>
-
-                            {canEdit && onClearDaily && filteredItems.length > 0 && (
+                        {!readOnly && (
+                            <div className="flex items-center gap-2">
                                 <button
-                                    onClick={onClearDaily}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-bold ${isDarkMode ? 'border-red-500/50 text-red-400 hover:bg-red-500/10' : 'border-red-300 text-red-500 hover:bg-red-50'}`}
-                                    title="清空當日行程"
+                                    onClick={() => setIsEditMode(!isEditMode)}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-bold ${isEditMode ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg' : (isDarkMode ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50')}`}
                                 >
-                                    <Trash2 className="w-4 h-4" />
-                                    清空當日
+                                    {isEditMode ? <CheckSquare className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
+                                    {isEditMode ? '完成編輯' : '編輯行程'}
                                 </button>
-                            )}
 
-                            {canEdit && <button onClick={() => onAddItem(currentDisplayDate, 'spot')} className="text-xs bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-3 py-1.5 rounded-lg font-bold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 active:scale-95">+ 新增</button>}
-                        </div>
+                                {canEdit && onClearDaily && filteredItems.length > 0 && (
+                                    <button
+                                        onClick={onClearDaily}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-bold ${isDarkMode ? 'border-red-500/50 text-red-400 hover:bg-red-500/10' : 'border-red-300 text-red-500 hover:bg-red-50'}`}
+                                        title="清空當日行程"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        清空當日
+                                    </button>
+                                )}
+
+                                {canEdit && <button onClick={() => onAddItem(currentDisplayDate, 'spot')} className="text-xs bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-3 py-1.5 rounded-lg font-bold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 active:scale-95">+ 新增</button>}
+                            </div>
+                        )}
 
                         {/* Mobile Date Scroll (Sticky Glassmorphic Ribbon) - Moved Here & Sticky */}
                         {viewMode !== 'kanban' && (
@@ -1485,7 +1491,7 @@ const ItineraryTab = ({
                     )}
                 </div> {/* End Main Content Column */}
             </div> {/* End Layout Wrapper */}
-        </div>
+        </div >
     );
 };
 

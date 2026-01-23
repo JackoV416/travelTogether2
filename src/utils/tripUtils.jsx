@@ -624,3 +624,17 @@ export const getTripSeasonDisplay = (dateStr, lang = 'zh-TW') => {
     };
 };
 
+
+// ============================================
+// SOCIAL & SHARING (V1.9.0)
+// ============================================
+
+export const generateShareableLink = (tripId) => {
+    return `${window.location.origin}/trip/${tripId}`;
+};
+
+export const forkTrip = async (sourceTripId, userId, userName) => {
+    // This logic is complex and involves Firestore, so it's typically better in a service or component.
+    // However, if simpler helper needed:
+    return null; // Placeholder - logic implemented in component for now
+};

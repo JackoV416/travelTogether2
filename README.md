@@ -1,10 +1,16 @@
-# Travel Together V2 <kbd>V1.8.3</kbd>
+# Travel Together V2 <kbd>V1.9.0</kbd>
 
 [![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://travel-together-v2.vercel.app/)
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
 [![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
 
 > **智能旅遊規劃助手** - 專為多人協作設計。支援即時同步、AI 行程建議與 PWA 離線使用。
+
+### 📄 V1.9.0 特性更新 (Social Revolution)
+- **Social Profile UI**: 全新 Grid 佈局個人頁面，完美對齊足跡、相簿與勳章，並加入動態等級顯示。
+- **Fork System**: 實裝「複製行程」功能，一鍵將公開行程 Deep Clone 到自己帳戶。
+- **Localization Audit**: 全面修復 Budget Chart 與 i18n 翻譯遺漏，支援中英雙語完美切換。
+- **Public Trip**: 強化公開行程預覽體驗，加入 Fork 按鈕與瀏覽數統計。
 
 ### 📄 V1.8.3 特性更新 (Documentation & PWA)
 - **文檔全面升級**：新增 `FAQ` 至 6 大項，涵蓋 PWA 安裝、安全性與協作上限。

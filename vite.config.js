@@ -105,6 +105,7 @@ export default defineConfig({
       'Cross-Origin-Embedder-Policy': 'unsafe-none'
     }
   },
+  appType: 'spa', // Ensure SPA fallback for client-side routing
   build: {
     chunkSizeWarningLimit: 1000,
     rollupOptions: {

@@ -19,15 +19,19 @@ const CustomTooltip = ({ active, payload, isDarkMode }) => {
     return null;
 };
 
+import { useTranslation } from 'react-i18next';
+
 const BudgetCharts = ({ budget = [], currency = 'HKD', isDarkMode, glassCard, trip, members }) => {
+    const { t } = useTranslation();
+
     const CAT_LABELS = {
-        'food': '餐飲',
-        'transport': '交通',
-        'shopping': '購物',
-        'hotel': '住宿',
-        'flight': '機票',
-        'spot': '門票/景點',
-        'misc': '其他'
+        'food': t('budget.category.food'),
+        'transport': t('budget.category.transport'),
+        'shopping': t('budget.category.shopping'),
+        'hotel': t('budget.category.hotel'),
+        'flight': t('budget.category.flight'),
+        'spot': t('budget.category.spot'),
+        'misc': t('budget.category.misc')
     };
 
     const categoryDataMap = budget.reduce((acc, item) => {
@@ -61,6 +65,18 @@ const BudgetCharts = ({ budget = [], currency = 'HKD', isDarkMode, glassCard, tr
 
     const barData = Object.entries(payerDataMap).map(([name, value]) => ({ name, value }));
 
+    // 3. Process Data for Daily Stacked Bar
+    const dailyDataMap = {}; // 'YYYY-MM-DD' -> { date: '...', food: 100, transport: 50... }
+
+    budget.forEach(item => {
+        const date = item.date ? item.date.split('T')[0] : 'Undated';
+        if (!dailyDataMap[date]) dailyDataMap[date] = { name: date }; // Initialize
+        const cat = item.category || 'misc';
+        dailyDataMap[date][cat] = (dailyDataMap[date][cat] || 0) + (Number(item.cost) || 0);
+    });
+
+    const dailyData = Object.values(dailyDataMap).sort((a, b) => a.name.localeCompare(b.name));
+
 
     if (pieData.length === 0) return null;
 
@@ -72,7 +88,7 @@ const BudgetCharts = ({ budget = [], currency = 'HKD', isDarkMode, glassCard, tr
                     <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500">
                         <PieIcon className="w-4 h-4" />
                     </div>
-                    <h3 className="text-sm font-black uppercase tracking-widest">支出類別分佈</h3>
+                    <h3 className="text-sm font-black uppercase tracking-widest">{t('budget.chart.category')}</h3>
                 </div>
                 <div className="h-[250px] w-full relative">
                     <ResponsiveContainer width="100%" height="100%">
@@ -118,7 +134,7 @@ const BudgetCharts = ({ budget = [], currency = 'HKD', isDarkMode, glassCard, tr
                     <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
                         <BarChart3 className="w-4 h-4" />
                     </div>
-                    <h3 className="text-sm font-black uppercase tracking-widest">各成員墊支總額</h3>
+                    <h3 className="text-sm font-black uppercase tracking-widest">{t('budget.chart.payer')}</h3>
                 </div>
                 <div className="h-[250px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
@@ -143,6 +159,48 @@ const BudgetCharts = ({ budget = [], currency = 'HKD', isDarkMode, glassCard, tr
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                 ))}
                             </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
+            {/* Daily Spending Trend (Stacked Bar) */}
+            <div className={`${glassCard(isDarkMode)} p-6 flex flex-col md:col-span-2`}>
+                <div className="flex items-center gap-2 mb-6">
+                    <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+                        <TrendingUp className="w-4 h-4" />
+                    </div>
+                    <h3 className="text-sm font-black uppercase tracking-widest">{t('budget.chart.daily')}</h3>
+                </div>
+                <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={dailyData}>
+                            <CartesianGrid strokeDasharray="3 3" opacity={0.1} vertical={false} />
+                            <XAxis
+                                dataKey="name"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 10, fill: isDarkMode ? '#9ca3af' : '#4b5563' }}
+                                dy={10}
+                            />
+                            <YAxis
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 10, fill: isDarkMode ? '#9ca3af' : '#4b5563' }}
+                                tickFormatter={(val) => `$${val}`}
+                            />
+                            <RechartsTooltip cursor={{ fill: isDarkMode ? '#ffffff10' : '#00000005' }} content={<CustomTooltip isDarkMode={isDarkMode} />} />
+                            <Legend iconSize={8} wrapperStyle={{ fontSize: '10px', paddingTop: '20px', opacity: 0.8 }} />
+                            {Object.keys(CAT_LABELS).map((catKey, index) => (
+                                <Bar
+                                    key={catKey}
+                                    dataKey={catKey}
+                                    name={CAT_LABELS[catKey]}
+                                    stackId="a"
+                                    fill={COLORS[index % COLORS.length]}
+                                    radius={index === Object.keys(CAT_LABELS).length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                                />
+                            ))}
                         </BarChart>
                     </ResponsiveContainer>
                 </div>

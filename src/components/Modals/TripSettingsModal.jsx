@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { X, Search, CheckCircle, Globe, Lock } from 'lucide-react';
+import { X, Search, CheckCircle, Globe, Lock, Link as LinkIcon, Copy, Check } from 'lucide-react';
 import { inputClasses, getLocalizedCountryName, getLocalizedCityName, getHolidayMap } from '../../utils/tripUtils';
 import { useTranslation } from 'react-i18next';
 import { buttonPrimary } from '../../constants/styles';
@@ -16,6 +16,15 @@ const TripSettingsModal = ({ isOpen, onClose, trip, onUpdate, isDarkMode, global
         cities: trip?.cities || (trip?.city ? [trip.city] : []),
         isPublic: trip?.isPublic || false
     });
+
+    const [copied, setCopied] = useState(false);
+
+    const handleCopyLink = () => {
+        const url = `${window.location.origin}/trip/${trip.id}`;
+        navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
 
     const [countrySearch, setCountrySearch] = useState("");
     const [citySearch, setCitySearch] = useState("");
@@ -97,32 +106,51 @@ const TripSettingsModal = ({ isOpen, onClose, trip, onUpdate, isDarkMode, global
                         />
                     </div>
 
-                    {/* V1.3.0: Public Trip Toggle */}
-                    <div className={`md:col-span-2 p-4 rounded-xl border flex items-center justify-between ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
-                        <div className="flex gap-4 items-center">
-                            <div className={`p-3 rounded-full ${form.isPublic ? 'bg-green-500/20 text-green-500' : 'bg-gray-500/20 text-gray-500'}`}>
-                                {form.isPublic ? <Globe className="w-6 h-6" /> : <Lock className="w-6 h-6" />}
-                            </div>
-                            <div>
-                                <div className="font-bold flex items-center gap-2">
-                                    {form.isPublic ? t('trip.settings.public') : t('trip.settings.private')}
-                                    {form.isPublic && <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-500 text-[10px] tracking-wide">LIVE</span>}
+                    <div className={`md:col-span-2 p-4 rounded-xl border flex flex-col gap-4 ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+                        <div className="flex items-center justify-between">
+                            <div className="flex gap-4 items-center">
+                                <div className={`p-3 rounded-full ${form.isPublic ? 'bg-indigo-500/20 text-indigo-500' : 'bg-gray-500/20 text-gray-500'}`}>
+                                    {form.isPublic ? <Globe className="w-6 h-6" /> : <Lock className="w-6 h-6" />}
                                 </div>
-                                <div className="text-xs opacity-60 mt-0.5">
-                                    {form.isPublic
-                                        ? t('trip.settings.public_desc')
-                                        : t('trip.settings.private_desc')}
+                                <div>
+                                    <div className="font-bold flex items-center gap-2 text-sm sm:text-base">
+                                        {/* Matches phrasing in image: "私人存取" vs "公開行程" */}
+                                        {form.isPublic ? '公開行程' : '私人存取'}
+                                        {form.isPublic && <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-500 text-[10px] tracking-tight font-black animate-pulse">LIVE</span>}
+                                    </div>
+                                    <div className="text-[10px] sm:text-xs opacity-60 mt-0.5">
+                                        {form.isPublic
+                                            ? '擁有連結者可查看' // Subtext from image
+                                            : t('trip.settings.private_desc')}
+                                    </div>
                                 </div>
                             </div>
+                            <button
+                                onClick={() => setForm({ ...form, isPublic: !form.isPublic })}
+                                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none ${form.isPublic ? 'bg-indigo-500' : 'bg-gray-600/30'}`}
+                            >
+                                <span
+                                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${form.isPublic ? 'translate-x-6' : 'translate-x-1'}`}
+                                />
+                            </button>
                         </div>
-                        <button
-                            onClick={() => setForm({ ...form, isPublic: !form.isPublic })}
-                            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none ${form.isPublic ? 'bg-green-500' : 'bg-gray-600/30'}`}
-                        >
-                            <span
-                                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${form.isPublic ? 'translate-x-7' : 'translate-x-1'}`}
-                            />
-                        </button>
+
+                        {/* Copy Link Section (Only if public) */}
+                        {form.isPublic && (
+                            <div className={`flex items-center gap-2 p-3 rounded-lg border border-dashed animate-fade-in ${isDarkMode ? 'bg-indigo-500/5 border-indigo-500/30' : 'bg-indigo-50 border-indigo-200'}`}>
+                                <LinkIcon className="w-4 h-4 text-indigo-500 shrink-0" />
+                                <div className="flex-1 truncate text-[10px] font-mono opacity-50">
+                                    {window.location.origin}/trip/{trip.id}
+                                </div>
+                                <button
+                                    onClick={handleCopyLink}
+                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5 ${copied ? 'bg-emerald-500 text-white' : 'bg-indigo-500 text-white hover:bg-indigo-600 shadow-md shadow-indigo-500/20'}`}
+                                >
+                                    {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                    {copied ? '已複製' : '複製連結'}
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     <div className="md:col-span-2 space-y-2">

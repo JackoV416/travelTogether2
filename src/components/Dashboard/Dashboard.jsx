@@ -25,6 +25,7 @@ import TripsGrid from './TripsGrid';
 import ExploreGrid from './ExploreGrid'; // V1.3.6 Pinterest Layout
 import UniversalChat from '../Shared/UniversalChat'; // V1.3.0
 import GlobalChatFAB from '../Shared/GlobalChatFAB';
+import MobileBottomNav from '../Shared/MobileBottomNav'; // V1.9.0 PWA Nav
 
 // Hooks
 import useDashboardData from '../../hooks/useDashboardData';
@@ -696,6 +697,19 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                     if (onOpenChat) onOpenChat('jarvis');
                     if (setChatInitialTab) setChatInitialTab('jarvis');
                 }}
+            />
+
+            {/* V1.9.0: Mobile Bottom Nav with Explore/My Trips Toggle */}
+            <MobileBottomNav
+                isDarkMode={isDarkMode}
+                currentView={forcedViewMode || 'dashboard'}
+                onViewChange={onViewChange}
+                onChatClick={() => {
+                    if (onOpenChat) onOpenChat('jarvis');
+                    if (setChatInitialTab) setChatInitialTab('jarvis');
+                }}
+                onCreateTrip={() => setIsCreateModalOpen(true)}
+                onSearch={onOpenCommandPalette}
             />
         </main>
     );
