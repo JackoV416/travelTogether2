@@ -770,6 +770,10 @@ const App = () => {
     }, [location.pathname, trips, loadingTrips, user]);
 
     useEffect(() => {
+        // Guard: If we are in "Public Trip Mode" (publicTripId is set), DO NOT SYNC URL based on 'view'.
+        // The URL is already controlled by the routing logic for that specific mode.
+        if (publicTripId) return;
+
         // Sync URL with View State (Push State on Navigation)
         const currentPath = window.location.pathname;
         let targetPath = '/';

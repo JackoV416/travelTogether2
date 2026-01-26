@@ -1,10 +1,18 @@
-# Travel Together V2 <kbd>V1.9.9</kbd>
+# Travel Together V2 <kbd>V1.9.10</kbd>
 
 [![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://travel-together-v2.vercel.app/)
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
 [![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
 
 > **智能旅遊規劃助手** - 專為多人協作設計。支援即時同步、AI 行程建議與 PWA 離線使用。
+
+### 🚀 V1.9.10: Navigation Hotfix (2026-01-26)
+**V1.9.10: [Hotfix] 導航邏輯緊急修復！**
+修復了從公開行程視圖 (Public View) 切換時可能導致的路由循環 (Navigation Throttling) 問題，提升頁面切換的穩定性。
+
+### 🌟 V1.9.10 主要更新
+1.  **Navigation Guard**: 在 `App.jsx` 加入路由守衛，防止 URL Sync 邏輯與公開行程視圖發生衝突。
+2.  **Performance Fix**: 消除因路由衝突導致的重複渲染與瀏覽器警告。
 
 ### 🚀 V1.9.9: PWA Polish & Gold Master (2026-01-26)
 **V1.9.9: [Gold Master] 1.9 系列最終章與 PWA 體驗打磨！**
@@ -376,7 +384,8 @@ graph TD
 
 ## 📋 版本紀錄 (History)
 
-| **V1.9.9** | **PWA Polish & Gold Master** | 🚀 最新版 |
+| **V1.9.10** | **Navigation Hotfix** | 🚀 最新版 |
+| **V1.9.9** | **PWA Polish & Gold Master** | ✅ 已發布 |
 | **V1.9.8** | **Stability & Public Polish** | ✅ 已發布 |
 | **V1.9.7** | **UI Unification & Public Improvements** | ✅ 已發布 |
 | **V1.9.0** | **Social Revolution** | ✅ 已發布 |

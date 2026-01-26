@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "1.9.9";
-export const APP_VERSION_TAG = "PWA Polish & Gold Master";
+export const APP_VERSION = "1.9.10";
+export const APP_VERSION_TAG = "Navigation Hotfix";
 export const APP_LAST_UPDATE = "2026-01-26";
 export const JARVIS_VERSION = "V0.0.5-Beta";
 
