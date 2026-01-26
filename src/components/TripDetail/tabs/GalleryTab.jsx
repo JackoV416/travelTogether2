@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Image as ImageIcon, X, MapPin, Calendar, ExternalLink, Download } from 'lucide-react';
+import { Image as ImageIcon, X, MapPin, Calendar, ExternalLink, Download, Globe2, Lock } from 'lucide-react';
 import { glassCard, formatDate } from '../../../utils/tripUtils';
+import { useTranslation } from 'react-i18next'; // Add i18n support
 
-const GalleryTab = ({ trip, isDarkMode }) => {
+const GalleryTab = ({ trip, isDarkMode, readOnly = false, onUpdateFile, user, isOwner }) => {
+    const { t } = useTranslation();
     const [selectedImage, setSelectedImage] = useState(null);
 
     // Extract all unique images from Itinerary and Files
@@ -11,6 +13,8 @@ const GalleryTab = ({ trip, isDarkMode }) => {
         const seenUrls = new Set();
 
         // 1. Itinerary Images
+        // In readOnly (Public) mode, Itinerary images are typically part of the public plan content if Itinerary is public.
+        // We assume they are safe if the user enabled the module.
         if (trip.itinerary) {
             Object.entries(trip.itinerary).forEach(([date, items]) => {
                 items.forEach(item => {
@@ -23,7 +27,8 @@ const GalleryTab = ({ trip, isDarkMode }) => {
                             date: date,
                             title: item.name,
                             description: item.details?.desc || item.details?.address || '',
-                            type: item.type
+                            type: item.type,
+                            isPublic: true // Itinerary items don't have per-file flags usually
                         });
                     }
                 });
@@ -33,6 +38,9 @@ const GalleryTab = ({ trip, isDarkMode }) => {
         // 2. Files (Images)
         if (trip.files) {
             trip.files.forEach(file => {
+                // Privacy Check for Public View
+                if (readOnly && !file.isPublic) return;
+
                 if (file.type?.startsWith('image/') && !seenUrls.has(file.url)) {
                     seenUrls.add(file.url);
 
@@ -61,7 +69,10 @@ const GalleryTab = ({ trip, isDarkMode }) => {
                         date: dateStr,
                         title: file.name,
                         description: 'Uploaded File',
-                        type: 'file'
+                        type: 'file',
+                        fileId: file.id || file.url, // Use ID if available, else URL as fallback key
+                        isPublic: !!file.isPublic, // Explicit boolean
+                        originalFile: file // Keep ref for updates
                     });
                 }
             });
@@ -73,7 +84,21 @@ const GalleryTab = ({ trip, isDarkMode }) => {
             if (!b.date) return -1;
             return b.date.localeCompare(a.date);
         });
-    }, [trip]);
+    }, [trip, readOnly]);
+
+    const handleTogglePublic = async (e, image) => {
+        e.stopPropagation();
+        if (readOnly || !onUpdateFile || !image.originalFile) return;
+
+        try {
+            // Optimistic update logic should be handled by parent or just wait for standard firestore flow
+            // Here we assume onUpdateFile handles the Firestore update
+            // We need to pass the file object and the new isPublic status
+            await onUpdateFile(image.originalFile, { isPublic: !image.isPublic });
+        } catch (error) {
+            console.error("Failed to toggle visibility", error);
+        }
+    };
 
     return (
         <div className="space-y-6 animate-fade-in">
@@ -84,7 +109,7 @@ const GalleryTab = ({ trip, isDarkMode }) => {
                         <ImageIcon className="w-5 h-5" />
                     </div>
                     <div>
-                        <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>旅程相簿</h3>
+                        <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{t ? t('trip.tabs.gallery') : '旅程相簿'}</h3>
                         <p className="text-xs opacity-60">共收錄 {galleryImages.length} 張精彩照片</p>
                     </div>
                 </div>
@@ -102,7 +127,7 @@ const GalleryTab = ({ trip, isDarkMode }) => {
                             src={img.url}
                             alt={img.title}
                             loading="lazy"
-                            className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-700"
+                            className={`w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-700 ${!readOnly && img.source === 'file' && !img.isPublic ? 'grayscale opacity-70' : ''}`}
                         />
 
                         {/* Overlay Gradient */}
@@ -118,9 +143,25 @@ const GalleryTab = ({ trip, isDarkMode }) => {
                             </div>
                         </div>
 
-                        {/* Source Badge */}
-                        <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-md text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                            {img.source === 'itinerary' ? '行程' : '檔案'}
+                        {/* Top Right Controls (Public Toggle) */}
+                        <div className="absolute top-2 right-2 flex gap-1">
+                            {/* Source Badge */}
+                            <div className="px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-md text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                {img.source === 'itinerary' ? '行程' : '檔案'}
+                            </div>
+
+                            {/* Privacy Toggle (Only for Files in Edit Mode) */}
+                            {/* Logic: Show if !readOnly AND (User is Owner OR User is Uploader) */}
+                            {!readOnly && img.source === 'file' &&
+                                (isOwner || (user?.uid && (img.originalFile?.ownerId === user.uid || img.originalFile?.uploadedBy === user.displayName))) && (
+                                    <button
+                                        onClick={(e) => handleTogglePublic(e, img)}
+                                        className={`w-6 h-6 rounded-full flex items-center justify-center backdrop-blur-md transition-all ${img.isPublic ? 'bg-emerald-500 text-white shadow-emerald-500/40' : 'bg-black/50 text-white/50 hover:bg-black/70 hover:text-white'}`}
+                                        title={img.isPublic ? "已公開 (Public)" : "私人 (Private)"}
+                                    >
+                                        {img.isPublic ? <Globe2 className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                                    </button>
+                                )}
                         </div>
                     </div>
                 ))}

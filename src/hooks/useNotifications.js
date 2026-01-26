@@ -109,7 +109,7 @@ export const useNotifications = (user) => {
         const q = query(
             collection(db, `users/${user.uid}/notifications`),
             orderBy('timestamp', 'desc'),
-            limit(30)
+            limit(50)
         );
 
         let isInitialLoad = true;

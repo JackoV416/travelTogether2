@@ -12,7 +12,8 @@ const MobileBottomNav = ({
     currentView,
     onViewChange,
     onCreateTrip,
-    onSearch  // For global search/command palette
+    onSearch,  // For global search/command palette
+    friendRequestCount = 0
 }) => {
     const { t } = useTranslation();
 
@@ -121,7 +122,10 @@ const MobileBottomNav = ({
                         ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/40 -translate-y-1'
                         : 'text-gray-400 group-hover:bg-gray-500/10'
                         }`}>
-                        <User className="w-6 h-6 stroke-2" />
+                        <div className="relative">
+                            <User className="w-6 h-6 stroke-2" />
+                            {friendRequestCount > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white dark:border-gray-900 rounded-full animate-pulse"></span>}
+                        </div>
                     </div>
                     <span className={`text-[10px] font-black mt-1 uppercase tracking-tighter ${currentView === 'profile' ? 'text-indigo-500' : 'text-gray-500 opacity-50'
                         }`}>我</span>

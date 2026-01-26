@@ -18,7 +18,8 @@ const ShoppingTab = ({
     glassCard,
     onOpenSmartImport,
     onOpenSmartExport,
-    exchangeRates
+    exchangeRates,
+    readOnly = false // V1.9.8 Public View Support
 }) => {
     const { t, i18n } = useTranslation();
     const isZh = i18n.language.includes('zh');
@@ -104,18 +105,22 @@ const ShoppingTab = ({
                                 <p className="text-[10px] opacity-50 font-bold uppercase tracking-widest mt-0.5">Shopping Wishlist</p>
                             </div>
                             <div className="flex gap-2">
-                                <button
-                                    onClick={() => onOpenAIModal('shopping')}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-purple-400 rounded-lg transition-all text-[10px] font-black uppercase tracking-wider"
-                                >
-                                    <Sparkles className="w-3 h-3" /> Jarvis 靈感
-                                </button>
-                                <button
-                                    onClick={() => onAddItem('shopping_plan')}
-                                    className="p-1.5 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-500/20"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                </button>
+                                {!readOnly && (
+                                    <>
+                                        <button
+                                            onClick={() => onOpenAIModal('shopping')}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-purple-400 rounded-lg transition-all text-[10px] font-black uppercase tracking-wider"
+                                        >
+                                            <Sparkles className="w-3 h-3" /> Jarvis 靈感
+                                        </button>
+                                        <button
+                                            onClick={() => onAddItem('shopping_plan')}
+                                            className="p-1.5 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-500/20"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
 
@@ -126,7 +131,7 @@ const ShoppingTab = ({
                                     title={searchValue ? "找不到相關商品" : "清單空空如也"}
                                     description={searchValue ? `找不到與「${searchValue}」相關的商品。` : "將您想買的東西加入清單，避免錯過心頭好。"}
                                     isDarkMode={isDarkMode}
-                                    action={!searchValue ? {
+                                    action={!searchValue && !readOnly ? {
                                         label: "立即新增",
                                         onClick: () => onAddItem('shopping_plan'),
                                         icon: Plus
@@ -180,12 +185,14 @@ const ShoppingTab = ({
                                 </h3>
                                 <p className="text-[10px] opacity-50 font-bold uppercase tracking-widest mt-0.5">Purchase Records</p>
                             </div>
-                            <button
-                                onClick={() => onAddItem('shopping')}
-                                className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 text-[10px] font-black uppercase tracking-wider"
-                            >
-                                <Plus className="w-3.5 h-3.5" /> 記帳
-                            </button>
+                            {!readOnly && (
+                                <button
+                                    onClick={() => onAddItem('shopping')}
+                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 text-[10px] font-black uppercase tracking-wider"
+                                >
+                                    <Plus className="w-3.5 h-3.5" /> 記帳
+                                </button>
+                            )}
                         </div>
 
                         <div className="space-y-3 min-h-[100px]">
@@ -195,7 +202,7 @@ const ShoppingTab = ({
                                     title={searchValue ? "找不到購買記錄" : "尚未有購入記錄"}
                                     description={searchValue ? `找不到與「${searchValue}」相關的記錄。` : "記錄您的戰利品，自動同步到預算管理中。"}
                                     isDarkMode={isDarkMode}
-                                    action={!searchValue ? {
+                                    action={!searchValue && !readOnly ? {
                                         label: "手動記帳",
                                         onClick: () => onAddItem('shopping'),
                                         icon: Plus

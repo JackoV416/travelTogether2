@@ -122,7 +122,7 @@ const TripCard = ({ trip, currentLang, onSelect, setGlobalBg, cardWeather, isDar
                                     </div>
                                     <div className="flex items-center gap-2 w-1/2 justify-center pl-2">
                                         <Moon className="w-3.5 h-3.5 text-indigo-400" />
-                                        <span className="text-sm font-bold">{cardWeather.temp.split('/')[1].trim()}</span>
+                                        <span className="text-sm font-bold">{(cardWeather.temp.split('/')[1] || '').trim() || '--'}</span>
                                         <span className="opacity-50 text-[10px] scale-90">{cardWeather.icon}</span>
                                     </div>
                                 </div>

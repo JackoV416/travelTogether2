@@ -17,7 +17,8 @@ const PackingTab = ({
     onDeleteItem,
     onGenerateList,
     onClearList,
-    glassCard
+    glassCard,
+    readOnly = false // V1.9.8 Public View Support
 }) => {
     const { t, i18n } = useTranslation();
     const packingList = trip.packingList || [];
@@ -119,119 +120,126 @@ const PackingTab = ({
                             </div>
                         </div>
                     </div>
-                    <div className="flex flex-wrap gap-2 shrink-0">
-                        <button
-                            onClick={onGenerateList}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl shadow-xl hover:shadow-indigo-500/40 transition-all transform hover:-translate-y-1 active:scale-95 text-xs font-black uppercase tracking-wider"
-                        >
-                            <Sparkles className="w-3.5 h-3.5" /> Jarvis 推理清單
-                        </button>
-                        <button
-                            onClick={() => onAddItem('packing')}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all text-xs font-black uppercase tracking-wider bg-gray-100 hover:bg-gray-200 border border-gray-200 dark:bg-white/5 dark:hover:bg-white/10 dark:border-white/10"
-                        >
-                            <Plus className="w-3.5 h-3.5" /> 手動新增
-                        </button>
-                        <button
-                            onClick={onClearList}
-                            className="p-2.5 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-all"
-                            title="清空所有項目"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
-                    </div>
                 </div>
             </div>
+            {!readOnly && (
+                <div className="flex flex-wrap gap-2 shrink-0">
+                    <button
+                        onClick={onGenerateList}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl shadow-xl hover:shadow-indigo-500/40 transition-all transform hover:-translate-y-1 active:scale-95 text-xs font-black uppercase tracking-wider"
+                    >
+                        <Sparkles className="w-3.5 h-3.5" /> Jarvis 推理清單
+                    </button>
+                    <button
+                        onClick={() => onAddItem('packing')}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all text-xs font-black uppercase tracking-wider bg-gray-100 hover:bg-gray-200 border border-gray-200 dark:bg-white/5 dark:hover:bg-white/10 dark:border-white/10"
+                    >
+                        <Plus className="w-3.5 h-3.5" /> 手動新增
+                    </button>
+                    <button
+                        onClick={onClearList}
+                        className="p-2.5 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-all"
+                        title="清空所有項目"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
+
 
             {/* Categories */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {categories.map(cat => {
-                    const items = currentList.filter(i => i.category === cat.id && (i.name || "").toLowerCase().includes(searchValue.toLowerCase()));
-                    const isExpanded = expandedCats.includes(cat.id);
-                    const completedInCat = items.filter(i => i.checked).length;
+                {
+                    categories.map(cat => {
+                        const items = currentList.filter(i => i.category === cat.id && (i.name || "").toLowerCase().includes(searchValue.toLowerCase()));
+                        const isExpanded = expandedCats.includes(cat.id);
+                        const completedInCat = items.filter(i => i.checked).length;
 
-                    return (
-                        <div key={cat.id} className={`${glassCard(isDarkMode)} overflow-hidden group/cat transition-all duration-300 ${items.length > 0 && completedInCat === items.length ? 'opacity-80' : ''}`}>
-                            <div
-                                onClick={() => toggleCat(cat.id)}
-                                className="p-4 flex justify-between items-center cursor-pointer transition-colors bg-gray-50/50 hover:bg-gray-50 dark:bg-white/[0.02] dark:hover:bg-white/5"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-white shadow-sm dark:bg-gray-800">
-                                        {cat.icon}
+                        return (
+                            <div key={cat.id} className={`${glassCard(isDarkMode)} overflow-hidden group/cat transition-all duration-300 ${items.length > 0 && completedInCat === items.length ? 'opacity-80' : ''}`}>
+                                <div
+                                    onClick={() => toggleCat(cat.id)}
+                                    className="p-4 flex justify-between items-center cursor-pointer transition-colors bg-gray-50/50 hover:bg-gray-50 dark:bg-white/[0.02] dark:hover:bg-white/5"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-lg bg-white shadow-sm dark:bg-gray-800">
+                                            {cat.icon}
+                                        </div>
+                                        <h4 className="font-black text-sm tracking-tight flex items-center gap-2">
+                                            {cat.label}
+                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-all ${completedInCat === items.length && items.length > 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'}`}>
+                                                {completedInCat}/{items.length}
+                                            </span>
+                                        </h4>
                                     </div>
-                                    <h4 className="font-black text-sm tracking-tight flex items-center gap-2">
-                                        {cat.label}
-                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-all ${completedInCat === items.length && items.length > 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'}`}>
-                                            {completedInCat}/{items.length}
-                                        </span>
-                                    </h4>
+                                    {isExpanded ? <ChevronDown className="w-4 h-4 opacity-30" /> : <ChevronRight className="w-4 h-4 opacity-30" />}
                                 </div>
-                                {isExpanded ? <ChevronDown className="w-4 h-4 opacity-30" /> : <ChevronRight className="w-4 h-4 opacity-30" />}
-                            </div>
 
-                            {isExpanded && (
-                                <div className="p-3 space-y-1.5 min-h-[60px]">
-                                    {items.length === 0 && (
-                                        <EmptyState
-                                            icon={searchValue ? Search : AlertCircle}
-                                            mini={true}
-                                            title={searchValue ? "找不到項目" : "無內容"}
-                                            description={searchValue ? "嘗試換個關鍵字搜尋。" : "此類別尚未有行李項目。"}
-                                            isDarkMode={isDarkMode}
-                                            action={!searchValue ? {
-                                                label: "新增",
-                                                onClick: () => onAddItem('packing'),
-                                                icon: Plus
-                                            } : null}
-                                        />
-                                    )}
-                                    {items.map((item) => (
-                                        <div
-                                            key={item.id}
-                                            className={`group/item flex items-center justify-between p-3 rounded-xl transition-all border border-transparent ${item.checked ? 'bg-indigo-500/5' : 'hover:bg-gray-50 hover:border-gray-100 dark:hover:bg-white/5 dark:hover:border-white/5'}`}
-                                        >
-                                            <div className="flex items-center gap-3 flex-1">
-                                                <button
-                                                    onClick={() => onToggleItem(item.id)}
-                                                    className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all transform active:scale-90 ${item.checked ? 'bg-indigo-500 border-indigo-500 text-white shadow-lg shadow-indigo-500/40' : 'border-gray-500/30 hover:border-indigo-500'}`}
-                                                >
-                                                    {item.checked && <PackageCheck className="w-3.5 h-3.5" />}
-                                                </button>
-                                                <div className="flex flex-col">
-                                                    <span className={`text-sm font-medium ${item.checked ? 'line-through opacity-40 text-gray-400' : ''}`}>
-                                                        {isZh && item.name_zh ? item.name_zh : item.name}
-                                                    </span>
-                                                    <div className="flex items-center gap-2">
-                                                        {item.aiSuggested && (
-                                                            <span className="text-[8px] text-purple-400 font-black uppercase tracking-tighter flex items-center gap-0.5">
-                                                                <Sparkles className="w-2 h-2" /> Jarvis Suggested
-                                                            </span>
-                                                        )}
-                                                        {/* Show Owner if 'All' view */}
-                                                        {activeMemberId === 'all' && (item.ownerId || item.createdBy?.id) && (
-                                                            <span className="text-[8px] bg-gray-500/20 text-gray-400 px-1.5 py-0.5 rounded-full flex items-center gap-1">
-                                                                <Users className="w-2 h-2" />
-                                                                {members.find(m => m.id === (item.ownerId || item.createdBy?.id))?.name || 'User'}
-                                                            </span>
-                                                        )}
+                                {isExpanded && (
+                                    <div className="p-3 space-y-1.5 min-h-[60px]">
+                                        {items.length === 0 && (
+                                            <EmptyState
+                                                icon={searchValue ? Search : AlertCircle}
+                                                mini={true}
+                                                title={searchValue ? "找不到項目" : "無內容"}
+                                                description={searchValue ? "嘗試換個關鍵字搜尋。" : "此類別尚未有行李項目。"}
+                                                isDarkMode={isDarkMode}
+                                                action={!searchValue && !readOnly ? {
+                                                    label: "新增",
+                                                    onClick: () => onAddItem('packing'),
+                                                    icon: Plus
+                                                } : null}
+                                            />
+                                        )}
+                                        {items.map((item) => (
+                                            <div
+                                                key={item.id}
+                                                className={`group/item flex items-center justify-between p-3 rounded-xl transition-all border border-transparent ${item.checked ? 'bg-indigo-500/5' : 'hover:bg-gray-50 hover:border-gray-100 dark:hover:bg-white/5 dark:hover:border-white/5'}`}
+                                            >
+                                                <div className="flex items-center gap-3 flex-1">
+                                                    <button
+                                                        onClick={() => !readOnly && onToggleItem(item.id)}
+                                                        className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all transform ${!readOnly ? 'active:scale-90 cursor-pointer' : 'cursor-default'} ${item.checked ? 'bg-indigo-500 border-indigo-500 text-white shadow-lg shadow-indigo-500/40' : 'border-gray-500/30 hover:border-indigo-500'}`}
+                                                    >
+                                                        {item.checked && <PackageCheck className="w-3.5 h-3.5" />}
+                                                    </button>
+                                                    <div className="flex flex-col">
+                                                        <span className={`text-sm font-medium ${item.checked ? 'line-through opacity-40 text-gray-400' : ''}`}>
+                                                            {isZh && item.name_zh ? item.name_zh : item.name}
+                                                        </span>
+                                                        <div className="flex items-center gap-2">
+                                                            {item.aiSuggested && (
+                                                                <span className="text-[8px] text-purple-400 font-black uppercase tracking-tighter flex items-center gap-0.5">
+                                                                    <Sparkles className="w-2 h-2" /> Jarvis Suggested
+                                                                </span>
+                                                            )}
+                                                            {/* Show Owner if 'All' view */}
+                                                            {activeMemberId === 'all' && (item.ownerId || item.createdBy?.id) && (
+                                                                <span className="text-[8px] bg-gray-500/20 text-gray-400 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                                                                    <Users className="w-2 h-2" />
+                                                                    {members.find(m => m.id === (item.ownerId || item.createdBy?.id))?.name || 'User'}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
+                                                {!readOnly && (
+                                                    <button
+                                                        onClick={() => onDeleteItem(item.id)}
+                                                        className="opacity-0 group-hover/item:opacity-100 p-2 hover:bg-red-500/10 text-red-500 rounded-lg transition-all transform hover:rotate-12"
+                                                        title="刪除"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                             </div>
-                                            <button
-                                                onClick={() => onDeleteItem(item.id)}
-                                                className="opacity-0 group-hover/item:opacity-100 p-2 hover:bg-red-500/10 text-red-500 rounded-lg transition-all transform hover:rotate-12"
-                                                title="刪除"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })
+                }
             </div>
         </div>
     );

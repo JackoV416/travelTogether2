@@ -7,6 +7,8 @@ import './i18n';
 import 'leaflet/dist/leaflet.css'; // Leaflet Map CSS
 
 
+import { BrowserRouter } from 'react-router-dom';
+
 const rootElement = document.getElementById('root');
 if (!rootElement) {
   console.error('❌ [Main] Root element not found!');
@@ -15,7 +17,9 @@ if (!rootElement) {
     ReactDOM.createRoot(rootElement).render(
       <React.StrictMode>
         <HelmetProvider>
-          <App />
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <App />
+          </BrowserRouter>
         </HelmetProvider>
       </React.StrictMode>,
     );

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { X, Search, CheckCircle, Globe, Lock, Link as LinkIcon, Copy, Check } from 'lucide-react';
+import { X, Search, CheckCircle, Globe, Lock, Link as LinkIcon, Copy, Check, Info } from 'lucide-react';
 import { inputClasses, getLocalizedCountryName, getLocalizedCityName, getHolidayMap } from '../../utils/tripUtils';
 import { useTranslation } from 'react-i18next';
 import { buttonPrimary } from '../../constants/styles';
@@ -14,7 +14,14 @@ const TripSettingsModal = ({ isOpen, onClose, trip, onUpdate, isDarkMode, global
         ...trip,
         countries: trip?.countries || (trip?.country ? [trip.country] : []),
         cities: trip?.cities || (trip?.city ? [trip.city] : []),
-        isPublic: trip?.isPublic || false
+        isPublic: trip?.isPublic || false,
+        publicModules: trip?.publicModules || {
+            budget: true, // Default to true or false? Let's default false for privacy unless explicitly set
+            packing: true,
+            shopping: true,
+            footprints: true,
+            gallery: true
+        }
     });
 
     const [copied, setCopied] = useState(false);
@@ -36,7 +43,8 @@ const TripSettingsModal = ({ isOpen, onClose, trip, onUpdate, isDarkMode, global
                 ...trip,
                 countries: trip.countries || (trip.country ? [trip.country] : []),
                 cities: trip.cities || (trip.city ? [trip.city] : []),
-                isPublic: trip.isPublic || false
+                isPublic: trip.isPublic || false,
+                publicModules: trip.publicModules || { budget: false, packing: false, shopping: false, footprints: false, gallery: false }
             }));
         }
     }, [trip]);
@@ -79,7 +87,8 @@ const TripSettingsModal = ({ isOpen, onClose, trip, onUpdate, isDarkMode, global
             city: form.cities[0] || form.city,          // Fallback to first selected
             countries: form.countries,
             cities: form.cities,
-            isPublic: form.isPublic // V1.3.0 Public Trip
+            isPublic: form.isPublic, // V1.3.0 Public Trip
+            publicModules: form.publicModules // V1.9.8 Modular Public
         };
         onUpdate(updateData);
         onClose();
@@ -152,6 +161,39 @@ const TripSettingsModal = ({ isOpen, onClose, trip, onUpdate, isDarkMode, global
                             </div>
                         )}
                     </div>
+
+                    {/* V1.9.8 Modular Public Visibility Settings */}
+                    {form.isPublic && (
+                        <div className="md:col-span-2 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-indigo-500/20">
+                            <h4 className="text-sm font-bold flex items-center gap-2 mb-4 text-indigo-500">
+                                <Globe className="w-4 h-4" /> 公開頁面模組設定 (Modular Visibility)
+                            </h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                {['budget', 'packing', 'shopping', 'footprints', 'gallery'].map(module => (
+                                    <label key={module} className="flex items-center gap-2 cursor-pointer group">
+                                        <div className="relative">
+                                            <input
+                                                type="checkbox"
+                                                className="peer sr-only"
+                                                checked={form.publicModules?.[module] === true}
+                                                onChange={(e) => setForm(prev => ({
+                                                    ...prev,
+                                                    publicModules: { ...prev.publicModules, [module]: e.target.checked }
+                                                }))}
+                                            />
+                                            <div className="w-10 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                                        </div>
+                                        <span className="text-sm font-medium opacity-70 group-hover:opacity-100 transition-opacity capitalize">
+                                            {t(`trip.tabs.${module}`, module)}
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
+                            <p className="text-[10px] opacity-50 mt-3 flex items-center gap-1">
+                                <Info className="w-3 h-3" /> 勾選後，訪客將可在公開頁面查看該分頁內容 (唯讀)。相簿需額外設定相片權限。
+                            </p>
+                        </div>
+                    )}
 
                     <div className="md:col-span-2 space-y-2">
                         <label className="text-xs font-bold opacity-70 uppercase tracking-wider ml-1">{t('trip.settings.dates')}</label>

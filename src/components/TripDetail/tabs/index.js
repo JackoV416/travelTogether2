@@ -10,3 +10,4 @@ export { default as FilesTab } from './FilesTab';
 export { default as VisaTab } from './VisaTab';
 export { default as JournalTab } from './JournalTab';
 export { default as GalleryTab } from './GalleryTab';
+export { default as FootprintsTab } from './FootprintsTab'; // V1.9.0 Footprints

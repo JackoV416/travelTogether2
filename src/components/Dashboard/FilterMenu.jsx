@@ -56,7 +56,11 @@ const FilterMenu = ({
     useEffect(() => {
         // Sync internal slider state when external filter changes
         if (filters.budget === 'All') {
-            setBudgetRange([0, MAX_BUDGET]);
+            setBudgetRange(prev => {
+                // Prevent infinite loop by checking if state actually needs to change
+                if (prev[0] === 0 && prev[1] === MAX_BUDGET) return prev;
+                return [0, MAX_BUDGET];
+            });
         }
         // If needed, map complex logic here later
     }, [filters.budget]);

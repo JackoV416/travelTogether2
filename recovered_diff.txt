@@ -1,0 +1,540 @@
+diff --git a/src/components/TripDetail/TripDetailContent.jsx b/src/components/TripDetail/TripDetailContent.jsx
+index fc291c74..f51b12ec 100644
+--- a/src/components/TripDetail/TripDetailContent.jsx
++++ b/src/components/TripDetail/TripDetailContent.jsx
+@@ -964,13 +964,19 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
+         }
+     };
+ 
+-    // V1.3.0 Social: Fork Handler
++    // V1.3.0 Social: Fork Handler (Updated V1.9.7 for Duplicate)
+     const handleFork = async () => {
+         if (!user) return alert("請先登入才可 Fork 行程");
+-        if (trip.ownerId === user.uid) return alert("這是你自己的行程，無需 Fork");
++        // Update V1.9.7: Allow owner to Duplicate
++        const isOwner = trip.ownerId === user.uid;
++
+         if (isSimulation) return alert("模擬模式無法執行 Fork");
+ 
+-        const confirmMsg = `確定要 Fork 這個行程「${trip.name}」？\n\n這將會：\n1. 複製一份完整的行程到你的帳戶\n2. 讓你自由修改而不影響原作\n3. 保留原作的 credits`;
++        const actionName = isOwner ? (t('trip.actions.duplicate') || '複製') : 'Fork';
++        const confirmMsg = isOwner
++            ? `確定要${actionName}這個行程「${trip.name}」？\n\n這將會建立一個全新的複本，讓你自由修改。`
++            : `確定要 Fork 這個行程「${trip.name}」？\n\n這將會：\n1. 複製一份完整的行程到你的帳戶\n2. 讓你自由修改而不影響原作\n3. 保留原作的 credits`;
++
+         if (!confirm(confirmMsg)) return;
+ 
+         try {
+@@ -980,7 +986,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
+             // 1. Prepare new trip data (Clean slate)
+             const newTrip = {
+                 ...trip,
+-                name: `${trip.name} (Forked)`,
++                name: isOwner ? `${trip.name} (Copy)` : `${trip.name} (Forked)`,
+                 ownerId: user.uid, // Transfer ownership to current user
+                 members: [{
+                     id: user.email || user.uid,
+@@ -1605,335 +1611,193 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
+                 description={`Trip to ${trip.city || trip.country} - ${trip.startDate ? formatDate(trip.startDate) : ''}`}
+                 image={currentHeaderImage}
+             />
+-            <div id="trip-detail-content" className="max-w-7xl mx-auto p-4 pb-36 md:pb-20 animate-fade-in">
+-                {/* Unified Hero Header Card */}
+-                <div className={`${glassCard(isDarkMode)} relative mb-8 z-40 group hover:shadow-2xl transition-all duration-500`}>
+-                    {/* Background Layer with Overflow Hidden to clip scaling image */}
+-                    {/* Header Background layer - Consolidated Background with fixed overflow */}
+-                    <div className="absolute inset-0 overflow-hidden rounded-2xl">
+-                        <div
+-                            className="absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out group-hover:scale-110"
+-                            style={{ backgroundImage: `url(${currentHeaderImage})` }}
+-                        />
+-
+-                        {/* Carousel Indicators */}
+-                        {trip.cities && trip.cities.length > 1 && (
+-                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 pt-10">
+-                                {trip.cities.map((c, i) => (
+-                                    <div
+-                                        key={c}
+-                                        className={`h-1.5 rounded-full transition-all duration-500 shadow-sm ${i === carouselIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/60'}`}
+-                                        title={c}
+-                                    />
+-                                ))}
+-                            </div>
+-                        )}
+-                        <div className={`absolute inset-0 bg-gradient-to-t ${isDarkMode ? 'from-slate-950 via-slate-950/60 to-transparent' : 'from-indigo-900/60 via-indigo-900/20 to-black/10'}`} />
+-                    </div>
++            <div id="trip-detail-content" className="pb-36 md:pb-20 animate-fade-in">
++                {/* Unified Hero Header (V1.9.7 New Design) */}
++                <div className="relative h-[50vh] w-full group overflow-hidden bg-gray-900 border-b border-white/10">
++                    {/* Background Image */}
++                    <div className="absolute inset-0 bg-black/30 z-10" />
++                    <div
++                        className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105"
++                        style={{ backgroundImage: `url(${currentHeaderImage})` }}
++                    />
++                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent z-20" />
++
++                    {/* Top Bar Actions */}
++                    <div className="absolute top-0 inset-x-0 p-4 flex justify-between items-start z-50">
++                        {/* Back Button */}
++                        <div className="flex gap-2">
++                            <button onClick={onBack} className="p-2.5 rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-black/40 transition-all border border-white/10 hover:border-white/30 active:scale-95 group/back">
++                                <ChevronLeft className="w-5 h-5 group-hover/back:-translate-x-0.5 transition-transform" />
++                            </button>
++                        </div>
+ 
+-                    {/* Content Grid - Centered Container */}
+-                    <div className="relative z-10 px-6 py-6 md:px-10 md:py-10 lg:px-14 lg:py-12">
+-                        <div className="max-w-7xl mx-auto">
+-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 text-white">
+-                                {/* Left Col: Trip Core Info */}
+-                                <div className="lg:col-span-2 flex flex-col justify-between min-h-[220px]">
+-                                    <div>
+-                                        <div className="text-[10px] text-indigo-300 uppercase font-black tracking-widest mb-2">行程概覽</div>
+-                                        <div className="flex items-center gap-2 mb-4">
+-                                            <span className="bg-indigo-500/80 text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur-md uppercase tracking-wider font-bold shadow-lg shadow-indigo-500/20">{displayCountry} {displayCity}</span>
+-                                            <div className="px-2.5 py-1 bg-white/5 rounded-full backdrop-blur-xl border border-white/5 text-[10px] font-black whitespace-nowrap shadow-sm flex items-center gap-1.5 ring-1 ring-white/5">
+-                                                <span className="text-indigo-400">DAY {getDaysArray(trip.startDate, trip.endDate).findIndex(d => d === currentDisplayDate) + 1 || '-'}</span>
+-                                                <span className="opacity-20">/</span>
+-                                                <span className="text-white/70">{getDaysArray(trip.startDate, trip.endDate).length} DAYS</span>
+-                                            </div>
+-                                            {trip.isPublic && <span className="bg-emerald-500/80 text-white text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-emerald-500/20"><Globe2 className="w-3 h-3" /> 公開</span>}
+-                                            {trip.forkedFrom && (
+-                                                <span className="bg-blue-500/20 border border-blue-500/30 text-blue-200 text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1 backdrop-blur-md" title={`From: ${trip.forkedFromName}`}>
+-                                                    <GitFork className="w-3 h-3" />
+-                                                    From {trip.forkedFromName || 'Original'}
+-                                                </span>
+-                                            )}
+-                                            {timeDiff !== 0 && <span className={`text-[10px] px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-md ${timeDiff > 0 ? 'bg-orange-500/20 text-orange-200' : 'bg-blue-500/20 text-blue-200'}`}>{timeDiff > 0 ? `+${timeDiff}h` : `${timeDiff}h`}</span>}
+-                                        </div>
++                        {/* Right Actions: Undo/Redo, Settings */}
++                        <div className="flex items-center gap-2">
++                            {/* Undo/Redo (Only if owner) */}
++                            {isAdmin && (
++                                <div className="hidden sm:flex items-center gap-1 bg-black/20 backdrop-blur-md rounded-full p-1 border border-white/10 mr-2 shadow-lg">
++                                    <button
++                                        onClick={undo}
++                                        disabled={!past.length}
++                                        className={`p-2 rounded-full transition-colors ${!past.length ? 'text-white/30 cursor-not-allowed' : 'text-white hover:bg-white/20 active:scale-95'}`}
++                                        title="Undo (Ctrl+Z)"
++                                    >
++                                        <Undo className="w-4 h-4" />
++                                    </button>
++                                    <div className="w-[1px] h-4 bg-white/10"></div>
++                                    <button
++                                        onClick={redo}
++                                        disabled={!future.length}
++                                        className={`p-2 rounded-full transition-colors ${!future.length ? 'text-white/30 cursor-not-allowed' : 'text-white hover:bg-white/20 active:scale-95'}`}
++                                        title="Redo (Ctrl+Y)"
++                                    >
++                                        <Redo className="w-4 h-4" />
++                                    </button>
++                                </div>
++                            )}
+ 
+-                                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
+-                                            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-[1.1] tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-white/60 drop-shadow-xl animate-fade-in-up">
+-                                                {i18n.language.includes('zh') && trip.name_zh ? trip.name_zh : trip.name}
+-                                            </h1>
+-
+-                                            {/* Removed redundant view switcher */}
+-
+-
+-                                            {/* Unified Premium Action Bar */}
+-                                            <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-900/60 backdrop-blur-3xl border border-white/5 shadow-2xl self-start sm:ml-4 group/toolbar transition-all hover:bg-slate-900/80 ring-1 ring-white/5 shadow-black/60">
+-                                                {/* History Actions */}
+-                                                <div className="flex items-center gap-1 px-1 border-r border-white/10 pr-2">
+-                                                    <button
+-                                                        onClick={handleUndo}
+-                                                        disabled={!canUndo}
+-                                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${canUndo ? 'hover:bg-white/10 text-white active:scale-90' : 'opacity-20 cursor-not-allowed'}`}
+-                                                        title={t('trip.actions.undo') || '撤銷 (Undo)'}
+-                                                    >
+-                                                        <Undo className="w-4 h-4" />
++                            {/* Settings Menu */}
++                            <div className="relative">
++                                <button
++                                    onClick={() => { setIsManageMenuOpen(!isManageMenuOpen); setIsPlanMenuOpen(false); }}
++                                    className={`p-2.5 rounded-full backdrop-blur-md text-white transition-all border shadow-lg ${isManageMenuOpen ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-black/20 border-white/10 hover:bg-black/40'}`}
++                                >
++                                    <ListIcon className="w-5 h-5" />
++                                </button>
++                                {/* Dropdown Reused Logic */}
++                                {isManageMenuOpen && (
++                                    <>
++                                        <div className="fixed inset-0 z-[90]" onClick={() => setIsManageMenuOpen(false)}></div>
++                                        <div className="absolute right-0 top-full mt-2 w-56 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[100] transform origin-top-right animate-scale-in">
++                                            {isOwner {isAdmin && ({isAdmin && ( (
++                                                <>
++                                                    <button onClick={() => { setIsMemberModalOpen(true); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-left text-sm transition-colors border-b border-white/10 text-gray-200">
++                                                        <Users className="w-4 h-4 text-blue-400" /> {t('trip.actions.manage_members') || '成員管理'}
+                                                     </button>
+-                                                    <button
+-                                                        onClick={handleRedo}
+-                                                        disabled={!canRedo}
+-                                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${canRedo ? 'hover:bg-white/10 text-white active:scale-90' : 'opacity-20 cursor-not-allowed'}`}
+-                                                        title={t('trip.actions.redo') || '重做 (Redo)'}
+-                                                    >
+-                                                        <Redo className="w-4 h-4" />
++                                                    <button onClick={() => { setIsInviteModal(true); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-left text-sm transition-colors border-b border-white/10 text-gray-200">
++                                                        <UserPlus className="w-4 h-4 text-green-400" /> {t('trip.actions.invite_friends') || '邀請朋友'}
+                                                     </button>
+-                                                </div>
+-
+-                                                {/* Edit/Settings */}
+-                                                {isOwner ? (
+-                                                    <button
+-                                                        onClick={() => setIsTripSettingsOpen(true)}
+-                                                        className="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:bg-white/10 text-indigo-300 active:scale-90"
+-                                                        title={t('trip.actions.edit_settings') || '編輯行程設定 (Edit)'}
+-                                                    >
+-                                                        <Edit3 className="w-4 h-4" />
++                                                    <button onClick={() => { handleExportPdf(); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-left text-sm transition-colors border-b border-white/10 text-gray-200">
++                                                        <FileText className="w-4 h-4 text-orange-400" /> {t('trip.actions.export_pdf') || '匯出 PDF'}
+                                                     </button>
+-                                                ) : trip.isPublic ? (
+-                                                    <button
+-                                                        onClick={handleFork}
+-                                                        className="w-9 h-9 rounded-xl flex items-center justify-center transition-all bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 active:scale-90 border border-emerald-500/20"
+-                                                        title="Fork 此行程 (複製到我的行程)"
+-                                                    >
+-                                                        <GitFork className="w-4 h-4" />
++                                                    <button onClick={() => { setIsTripSettingsOpen(true); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-left text-sm transition-colors border-b border-white/10 text-gray-200">
++                                                        <WaitIcon className="w-4 h-4 text-gray-400" /> {t('trip.settings.title') || '行程設定'}
+                                                     </button>
+-                                                ) : null}
+-
+-                                                {/* Chat Toggle */}
+-                                                {!isChatOpen && (
+-                                                    <button
+-                                                        onClick={onOpenChat}
+-                                                        data-tour="chat-button"
+-                                                        className="w-9 h-9 rounded-xl flex items-center justify-center transition-all bg-indigo-500/80 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 active:scale-95"
+-                                                        title={t('trip.actions.open_chat') || '打開行程對話 (Chat)'}
+-                                                    >
+-                                                        <MessageCircle className="w-4 h-4" />
++                                                    <button onClick={() => { handleDeleteTrip(); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 text-left text-sm text-red-400 transition-colors">
++                                                        <Trash2 className="w-4 h-4" /> {t('trip.actions.delete_trip') || '刪除行程'}
+                                                     </button>
+-                                                )}
+-                                            </div>
++                                                </>
++                                            )}
++                                            {!isOwner {!isAdmin &&{!isAdmin && <div className="px-4 py-3 text-xs opacity-50 text-center text-gray-400">{t('trip.actions.owner_only') || '僅擁有者可操作'}</div>}
+                                         </div>
++                                    </>
++                                )}
++                            </div>
++                        </div>
++                    </div>
+ 
+-                                        {/* 🚀 Dynamic Header Location & Metadata (Moved Back Inside) */}
+-                                        <div className="mt-8 pt-8 border-t border-white/10">
+-                                            <div className="flex flex-wrap items-center justify-between gap-6">
+-                                                <div className="flex flex-wrap items-center gap-3 text-[11px] md:text-sm opacity-90 font-medium">
+-                                                    <span className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md shadow-sm">
+-                                                        <Calendar className="w-3.5 h-3.5 text-indigo-300" /> {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
+-                                                    </span>
+-                                                    <span className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md"><Clock className="w-3.5 h-3.5 text-purple-300" /> {getDaysArray(trip.startDate, trip.endDate).length} 天行程</span>
+-                                                    {/* Dynamic Multi-City Badge - Shows Route A→B→C or A→B→A */}
+-                                                    {(() => {
+-                                                        // Helper: Extract clean city name (handles "Osaka -> Kyoto" format)
+-                                                        const extractCityName = (city) => {
+-                                                            if (!city) return null;
+-                                                            if (city.includes('->')) return city.split('->').pop().trim();
+-                                                            if (city.includes(' → ')) return city.split(' → ').pop().trim();
+-                                                            return city.trim();
+-                                                        };
+-
+-                                                        // Compute city route (preserving transitions, not unique)
+-                                                        const cityRoute = [];
+-                                                        const normalizedRoute = []; // Track normalized names for comparison
+-
+-                                                        if (trip.locations) {
+-                                                            const sortedDates = Object.keys(trip.locations).sort();
+-                                                            sortedDates.forEach(date => {
+-                                                                const rawCity = trip.locations[date]?.city;
+-                                                                if (!rawCity) return;
+-
+-                                                                // Extract clean city name (handle "Osaka -> Kyoto" format)
+-                                                                const cleanCity = extractCityName(rawCity);
+-                                                                // Normalize: Convert to localized name for comparison
+-                                                                const normalizedCity = getLocalizedCityName(cleanCity, currentLang);
+-
+-                                                                // Only add if different from last normalized city
+-                                                                if (normalizedRoute.length === 0 || normalizedRoute[normalizedRoute.length - 1] !== normalizedCity) {
+-                                                                    cityRoute.push(normalizedCity);
+-                                                                    normalizedRoute.push(normalizedCity);
+-                                                                }
+-                                                            });
+-                                                        }
+-
+-                                                        // Fallback to single city
+-                                                        if (cityRoute.length === 0 && trip.city) {
+-                                                            cityRoute.push(getLocalizedCityName(extractCityName(trip.city), currentLang));
+-                                                        }
+-
+-                                                        const isMultiCity = cityRoute.length > 1;
+-                                                        const routeText = cityRoute.join(' → ');
+-
+-                                                        return (
+-                                                            <span className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border backdrop-blur-md font-bold text-white shadow-sm ring-1 ring-white/5 tracking-tight text-[11px] ${isMultiCity ? 'bg-amber-500/20 border-amber-500/30' : 'bg-white/10 border-white/10'}`}>
+-                                                                <MapPin className={`w-3.5 h-3.5 flex-shrink-0 ${isMultiCity ? 'text-amber-300' : 'text-emerald-300'}`} />
+-                                                                <span className={isMultiCity ? 'text-amber-200' : ''}>{routeText}</span>
+-                                                            </span>
+-                                                        );
+-                                                    })()}
+-
+-                                                    {/* V1.3.0 Social Counters */}
+-                                                    {trip.isPublic && (
+-                                                        <div className="flex items-center gap-4 pl-4 border-l border-white/20 ml-1">
+-                                                            <div
+-                                                                className="flex items-center gap-1.5 cursor-pointer hover:scale-110 transition-transform active:scale-95"
+-                                                                title={trip.likedBy?.includes(user?.uid) ? "Unlike" : "Like"}
+-                                                                onClick={handleLike}
+-                                                            >
+-                                                                <Heart className={`w-3.5 h-3.5 transition-colors ${trip.likedBy?.includes(user?.uid) ? 'text-rose-500 fill-rose-500' : 'text-rose-400'}`} />
+-                                                                <span className="text-white font-bold">{trip.likes || 0}</span>
+-                                                            </div>
+-                                                            <div
+-                                                                className="flex items-center gap-1.5 cursor-pointer hover:scale-110 transition-transform active:scale-95"
+-                                                                title="Fork this trip"
+-                                                                onClick={handleFork}
+-                                                            >
+-                                                                <GitFork className="w-3.5 h-3.5 text-blue-400" />
+-                                                                <span className="text-white font-bold">{trip.forks || 0}</span>
+-                                                            </div>
+-                                                            <div className="flex items-center gap-1.5" title="Views">
+-                                                                <Eye className="w-3.5 h-3.5 text-gray-400" />
+-                                                                <span className="text-white/80 font-bold">{trip.views || 0}</span>
+-                                                            </div>
+-                                                        </div>
+-                                                    )}
+-
+-                                                    {/* Member Row (z-[60] to appear above action buttons z-40) */}
+-                                                    <div className="flex items-center gap-3 pl-3 border-l border-white/20 ml-2 relative z-[60]">
+-                                                        <div className="flex -space-x-3 flex-nowrap relative">
+-                                                            {trip.members?.slice(0, 4).map(m => (
+-                                                                <div key={m.id} onClick={() => setViewingMember(m)} className="relative group cursor-pointer transition-transform hover:scale-110 hover:z-50 flex-shrink-0" title={`${m.name} (${m.role})`}>
+-                                                                    <div className={`w-8 h-8 rounded-full border-2 border-slate-900 overflow-hidden bg-gray-800 ${m.id === user?.uid ? 'ring-2 ring-indigo-500' : ''}`}>
+-                                                                        <ImageWithFallback
+-                                                                            src={m.photoURL}
+-                                                                            className="w-full h-full object-cover"
+-                                                                            alt={m.name}
+-                                                                            type="avatar"
+-                                                                        />
+-                                                                    </div>
+-                                                                    {m.status === 'pending' && <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-amber-500 rounded-full border-2 border-slate-900"></span>}
+-                                                                    {m.role === 'owner' && <div className="absolute -top-1 -right-1 bg-amber-500 text-[10px] w-4 h-4 rounded-full border border-slate-900 flex items-center justify-center shadow-sm">👑</div>}
+-                                                                </div>
+-                                                            ))}
+-                                                            {(trip.members?.length || 0) > 4 && (
+-                                                                <div className="w-8 h-8 rounded-full bg-slate-800/90 backdrop-blur border-2 border-slate-900 flex items-center justify-center text-[10px] font-black text-indigo-300 shadow-lg flex-shrink-0">
+-                                                                    +{trip.members.length - 4}
+-                                                                </div>
+-                                                            )}
+-                                                        </div>
+-                                                        <button data-tour="invite-members" onClick={() => setIsMemberModalOpen(true)} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center transition-all border border-white/5 hover:border-white/20 shadow-lg ring-1 ring-white/5" title={t('trip.actions.manage_members') || '成員管理'}>
+-                                                            <UserPlus className="w-4 h-4 text-white" />
+-                                                        </button>
+-                                                    </div>
+-                                                    <ActiveUsersList tripId={trip.id} user={user} activeTab={activeTab} language={globalSettings.language} onUserClick={onUserClick || setViewingMember} />
+-                                                </div>
++                    {/* Bottom Content Area */}
++                    <div className="absolute bottom-0 inset-x-0 p-6 md:p-10 z-40 flex flex-col md:flex-row justify-between items-end gap-6 animate-slide-up-fade">
++                        {/* Left: Title & Info */}
++                        <div className="space-y-3 max-w-2xl w-full">
++                            <div className="flex items-center gap-2 mb-1">
++                                {trip.isPublic && <span className="bg-emerald-500/20 text-emerald-300 text-[10px] uppercase font-bold px-2.5 py-1 rounded-full border border-emerald-500/30 backdrop-blur-md shadow-sm">Public</span>}
++                                {!trip.isPublic && <span className="bg-white/10 text-gray-300 text-[10px] uppercase font-bold px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-md shadow-sm">Private</span>}
++
++                                {/* Views Count */}
++                                {(trip.views > 0 || trip.forks > 0) && (
++                                    <div className="flex items-center gap-3 text-xs font-medium text-white/60 ml-2">
++                                        {trip.views > 0 && <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {trip.views}</span>}
++                                        {trip.forks > 0 && <span className="flex items-center gap-1"><GitFork className="w-3 h-3" /> {trip.forks}</span>}
++                                    </div>
++                                )}
++                            </div>
+ 
+-                                                {/* Action Buttons (z-40 so member hover z-60 appears above) */}
+-                                                <div className="flex gap-3 items-center relative z-40">
+-                                                    <button
+-                                                        onClick={() => { setAIMode('daily-summary'); setIsAIModal(true); }}
+-                                                        data-tour="ask-jarvis-daily"
+-                                                        className="px-3 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white rounded-xl text-xs font-bold transition-all shadow-lg border border-white/20 flex justify-center items-center gap-2 active:scale-95 whitespace-nowrap backdrop-blur-md"
+-                                                    >
+-                                                        <Newspaper className="w-4 h-4" /> <span className="hidden sm:inline">{t('trip.actions.jarvis_daily') || 'Jarvis 日報'}</span>
+-                                                    </button>
++                            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight drop-shadow-xl leading-tight line-clamp-2">
++                                {trip.name}
++                            </h1>
+ 
+-                                                    <div className="relative group">
+-                                                        <button
+-                                                            onClick={onOpenSmartImport}
+-                                                            data-tour="smart-import"
+-                                                            className="px-3 py-2.5 bg-white/15 hover:bg-white/25 text-white rounded-xl text-xs font-bold transition-all shadow-lg border border-white/20 flex justify-center items-center gap-2 active:scale-95 whitespace-nowrap backdrop-blur-md"
+-                                                        >
+-                                                            <Upload className="w-4 h-4" /> <span className="hidden sm:inline">{t('trip.actions.smart_import') || '智能匯入'}</span>
+-                                                        </button>
+-                                                        <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none items-center gap-2 z-50 whitespace-nowrap">
+-                                                            <span className="text-[10px] text-gray-300">Import</span>
+-                                                            <Kbd keys={['⌘', 'I']} className="bg-white/10 border-white/20 text-white" />
+-                                                        </div>
+-                                                    </div>
+-
+-                                                    <div className="relative group">
+-                                                        <button
+-                                                            onClick={() => setIsSmartExportOpen(true)}
+-                                                            className="px-3 py-2.5 bg-white/15 hover:bg-white/25 text-white rounded-xl text-xs font-bold transition-all shadow-lg border border-white/20 flex justify-center items-center gap-2 active:scale-95 whitespace-nowrap backdrop-blur-md"
+-                                                        >
+-                                                            <Share2 className="w-4 h-4" /> <span className="hidden sm:inline">分享</span>
+-                                                        </button>
+-                                                        <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none items-center gap-2 z-50 whitespace-nowrap">
+-                                                            <span className="text-[10px] text-gray-300">Share</span>
+-                                                            <Kbd keys={['⇧', '⌘', 'S']} className="bg-white/10 border-white/20 text-white" />
+-                                                        </div>
+-                                                    </div>
+-
+-                                                    <div className="relative">
+-                                                        <button
+-                                                            onClick={() => { setIsPlanMenuOpen(!isPlanMenuOpen); setIsManageMenuOpen(false); }}
+-                                                            data-tour="plan-trip-menu"
+-                                                            className="px-3 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl flex justify-center items-center gap-2 font-black text-xs transition-all shadow-xl shadow-indigo-900/40 active:scale-95 whitespace-nowrap border border-indigo-400/20 backdrop-blur-xl"
+-                                                        >
+-                                                            <Plus className="w-4 h-4" /> {t('trip.actions.plan_trip') || '行程規劃'} <ChevronDown className={`w-3.5 h-3.5 text-indigo-200 transition-transform ${isPlanMenuOpen ? 'rotate-180' : ''}`} />
+-                                                        </button>
+-                                                        {isPlanMenuOpen && (
+-                                                            <>
+-                                                                <div className="fixed inset-0 z-[90]" onClick={() => setIsPlanMenuOpen(false)}></div>
+-                                                                <div className="absolute right-0 top-full mt-2 w-48 bg-slate-900/90 backdrop-blur-3xl border border-white/5 rounded-2xl shadow-2xl overflow-hidden z-[100] transform origin-top-right animate-scale-in p-1.5 shadow-black/80" data-tour="add-activity-menu">
+-                                                                    <button onClick={() => { setAddType('spot'); setIsAddModal(true); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 text-left text-xs transition-colors rounded-lg text-white font-medium">
+-                                                                        <Edit3 className="w-3.5 h-3.5 text-blue-400" /> {t('trip.actions.manual_add') || '手動新增'}
+-                                                                    </button>
+-                                                                    <button onClick={() => { setAIMode('full'); setIsAIModal(true); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 text-left text-xs transition-colors rounded-lg text-white font-medium">
+-                                                                        <BrainCircuit className="w-3.5 h-3.5 text-purple-400" /> Jarvis 建議行程
+-                                                                    </button>
+-                                                                    <button onClick={() => { handleOptimizeSchedule(); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/10 text-left text-xs transition-colors rounded-lg text-white font-medium">
+-                                                                        <Sparkles className="w-3.5 h-3.5 text-amber-400" /> {t('trip.actions.jarvis_optimize') || 'Jarvis 排程優化'}
+-                                                                    </button>
+-                                                                </div>
+-                                                            </>
+-                                                        )}
+-                                                    </div>
+-
+-                                                    <div className="relative">
+-                                                        <button
+-                                                            onClick={() => { setIsManageMenuOpen(!isManageMenuOpen); setIsPlanMenuOpen(false); }}
+-                                                            className={`bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-colors border border-white/10 ${isManageMenuOpen ? 'bg-white/20' : ''}`}
+-                                                        >
+-                                                            <ListIcon className="w-5 h-5 text-white" />
+-                                                        </button>
+-                                                        {isManageMenuOpen && (
+-                                                            <>
+-                                                                <div className="fixed inset-0 z-[90]" onClick={() => setIsManageMenuOpen(false)}></div>
+-                                                                <div className="absolute right-0 top-full mt-2 w-56 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[100] transform origin-top-right animate-scale-in">
+-                                                                    {isOwner && (
+-                                                                        <>
+-                                                                            <button onClick={() => { setIsMemberModalOpen(true); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-left text-sm transition-colors border-b border-white/10 text-gray-200">
+-                                                                                <Users className="w-4 h-4 text-blue-400" /> {t('trip.actions.manage_members') || '成員管理'}
+-                                                                            </button>
+-                                                                            <button onClick={() => { setIsInviteModal(true); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-left text-sm transition-colors border-b border-white/10 text-gray-200">
+-                                                                                <UserPlus className="w-4 h-4 text-green-400" /> {t('trip.actions.invite_friends') || '邀請朋友'}
+-                                                                            </button>
+-                                                                            <button onClick={() => { handleDeleteTrip(); setIsManageMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 text-left text-sm text-red-400 transition-colors">
+-                                                                                <Trash2 className="w-4 h-4" /> {t('trip.actions.delete_trip') || '刪除行程'}
+-                                                                            </button>
+-                                                                        </>
+-                                                                    )}
+-                                                                    {!isOwner && <div className="px-4 py-3 text-xs opacity-50 text-center text-gray-400">{t('trip.actions.owner_only') || '僅擁有者可操作'}</div>}
+-                                                                </div>
+-                                                            </>
+-                                                        )}
+-                                                    </div>
+-                                                </div>
++                            <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-white/90">
++                                <div className="flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-lg backdrop-blur-sm border border-white/5"><MapPin className="w-4 h-4 text-indigo-400" /> {getLocalizedCityName(trip.city, trip.country, globalSettings.language) || trip.city}</div>
++                                <div className="flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-lg backdrop-blur-sm border border-white/5"><Calendar className="w-4 h-4 text-indigo-400" /> {trip.startDate ? `${formatDate(trip.startDate)} - ${formatDate(trip.endDate)}` : 'Dates not set'}</div>
++
++                                {/* Active Users Avatars */}
++                                <div className="flex items-center gap-2 pl-2 border-l border-white/20" onClick={() => setIsMemberModalOpen(true)}>
++                                    <div className="flex -space-x-3 cursor-pointer hover:scale-105 transition-transform">
++                                        {trip.members?.slice(0, 4).map(m => (
++                                            <div key={m.id} className="w-7 h-7 rounded-full border border-white/30 overflow-hidden ring-1 ring-black/20">
++                                                <ImageWithFallback src={m.photoURL} className="w-full h-full object-cover" />
+                                             </div>
+-                                        </div>
++                                        ))}
++                                        {(trip.members?.length || 0) > 4 && (
++                                            <div className="w-7 h-7 rounded-full bg-slate-800 border border-white/30 flex items-center justify-center text-[9px] text-white">+{trip.members.length - 4}</div>
++                                        )}
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
++
++                        {/* Right: Primary Actions */}
++                        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
++                            {/* Daily Summary Button */}
++                            <button
++                                onClick={() => { setAIMode('daily-summary'); setIsAIModal(true); }}
++                                className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md border border-white/10 transition-all active:scale-95"
++                                title={t('trip.actions.jarvis_daily') || 'Daily Summary'}
++                            >
++                                <Newspaper className="w-5 h-5" />
++                            </button>
++
++                            {/* Smart Import */}
++                            <button
++                                onClick={onOpenSmartImport}
++                                className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md border border-white/10 transition-all active:scale-95"
++                                title={t('trip.actions.smart_import') || 'Import'}
++                            >
++                                <Upload className="w-5 h-5" />
++                            </button>
++
++                            {/* Duplicate/Fork Button */}
++                            <button
++                                onClick={handleFork}
++                                className="flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-bold backdrop-blur-md border border-white/10 transition-all active:scale-95 group/fork"
++                            >
++                                <Copy className="w-4 h-4 group-hover/fork:rotate-12 transition-transform" />
++                                <span className="hidden sm:inline">{isOwner ? (t('trip.actions.duplicate') || "複製") : (t('trip.actions.fork') || "Fork")}</span>
++                            </button>
++
++                            {/* Plan Trip Button (Primary) */}
++                            <div className="relative">
++                                <button
++                                    onClick={() => setIsPlanMenuOpen(!isPlanMenuOpen)}
++                                    className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black shadow-lg shadow-indigo-900/30 transition-all active:scale-95 border border-indigo-400/20"
++                                >
++                                    <Plus className="w-5 h-5" />
++                                    <span className="inline">{t('trip.actions.plan_trip') || '行程規劃'}</span>
++                                </button>
++                                {isPlanMenuOpen && (
++                                    <>
++                                        <div className="fixed inset-0 z-[90]" onClick={() => setIsPlanMenuOpen(false)}></div>
++                                        <div className="absolute right-0 bottom-full mb-3 w-56 bg-white dark:bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-[100] transform origin-bottom-right animate-scale-in p-1.5 text-left">
++                                            <button onClick={() => { setAddType('spot'); setIsAddModal(true); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-3 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors rounded-xl font-medium dark:text-white text-gray-700">
++                                                <Edit3 className="w-4 h-4 text-blue-500" /> {t('trip.actions.manual_add') || '手動新增'}
++                                            </button>
++                                            <button onClick={() => { setAIMode('full'); setIsAIModal(true); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-3 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors rounded-xl font-medium dark:text-white text-gray-700">
++                                                <BrainCircuit className="w-4 h-4 text-purple-500" /> Jarvis 建議行程
++                                            </button>
++                                            <button onClick={() => { handleOptimizeSchedule(); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-3 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors rounded-xl font-medium dark:text-white text-gray-700">
++                                                <Sparkles className="w-4 h-4 text-amber-500" /> {t('trip.actions.jarvis_optimize') || 'Jarvis 排程優化'}
++                                            </button>
++                                        </div>
++                                    </>
++                                )}
++                            </div>
++                        </div>
+                     </div>
+                 </div>
+ 
++                {/* Main Content (Tabs) - Wrapped manually since we removed the top wrapper */}
++                <div className="max-w-7xl mx-auto px-4">
+                 {/* Static Tabs Navigation - Wrapped in Container */}
+                 <div className="max-w-7xl mx-auto">
+                     <div className="flex items-center justify-between gap-4 mb-4">

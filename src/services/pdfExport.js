@@ -224,8 +224,8 @@ export const exportToBeautifulPDF = async (trip, options = { template: 'modern' 
 
                         if (startTime !== '—' && endTime) {
                             try {
-                                const [h1, m1] = startTime.split(':').map(Number);
-                                const [h2, m2] = endTime.split(':').map(Number);
+                                const [h1, m1] = startTime.trim().split(':').map(Number);
+                                const [h2, m2] = endTime.trim().split(':').map(Number);
                                 if (!isNaN(h1) && !isNaN(h2)) {
                                     let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
                                     if (diff < 0) diff += 24 * 60;

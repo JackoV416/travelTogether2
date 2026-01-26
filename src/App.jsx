@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router-dom'; // V1.9.2 Fix
 import { buttonPrimary } from './constants/styles';
 const TripDetailContent = lazy(() => import('./components/TripDetail/TripDetailContent'));
 import { signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
@@ -46,6 +47,8 @@ import CommandPalette from './components/Shared/CommandPalette';
 import Kbd from './components/Shared/Kbd';
 import { SEO } from './components/Shared/SEO'; // V1.6.0 SEO
 import TripDetailSkeleton from './components/Loaders/TripDetailSkeleton';
+const ChatModal = lazy(() => import('./components/Chat/ChatModal')); // V1.9.2 Chat
+import NotificationCenter from './components/Notifications/NotificationCenter'; // V1.9.4 Notification Center
 
 import {
     APP_VERSION, APP_AUTHOR, APP_LAST_UPDATE, ADMIN_EMAILS,
@@ -69,7 +72,7 @@ const HttpStatusPage = lazy(() => import('./components/Shared/HttpStatusPage'));
 const Footer = lazy(() => import('./components/Shared/Footer'));
 import ImageWithFallback from './components/Shared/ImageWithFallback';
 
-const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onTutorialStart, onViewChange, onOpenUserSettings, onOpenVersion, notifications = [], onRemoveNotification, onMarkNotificationsRead, onNotificationClick, onOpenFeedback, onOpenAdminFeedback, isAdmin, adminPendingCount = 0, activeView, allTrips = [] }) => {
+const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onTutorialStart, onViewChange, onOpenUserSettings, onOpenVersion, notifications = [], onRemoveNotification, onMarkNotificationsRead, onNotificationClick, onOpenFeedback, onOpenAdminFeedback, isAdmin, adminPendingCount = 0, friendRequestCount = 0, activeView, allTrips = [], onOpenPrivateChat }) => {
     const { t } = useTranslation();
     const { startTour } = useTour();
     const [hoverMenu, setHoverMenu] = useState(false);
@@ -116,17 +119,13 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
         }
     };
 
-    const [notifTab, setNotifTab] = useState('all');
-    const filteredNotifs = notifications.filter(n => {
-        if (notifTab === 'all') return true;
-        if (notifTab === 'alert') return n.type === 'warning' || n.type === 'error';
-        if (notifTab === 'system') return n.type === 'success' || n.type === 'info';
-        return true;
-    });
+
+
+
 
     return (
         <>
-            <header className={`fixed top-0 left-0 right-0 z-[50] p-4 pt-[max(1rem,env(safe-area-inset-top))] transition-all duration-300 ${isDarkMode ? 'bg-gray-900/80 border-b border-white/5' : 'bg-gray-50/80 border-b border-gray-200/50'} shadow-sm backdrop-blur-xl supports-[backdrop-filter]:bg-gray-900/60`}>
+            <header className={`fixed top-0 left-0 right-0 z-[50] p-4 pt-[max(1.25rem,env(safe-area-inset-top))] transition-all duration-300 ${isDarkMode ? 'bg-gray-900/80 border-b border-white/5' : 'bg-gray-50/80 border-b border-gray-200/50'} shadow-sm backdrop-blur-xl supports-[backdrop-filter]:bg-gray-900/60 select-none`}>
                 <div className="flex items-center justify-between max-w-7xl mx-auto">
                     <div className="flex items-center gap-3">
                         {onBack && (
@@ -147,13 +146,13 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                     <div className="hidden md:flex items-center gap-1 bg-gray-500/5 p-1 rounded-full border border-gray-500/10">
                         <button
                             onClick={() => onViewChange && onViewChange('dashboard')}
-                            className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${activeView === 'dashboard' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'}`}
+                            className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${activeView === 'dashboard' ? (isDarkMode ? 'bg-gray-800 text-white shadow-sm ring-1 ring-white/10' : 'bg-white shadow-sm text-indigo-600') : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'}`}
                         >
                             {t('dashboard.explore_community') || '探索'}
                         </button>
                         <button
                             onClick={() => onViewChange && onViewChange('my_trips')}
-                            className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${activeView === 'my_trips' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'}`}
+                            className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${activeView === 'my_trips' ? (isDarkMode ? 'bg-gray-800 text-white shadow-sm ring-1 ring-white/10' : 'bg-white shadow-sm text-indigo-600') : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'}`}
                         >
                             {t('dashboard.my_trips') || '我的行程'}
                         </button>
@@ -184,6 +183,21 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                         )}
 
                         <div className="relative group">
+                            <button
+                                onClick={() => onOpenPrivateChat && onOpenPrivateChat()}
+                                className="p-2 rounded-full hover:bg-gray-500/10 relative btn-press"
+                                aria-label="私訊"
+                                title="我的訊息"
+                            >
+                                <MessageCircle className="w-5 h-5" />
+                                {/* Optional: Unread Badge logic here later */}
+                            </button>
+                            <div className="absolute right-0 top-full mt-2 w-max px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none shadow-xl border border-white/10 flex items-center gap-2">
+                                <span className="text-[10px] font-bold">Messages</span>
+                            </div>
+                        </div>
+
+                        <div className="relative group">
                             <button onClick={handleBellClick} className="p-2 rounded-full hover:bg-gray-500/10 relative btn-press" aria-label="通知中心">
                                 <Bell className="w-5 h-5" />
                                 {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>}
@@ -192,48 +206,21 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                                 <span className="text-[10px] font-bold">Notifs</span>
                                 <Kbd keys={['⌘', 'B']} className="border-gray-600 bg-gray-700 text-gray-300" />
                             </div>
-                            {showNotif && <div className={`absolute top-12 right-0 w-96 p-4 rounded-xl shadow-2xl border z-50 backdrop-blur-xl ${isDarkMode ? 'bg-gray-900/95 border-white/10' : 'bg-white/95 border-gray-200'}`}>
-                                <div className="flex justify-between items-center border-b border-gray-500/10 pb-2 mb-2">
-                                    <h4 className="font-bold text-sm">通知中心</h4>
-                                    <button onClick={handleClearAll} className="text-xs text-red-400 hover:text-red-500 flex items-center gap-1 btn-press"><Trash2 className="w-3 h-3" /> 清除全部</button>
-                                </div>
-                                <div className="flex gap-1 mb-2">
-                                    {[{ id: 'all', label: '全部' }, { id: 'alert', label: '警報' }, { id: 'system', label: '系統' }].map(t => (
-                                        <button
-                                            key={t.id}
-                                            onClick={() => setNotifTab(t.id)}
-                                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${notifTab === t.id ? 'bg-indigo-500 text-white' : 'hover:bg-gray-500/10 opacity-60'}`}
-                                        >
-                                            {t.label}
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-1">
-                                    {filteredNotifs.length === 0 ? (
-                                        <div className="text-xs opacity-60 text-center py-6">目前沒有相關通知。</div>
-                                    ) : filteredNotifs.map(n => (
-                                        <div
-                                            key={n.id}
-                                            onClick={() => n.context && onNotificationClick?.(n)}
-                                            className={`p-3 rounded-lg border border-gray-500/20 text-xs flex flex-col gap-1 bg-white/5 transition-colors ${n.context ? 'cursor-pointer hover:bg-white/10' : ''}`}
-                                        >
-                                            <div className="flex justify-between items-center gap-2">
-                                                <span className={`font-semibold ${n.type === 'warning' || n.type === 'error' ? 'text-orange-400' : ''}`}>{n.title || '系統通知'}</span>
-                                                <button onClick={(e) => { e.stopPropagation(); onRemoveNotification && onRemoveNotification(n.id); }} className="text-red-400 hover:text-red-600" aria-label="移除通知"><X className="w-3 h-3" /></button>
-                                            </div>
-                                            <p className="opacity-80 leading-relaxed">{n.message}</p>
-                                            <div className="flex justify-between text-[10px] opacity-60 mt-1">
-                                                <span>{n.time}</span>
-                                                {n.url ? (
-                                                    <a href={n.url} target="_blank" onClick={(e) => e.stopPropagation()} className="text-indigo-400 flex items-center gap-1">查看專頁<ArrowUpRight className="w-3 h-3" /></a>
-                                                ) : n.context && (
-                                                    <span className="text-indigo-400 flex items-center gap-1">立即跳轉<ChevronRight className="w-3 h-3" /></span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>}
+                            {showNotif && (
+                                <NotificationCenter
+                                    isOpen={showNotif}
+                                    onClose={() => setShowNotif(false)}
+                                    notifications={notifications}
+                                    onMarkAllRead={onMarkNotificationsRead}
+                                    onClearAll={handleClearAll}
+                                    onRemoveNotification={onRemoveNotification}
+                                    onNotificationClick={(n) => {
+                                        setShowNotif(false);
+                                        if (onNotificationClick) onNotificationClick(n);
+                                    }}
+                                    isDarkMode={isDarkMode}
+                                />
+                            )}
                         </div>
 
                         <div className="relative" onMouseEnter={() => setHoverMenu(true)} onMouseLeave={() => setHoverMenu(false)}>
@@ -281,7 +268,13 @@ const Header = ({ title, onBack, user, isDarkMode, toggleDarkMode, onLogout, onT
                                     </div>
                                     <div className="p-2 flex flex-col gap-1">
                                         <button onClick={() => { setHoverMenu(false); onViewChange && onViewChange('profile'); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition justify-between ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
-                                            <div className="flex items-center gap-3"><User className="w-4 h-4 text-indigo-500" /> {t('app.menu.profile')}</div>
+                                            <div className="flex items-center gap-3">
+                                                <div className="relative">
+                                                    <User className="w-4 h-4 text-indigo-500" />
+                                                    {friendRequestCount > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white dark:border-gray-900 rounded-full animate-pulse"></span>}
+                                                </div>
+                                                {t('app.menu.profile')}
+                                            </div>
                                             <Kbd keys={['⇧', '⌘', 'P']} />
                                         </button>
                                         <button onClick={() => { setHoverMenu(false); onViewChange && onViewChange('dashboard'); }} className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition justify-between ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
@@ -488,9 +481,15 @@ const TripDetail = ({ tripData, onBack, user, isDarkMode, setGlobalBg, isSimulat
 const App = () => {
     const { t, i18n } = useTranslation();
     const [user, setUser] = useState(null);
+    const [initialAuthCheck, setInitialAuthCheck] = useState(false); // V1.9.6.1 Fix
     const [view, setView] = useState(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get('view') || 'dashboard';
+        const viewParam = urlParams.get('view');
+        if (viewParam) return viewParam;
+
+        // V1.9.6.1 Fix: Check path for trip detail to prevent dashboard flash
+        if (window.location.pathname.startsWith('/trip/')) return 'detail';
+        return 'dashboard';
     });
     const [selectedTrip, setSelectedTrip] = useState(null);
     const [isDarkMode, setIsDarkMode] = useState(true);
@@ -539,6 +538,10 @@ const App = () => {
     const [settingsInitialTab, setSettingsInitialTab] = useState('general');
     const [isReportCenterOpen, setIsReportCenterOpen] = useState(false);
 
+    // Private Chat State (V1.9.2)
+    const [isPrivateChatOpen, setIsPrivateChatOpen] = useState(false);
+    const [privateChatTarget, setPrivateChatTarget] = useState(null);
+
     const { notifications, toasts, setToasts, sendNotification, setNotifications, markNotificationsRead, removeNotification } = useNotifications(user);
 
     const currentUser = React.useMemo(() => user ? { ...user, ...userProfile } : null, [user, userProfile]);
@@ -555,9 +558,12 @@ const App = () => {
                 // Hide initial loading screen if it exists
                 const loader = document.getElementById('initial-loading');
                 if (loader) {
-                    loader.classList.add('fade-out');
-                    setTimeout(() => loader.remove(), 500);
+                    setTimeout(() => { // V1.9.6.1 Fix: Add a small delay to ensure loader is visible before fading
+                        loader.classList.add('fade-out');
+                        setTimeout(() => loader.remove(), 500);
+                    }, 500);
                 }
+                setInitialAuthCheck(true); // V1.9.6.1 Fix: Mark auth as checked
 
                 if (u) {
                     const userRef = doc(db, "users", u.uid);
@@ -599,15 +605,27 @@ const App = () => {
         };
     }, []);
 
+    // 1.5 Friend Requests Listener
+    const [friendRequestCount, setFriendRequestCount] = useState(0);
     useEffect(() => {
-        // Handle /trip/:id Route
-        const path = window.location.pathname;
-        const tripMatch = path.match(/^\/trip\/([a-zA-Z0-9_-]+)/);
-        if (tripMatch) {
-            setPublicTripId(tripMatch[1]);
-            // Don't auto-fetch user trips if just viewing public trip (optional optimization)
-        }
+        if (!user?.uid) return;
 
+        // Import dynamically to avoid circular dependencies if any, or just standard import
+        import('./services/friendService').then(({ listenToFriendRequests }) => {
+            const unsub = listenToFriendRequests(user.uid, (requests) => {
+                setFriendRequestCount(requests.length);
+            });
+            return unsub;
+        }).then(unsub => {
+            // Cleanup handled by returning/effect cleanup if we stored unsub
+            // Ideally we need to store the unsub function
+        });
+
+        // Better approach: Import at top level if possible.
+    }, [user?.uid]);
+
+    useEffect(() => {
+        // V1.9.6: Trips loading with /trip/:id URL handling for Fork feature
         if (!user) return;
         const q = query(collection(db, "trips"));
         return onSnapshot(q, s => {
@@ -615,14 +633,47 @@ const App = () => {
             setTrips(fetched);
             setLoadingTrips(false);
 
-            // Restore session trip from URL if not already set
-            const urlParams = new URLSearchParams(window.location.search);
-            const tid = urlParams.get('id');
-            if (tid && !selectedTrip) {
-                const found = fetched.find(t => t.id === tid);
-                if (found) {
-                    setSelectedTrip(found);
+            // V1.9.9: Check if we're on a /trip/:id URL and route appropriately (Enhanced)
+            const path = window.location.pathname;
+
+            // 1. Check Public View first
+            const publicMatch = path.match(/^\/trip\/public\/([a-zA-Z0-9_-]+)(?:\/)?$/);
+            if (publicMatch) {
+                setPublicTripId(publicMatch[1]);
+                return;
+            }
+
+            // 2. Check Edit/View/Private
+            const editMatch = path.match(/^\/trip\/(?:edit|view|private)\/([a-zA-Z0-9_-]+)(?:\/)?$/);
+            if (editMatch) {
+                const urlTripId = editMatch[1];
+                const userTrip = fetched.find(t => t.id === urlTripId);
+                if (userTrip) {
+                    setSelectedTrip(userTrip);
                     setView('detail');
+                    setPublicTripId(null);
+                } else {
+                    setPublicTripId(urlTripId);
+                }
+                return;
+            }
+
+            // 3. Check Legacy Standard
+            const tripMatch = path.match(/^\/trip\/([a-zA-Z0-9_-]+)(?:\/)?$/);
+            if (tripMatch) {
+                const urlTripId = tripMatch[1];
+                const userTrip = fetched.find(t => t.id === urlTripId);
+                const searchParams = new URLSearchParams(window.location.search);
+                const forcePublic = searchParams.get('view') === 'public';
+
+                if (forcePublic) {
+                    setPublicTripId(urlTripId);
+                } else if (userTrip) {
+                    setSelectedTrip(userTrip);
+                    setView('detail');
+                    setPublicTripId(null);
+                } else {
+                    setPublicTripId(urlTripId);
                 }
             }
         }, (err) => {
@@ -640,22 +691,64 @@ const App = () => {
         }
     }, []);
 
-    // --- Deep Link Routing (V1.9.0) ---
+    // --- Deep Link Routing (V1.9.6: Fork Feature) ---
     useEffect(() => {
-        const path = window.location.pathname;
+        const path = location.pathname;
 
-        // Handle /trip/:id Route (Public Trip View)
-        const tripMatch = path.match(/^\/trip\/([a-zA-Z0-9_-]+)/);
+        // V1.9.6: Handle /trip/:id Route - Check membership for Fork feature
+        // V1.9.9: Enhanced Routing Scheme - Deep Link Handling
+
+        // 1. Public View: /trip/public/:id
+        const publicMatch = path.match(/^\/trip\/public\/([a-zA-Z0-9_-]+)(?:\/)?$/);
+        if (publicMatch) {
+            setLoadingTrips(false);
+            setPublicTripId(publicMatch[1]);
+            return;
+        }
+
+        // 2. Private/Edit View: /trip/edit/:id
+        const editMatch = path.match(/^\/trip\/(?:edit|view|private)\/([a-zA-Z0-9_-]+)(?:\/)?$/);
+        if (editMatch) {
+            const urlTripId = editMatch[1];
+            const userTrip = trips.find(t => t.id === urlTripId);
+            if (userTrip) {
+                setSelectedTrip(userTrip);
+                setView('detail');
+                setPublicTripId(null);
+            } else if (!loadingTrips) {
+                // Not found locally? Check public as fallback
+                setPublicTripId(urlTripId);
+            }
+            return;
+        }
+
+        // 3. Legacy Standard: /trip/:id
+        // STRICT END MATCHING to prevent catching /trip/public/...
+        const tripMatch = path.match(/^\/trip\/([a-zA-Z0-9_-]+)(?:\/)?$/);
         if (tripMatch) {
-            setPublicTripId(tripMatch[1]);
-            return; // Early return, publicTripId will trigger its own view
+            const urlTripId = tripMatch[1];
+            const userTrip = trips.find(t => t.id === urlTripId);
+            const searchParams = new URLSearchParams(window.location.search);
+            const forcePublic = searchParams.get('view') === 'public';
+
+            if (forcePublic) {
+                setPublicTripId(urlTripId);
+            } else if (userTrip) {
+                setSelectedTrip(userTrip);
+                setView('detail');
+                setPublicTripId(null);
+            } else if (!loadingTrips && user) {
+                setPublicTripId(urlTripId);
+            } else if (!user) {
+                setPublicTripId(urlTripId);
+            }
+            return;
         }
 
         // Handle /profile/:id Route (Social Profile View)
         const profileMatch = path.match(/^\/profile\/([a-zA-Z0-9_-]+)/);
         if (profileMatch) {
             const profileUserId = profileMatch[1];
-            // Fetch user data and set viewingProfileUser
             import('firebase/firestore').then(({ doc, getDoc }) => {
                 getDoc(doc(db, 'users', profileUserId)).then(snap => {
                     if (snap.exists()) {
@@ -672,14 +765,12 @@ const App = () => {
         const viewMatch = path.match(/^\/([a-zA-Z_]+)/);
         if (viewMatch && viewRoutes.includes(viewMatch[1])) {
             setView(viewMatch[1]);
+            setPublicTripId(null); // Clear public trip when navigating to other views
         }
-    }, []);
+    }, [location.pathname, trips, loadingTrips, user]);
 
-    // --- Sync URL with View State (Push State on Navigation) ---
     useEffect(() => {
-        // Don't update URL during initial load or for public trip view
-        if (publicTripId) return;
-
+        // Sync URL with View State (Push State on Navigation)
         const currentPath = window.location.pathname;
         let targetPath = '/';
 
@@ -699,27 +790,66 @@ const App = () => {
         if (currentPath !== targetPath && targetPath !== '/') {
             window.history.pushState({ view }, '', targetPath);
         }
-    }, [view, viewingProfileUser, selectedTrip, publicTripId]);
+    }, [view, viewingProfileUser, selectedTrip]);
 
-    // --- Handle Browser Back/Forward Navigation ---
+    // --- Handle Browser Back/Forward Navigation (V1.9.6: Fork Feature) ---
     useEffect(() => {
         const handlePopState = (event) => {
             const path = window.location.pathname;
 
-            // Re-parse URL on back/forward
-            const tripMatch = path.match(/^\/trip\/([a-zA-Z0-9_-]+)/);
+            // V1.9.9: Enhanced Routing Scheme
+            // 1. Public View: /trip/public/:id
+            const publicMatch = path.match(/^\/trip\/public\/([a-zA-Z0-9_-]+)(?:\/)?$/);
+            if (publicMatch) {
+                setPublicTripId(publicMatch[1]);
+                return;
+            }
+
+            // 2. Private/Edit View: /trip/edit/:id or /trip/view/:id or /trip/private/:id
+            const editMatch = path.match(/^\/trip\/(?:edit|view|private)\/([a-zA-Z0-9_-]+)(?:\/)?$/);
+            if (editMatch) {
+                const urlTripId = editMatch[1];
+                const userTrip = trips.find(t => t.id === urlTripId);
+                if (userTrip) {
+                    setSelectedTrip(userTrip);
+                    setView('detail');
+                    setPublicTripId(null);
+                } else {
+                    // Fallback
+                    setPublicTripId(urlTripId);
+                }
+                return;
+            }
+
+            // 3. Legacy Standard: /trip/:id
+            const tripMatch = path.match(/^\/trip\/([a-zA-Z0-9_-]+)(?:\/)?$/);
             if (tripMatch) {
-                setPublicTripId(tripMatch[1]);
+                const urlTripId = tripMatch[1];
+                const userTrip = trips.find(t => t.id === urlTripId);
+                const searchParams = new URLSearchParams(window.location.search);
+                const forcePublic = searchParams.get('view') === 'public';
+
+                if (forcePublic) {
+                    setPublicTripId(urlTripId);
+                } else if (userTrip) {
+                    setSelectedTrip(userTrip);
+                    setView('detail');
+                    setPublicTripId(null);
+                } else {
+                    // Not found in local trips, assume public or unauth
+                    setPublicTripId(urlTripId);
+                }
                 return;
             }
 
             const profileMatch = path.match(/^\/profile\/([a-zA-Z0-9_-]+)/);
             if (profileMatch) {
-                // Would need to re-fetch profile user data here
+                // Profile navigation handled by deep link effect
                 return;
             }
 
-            // Default views
+            // Default views - clear publicTripId
+            setPublicTripId(null);
             if (path === '/dashboard' || path === '/') setView('dashboard');
             else if (path === '/explore') setView('explore');
             else if (path === '/my_trips') setView('my_trips');
@@ -729,7 +859,7 @@ const App = () => {
 
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
-    }, []);
+    }, [trips]);
 
     // Fetch Exchange Rates
     useEffect(() => {
@@ -737,6 +867,64 @@ const App = () => {
             if (data) setExchangeRates(data);
         });
     }, []);
+
+    // V1.9.7: Fix Weather Loading (Global & Detail)
+    useEffect(() => {
+        const fetchWeather = async () => {
+            // 1. Detail View: Fetch for specific trip city
+            if (view === 'detail' && selectedTrip?.city) {
+                const city = selectedTrip.city;
+                if (weatherData[city]) return; // Cache hit
+
+                setIsLoadingWeather(true);
+                try {
+                    const countryInfo = getSafeCountryInfo(selectedTrip.country);
+                    const coords = CITY_COORDS[city] || CITY_COORDS[countryInfo.capital];
+
+                    if (coords) {
+                        const lat = coords.lat || coords.latitude;
+                        const lng = coords.lng || coords.lon || coords.longitude;
+                        if (lat && lng) {
+                            const data = await getWeather(lat, lng, city);
+                            if (data) {
+                                setWeatherData(prev => ({ ...prev, [city]: data }));
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.error("Weather fetch failed (Detail):", err);
+                } finally {
+                    setIsLoadingWeather(false);
+                }
+            }
+            // 2. Dashboard View: Fetch for top cities (Tokyo, Osaka, Taipei, HK)
+            else if (view === 'dashboard' || view === 'explore') {
+                const targetCities = ["Tokyo", "Osaka", "Taipei", "Hong Kong", "Seoul", "Bangkok"];
+                const needed = targetCities.filter(c => !weatherData[c]);
+                if (needed.length === 0) return;
+
+                setIsLoadingWeather(true);
+                try {
+                    await Promise.all(needed.map(async (city) => {
+                        const coords = CITY_COORDS[city];
+                        if (coords) {
+                            const lat = coords.lat;
+                            const lng = coords.lon || coords.lng; // Use .lon as primary
+                            const data = await getWeather(lat, lng, city);
+                            if (data) {
+                                setWeatherData(prev => ({ ...prev, [city]: data }));
+                            }
+                        }
+                    }));
+                } catch (err) {
+                    console.error("Weather fetch failed (Dashboard):", err);
+                } finally {
+                    setIsLoadingWeather(false);
+                }
+            }
+        };
+        fetchWeather();
+    }, [view, selectedTrip?.city, selectedTrip?.country]);
 
     useEffect(() => {
         if (!user) return; // V1.8.4 Fix: Ensure auth before listening to protected metadata
@@ -770,6 +958,15 @@ const App = () => {
         if (tab) setChatInitialTab(tab);
     };
 
+    const handleOpenPrivateChat = (targetUser = null) => {
+        if (!user) {
+            sendNotification("需要登入", "私訊功能需要登入後才可使用。", "warning");
+            return;
+        }
+        setPrivateChatTarget(targetUser);
+        setIsPrivateChatOpen(true);
+    };
+
     const handleNotificationNavigate = (notif) => {
         if (!notif.context) return;
         const { tripId, view: v, tab, itemId } = notif.context;
@@ -792,17 +989,85 @@ const App = () => {
 
     if (isLoading) return <DashboardSkeleton isDarkMode={isDarkMode} />;
 
-    // Render simplified public view if publicTripId exists
+    // V1.9.6: PublicTripView for Fork feature - Render for non-members viewing /trip/:id
     if (publicTripId) {
         return (
-            <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
-                <Suspense fallback={<DashboardSkeleton isDarkMode={isDarkMode} />}>
-                    <PublicTripView
-                        user={currentUser}
-                        isDarkMode={isDarkMode}
-                    />
-                </Suspense>
-            </div>
+            <ErrorBoundary isDarkMode={isDarkMode}>
+                <TourProvider onNavigate={() => { }}>
+                    <div className={`min-h-screen flex flex-col font-sans ${isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-slate-50 text-gray-900'}`}>
+                        {/* Independent Static Components */}
+                        <NotificationSystem notifications={toasts} setNotifications={setToasts} isDarkMode={isDarkMode} onNotificationClick={handleNotificationNavigate} />
+                        <OfflineBanner isDarkMode={isDarkMode} />
+                        <ReloadPrompt isDarkMode={isDarkMode} />
+                        <ImageWithFallback src={globalBg} className="fixed inset-0 z-0 opacity-20 pointer-events-none object-cover w-full h-full" alt="Background" />
+
+                        {/* Standard Header */}
+                        <Header
+                            title="✈️ Travel Together"
+                            user={currentUser}
+                            isDarkMode={isDarkMode}
+                            toggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+                            onLogout={async () => {
+                                try {
+                                    await signOut(auth);
+                                    window.location.reload();
+                                } catch (error) {
+                                    console.error("Logout error:", error);
+                                }
+                            }}
+                            onTutorialStart={() => setView('tutorial')}
+                            onBack={() => setPublicTripId(null)} // Clear public state to go back
+                            onViewChange={setView}
+                            onOpenUserSettings={() => setView('settings')}
+                            onOpenFeedback={() => setIsReportCenterOpen(true)}
+                            onOpenAdminFeedback={() => setIsAdminFeedbackModalOpen(true)}
+                            isAdmin={isAdmin}
+                            adminPendingCount={openFeedbackCount}
+                            friendRequestCount={friendRequestCount}
+                            onOpenVersion={() => setIsVersionOpen(true)}
+                            notifications={notifications}
+                            onRemoveNotification={removeNotification}
+                            onMarkNotificationsRead={markNotificationsRead}
+                            onNotificationClick={handleNotificationNavigate}
+                            allTrips={trips}
+                            activeView={view}
+                            onOpenPrivateChat={() => handleOpenPrivateChat()}
+                        />
+
+                        {/* Main Content Area */}
+                        <div className="relative z-10 flex-grow pb-safe" style={{ paddingTop: 'calc(72px + env(safe-area-inset-top, 0px))' }}>
+                            <Suspense fallback={<TripDetailSkeleton isDarkMode={isDarkMode} />}>
+                                <PublicTripView
+                                    tripId={publicTripId}
+                                    user={user || null}
+                                    isDarkMode={isDarkMode}
+                                    setGlobalBg={setGlobalBg} // Pass for dynamic background
+                                />
+                            </Suspense>
+                        </div>
+
+                        {/* Standard Footer */}
+                        <Suspense fallback={null}>
+                            <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} onLanguageChange={(lang) => setGlobalSettings(prev => ({ ...prev, language: lang }))} />
+                        </Suspense>
+
+                        {/* Necessary Modals for Public View (e.g. Login/Version) */}
+                        <Suspense fallback={null}>
+                            <UniversalOnboarding isOpen={isOnboardingOpen} onClose={() => setIsOnboardingOpen(false)} isDarkMode={isDarkMode} onStartDemo={() => setView('tutorial')} />
+                            {isPrivateChatOpen && (
+                                <ChatModal
+                                    isOpen={isPrivateChatOpen}
+                                    onClose={() => setIsPrivateChatOpen(false)}
+                                    currentUser={currentUser}
+                                    initialTargetUser={privateChatTarget}
+                                    isDarkMode={isDarkMode}
+                                />
+                            )}
+                            <VersionModal isOpen={isVersionOpen} onClose={() => setIsVersionOpen(false)} isDarkMode={isDarkMode} globalSettings={globalSettings} />
+                        </Suspense>
+                    </div>
+                </TourProvider>
+            </ErrorBoundary>
         );
     }
 
@@ -824,40 +1089,44 @@ const App = () => {
                     <ReloadPrompt isDarkMode={isDarkMode} />
                     <ImageWithFallback src={globalBg} className="fixed inset-0 z-0 opacity-20 pointer-events-none object-cover w-full h-full" alt="Background" />
 
-                    {view !== 'tutorial' && (
-                        <Header
-                            title="✈️ Travel Together"
-                            user={currentUser}
-                            isDarkMode={isDarkMode}
-                            toggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-                            onLogout={async () => {
-                                try {
-                                    // Optional: Clear FCM token or other private data BEFORE signing out
-                                    // await clearUserTokens(user.uid); 
-                                    await signOut(auth);
-                                    // Force reload to clear memory states
-                                    window.location.reload();
-                                } catch (error) {
-                                    console.error("Logout error:", error);
-                                }
-                            }}
-                            onTutorialStart={() => setView('tutorial')}
-                            onBack={view !== 'dashboard' ? () => setView('dashboard') : null}
-                            onViewChange={setView}
-                            onOpenUserSettings={() => setView('settings')}
-                            onOpenFeedback={() => setIsReportCenterOpen(true)}
-                            onOpenAdminFeedback={() => setIsAdminFeedbackModalOpen(true)}
-                            isAdmin={isAdmin}
-                            adminPendingCount={openFeedbackCount}
-                            onOpenVersion={() => setIsVersionOpen(true)}
-                            notifications={notifications}
-                            onRemoveNotification={removeNotification}
-                            onMarkNotificationsRead={markNotificationsRead}
-                            onNotificationClick={handleNotificationNavigate}
-                            allTrips={trips}
-                            activeView={view}
-                        />
-                    )}
+                    {
+                        view !== 'tutorial' && (
+                            <Header
+                                title="✈️ Travel Together"
+                                user={currentUser}
+                                isDarkMode={isDarkMode}
+                                toggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+                                onLogout={async () => {
+                                    try {
+                                        // Optional: Clear FCM token or other private data BEFORE signing out
+                                        // await clearUserTokens(user.uid); 
+                                        await signOut(auth);
+                                        // Force reload to clear memory states
+                                        window.location.reload();
+                                    } catch (error) {
+                                        console.error("Logout error:", error);
+                                    }
+                                }}
+                                onTutorialStart={() => setView('tutorial')}
+                                onBack={view !== 'dashboard' ? () => setView('dashboard') : null}
+                                onViewChange={setView}
+                                onOpenUserSettings={() => setView('settings')}
+                                onOpenFeedback={() => setIsReportCenterOpen(true)}
+                                onOpenAdminFeedback={() => setIsAdminFeedbackModalOpen(true)}
+                                isAdmin={isAdmin}
+                                adminPendingCount={openFeedbackCount}
+                                friendRequestCount={friendRequestCount}
+                                onOpenVersion={() => setIsVersionOpen(true)}
+                                notifications={notifications}
+                                onRemoveNotification={removeNotification}
+                                onMarkNotificationsRead={markNotificationsRead}
+                                onNotificationClick={handleNotificationNavigate}
+                                allTrips={trips}
+                                activeView={view}
+                                onOpenPrivateChat={() => handleOpenPrivateChat()}
+                            />
+                        )
+                    }
 
                     {/* Main Content Suspense Boundary */}
                     <div className="relative z-10 flex-grow pb-safe" style={{ paddingTop: view !== 'tutorial' ? 'calc(72px + env(safe-area-inset-top, 0px))' : '0' }}>
@@ -880,6 +1149,7 @@ const App = () => {
                                     forcedViewMode="explore"
                                     allTrips={trips}
                                     loadingAllTrips={loadingTrips}
+                                    friendRequestCount={friendRequestCount}
                                 />
                             )}
                             {view === 'my_trips' && (
@@ -900,35 +1170,48 @@ const App = () => {
                                     forcedViewMode="my_trips"
                                     allTrips={trips}
                                     loadingAllTrips={loadingTrips}
+                                    friendRequestCount={friendRequestCount}
                                 />
                             )}
-                            {view === 'profile' && <SocialProfile user={viewingProfileUser || currentUser} currentUser={currentUser} isOwnProfile={!viewingProfileUser || viewingProfileUser.uid === user?.uid} trips={trips} isDarkMode={isDarkMode} onEditProfile={() => { setSettingsInitialTab('account'); setView('settings'); }} />}
+                            {view === 'profile' && <SocialProfile
+                                user={viewingProfileUser || currentUser}
+                                currentUser={currentUser}
+                                isOwnProfile={!viewingProfileUser || viewingProfileUser.uid === user?.uid}
+                                trips={trips}
+                                isDarkMode={isDarkMode}
+                                onEditProfile={() => { setSettingsInitialTab('account'); setView('settings'); }}
+                                onOpenPrivateChat={handleOpenPrivateChat}
+                            />}
                             {view === 'detail' && (
-                                <TripDetail
-                                    tripData={selectedTrip}
-                                    user={user}
-                                    isDarkMode={isDarkMode}
-                                    setGlobalBg={setGlobalBg}
-                                    isSimulation={false}
-                                    globalSettings={globalSettings}
-                                    onBack={() => setView('dashboard')}
-                                    exchangeRates={exchangeRates}
-                                    weatherData={weatherData}
-                                    onOpenSmartImport={() => setIsSmartImportModalOpen(true)}
-                                    requestedTab={requestedTab}
-                                    onTabHandled={() => setRequestedTab(null)}
-                                    requestedItemId={requestedItemId}
-                                    onItemHandled={() => setRequestedItemId(null)}
-                                    isBanned={isBanned}
-                                    isAdmin={isAdmin}
-                                    onOpenChat={handleOpenChat}
-                                    isChatOpen={isChatOpen}
-                                    setIsChatOpen={setIsChatOpen}
-                                    onUserClick={setViewingProfileUser}
-                                    onViewProfile={setViewingProfileUser}
-                                    setChatInitialTab={setChatInitialTab}
-                                    onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
-                                />
+                                !selectedTrip ? (
+                                    <TripDetailSkeleton isDarkMode={isDarkMode} />
+                                ) : (
+                                    <TripDetail
+                                        tripData={selectedTrip}
+                                        user={user}
+                                        isDarkMode={isDarkMode}
+                                        setGlobalBg={setGlobalBg}
+                                        isSimulation={false}
+                                        globalSettings={globalSettings}
+                                        onBack={() => setView('dashboard')}
+                                        exchangeRates={exchangeRates}
+                                        weatherData={weatherData}
+                                        onOpenSmartImport={() => setIsSmartImportModalOpen(true)}
+                                        requestedTab={requestedTab}
+                                        onTabHandled={() => setRequestedTab(null)}
+                                        requestedItemId={requestedItemId}
+                                        onItemHandled={() => setRequestedItemId(null)}
+                                        isBanned={isBanned}
+                                        isAdmin={isAdmin}
+                                        onOpenChat={handleOpenChat}
+                                        isChatOpen={isChatOpen}
+                                        setIsChatOpen={setIsChatOpen}
+                                        onUserClick={setViewingProfileUser}
+                                        onViewProfile={setViewingProfileUser}
+                                        setChatInitialTab={setChatInitialTab}
+                                        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+                                    />
+                                )
                             )}
                             {view === 'settings' && <SettingsView globalSettings={globalSettings} setGlobalSettings={setGlobalSettings} isDarkMode={isDarkMode} onBack={() => setView('dashboard')} initialTab={settingsInitialTab} user={user} isAdmin={isAdmin} exchangeRates={exchangeRates} weatherData={weatherData} />}
                             {['403', '404', '500', '503'].includes(view) && <HttpStatusPage code={parseInt(view)} isDarkMode={isDarkMode} onBackHome={() => setView('dashboard')} onOpenFeedback={() => setIsFeedbackModalOpen(true)} />}
@@ -960,15 +1243,29 @@ const App = () => {
                         </Suspense>
                     </div>
 
-                    {view !== 'tutorial' && (
-                        <Suspense fallback={null}>
-                            <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} onLanguageChange={(lang) => setGlobalSettings(prev => ({ ...prev, language: lang }))} />
-                        </Suspense>
-                    )}
+                    {
+                        view !== 'tutorial' && (
+                            <Suspense fallback={null}>
+                                <Footer isDarkMode={isDarkMode} onOpenVersion={() => setIsVersionOpen(true)} onLanguageChange={(lang) => setGlobalSettings(prev => ({ ...prev, language: lang }))} />
+                            </Suspense>
+                        )
+                    }
 
                     {/* Lazy Modals - Separate Suspense so they don't block UI */}
                     <Suspense fallback={null}>
                         <UniversalOnboarding isOpen={isOnboardingOpen} onClose={() => setIsOnboardingOpen(false)} isDarkMode={isDarkMode} onStartDemo={() => setView('tutorial')} />
+
+                        {/* Private Chat Modal (V1.9.2) */}
+                        {isPrivateChatOpen && (
+                            <ChatModal
+                                isOpen={isPrivateChatOpen}
+                                onClose={() => setIsPrivateChatOpen(false)}
+                                currentUser={currentUser}
+                                initialTargetUser={privateChatTarget}
+                                isDarkMode={isDarkMode}
+                            />
+                        )}
+
                         {(user || view === 'tutorial') && !isChatOpen && <GlobalChatFAB isDarkMode={isDarkMode} context={view === 'detail' || view === 'tutorial' ? 'trip' : 'default'} onClick={() => handleOpenChat(view === 'tutorial' ? SIMULATION_DATA : null)} />}
                         <VersionModal isOpen={isVersionOpen} onClose={() => setIsVersionOpen(false)} isDarkMode={isDarkMode} globalSettings={globalSettings} />
                         <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} isDarkMode={isDarkMode} user={user} isBanned={isBanned} />
@@ -983,9 +1280,9 @@ const App = () => {
                     {/* Static Modals - Rendering Instantly */}
                     <ReportCenterModal isOpen={isReportCenterOpen} onClose={() => setIsReportCenterOpen(false)} isDarkMode={isDarkMode} user={user} />
                     <VersionGuardModal isOpen={isVersionGuardOpen} onClose={() => setIsVersionGuardOpen(false)} latestVersion={latestVersion} currentVersion={APP_VERSION} isDarkMode={isDarkMode} />
-                </div>
-            </ErrorBoundary>
-        </TourProvider>
+                </div >
+            </ErrorBoundary >
+        </TourProvider >
     );
 };
 

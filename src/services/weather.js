@@ -34,7 +34,7 @@ export const weatherCodes = {
     99: { icon: '⛈️', desc: '大雷暴伴隨冰雹', descEn: 'Thunderstorm with heavy hail' }
 };
 
-const CACHE_KEY_PREFIX = 'weather_cache_';
+const CACHE_KEY_PREFIX = 'weather_cache_v2_';
 const CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 hours
 const ERROR_BACKOFF = 30 * 60 * 1000; // 30 mins backoff on 429
 
@@ -92,13 +92,32 @@ export async function getWeather(latitude, longitude, cityName = 'default') {
 
         const data = await response.json();
 
+        // 3. 數據標準化 (Normalization)
+        // Ensure we handle both legacy current_weather and new current object
+        const current = data.current || data.current_weather || {};
+        const daily = data.daily || {};
+        const wCode = current.weathercode !== undefined ? current.weathercode : (current.weather_code || 0); // OpenMeteo names vary
+
+        const tempVal = current.temperature_2m !== undefined ? current.temperature_2m : current.temperature;
+        const wInfo = getWeatherInfo(wCode);
+
+        const normalizedData = {
+            ...data, // Keep raw data for advanced users
+            temp: tempVal !== undefined ? `${Math.round(tempVal)}°C` : undefined,
+            rawTemp: tempVal,
+            icon: wInfo.icon,
+            desc: wInfo.desc,
+            descEn: wInfo.descEn,
+            timestamp: Date.now() // specific fetch time
+        };
+
         // 2. 儲存緩存
         localStorage.setItem(cacheKey, JSON.stringify({
             timestamp: Date.now(),
-            data: data
+            data: normalizedData
         }));
 
-        return data;
+        return normalizedData;
     } catch (error) {
         console.error('Failed to fetch weather:', error);
         // 如果有舊緩存，即使過期也先用著
@@ -115,4 +134,31 @@ export async function getWeather(latitude, longitude, cityName = 'default') {
  */
 export function getWeatherInfo(code) {
     return weatherCodes[code] || { icon: '❓', desc: '未知', descEn: 'Unknown' };
+}
+
+/**
+ * AI 天氣摘要生成 (Placeholder / Re-impl)
+ * @param {Object} weatherData - Normalized weather data
+ * @param {string} lang - Language code
+ */
+export async function generateWeatherSummary(weatherData, lang = 'zh-HK') {
+    // This looks like it was intended to use Gemini to summarize the week's weather.
+    // To avoid circular dependencies or complex imports right now, we return a simple summary.
+    // In a real implementation, we would import the AI service here.
+
+    if (!weatherData || !weatherData.daily) return "";
+
+    try {
+        const { daily } = weatherData;
+        const maxTemp = Math.max(...(daily.temperature_2m_max || []));
+        const minTemp = Math.min(...(daily.temperature_2m_min || []));
+
+        // Simple heuristic summary
+        return lang === 'en'
+            ? `Forecast for the week: Highs of ${Math.round(maxTemp)}°C, Lows of ${Math.round(minTemp)}°C.`
+            : `本週天氣預測：最高 ${Math.round(maxTemp)}°C，最低 ${Math.round(minTemp)}°C，請留意溫差。`;
+    } catch (e) {
+        console.error("Weather summary generation failed:", e);
+        return "";
+    }
 }

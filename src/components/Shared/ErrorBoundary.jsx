@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { Suspense } from 'react';
+import ErrorPage from './ErrorPage';
 import { AlertTriangle, RefreshCw, MessageCircle } from 'lucide-react';
 
 class ErrorBoundary extends React.Component {

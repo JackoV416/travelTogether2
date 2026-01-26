@@ -9,9 +9,9 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "1.9.0";
-export const APP_VERSION_TAG = "Social Revolution";
-export const APP_LAST_UPDATE = "2026-01-23";
+export const APP_VERSION = "1.9.9";
+export const APP_VERSION_TAG = "PWA Polish & Gold Master";
+export const APP_LAST_UPDATE = "2026-01-26";
 export const JARVIS_VERSION = "V0.0.5-Beta";
 
 export const JARVIS_VERSION_HISTORY = [
@@ -96,6 +96,116 @@ export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086
 
 export const VERSION_HISTORY = [
     {
+        ver: "V1.9.8",
+        date: "2026-01-26",
+        tag: "Stability & Public View",
+        desc: {
+            "zh-TW": "公開頁面按鈕與刷新穩定性修復",
+            "zh-HK": "公開頁面按鈕同刷新穩定性修復",
+            "en": "Public View Button & Refresh Stability Fix"
+        },
+        details: {
+            "zh-TW": [
+                "🔗 Public View: 私人行程新增「查看公開頁面」按鈕 (Globe Icon)",
+                "🛡️ Stability: 修復私人頁面刷新後被錯誤重導至首頁的問題",
+                "🌐 i18n: 修正行程篩選器 (Filter) 翻譯失效問題"
+            ],
+            "zh-HK": [
+                "🔗 Public View: 私人行程新增「查看公開頁面」按鈕 (Globe Icon)",
+                "🛡️ Stability: 修復私人頁面刷新後被錯誤重導至首頁嘅問題",
+                "🌐 i18n: 修正行程篩選器 (Filter) 翻譯失效問題"
+            ],
+            "en": [
+                "🔗 Public View: Added 'View Public Page' button to private trips",
+                "🛡️ Stability: Fixed redirect loop when refreshing private trip pages",
+                "🌐 i18n: Fixed broken translation keys in Itinerary Filters"
+            ]
+        }
+    },
+    {
+        ver: "V1.9.7",
+        date: "2026-01-23",
+        tag: "Fork Feature",
+        desc: {
+            "zh-TW": "Fork 功能正式上線",
+            "zh-HK": "Fork 功能正式上線",
+            "en": "Fork Feature Official Release"
+        },
+        details: {
+            "zh-TW": [
+                "🍴 Fork: 公開行程可一鍵複製到自己帳號",
+                "📱 UI: 全新 PublicTripView 公開行程頁面",
+                "🔀 Route: 路由智能判斷 - 成員看完整版，訪客看公開版",
+                "👁️ Stats: 新增瀏覽次數與 Fork 次數統計"
+            ],
+            "zh-HK": [
+                "🍴 Fork: 公開行程可一鍵複製到自己帳號",
+                "📱 UI: 全新 PublicTripView 公開行程頁面",
+                "🔀 Route: 路由智能判斷 - 成員睇完整版，訪客睇公開版",
+                "👁️ Stats: 新增瀏覽次數同 Fork 次數統計"
+            ],
+            "en": [
+                "🍴 Fork: Clone public trips to your account with one click",
+                "📱 UI: Brand new PublicTripView for public trips",
+                "🔀 Route: Smart routing - Members see full view, visitors see public view",
+                "👁️ Stats: Added view count and fork count tracking"
+            ]
+        }
+    },
+    {
+        ver: "V1.9.4",
+        details: {
+            "zh-TW": [
+                "🐛 Fix: 修復 /trip 路由問題 - 用戶自己嘅行程會跳轉至完整 TripDetail",
+                "🌐 i18n: 完善 zh-HK Badge 翻譯 (20+ 勳章)",
+                "🌐 i18n: 新增 Level/XP 相關翻譯鍵",
+                "⚡ UI: 公開行程頁面恢復 Header 與 Footer"
+            ],
+            "zh-HK": [
+                "🐛 Fix: 修復 /trip 路由問題 - 用戶自己嘅行程會跳轉至完整 TripDetail",
+                "🌐 i18n: 完善 zh-HK Badge 翻譯 (20+ 勳章)",
+                "🌐 i18n: 新增 Level/XP 相關翻譯鍵",
+                "⚡ UI: 公開行程頁面恢復 Header 同 Footer"
+            ],
+            "en": [
+                "🐛 Fix: Resolved /trip route issue - User's own trips now redirect to full TripDetail",
+                "🌐 i18n: Completed zh-HK badge translations (20+ badges)",
+                "🌐 i18n: Added Level/XP localization keys",
+                "⚡ UI: Restored Header & Footer in Public Trip View"
+            ]
+        }
+    },
+    {
+        ver: "V1.9.3",
+        date: "2026-01-23",
+        tag: "Badge System Polish & Fixes",
+        desc: {
+            "zh-TW": "徽章系統完善與錯誤修復",
+            "zh-HK": "徽章系統完善同錯誤修復",
+            "en": "Badge System Polish & Bug Fixes"
+        },
+        details: {
+            "zh-TW": [
+                "🐛 Fix: 修復 Public Trip View 崩潰問題 (setViewMode error)",
+                "🏅 Badge: 實裝徽章多語言顯示 (zh-HK/en)",
+                "📊 UI: 修正 XP 進度條顯示邏輯與閾值",
+                "⚡ Perf: 優化 Public Trip 資料載入穩定性"
+            ],
+            "zh-HK": [
+                "🐛 Fix: 修復 Public Trip View 崩潰問題 (setViewMode error)",
+                "🏅 Badge: 實裝徽章多語言顯示 (zh-HK/en)",
+                "📊 UI: 修正 XP 進度條顯示邏輯同閾值",
+                "⚡ Perf: 優化 Public Trip 資料載入穩定性"
+            ],
+            "en": [
+                "🐛 Fix: Resolved Public Trip View crash (setViewMode error)",
+                "🏅 Badge: Implemented localized badge names (zh-HK/en)",
+                "📊 UI: Corrected XP progress bar logic and thresholds",
+                "⚡ Perf: Optimized Public Trip data loading stability"
+            ]
+        }
+    },
+    {
         ver: "V1.9.0",
         date: "2026-01-23",
         tag: "Social Revolution & UX Evolution",
@@ -171,17 +281,29 @@ export const VERSION_HISTORY = [
 
 export const CITY_COORDS = {
     "Tokyo": { lat: 35.6762, lon: 139.6503 },
+    "東京": { lat: 35.6762, lon: 139.6503 },
     "Taipei": { lat: 25.0330, lon: 121.5654 },
+    "台北": { lat: 25.0330, lon: 121.5654 },
     "London": { lat: 51.5074, lon: -0.1278 },
+    "倫敦": { lat: 51.5074, lon: -0.1278 },
     "New York": { lat: 40.7128, lon: -74.0060 },
+    "紐約": { lat: 40.7128, lon: -74.0060 },
     "Bangkok": { lat: 13.7563, lon: 100.5018 },
+    "曼谷": { lat: 13.7563, lon: 100.5018 },
     "Zurich": { lat: 47.3769, lon: 8.5417 },
+    "蘇黎世": { lat: 47.3769, lon: 8.5417 },
     "Osaka": { lat: 34.6937, lon: 135.5023 },
+    "大阪": { lat: 34.6937, lon: 135.5023 },
     "Seoul": { lat: 37.5665, lon: 126.9780 },
+    "首爾": { lat: 37.5665, lon: 126.9780 },
     "Paris": { lat: 48.8566, lon: 2.3522 },
+    "巴黎": { lat: 48.8566, lon: 2.3522 },
     "Berlin": { lat: 52.5200, lon: 13.4050 },
+    "柏林": { lat: 52.5200, lon: 13.4050 },
     "Rome": { lat: 41.9028, lon: 12.4964 },
-    "Sydney": { lat: -33.8688, lon: 151.2093 }
+    "羅馬": { lat: 41.9028, lon: 12.4964 },
+    "Sydney": { lat: -33.8688, lon: 151.2093 },
+    "雪梨": { lat: -33.8688, lon: 151.2093 }
 };
 
 export const CURRENCIES = {

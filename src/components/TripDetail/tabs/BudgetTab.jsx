@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import SearchFilterBar from '../../Shared/SearchFilterBar';
 import EmptyState from '../../Shared/EmptyState';
-import { Search, BarChart3, List as ListIcon } from 'lucide-react';
+import { BarChart3, List as ListIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import BudgetCharts from './BudgetCharts';
 
@@ -20,7 +20,8 @@ const BudgetTab = ({
     glassCard,
     onOpenSmartImport,
     onOpenSmartExport,
-    onAddItem // V1.2.6
+    onAddItem, // V1.2.6
+    readOnly = false // V1.9.8 Public View Support
 }) => {
     const { t, i18n } = useTranslation();
     const isZh = i18n.language.includes('zh');
@@ -77,13 +78,15 @@ const BudgetTab = ({
 
             {/* View Toggle */}
             <div className="flex justify-between items-center mb-4">
-                <button
-                    onClick={onAddItem}
-                    data-tour="add-expense"
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg active:scale-95"
-                >
-                    <Plus className="w-4 h-4" /> <span>新增支出</span>
-                </button>
+                {!readOnly ? (
+                    <button
+                        onClick={onAddItem}
+                        data-tour="add-expense"
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg active:scale-95"
+                    >
+                        <Plus className="w-4 h-4" /> <span>新增支出</span>
+                    </button>
+                ) : <div></div>}
 
                 <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-lg inline-flex">
                     <button

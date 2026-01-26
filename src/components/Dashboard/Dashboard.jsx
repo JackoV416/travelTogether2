@@ -38,7 +38,7 @@ import SearchFilterBar from './SearchFilterBar';
 
 
 
-const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSettings, setGlobalBg, globalSettings, exchangeRates, weatherData, isLoadingWeather, isBanned, onOpenCommandPalette, deferredPrompt, onInstall, shouldStartProductTour, onProductTourStarted, onOpenChat, setChatInitialTab, forcedViewMode, allTrips, loadingAllTrips }) => {
+const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSettings, setGlobalBg, globalSettings, exchangeRates, weatherData, isLoadingWeather, isBanned, onOpenCommandPalette, deferredPrompt, onInstall, shouldStartProductTour, onProductTourStarted, onOpenChat, setChatInitialTab, forcedViewMode, allTrips, loadingAllTrips, friendRequestCount = 0 }) => {
     const {
         trips, loadingTrips, newsData, loadingNews,
         hotels, loadingHotels, flights, loadingFlights,
@@ -710,6 +710,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                 }}
                 onCreateTrip={() => setIsCreateModalOpen(true)}
                 onSearch={onOpenCommandPalette}
+                friendRequestCount={friendRequestCount}
             />
         </main>
     );

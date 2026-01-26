@@ -54,45 +54,47 @@ const DashboardHeader = ({
                     <div className="relative group flex-1 md:flex-none">
                         <button
                             onClick={onOpenCommandPalette}
-                            className={`w-full md:w-auto px-4 py-2.5 rounded-xl border transition-all flex items-center justify-center gap-2 ${isDarkMode
-                                ? 'bg-indigo-500/10 border-white/5 text-indigo-400 hover:bg-indigo-500/20 shadow-lg shadow-indigo-500/5'
-                                : 'bg-white/50 border-indigo-100 text-indigo-600 hover:bg-white'} backdrop-blur-xl group`}
+                            className={`w-full md:w-auto h-12 md:h-12 px-5 rounded-2xl border transition-all flex items-center justify-center gap-2 ${isDarkMode
+                                ? 'bg-indigo-950/30 border-indigo-500/20 text-indigo-300 hover:bg-indigo-900/40 hover:text-white shadow-lg shadow-indigo-900/10'
+                                : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600 hover:shadow-md'} backdrop-blur-xl group`}
                         >
-                            <Search className="w-4 h-4" />
-                            <span className="hidden sm:inline text-xs font-black">{t('dashboard.header.tooltips.search') || '搜尋'}</span>
+                            <Search className="w-5 h-5" />
+                            <span className="hidden sm:inline text-sm font-bold">{t('dashboard.header.tooltips.search') || '搜尋'}</span>
                         </button>
-                        <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
-                            <span className="text-[10px] font-bold">{t('dashboard.header.tooltips.search')}</span>
+                        <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-max px-2.5 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
+                            <span className="text-[10px] font-bold tracking-wide">{t('dashboard.header.tooltips.search')}</span>
                             <Kbd keys={['⌘', 'K']} className="border-gray-600 bg-gray-700 text-gray-300" />
                         </div>
                     </div>
 
-                    {/* Create Trip */}
+                    {/* Create Trip (Primary Gradient) */}
                     <div className="relative group flex-1 md:flex-none">
                         <button
                             onClick={() => setIsCreateModalOpen(true)}
-                            className={`${buttonPrimary} !px-4 !py-2.5 !text-sm flex items-center justify-center gap-2`}
+                            className="w-full md:w-auto h-12 md:h-12 px-6 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold transition-all duration-300 shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-[1.02] active:scale-95 border border-white/10 flex items-center justify-center gap-2"
                         >
-                            <Plus className="w-4 h-4" />
-                            <span className="hidden sm:inline font-black">{t('dashboard.header.new_trip') || '新行程'}</span>
+                            <Plus className="w-5 h-5" />
+                            <span className="hidden sm:inline font-bold">{t('dashboard.header.new_trip') || '新行程'}</span>
                         </button>
-                        <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
-                            <span className="text-[10px] font-bold">{t('dashboard.header.tooltips.new')}</span>
+                        <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-max px-2.5 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
+                            <span className="text-[10px] font-bold tracking-wide">{t('dashboard.header.tooltips.new')}</span>
                             <Kbd keys={['⇧', 'N']} className="border-gray-600 bg-gray-700 text-gray-300" />
                         </div>
                     </div>
 
-                    {/* Smart Import */}
+                    {/* Smart Import (Secondary Outline) */}
                     <div className="relative group flex-1 md:flex-none">
                         <button
                             onClick={() => setIsSmartImportModalOpen(true)}
-                            className={`${buttonSecondary} !px-4 !py-2.5 !text-sm !bg-emerald-600/20 !border-emerald-500/30 !text-emerald-400 hover:!bg-emerald-600/30 !shadow-none flex items-center justify-center gap-2`}
+                            className={`w-full md:w-auto h-12 md:h-12 px-5 rounded-2xl border transition-all flex items-center justify-center gap-2 ${isDarkMode
+                                ? 'bg-emerald-950/30 border-emerald-500/20 text-emerald-400 hover:bg-emerald-900/40 hover:text-emerald-300 hover:border-emerald-400/30 shadow-lg shadow-emerald-900/10'
+                                : 'bg-white border-slate-200 text-emerald-600 hover:border-emerald-300 hover:shadow-md'} backdrop-blur-xl group`}
                         >
-                            <Upload className="w-4 h-4" />
-                            <span className="hidden sm:inline font-black">{t('dashboard.header.smart_import') || '匯入'}</span>
+                            <Upload className="w-5 h-5" />
+                            <span className="hidden sm:inline text-sm font-bold">{t('dashboard.header.smart_import') || '匯入'}</span>
                         </button>
-                        <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
-                            <span className="text-[10px] font-bold">{t('dashboard.header.tooltips.import')}</span>
+                        <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-max px-2.5 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
+                            <span className="text-[10px] font-bold tracking-wide">{t('dashboard.header.tooltips.import')}</span>
                             <Kbd keys={['⇧', 'I']} className="border-gray-600 bg-gray-700 text-gray-300" />
                         </div>
                     </div>

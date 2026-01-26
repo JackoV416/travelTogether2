@@ -50,6 +50,7 @@ const ItineraryTab = ({
     isDarkMode,
     dailyWeather,
     dailyReminder,
+    timeDiff, // V1.9.7: Added for Intelligent Summary
     viewMode,
     setViewMode,
     canEdit,
@@ -82,7 +83,8 @@ const ItineraryTab = ({
     onRedo,
     canUndo = false,
     canRedo = false,
-    readOnly = false // V1.9.0 Public View Support
+    readOnly = false, // V1.9.0 Public View Support
+    displayedItems = itineraryItems // Allow overriding items for display counts if needed
 }) => {
     const { t } = useTranslation();
     const { startTour } = useTour(); // V1.6.0 Tour
@@ -301,13 +303,13 @@ const ItineraryTab = ({
 
     const filters = [{
         key: 'type',
-        label: t('itinerary.filters.type') || '類型',
+        label: t('itinerary.filters.type', '類型'),
         options: [
-            { value: 'spot', label: t('itinerary.filters.spot') || '景點' },
-            { value: 'food', label: t('itinerary.filters.food') || '美食' },
-            { value: 'transport', label: t('itinerary.filters.transport') || '交通' },
-            { value: 'hotel', label: t('itinerary.filters.hotel') || '住宿' },
-            { value: 'shopping', label: t('itinerary.filters.shopping') || '購物' }
+            { value: 'spot', label: t('itinerary.filters.spot', '景點') },
+            { value: 'food', label: t('itinerary.filters.food', '美食') },
+            { value: 'transport', label: t('itinerary.filters.transport', '交通') },
+            { value: 'hotel', label: t('itinerary.filters.hotel', '住宿') },
+            { value: 'shopping', label: t('itinerary.filters.shopping', '購物') }
         ]
     }];
 
@@ -357,7 +359,7 @@ const ItineraryTab = ({
     const cachedItems = pendingItemsCache[currentDisplayDate] || [];
 
     // Step 1: Merge
-    const mergedList = itineraryItems.map(item => {
+    const mergedList = (itineraryItems || []).map(item => {
         const cached = cachedItems.find(c => String(c.id) === String(item.id));
         return cached ? cached : item;
     });
@@ -858,7 +860,68 @@ const ItineraryTab = ({
 
                     </div>
 
-                    {/* Old Date Card removed - Date now in header */}
+                    {/* Intelligent Summary moved to Global Header */}
+                    {false && (
+                        <div className="animate-fade-in mb-6">
+                            <div className={`rounded-3xl p-5 border flex flex-col md:flex-row gap-6 relative overflow-hidden ${isDarkMode ? 'bg-indigo-900/10 border-indigo-500/20' : 'bg-white border-indigo-50 shadow-sm'}`}>
+
+                                {/* Background Decoration */}
+                                <div className={`absolute top-0 right-0 w-32 h-32 blur-3xl rounded-full pointer-events-none opacity-20 ${isDarkMode ? 'bg-indigo-500' : 'bg-indigo-300'}`} />
+
+                                {/* Left: Weather & Time */}
+                                <div className="flex items-center gap-6 min-w-fit z-10">
+                                    {/* Weather Icon & Temp */}
+                                    <div className="flex flex-col items-center">
+                                        <div className="text-4xl mb-1 filter drop-shadow-sm">{dailyWeather?.icon || "🌤️"}</div>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-2xl font-black">{dailyWeather?.temp ? dailyWeather.temp.split('/')[0]?.trim() || '--' : '--'}</span>
+                                            <span className="text-xs opacity-60 font-bold">{dailyWeather?.temp ? `/ ${dailyWeather.temp.split('/')[1]?.trim()}` : ''}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Clothing & Time */}
+                                    <div className="flex flex-col gap-2">
+                                        {/* Clothing */}
+                                        <div className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full w-fit ${isDarkMode ? 'bg-white/10 text-indigo-300' : 'bg-indigo-50 text-indigo-600'}`}>
+                                            <Shirt className="w-3.5 h-3.5" />
+                                            <span>{dailyWeather?.dayClothes || "建議: --"}</span>
+                                        </div>
+                                        {/* Time Diff */}
+                                        {timeDiff !== undefined && timeDiff !== 0 && (
+                                            <div className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full w-fit ${isDarkMode ? 'bg-black/30 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
+                                                <Clock className="w-3.5 h-3.5" />
+                                                <span>{timeDiff > 0 ? `當地 +${timeDiff}h` : `當地 ${timeDiff}h`}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Divider (Desktop) */}
+                                <div className="hidden md:block w-px bg-current opacity-10 mx-2" />
+
+                                {/* Right: Daily Reminder */}
+                                <div className="flex-1 z-10 flex flex-col justify-center">
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-2">Daily Insight</h4>
+                                    {dailyReminder ? (
+                                        <div className="flex items-start gap-3">
+                                            <div className={`mt-1 p-1.5 rounded-full ${dailyReminder.includes('⚠️') ? 'bg-amber-500/20 text-amber-500' : 'bg-indigo-500/20 text-indigo-500'}`}>
+                                                <Info className="w-4 h-4" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className={`text-sm font-bold leading-relaxed ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                                                    {dailyReminder}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2 opacity-40 text-sm italic">
+                                            <span>沒有特別提示，盡情享受旅程！✨</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* V1.1: Edit Mode Indicator Banner */}
                     {isEditMode && (
@@ -980,12 +1043,17 @@ const ItineraryTab = ({
                         <div className="mb-4 pr-0">
                             <div className={`p-4 rounded-3xl border border-dashed ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-indigo-50/50 border-indigo-200/50'}`}>
                                 {/* Summary Header */}
-                                <div className="flex items-center gap-2 mb-4">
-                                    <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-xs">
-                                        {filteredItems.length}
+                                <div className="flex items-center justify-between gap-2 mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-xs">
+                                            {filteredItems.length}
+                                        </div>
+                                        <div className="font-bold text-sm opacity-80">📋 每日總覽</div>
                                     </div>
-                                    <div className="font-bold text-sm opacity-80">📋 每日總覽</div>
+                                    {/* Time Difference Badge Removed (Moved to Intelligent Header) */}
                                 </div>
+
+
 
                                 {/* Metrics Grid - Responsive: 1 col mobile, 3 cols desktop */}
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">

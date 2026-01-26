@@ -5,6 +5,11 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 const resources = {
     en: {
         translation: {
+            "auth": {
+                "login_to_fork": "Login to Fork",
+                "login": "Login",
+                "login_desc": "Sign in to sync across devices"
+            },
             "common": {
                 "search": "Search...",
                 "cancel": "Cancel",
@@ -107,6 +112,7 @@ const resources = {
                     "limit_reached": "Daily limit reached",
                     "reset_countdown": "Resets in {{time}}"
                 },
+
                 "api": {
                     "title": "API Keys",
                     "desc": "Configure your own API keys for unlimited usage",
@@ -125,6 +131,40 @@ const resources = {
                     "desc": "Jarvis is your AI travel assistant powered by Google Gemini."
                 },
                 "info_desc": "Travel Together v{{version}}"
+            },
+            "friends": {
+                "title": "Friends",
+                "add_friend": "Add Friend",
+                "add_friend_title": "Add New Friend",
+                "add_friend_desc": "Search by email, name or scan QR code",
+                "requests": "Friend Requests",
+                "recent_requests": "Recent Requests",
+                "my_friends": "My Friends",
+                "scan_qr": "Scan QR",
+                "my_qr": "My QR Code",
+                "search_tab": "Search",
+                "search_placeholder": "Name or Email...",
+                "enter_email": "Enter friend's email",
+                "enter_email_or_name": "Enter Email or Name",
+                "send_request": "Send Request",
+                "accept": "Accept",
+                "reject": "Reject",
+                "unfriend": "Unfriend",
+                "block": "Block User",
+                "cancel_request": "Cancel Request",
+                "confirm_unfriend": "Are you sure you want to remove this friend?",
+                "confirm_block": "Are you sure you want to block this user?",
+                "no_friends": "No friends yet. Start adding!",
+                "no_requests": "No pending requests",
+                "friend_since": "Friends since {{date}}",
+                "already_friends": "Already friends",
+                "request_sent": "Request sent!",
+                "self_add": "Cannot add yourself",
+                "user_not_found": "User not found",
+                "status": {
+                    "online": "Online",
+                    "offline": "Offline"
+                }
             },
             "modal": {
                 "item_detail": {
@@ -329,7 +369,9 @@ const resources = {
                 "redo": "Redo",
                 "edit_settings": "Edit Settings",
                 "finish_edit_first": "Please finish editing first",
-                "open_chat": "Open Chat"
+                "open_chat": "Open Chat",
+                "export_pdf": "Export PDF",
+                "duplicate": "Duplicate Trip"
             },
             "footer": {
                 "people": "People",
@@ -565,6 +607,11 @@ const resources = {
             "default_name": "Traveler",
             "login_prompt": "Please log in to view your profile",
             "level": "Level",
+            "xp": "XP",
+            "lvl": "Lvl",
+            "max_level": "Max Level",
+            "level_caps": "LEVEL",
+            "elite": "ELITE",
             "joined": "Joined",
             "xp": "XP",
             "stats": {
@@ -601,6 +648,19 @@ const resources = {
             },
             "badges_title": "Badges & Achievements",
             "badges_unlocked": "{{count}} / {{total}} Unlocked",
+            "badges": {
+                "adventurer_rank": "Explorer Rank",
+                "keep_exploring": "Keep exploring to unlock more rewards!",
+                "locked": "Locked",
+                "unlocked": "Unlocked!",
+                "target": "Target: {{count}} {{type}}",
+                "rarity": {
+                    "common": "Common",
+                    "rare": "Rare",
+                    "epic": "Epic",
+                    "legendary": "Legendary"
+                }
+            },
             "map": {
                 "title": "My Footprints",
                 "stats_desc": "You've visited {{count}} countries ({{percent}}% of the world)",
@@ -861,6 +921,11 @@ const resources = {
     },
     zh: {
         translation: {
+            "auth": {
+                "login_to_fork": "登入以複製行程",
+                "login": "登入",
+                "login_desc": "登入以同步所有裝置"
+            },
             "common": {
                 "search": "搜尋...",
                 "confirm": "確認",
@@ -965,6 +1030,7 @@ const resources = {
                     "limit_reached": "已達每日上限",
                     "reset_countdown": "{{time}} 後重設"
                 },
+
                 "api": {
                     "title": "API 金鑰",
                     "desc": "設定您的個人 API 金鑰以解除限制",
@@ -983,6 +1049,40 @@ const resources = {
                     "desc": "Jarvis 是由 Google Gemini 驅動的 AI 旅遊助理。"
                 },
                 "info_desc": "Travel Together v{{version}}"
+            },
+            "friends": {
+                "title": "好友",
+                "add_friend": "新增好友",
+                "add_friend_title": "新增好友",
+                "add_friend_desc": "透過 Email、名稱搜尋或掃描 QR Code",
+                "requests": "好友邀請",
+                "recent_requests": "最近邀請",
+                "my_friends": "我的好友",
+                "scan_qr": "掃描 QR",
+                "my_qr": "我的 QR Code",
+                "search_tab": "搜尋",
+                "search_placeholder": "名稱或 Email...",
+                "enter_email": "輸入好友 Email",
+                "enter_email_or_name": "輸入 Email 或名稱",
+                "send_request": "發送邀請",
+                "accept": "接受",
+                "reject": "拒絕",
+                "unfriend": "刪除好友",
+                "block": "封鎖用戶",
+                "cancel_request": "取消邀請",
+                "confirm_unfriend": "確定要刪除這位好友嗎？",
+                "confirm_block": "確定要封鎖此用戶嗎？",
+                "no_friends": "還沒有好友，開始新增吧！",
+                "no_requests": "暫無好友邀請",
+                "friend_since": "於 {{date}} 成為好友",
+                "already_friends": "已經是好友了",
+                "request_sent": "邀請已發送",
+                "self_add": "不能新增自己",
+                "user_not_found": "找不到此用戶",
+                "status": {
+                    "online": "線上",
+                    "offline": "離線"
+                }
             },
             "modal": {
                 "item_detail": {
@@ -1053,6 +1153,25 @@ const resources = {
                 },
                 "rating_select": "評分"
             },
+            "notifications": {
+                "title": "通知中心",
+                "new": "新",
+                "mark_all_read": "全部已讀",
+                "clear_all": "清除全部",
+                "empty_title": "暫無通知",
+                "empty_desc": "如果有新動態，會即刻通知你。",
+                "tabs": {
+                    "all": "全部",
+                    "activity": "動態",
+                    "alerts": "警報",
+                    "system": "系統"
+                },
+                "groups": {
+                    "today": "今天",
+                    "yesterday": "昨天",
+                    "older": "較早前"
+                }
+            },
             "filter_menu": {
                 "all_countries": "所有國家",
                 "destination": "目的地",
@@ -1068,7 +1187,7 @@ const resources = {
                 "price_range": "價格範圍 ({{currency}})",
                 "selected_countries": "已選國家",
                 "show_more": "+ {{count}} 更多",
-                "show_less": "顯示更少",
+                "show_less": "顯示較少",
                 "budget_level": {
                     "Budget": "經濟",
                     "Standard": "標準",
@@ -1197,7 +1316,9 @@ const resources = {
                 "redo": "重做",
                 "edit_settings": "編輯行程設定",
                 "finish_edit_first": "請先完成編輯",
-                "open_chat": "開啟行程對話"
+                "open_chat": "開啟行程對話",
+                "export_pdf": "匯出 PDF",
+                "duplicate": "複製行程"
             },
             "footer": {
                 "people": "人",
@@ -1328,7 +1449,7 @@ const resources = {
                 "buy_insurance": "購買保險",
                 "safety_first": "保障旅程安全",
                 "check_visa": "檢查簽證",
-                "check_passport": "確認護照有效期",
+                "check_passport": "檢查護照有效期",
                 "pack_luggage": "收拾行李",
                 "check_essentials": "檢查必帶物品",
                 "check_weather": "查看天氣",
@@ -1379,6 +1500,38 @@ const resources = {
                 "upcoming": "即將開始",
                 "active": "進行中",
                 "completed": "已結束"
+            }
+        },
+        "itinerary": {
+            "weekdays": {
+                "sun": "週日",
+                "mon": "週一",
+                "tue": "週二",
+                "wed": "週三",
+                "thu": "週四",
+                "fri": "週五",
+                "sat": "週六"
+            },
+            "filters": {
+                "type": "類型",
+                "all": "全部",
+                "food": "美食",
+                "spot": "景點",
+                "hotel": "住宿",
+                "shopping": "購物",
+                "transport": "交通",
+                "flight": "航班"
+            },
+            "actions": {
+                "open_maps": "開啟地圖",
+                "check_route": "查看路線"
+            },
+            "transport": {
+                "suggested": "建議路線",
+                "metro": "地鐵",
+                "bus": "巴士",
+                "walk": "步行",
+                "car": "駕車"
             }
         },
         "onboarding": {
@@ -1898,6 +2051,25 @@ const resources = {
                 },
                 "rating_select": "評分"
             },
+            "notifications": {
+                "title": "通知中心",
+                "new": "新",
+                "mark_all_read": "全部已讀",
+                "clear_all": "清除全部",
+                "empty_title": "暫無通知",
+                "empty_desc": "如果有新動態，會即刻通知你。",
+                "tabs": {
+                    "all": "全部",
+                    "activity": "動態",
+                    "alerts": "警報",
+                    "system": "系統"
+                },
+                "groups": {
+                    "today": "今天",
+                    "yesterday": "昨天",
+                    "older": "較早前"
+                }
+            },
             "filter_menu": {
                 "all_countries": "全部國家",
                 "destination": "目的地",
@@ -2245,8 +2417,30 @@ const resources = {
                     "deleting": "刪除中...",
                     "download_settings": "下載資料",
                     "upload_settings": "上傳資料",
-                    "upload_btn": "上傳",
-                    "reset_btn": "重設"
+                    "upload_btn": "上載",
+                    "reset_btn": "重置"
+                },
+                "friends": {
+                    "recent_requests": "最近邀請",
+                    "my_friends": "我嘅朋友",
+                    "scan_qr": "掃瞄 QR",
+                    "my_qr": "我個 Code",
+                    "search_placeholder": "搵 email...",
+                    "enter_email": "輸入朋友 Email",
+                    "send_request": "發送請求",
+                    "accept": "接受",
+                    "reject": "狠心拒絕",
+                    "no_friends": "仲未有朋友喎，快啲加人啦！",
+                    "no_requests": "暫時冇請求",
+                    "friend_since": "{{date}} 做咗朋友",
+                    "already_friends": "已經係朋友喇",
+                    "request_sent": "請求已發送",
+                    "self_add": "自己加唔到自己架",
+                    "user_not_found": "搵唔到呢個人",
+                    "status": {
+                        "online": "在線",
+                        "offline": "離線"
+                    }
                 },
                 "general": {
                     "language": "語言",
@@ -2274,6 +2468,7 @@ const resources = {
                     "limit_reached": "今日用完喇",
                     "reset_countdown": "{{time}} 後重設"
                 },
+
                 "api": {
                     "title": "API Keys",
                     "desc": "設定你自己嘅 API Key 無限用",
@@ -2292,6 +2487,35 @@ const resources = {
                     "desc": "Jarvis 係你嘅 AI 旅遊助理，由 Google Gemini 驅動。"
                 },
                 "info_desc": "Travel Together v{{version}}"
+            },
+            "friends": {
+                "title": "好友",
+                "add_friend": "加好友",
+                "add_friend_title": "加新朋友",
+                "add_friend_desc": "用 Email、名搵或者掃 QR Code",
+                "requests": "好友邀請",
+                "recent_requests": "最近邀請",
+                "my_friends": "我嘅好友",
+                "scan_qr": "掃描 QR",
+                "my_qr": "我嘅 QR Code",
+                "search_tab": "搵人",
+                "search_placeholder": "入名或 Email...",
+                "enter_email": "輸入好友 Email",
+                "enter_email_or_name": "輸入 Email 或名稱",
+                "send_request": "Send 邀請",
+                "accept": "Accept",
+                "reject": "Reject",
+                "no_friends": "暫時未有好友，快啲加人啦！",
+                "no_requests": "暫時冇邀請",
+                "friend_since": "做咗好友由 {{date}}",
+                "already_friends": "已經係好友",
+                "request_sent": "邀請 Send 咗！",
+                "self_add": "唔可以加自己",
+                "user_not_found": "搵唔到用戶",
+                "status": {
+                    "online": "Online",
+                    "offline": "Offline"
+                }
             },
             "modal": {
                 "item_detail": {
@@ -2372,8 +2596,12 @@ const resources = {
                 "default_name": "遊客仔",
                 "login_prompt": "登入先睇到你嘅個人檔案呀",
                 "level": "等級",
-                "joined": "加入咗",
+                "lvl": "Lv",
                 "xp": "經驗值",
+                "max_level": "滿級",
+                "level_caps": "LEVEL",
+                "elite": "精英",
+                "joined": "加入咗",
                 "stats": {
                     "countries": "國家",
                     "trips": "行程",
@@ -2386,14 +2614,43 @@ const resources = {
                 },
                 "badges_list": {
                     "early_adopter": { "name": "早鳥先鋒", "desc": "喺 Travel Together 早期就加入咗。" },
+                    "journey_beginner": { "name": "冒險起步", "desc": "完成咗你第一個行程！" },
                     "jetsetter": { "name": "空中飛人", "desc": "開咗 5 個以上嘅行程。" },
+                    "world_traveler": { "name": "世界旅人", "desc": "開咗 20 個以上嘅行程。" },
                     "explorer": { "name": "探險家", "desc": "去過 3 個以上唔同嘅國家。" },
+                    "country_collector": { "name": "國家收集控", "desc": "去過 10 個以上嘅國家。" },
+                    "globetrotter": { "name": "環球旅行家", "desc": "足跡跨越咗 3 個以上嘅大洲。" },
+                    "social_butterfly": { "name": "社交蝴蝶", "desc": "同 3 位以上朋友一齊揸行程。" },
+                    "popular_buddy": { "name": "人氣夥伴", "desc": "參與咗 10 個以上共享行程。" },
+                    "budget_master": { "name": "理財大師", "desc": "喺 5 個行程中記錄晒開支。" },
+                    "packing_expert": { "name": "收納專家", "desc": "用咗行李清單超過 5 次。" },
+                    "jarvis_fan": { "name": "Jarvis 狂粉", "desc": "問咗 AI 超過 50 次。" },
+                    "aesthetic_planner": { "name": "美學策劃師", "desc": "上傳咗超過 20 張相去足跡。" },
+                    "night_owl": { "name": "夜貓子", "desc": "規劃過深夜冒險行程。" },
+                    "early_bird": { "name": "早起鳥兒", "desc": "總係第一個睇到日出。" },
+                    "asia_lover": { "name": "亞洲通", "desc": "去過 5 個以上亞洲國家。" },
+                    "europe_expert": { "name": "歐洲專家", "desc": "去過 5 個以上歐洲國家。" },
+                    "foodie": { "name": "美食家", "desc": "加咗超過 20 個餐廳景點。" },
+                    "culture_buff": { "name": "文化愛好者", "desc": "去過超過 20 個博物館/古蹟。" },
+                    "achievement_king": { "name": "成就王者", "desc": "解鎖咗超過 15 個勳章。" },
                     "contributor": { "name": "熱心貢獻", "desc": "有份參與社群協作或者報料。" },
-                    "influencer": { "name": "旅遊 KOL", "desc": "行程攞到 10 個 Like。" },
-                    "globetrotter": { "name": "環球旅行家", "desc": "足跡跨越咗 3 個以上嘅大洲。" }
+                    "influencer": { "name": "旅遊 KOL", "desc": "行程攞到 10 個 Like。" }
                 },
-                "badges_title": "勳章同成就",
-                "badges_unlocked": "{{count}} / {{total}} 解鎖咗",
+                "badges_title": "勳章與成就",
+                "badges_unlocked": "已解鎖 {{count}} / {{total}}",
+                "badges": {
+                    "adventurer_rank": "探索者等級",
+                    "keep_exploring": "繼續探索以解鎖更多獎勵！",
+                    "locked": "未解鎖",
+                    "unlocked": "已解鎖！",
+                    "target": "目標：{{count}} {{type}}",
+                    "rarity": {
+                        "common": "普通",
+                        "rare": "稀有",
+                        "epic": "史詩",
+                        "legendary": "傳說"
+                    }
+                },
                 "map": {
                     "title": "我嘅足跡",
                     "stats_desc": "你去過 {{count}} 個國家喇 (佔全球 {{percent}}%)",

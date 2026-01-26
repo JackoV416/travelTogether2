@@ -223,9 +223,9 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
                                         <label className="block text-[10px] font-bold opacity-60 uppercase tracking-wider mb-1.5 ml-1">{t('startTime')}</label>
                                         <input
                                             type="time"
-                                            value={details.time || ''}
+                                            value={details.time ? details.time.trim() : ''}
                                             onChange={e => {
-                                                const newTime = e.target.value;
+                                                const newTime = e.target.value.trim();
                                                 if (newTime && details.duration) {
                                                     const [h, m] = newTime.split(':').map(Number);
                                                     const endMins = h * 60 + m + Number(details.duration);
@@ -273,9 +273,9 @@ const AddActivityModal = ({ isOpen, onClose, onSave, onDelete, isDarkMode, date,
                                         </label>
                                         <input
                                             type="time"
-                                            value={details.endTime || ''}
+                                            value={details.endTime ? details.endTime.trim() : ''}
                                             onChange={e => {
-                                                const newEndTime = e.target.value;
+                                                const newEndTime = e.target.value.trim();
                                                 if (details.time && newEndTime) {
                                                     const [sh, sm] = details.time.split(':').map(Number);
                                                     const [eh, em] = newEndTime.split(':').map(Number);

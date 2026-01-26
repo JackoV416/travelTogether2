@@ -15,6 +15,10 @@
     transition: background-color 0.3s ease, color 0.3s ease;
     /* Prevent white flash on iOS scroll bounce */
     overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    /* Ensure full height usage */
+    min-height: 100dvh;
   }
 }
 

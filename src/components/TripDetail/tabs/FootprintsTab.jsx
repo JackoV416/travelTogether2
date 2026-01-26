@@ -59,7 +59,7 @@ const COUNTRY_ISO_MAP = {
  * Combines Map (Location), Timeline (Time), and Notebook (Thoughts).
  * Replaces the legacy JournalTab.
  */
-const FootprintsTab = ({ trip, user, isOwner, isDarkMode, currentLang, onViewProfile, viewingMember }) => {
+const FootprintsTab = ({ trip, user, isOwner, isDarkMode, currentLang, onViewProfile, viewingMember, readOnly = false }) => {
     const { t } = useTranslation();
     const [viewMode, setViewMode] = useState('map'); // 'map' | 'timeline' | 'editor'
     const [searchValue, setSearchValue] = useState("");
@@ -391,7 +391,7 @@ const FootprintsTab = ({ trip, user, isOwner, isDarkMode, currentLang, onViewPro
                     </button>
                 </div>
 
-                {viewMode === 'editor' && (
+                {viewMode === 'editor' && !readOnly && (
                     <button
                         onClick={() => setIsAddingNote(!isAddingNote)}
                         className="w-full sm:w-auto px-5 py-2 rounded-xl bg-indigo-600 text-white font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20"
@@ -405,305 +405,313 @@ const FootprintsTab = ({ trip, user, isOwner, isDarkMode, currentLang, onViewPro
             {/* Content Area */}
 
             {/* MAP VIEW */}
-            {viewMode === 'map' && (
-                <div className="animate-fade-in space-y-4" key="map-view-container">
-                    <div className={`rounded-3xl border overflow-hidden relative ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-xl isolate`} data-tour="map-content">
-                        {/* Header Overlay (Stats Dynamic Island) */}
-                        <div
-                            className="absolute top-6 left-1/2 -translate-x-1/2 sm:left-6 sm:translate-x-0 z-[9999] pointer-events-none drop-shadow-2xl"
-                        >
-                            <div className={`
+            {
+                viewMode === 'map' && (
+                    <div className="animate-fade-in space-y-4" key="map-view-container">
+                        <div className={`rounded-3xl border overflow-hidden relative ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-xl isolate`} data-tour="map-content">
+                            {/* Header Overlay (Stats Dynamic Island) */}
+                            <div
+                                className="absolute top-6 left-1/2 -translate-x-1/2 sm:left-6 sm:translate-x-0 z-[9999] pointer-events-none drop-shadow-2xl"
+                            >
+                                <div className={`
                                 flex items-center gap-2 sm:gap-4 px-3 py-2 sm:px-5 sm:py-3 rounded-full border backdrop-blur-xl transition-all duration-300 max-w-[95vw]
                                 ${isDarkMode
-                                    ? 'bg-black/60 border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]'
-                                    : 'bg-white/80 border-white/40 shadow-[0_8px_32px_rgba(31,38,135,0.15)]'
-                                }
+                                        ? 'bg-black/60 border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]'
+                                        : 'bg-white/80 border-white/40 shadow-[0_8px_32px_rgba(31,38,135,0.15)]'
+                                    }
                             `}>
-                                {/* Icon / Avatar - Smaller on mobile */}
-                                <div className={`p-1.5 sm:p-2 rounded-full ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
-                                    <MapPinned className={`w-4 h-4 sm:w-5 sm:h-5 ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
-                                </div>
+                                    {/* Icon / Avatar - Smaller on mobile */}
+                                    <div className={`p-1.5 sm:p-2 rounded-full ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
+                                        <MapPinned className={`w-4 h-4 sm:w-5 sm:h-5 ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
+                                    </div>
 
-                                {/* Texts */}
-                                <div className="flex flex-col">
-                                    <h3 className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                        {viewingMember ? `${viewingMember.name} 的足跡` : t('footprints.map')}
-                                    </h3>
-                                    <p className={`text-xs sm:text-sm font-black tabular-nums whitespace-nowrap ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                        {viewingMember
-                                            ? `已分享 ${mapMarkers.length} 個地點`
-                                            : `已探索 ${visitedCountries.length} 國 • ${mapMarkers.length} 打卡點`
-                                        }
-                                    </p>
-                                </div>
+                                    {/* Texts */}
+                                    <div className="flex flex-col">
+                                        <h3 className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                            {viewingMember ? `${viewingMember.name} 的足跡` : t('footprints.map')}
+                                        </h3>
+                                        <p className={`text-xs sm:text-sm font-black tabular-nums whitespace-nowrap ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                            {viewingMember
+                                                ? `已分享 ${mapMarkers.length} 個地點`
+                                                : `已探索 ${visitedCountries.length} 國 • ${mapMarkers.length} 打卡點`
+                                            }
+                                        </p>
+                                    </div>
 
-                                {/* Divider - Hide on very small screens */}
-                                <div className={`hidden xs:block w-px h-6 sm:h-8 mx-0.5 sm:mx-1 ${isDarkMode ? 'bg-white/10' : 'bg-gray-200'}`}></div>
+                                    {/* Divider - Hide on very small screens */}
+                                    <div className={`hidden xs:block w-px h-6 sm:h-8 mx-0.5 sm:mx-1 ${isDarkMode ? 'bg-white/10' : 'bg-gray-200'}`}></div>
 
-                                {/* Mini Chart / Extra Info - Hide on mobile if tight */}
-                                <div className="hidden xs:flex items-center gap-1 sm:gap-2">
-                                    <Globe2 className={`w-3 h-3 sm:w-4 sm:h-4 ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
-                                    <span className={`text-[10px] sm:text-xs font-bold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                        {Math.round((visitedCountries.length / 195) * 100)}% 世界
-                                    </span>
+                                    {/* Mini Chart / Extra Info - Hide on mobile if tight */}
+                                    <div className="hidden xs:flex items-center gap-1 sm:gap-2">
+                                        <Globe2 className={`w-3 h-3 sm:w-4 sm:h-4 ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
+                                        <span className={`text-[10px] sm:text-xs font-bold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                            {Math.round((visitedCountries.length / 195) * 100)}% 世界
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Mobile Header Overlay (Simplified) */}
-                        {/* Hidden on mobile because the main island above is now centered/adaptive */}
+                            {/* Mobile Header Overlay (Simplified) */}
+                            {/* Hidden on mobile because the main island above is now centered/adaptive */}
 
-                        {/* Map Container - Ensure local z-context */}
-                        <div className="h-[500px] w-full bg-indigo-50/50 dark:bg-gray-900/50 relative z-[0]">
-                            <FootprintsLeafletMap
-                                isDarkMode={isDarkMode}
-                                markers={mapMarkers}
-                                initialCenter={mapViewSettings.center}
-                                initialZoom={mapViewSettings.zoom}
-                            />
-                        </div>
+                            {/* Map Container - Ensure local z-context */}
+                            <div className="h-[500px] w-full bg-indigo-50/50 dark:bg-gray-900/50 relative z-[0]">
+                                <FootprintsLeafletMap
+                                    isDarkMode={isDarkMode}
+                                    markers={mapMarkers}
+                                    initialCenter={mapViewSettings.center}
+                                    initialZoom={mapViewSettings.zoom}
+                                />
+                            </div>
 
-                        {/* Stats Footer */}
-                        <div className="grid grid-cols-5 divide-x divide-gray-100 dark:divide-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-t border-gray-100 dark:border-gray-700 relative z-[10]">
-                            {['Asia', 'Europe', 'Americas', 'Africa', 'Oceania'].map(cont => (
-                                <div key={cont} className="p-4 text-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer group">
-                                    <div className={`text-xl font-black ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'} group-hover:scale-110 transition-transform`}>
-                                        {continentStats[cont] !== undefined ? continentStats[cont] : '-'}
+                            {/* Stats Footer */}
+                            <div className="grid grid-cols-5 divide-x divide-gray-100 dark:divide-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-t border-gray-100 dark:border-gray-700 relative z-[10]">
+                                {['Asia', 'Europe', 'Americas', 'Africa', 'Oceania'].map(cont => (
+                                    <div key={cont} className="p-4 text-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer group">
+                                        <div className={`text-xl font-black ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'} group-hover:scale-110 transition-transform`}>
+                                            {continentStats[cont] !== undefined ? continentStats[cont] : '-'}
+                                        </div>
+                                        <div className="text-[10px] font-bold opacity-50 uppercase tracking-widest">{t(`profile.map.continents.${cont.toLowerCase()}`)}</div>
                                     </div>
-                                    <div className="text-[10px] font-bold opacity-50 uppercase tracking-widest">{t(`profile.map.continents.${cont.toLowerCase()}`)}</div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
+                            {/* DEBUG: Removed after verification */}
                         </div>
-                        {/* DEBUG: Removed after verification */}
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* TIMELINE VIEW */}
-            {viewMode === 'timeline' && (
-                <div className="space-y-6 animate-fade-in">
-                    <div className="flex flex-col md:flex-row gap-4 items-center">
-                        <div className="flex-1 w-full">
-                            <SearchFilterBar
-                                searchValue={searchValue}
-                                onSearchChange={setSearchValue}
-                                placeholder="搜尋往事足跡..."
-                                isDarkMode={isDarkMode}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                        {categories.map(cat => (
-                            <button
-                                key={cat.id}
-                                onClick={() => setActiveCategory(cat.id)}
-                                className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeCategory === cat.id
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'bg-white/5 hover:bg-white/10 opacity-60'
-                                    }`}
-                            >
-                                {cat.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    {filteredMemories.length === 0 ? (
-                        <EmptyState
-                            icon={Sparkles}
-                            title="尚未留下足跡"
-                            description="開始上傳相片、保存機票，或在筆記本中記錄點滴。"
-                            isDarkMode={isDarkMode}
-                            action={{
-                                label: "切換到筆記本",
-                                onClick: () => setViewMode('editor'),
-                                icon: BookOpen
-                            }}
-                        />
-                    ) : (
-                        <div className="relative pl-8 border-l border-indigo-500/30 ml-4 space-y-10 py-4">
-                            {filteredMemories.map((m) => (
-                                <div key={m.id} className="relative group/item">
-                                    <div className="absolute -left-[41px] top-2 w-4 h-4 rounded-full bg-indigo-600 border-4 border-slate-950 z-10 transition-transform group-hover/item:scale-125"></div>
-
-                                    <div className="flex flex-col md:flex-row gap-4">
-                                        <div className="w-24 shrink-0 text-[10px] font-black opacity-40 uppercase tracking-tighter pt-2">
-                                            {m.parsedDate.toISOString().split('T')[0]}
-                                        </div>
-                                        <div className={`${glassCardStyle(isDarkMode)} flex-1 p-6 hover:shadow-2xl transition-all duration-500`}>
-                                            <div className="flex items-start justify-between gap-4">
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2 mb-3">
-                                                        {m.memoryType === 'file' && m.isImage && <ImageIcon className="w-4 h-4 text-emerald-400" />}
-                                                        {m.memoryType === 'file' && !m.isImage && <FileText className="w-4 h-4 text-sky-400" />}
-                                                        {m.memoryType === 'note' && <StickyNote className="w-4 h-4 text-indigo-400" />}
-                                                        <span className="text-[10px] font-black opacity-50 uppercase tracking-widest">
-                                                            {m.isImage ? 'Photo' : m.memoryType}
-                                                        </span>
-                                                    </div>
-                                                    <h4 className="font-bold text-lg mb-2">{m.name || m.title || m.memo}</h4>
-                                                    {m.content && <p className="text-sm opacity-70 mb-4 leading-relaxed line-clamp-3 group-hover/item:line-clamp-none transition-all">{m.content}</p>}
-                                                    {m.memoryType === 'file' && m.isImage && (
-                                                        <div className="max-w-md rounded-xl overflow-hidden shadow-2xl border border-white/10">
-                                                            <img src={m.url} alt={m.name} className="w-full hover:scale-105 transition-transform duration-700" />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="flex flex-col items-end gap-2">
-                                                    {m.url && (
-                                                        <a href={m.url} target="_blank" rel="noopener noreferrer" className="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg hover:bg-indigo-500/20 shadow-sm">
-                                                            <Download className="w-4 h-4" />
-                                                        </a>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* NOTEBOOK EDITOR VIEW */}
-            {viewMode === 'editor' && (
-                <div className="space-y-6 animate-fade-in">
-                    {isAddingNote && (
-                        <div className={`${glassCardStyle(isDarkMode)} p-6 border-2 border-indigo-500/30 animate-scale-in`}>
-                            <div className="space-y-4">
-                                <input
-                                    type="text"
-                                    placeholder="筆記標題 (如：第一天心情、必買清單...)"
-                                    className="w-full bg-transparent border-b border-white/10 py-2 text-lg font-bold outline-none focus:border-indigo-500 transition-colors"
-                                    value={newNote.title}
-                                    onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
+            {
+                viewMode === 'timeline' && (
+                    <div className="space-y-6 animate-fade-in">
+                        <div className="flex flex-col md:flex-row gap-4 items-center">
+                            <div className="flex-1 w-full">
+                                <SearchFilterBar
+                                    searchValue={searchValue}
+                                    onSearchChange={setSearchValue}
+                                    placeholder="搜尋往事足跡..."
+                                    isDarkMode={isDarkMode}
                                 />
-                                <div className="flex items-center gap-2 text-xs opacity-50">
-                                    <Calendar className="w-3 h-3" />
-                                    <input
-                                        type="date"
-                                        className="bg-transparent outline-none"
-                                        value={newNote.date}
-                                        onChange={(e) => setNewNote({ ...newNote, date: e.target.value })}
-                                    />
-                                </div>
-                                <textarea
-                                    placeholder="開始寫作..."
-                                    className="w-full h-40 bg-white/5 rounded-xl p-4 outline-none focus:ring-2 ring-indigo-500/50 resize-none"
-                                    value={newNote.content}
-                                    onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
-                                ></textarea>
-                                <div className="flex justify-end gap-3">
-                                    <button
-                                        onClick={handleAddNote}
-                                        className="px-6 py-2 rounded-xl bg-indigo-600 text-white font-bold flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20"
-                                    >
-                                        <Check className="w-4 h-4" /> 儲存筆記
-                                    </button>
-                                </div>
                             </div>
                         </div>
-                    )}
 
-                    <div className="grid grid-cols-1 gap-4">
-                        {(Array.isArray(trip.notes) ? trip.notes : []).length === 0 ? (
+                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                            {categories.map(cat => (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => setActiveCategory(cat.id)}
+                                    className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeCategory === cat.id
+                                        ? 'bg-indigo-600 text-white'
+                                        : 'bg-white/5 hover:bg-white/10 opacity-60'
+                                        }`}
+                                >
+                                    {cat.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {filteredMemories.length === 0 ? (
                             <EmptyState
-                                icon={PenLine}
-                                title="筆記本是空的"
-                                description="在這裡寫下您的旅遊日記，它們會自動同步到足跡時光流中。"
+                                icon={Sparkles}
+                                title="尚未留下足跡"
+                                description="開始上傳相片、保存機票，或在筆記本中記錄點滴。"
                                 isDarkMode={isDarkMode}
                                 action={{
-                                    label: "開始寫作",
-                                    onClick: () => setIsAddingNote(true),
-                                    icon: Plus
+                                    label: "切換到筆記本",
+                                    onClick: () => setViewMode('editor'),
+                                    icon: BookOpen
                                 }}
                             />
                         ) : (
-                            (Array.isArray(trip.notes) ? trip.notes : []).map(note => (
-                                <div key={note.id} className={`${glassCardStyle(isDarkMode)} transition-all duration-300 hover:shadow-xl group`}>
-                                    {editingNoteId === note.id ? (
-                                        <div className="p-6 space-y-4">
-                                            <input
-                                                type="text"
-                                                className="w-full bg-transparent border-b border-white/20 py-1 text-lg font-bold outline-none"
-                                                value={editNote.title}
-                                                onChange={(e) => setEditNote({ ...editNote, title: e.target.value })}
-                                            />
-                                            <textarea
-                                                className="w-full h-40 bg-white/5 rounded-xl p-4 outline-none resize-none"
-                                                value={editNote.content}
-                                                onChange={(e) => setEditNote({ ...editNote, content: e.target.value })}
-                                            ></textarea>
-                                            <div className="flex justify-end gap-2">
-                                                <button onClick={() => setEditingNoteId(null)} className="px-4 py-2 opacity-50 hover:opacity-100">取消</button>
-                                                <button
-                                                    onClick={() => handleSaveNoteEdit(note)}
-                                                    className="px-6 py-2 rounded-xl bg-indigo-600 text-white font-bold"
-                                                >
-                                                    儲存修改
-                                                </button>
+                            <div className="relative pl-8 border-l border-indigo-500/30 ml-4 space-y-10 py-4">
+                                {filteredMemories.map((m) => (
+                                    <div key={m.id} className="relative group/item">
+                                        <div className="absolute -left-[41px] top-2 w-4 h-4 rounded-full bg-indigo-600 border-4 border-slate-950 z-10 transition-transform group-hover/item:scale-125"></div>
+
+                                        <div className="flex flex-col md:flex-row gap-4">
+                                            <div className="w-24 shrink-0 text-[10px] font-black opacity-40 uppercase tracking-tighter pt-2">
+                                                {m.parsedDate.toISOString().split('T')[0]}
                                             </div>
-                                        </div>
-                                    ) : (
-                                        <div className="p-6">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div>
-                                                    <h3 className="text-lg font-bold flex items-center gap-2">
-                                                        <StickyNote className="w-5 h-5 text-indigo-400" />
-                                                        {note.title}
-                                                    </h3>
-                                                    <div className="flex items-center gap-3 mt-1 opacity-50 text-[10px] font-mono">
-                                                        <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {note.date}</span>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                // Try to find member object
-                                                                const member = trip.members?.find(m => m.name === note.author || m.id === note.authorId);
-                                                                if (member && onViewProfile) onViewProfile(member);
-                                                            }}
-                                                            className="flex items-center gap-1 hover:opacity-100 transition-opacity"
-                                                        >
-                                                            <div className="w-4 h-4 rounded-full bg-indigo-500 overflow-hidden">
-                                                                <img
-                                                                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(note.author || 'U')}&background=random`}
-                                                                    alt={note.author}
-                                                                    className="w-full h-full object-cover"
-                                                                />
+                                            <div className={`${glassCardStyle(isDarkMode)} flex-1 p-6 hover:shadow-2xl transition-all duration-500`}>
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-3">
+                                                            {m.memoryType === 'file' && m.isImage && <ImageIcon className="w-4 h-4 text-emerald-400" />}
+                                                            {m.memoryType === 'file' && !m.isImage && <FileText className="w-4 h-4 text-sky-400" />}
+                                                            {m.memoryType === 'note' && <StickyNote className="w-4 h-4 text-indigo-400" />}
+                                                            <span className="text-[10px] font-black opacity-50 uppercase tracking-widest">
+                                                                {m.isImage ? 'Photo' : m.memoryType}
+                                                            </span>
+                                                        </div>
+                                                        <h4 className="font-bold text-lg mb-2">{m.name || m.title || m.memo}</h4>
+                                                        {m.content && <p className="text-sm opacity-70 mb-4 leading-relaxed line-clamp-3 group-hover/item:line-clamp-none transition-all">{m.content}</p>}
+                                                        {m.memoryType === 'file' && m.isImage && (
+                                                            <div className="max-w-md rounded-xl overflow-hidden shadow-2xl border border-white/10">
+                                                                <img src={m.url} alt={m.name} className="w-full hover:scale-105 transition-transform duration-700" />
                                                             </div>
-                                                            <span className="hover:underline">By {note.author}</span>
-                                                        </button>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex flex-col items-end gap-2">
+                                                        {m.url && (
+                                                            <a href={m.url} target="_blank" rel="noopener noreferrer" className="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg hover:bg-indigo-500/20 shadow-sm">
+                                                                <Download className="w-4 h-4" />
+                                                            </a>
+                                                        )}
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button
-                                                        onClick={() => { setEditingNoteId(note.id); setEditNote(note); }}
-                                                        className="p-2 hover:bg-white/10 rounded-lg text-indigo-400 transition-colors"
-                                                    >
-                                                        <Edit3 className="w-4 h-4" />
-                                                    </button>
-                                                    {isOwner && (
-                                                        <button
-                                                            onClick={() => handleDeleteNote(note)}
-                                                            className="p-2 hover:bg-red-500/20 rounded-lg text-red-500 transition-colors"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="mt-4 whitespace-pre-wrap text-sm leading-relaxed opacity-80">
-                                                {note.content}
                                             </div>
                                         </div>
-                                    )}
-                                </div>
-                            ))
+                                    </div>
+                                ))}
+                            </div>
                         )}
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+
+            {/* NOTEBOOK EDITOR VIEW */}
+            {
+                viewMode === 'editor' && (
+                    <div className="space-y-6 animate-fade-in">
+                        {isAddingNote && (
+                            <div className={`${glassCardStyle(isDarkMode)} p-6 border-2 border-indigo-500/30 animate-scale-in`}>
+                                <div className="space-y-4">
+                                    <input
+                                        type="text"
+                                        placeholder="筆記標題 (如：第一天心情、必買清單...)"
+                                        className="w-full bg-transparent border-b border-white/10 py-2 text-lg font-bold outline-none focus:border-indigo-500 transition-colors"
+                                        value={newNote.title}
+                                        onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
+                                    />
+                                    <div className="flex items-center gap-2 text-xs opacity-50">
+                                        <Calendar className="w-3 h-3" />
+                                        <input
+                                            type="date"
+                                            className="bg-transparent outline-none"
+                                            value={newNote.date}
+                                            onChange={(e) => setNewNote({ ...newNote, date: e.target.value })}
+                                        />
+                                    </div>
+                                    <textarea
+                                        placeholder="開始寫作..."
+                                        className="w-full h-40 bg-white/5 rounded-xl p-4 outline-none focus:ring-2 ring-indigo-500/50 resize-none"
+                                        value={newNote.content}
+                                        onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
+                                    ></textarea>
+                                    <div className="flex justify-end gap-3">
+                                        <button
+                                            onClick={handleAddNote}
+                                            className="px-6 py-2 rounded-xl bg-indigo-600 text-white font-bold flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20"
+                                        >
+                                            <Check className="w-4 h-4" /> 儲存筆記
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 gap-4">
+                            {(Array.isArray(trip.notes) ? trip.notes : []).length === 0 ? (
+                                <EmptyState
+                                    icon={PenLine}
+                                    title="筆記本是空的"
+                                    description="在這裡寫下您的旅遊日記，它們會自動同步到足跡時光流中。"
+                                    isDarkMode={isDarkMode}
+                                    action={!readOnly ? {
+                                        label: "開始寫作",
+                                        onClick: () => setIsAddingNote(true),
+                                        icon: Plus
+                                    } : null}
+                                />
+                            ) : (
+                                (Array.isArray(trip.notes) ? trip.notes : []).map(note => (
+                                    <div key={note.id} className={`${glassCardStyle(isDarkMode)} transition-all duration-300 hover:shadow-xl group`}>
+                                        {editingNoteId === note.id ? (
+                                            <div className="p-6 space-y-4">
+                                                <input
+                                                    type="text"
+                                                    className="w-full bg-transparent border-b border-white/20 py-1 text-lg font-bold outline-none"
+                                                    value={editNote.title}
+                                                    onChange={(e) => setEditNote({ ...editNote, title: e.target.value })}
+                                                />
+                                                <textarea
+                                                    className="w-full h-40 bg-white/5 rounded-xl p-4 outline-none resize-none"
+                                                    value={editNote.content}
+                                                    onChange={(e) => setEditNote({ ...editNote, content: e.target.value })}
+                                                ></textarea>
+                                                <div className="flex justify-end gap-2">
+                                                    <button onClick={() => setEditingNoteId(null)} className="px-4 py-2 opacity-50 hover:opacity-100">取消</button>
+                                                    <button
+                                                        onClick={() => handleSaveNoteEdit(note)}
+                                                        className="px-6 py-2 rounded-xl bg-indigo-600 text-white font-bold"
+                                                    >
+                                                        儲存修改
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="p-6">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <div>
+                                                        <h3 className="text-lg font-bold flex items-center gap-2">
+                                                            <StickyNote className="w-5 h-5 text-indigo-400" />
+                                                            {note.title}
+                                                        </h3>
+                                                        <div className="flex items-center gap-3 mt-1 opacity-50 text-[10px] font-mono">
+                                                            <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {note.date}</span>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    // Try to find member object
+                                                                    const member = trip.members?.find(m => m.name === note.author || m.id === note.authorId);
+                                                                    if (member && onViewProfile) onViewProfile(member);
+                                                                }}
+                                                                className="flex items-center gap-1 hover:opacity-100 transition-opacity"
+                                                            >
+                                                                <div className="w-4 h-4 rounded-full bg-indigo-500 overflow-hidden">
+                                                                    <img
+                                                                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(note.author || 'U')}&background=random`}
+                                                                        alt={note.author}
+                                                                        className="w-full h-full object-cover"
+                                                                    />
+                                                                </div>
+                                                                <span className="hover:underline">By {note.author}</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    {!readOnly && (
+                                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button
+                                                                onClick={() => { setEditingNoteId(note.id); setEditNote(note); }}
+                                                                className="p-2 hover:bg-white/10 rounded-lg text-indigo-400 transition-colors"
+                                                            >
+                                                                <Edit3 className="w-4 h-4" />
+                                                            </button>
+                                                            {isOwner && (
+                                                                <button
+                                                                    onClick={() => handleDeleteNote(note)}
+                                                                    className="p-2 hover:bg-red-500/20 rounded-lg text-red-500 transition-colors"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="mt-4 whitespace-pre-wrap text-sm leading-relaxed opacity-80">
+                                                    {note.content}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                )
+            }
+        </div >
     );
 };
 

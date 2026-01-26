@@ -4,10 +4,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no" />
   <meta name="description" content="Travel Together - 智能旅遊規劃助手，專為多人協作設計。支援即時同步、AI 行程建議、預算管理與 PWA 離線使用。" />
   <meta name="keywords" content="旅遊規劃, 多人協作, 行程管理, AI 領隊, 旅遊預算, PWA, 離線旅遊" />
   <meta name="author" content="Jamie Kwok" />
+
+  <!-- Premium PWA Theme Colors -->
   <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#020617" media="(prefers-color-scheme: dark)" />
 
@@ -38,8 +40,11 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <!-- Native Status Bar -->
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Travel Together" />
+  <!-- Disable Text Auto Sizing -->
+  <meta name="format-detection" content="telephone=no" />
 
   <title>Travel Together | 智能旅遊規劃</title>
   <style>
@@ -147,6 +152,7 @@
       text-transform: uppercase;
       margin-bottom: 0.5rem;
       background: linear-gradient(to right, #fff, #a5b4fc, #fff);
+      background-clip: text;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-size: 200% auto;

@@ -14,7 +14,7 @@ export default defineConfig({
         name: 'Travel Together - 智能旅遊規劃',
         short_name: 'TravelTogether',
         description: '智能旅遊規劃助手，輕鬆規劃您的完美旅程',
-        theme_color: '#020617',
+        theme_color: '#020617', // Match Slate 950
         background_color: '#020617',
         start_url: '/',
         display: 'standalone',

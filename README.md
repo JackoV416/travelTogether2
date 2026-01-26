@@ -1,10 +1,49 @@
-# Travel Together V2 <kbd>V1.9.0</kbd>
+# Travel Together V2 <kbd>V1.9.9</kbd>
 
 [![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://travel-together-v2.vercel.app/)
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
 [![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
 
 > **智能旅遊規劃助手** - 專為多人協作設計。支援即時同步、AI 行程建議與 PWA 離線使用。
+
+### 🚀 V1.9.9: PWA Polish & Gold Master (2026-01-26)
+**V1.9.9: [Gold Master] 1.9 系列最終章與 PWA 體驗打磨！**
+為私人行程加入公開「預覽模式 (Preview Mode)」，修復路由邏輯，並確保 PWA 在各平台的穩定性，標誌著 V1.9 系列的完美收官。
+
+### 🌟 V1.9.9 主要更新
+1.  **Preview Mode Banner**: 公開行程預覽視圖加入醒目 Banner，明確區分預覽與真實視圖。
+2.  **Robust Routing**: 全面重構 URL 路由邏輯 (`/trip/public/:id`), 解決 ID 誤判問題。
+3.  **Error Diagnostics**: 強化 `PublicTripView` 錯誤顯示，區分 404 (Not Found) 與 403 (Permission Denied)。
+4.  **Weather Stability**: 修復 TripCard 因不完整天氣數據導致的崩潰。
+
+### 🚀 V1.9.8: Stability & Public Polish (2026-01-26)
+**V1.9.8: [Stability] 穩定性與體驗微調！**
+解決了頁面刷新重導問題，並為私人行程加入了公開預覽按鈕。
+
+### 🌟 V1.9.8 主要更新
+1.  **Public Preview**: 私人行程頁面新增「地球」按鈕，一鍵預覽公開效果。
+2.  **Redirect Fix**: 徹底修復刷新頁面時錯誤回到 Dashbaord 的問題。
+3.  **i18n Fix**: 修正行程篩選器 (Filter) 偶發的翻譯失效。
+
+### 🚀 V1.9.7: UI Unification & Public Improvements (2026-01-23)
+**V1.9.7: [UI/UX] 介面大一統與公開行程體驗升級！**
+統一了私人與公開行程的 Hero Header 設計，並解決了公開行程資料顯示與崩潰問題。
+
+### 🌟 V1.9.7 主要更新
+1.  **Unified Hero Header**: 私人行程引入與公開行程一致的全螢幕 Hero Header，視覺體驗更具沉浸感。
+2.  **Public View Fix**: 修復公開行程頁面 (Public Trip View) 資料載入問題，正確顯示 Itinerary 與 Weathr。
+3.  **Owner Duplicate**: 行程擁有者現在可以 "Duplicate" (複製) 自己的行程，而非 Fork。
+4.  **Crash Fix**: 修復 TripDetailContent 因語法錯誤導致的 500 崩潰。
+
+### 📄 V1.9.4 特性更新 (Stability)
+- **Route Fix**: 修復 `/trip` 路由問題，自己嘅行程會正確顯示完整功能。
+- **i18n Completion**: 完善 zh-HK 所有勳章翻譯 (20+)，Level/XP 顯示正常。
+- **UI Restore**: 公開行程頁面恢復 Header 與 Footer。
+
+### 📄 V1.9.3 特性更新 (Badge Polish)
+- **Stability Fix**: 修復 Public Trip View 崩潰問題，確保行程資料正確載入。
+- **Badge Localization**: 徽章名稱與描述全面支援繁體中文 (HK) 與英文切換。
+- **XP Progress**: 修正等級進度條顯示邏輯，精準反映升級進度。
 
 ### 📄 V1.9.0 特性更新 (Social Revolution)
 - **Social Profile UI**: 全新 Grid 佈局個人頁面，完美對齊足跡、相簿與勳章，並加入動態等級顯示。
@@ -337,11 +376,11 @@ graph TD
 
 ## 📋 版本紀錄 (History)
 
-| **V1.8.1** | **Export Modal & UI Polish** | 🚀 最新版 |
-| **V1.8.0** | **Performance Audit** | ✅ 已發布 |
-| **V1.7.6** | **Pro Editor Robustness** | ✅ 已發布 |
-| **V1.7.0** | **PDF Preview & Edit** | ✅ 已發布 |
-| **V1.6.0** | **Advanced Performance** | ✅ 已發布 |
+| **V1.9.9** | **PWA Polish & Gold Master** | 🚀 最新版 |
+| **V1.9.8** | **Stability & Public Polish** | ✅ 已發布 |
+| **V1.9.7** | **UI Unification & Public Improvements** | ✅ 已發布 |
+| **V1.9.0** | **Social Revolution** | ✅ 已發布 |
+| **V1.8.1** | **Export Modal & UI Polish** | ✅ 已發布 |
 | **V1.5.2** | **Local Trip Logic** | ✅ 已發布 |
 
 ---
