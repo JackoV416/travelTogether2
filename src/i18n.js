@@ -1750,6 +1750,10 @@ const resources = {
             "default_name": "旅人",
             "login_prompt": "請先登入以查看您的個人檔案",
             "level": "等級",
+            "level_caps": "等級",
+            "lvl": "Lv.",
+            "max_level": "最高等級",
+            "elite": "精英",
             "joined": "加入於",
             "xp": "經驗值",
             "stats": {

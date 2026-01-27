@@ -8,9 +8,12 @@ import {
 import ImageWithFallback from '../Shared/ImageWithFallback';
 import { SEO } from '../Shared/SEO';
 
+import { usePWAInstall } from '../../hooks/usePWAInstall';
+
 const LandingPage = ({ onLogin }) => {
     const { t } = useTranslation();
     const [scrolled, setScrolled] = useState(false);
+    const { isInstallable, install } = usePWAInstall();
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -53,13 +56,24 @@ const LandingPage = ({ onLogin }) => {
                         <button onClick={() => scrollTo('faq')} className="hover:text-indigo-400 transition-colors">{t('landing.nav.faq', 'FAQ')}</button>
                     </div>
 
-                    <button
-                        onClick={onLogin}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-600/20 flex items-center gap-2 btn-press"
-                    >
-                        <LogIn className="w-4 h-4" />
-                        {t('landing.nav.login', 'Login')}
-                    </button>
+                    <div className="flex items-center gap-3">
+                        {isInstallable && (
+                            <button
+                                onClick={install}
+                                className="hidden sm:flex bg-slate-800/50 hover:bg-slate-700/50 border border-white/10 text-indigo-300 px-4 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 btn-press"
+                            >
+                                <Rocket className="w-4 h-4" />
+                                {t('pwa.install_btn', 'Install App')}
+                            </button>
+                        )}
+                        <button
+                            onClick={onLogin}
+                            className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-600/20 flex items-center gap-2 btn-press"
+                        >
+                            <LogIn className="w-4 h-4" />
+                            {t('landing.nav.login', 'Login')}
+                        </button>
+                    </div>
                 </div>
             </nav>
 

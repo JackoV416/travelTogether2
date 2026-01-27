@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "1.9.10";
-export const APP_VERSION_TAG = "Navigation Hotfix";
+export const APP_VERSION = "1.9.11";
+export const APP_VERSION_TAG = "PWA & Localization";
 export const APP_LAST_UPDATE = "2026-01-26";
 export const JARVIS_VERSION = "V0.0.5-Beta";
 
@@ -95,6 +95,81 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V1.9.11",
+        date: "2026-01-27",
+        tag: "PWA & Localization",
+        desc: {
+            "zh-TW": "PWA 安裝按鈕與在地化修復",
+            "zh-HK": "PWA 安裝按鈕同埋在地化修復",
+            "en": "PWA Install Button & Localization Fixes"
+        },
+        details: {
+            "zh-TW": [
+                "📱 PWA: 首頁 Navbar 新增安裝應用程式按鈕 (Chrome/Edge/Android)",
+                "🌐 i18n: 補完 Level/XP/Elite 等漏譯字串 (zh-HK)"
+            ],
+            "zh-HK": [
+                "📱 PWA: 首頁 Navbar 新增安裝應用程式按鈕 (Chrome/Edge/Android)",
+                "🌐 i18n: 補完 Level/XP/Elite 等漏譯字串 (zh-HK)"
+            ],
+            "en": [
+                "📱 PWA: Added 'Install App' button to Landing Page navbar",
+                "🌐 i18n: Completed missing Level/XP/Elite translations (zh-HK)"
+            ]
+        }
+    },
+    {
+        ver: "V1.9.10",
+        date: "2026-01-26",
+        tag: "Navigation Hotfix",
+        desc: {
+            "zh-TW": "導航邏輯緊急修復",
+            "zh-HK": "導航邏輯緊急修復",
+            "en": "Navigation Logic Hotfix"
+        },
+        details: {
+            "zh-TW": [
+                "🛡️ Nav: 修復公開行程視圖 (Public View) 的路由循環問題",
+                "⚡ Perf: 消除因 URL Sync 導致的重複渲染"
+            ],
+            "zh-HK": [
+                "🛡️ Nav: 修復公開行程視圖 (Public View) 嘅路由循環問題",
+                "⚡ Perf: 消除因 URL Sync 導致嘅重複渲染"
+            ],
+            "en": [
+                "🛡️ Nav: Fixed routing loop issue in Public Trip View",
+                "⚡ Perf: Eliminated duplicate renders caused by URL Sync"
+            ]
+        }
+    },
+    {
+        ver: "V1.9.9",
+        date: "2026-01-26",
+        tag: "PWA Polish & Gold Master",
+        desc: {
+            "zh-TW": "PWA 體驗打磨與最終版",
+            "zh-HK": "PWA 體驗打磨同最終版",
+            "en": "PWA Polish & Gold Master"
+        },
+        details: {
+            "zh-TW": [
+                "👁️ Preview: 私人行程公開預覽視圖加入醒目 Banner",
+                "🛡️ Route: 強化 404/403 錯誤狀態顯示與處理",
+                "⚡ Weather: 修復 TripCard 天氣數據導致的崩潰"
+            ],
+            "zh-HK": [
+                "👁️ Preview: 私人行程公開預覽視圖加入醒目 Banner",
+                "🛡️ Route: 強化 404/403 錯誤狀態顯示同處理",
+                "⚡ Weather: 修復 TripCard 天氣數據導致嘅崩潰"
+            ],
+            "en": [
+                "👁️ Preview: Added distinct banner for Public Preview Mode",
+                "🛡️ Route: Enhanced error handling for 404/403 states",
+                "⚡ Weather: Fixed TripCard crash due to weather data issues"
+            ]
+        }
+    },
     {
         ver: "V1.9.8",
         date: "2026-01-26",

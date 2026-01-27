@@ -1,10 +1,18 @@
-# Travel Together V2 <kbd>V1.9.10</kbd>
+# Travel Together V2 <kbd>V1.9.11</kbd>
 
 [![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://travel-together-v2.vercel.app/)
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
 [![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
 
 > **智能旅遊規劃助手** - 專為多人協作設計。支援即時同步、AI 行程建議與 PWA 離線使用。
+
+### 🚀 V1.9.11: PWA & Localization (2026-01-27)
+**V1.9.11: [Polish] PWA 安裝優化與在地化修復！**
+為首頁加入「安裝 App」按鈕，並補完廣東話 (zh-HK) 等級與名片翻譯。
+
+### 🌟 V1.9.11 主要更新
+1.  **PWA Install Hook**: 實裝 `usePWAInstall`，在首頁 Navbar 顯示原生安裝按鈕 (Chrome/Edge/Android)。
+2.  **Localization Fix**: 補完 `Level`, `XP`, `Elite` 等漏譯字串 (zh-HK)。
 
 ### 🚀 V1.9.10: Navigation Hotfix (2026-01-26)
 **V1.9.10: [Hotfix] 導航邏輯緊急修復！**
