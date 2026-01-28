@@ -55,15 +55,20 @@ const TripCard = ({ trip, currentLang, onSelect, setGlobalBg, cardWeather, isDar
     return (
         <div
             onClick={() => { setGlobalBg(COUNTRIES_DATA[trip.country]?.image || DEFAULT_BG_IMAGE); onSelect(trip); }}
-            className={`h-64 relative overflow-hidden group cursor-pointer ${glassCard(isDarkMode)} border-white/5 bg-slate-900/40 backdrop-blur-3xl shadow-2xl shadow-black/40`}
+            className={`h-64 relative overflow-hidden group cursor-pointer ${glassCard(isDarkMode)} border-white/5 hover:border-indigo-500/30 bg-slate-900/40 backdrop-blur-3xl shadow-2xl shadow-black/40 hover:shadow-indigo-500/20 transition-all duration-500 hover:-translate-y-1`}
         >
+            {/* Background Image */}
             <div
                 className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
                 style={{ backgroundImage: `url(${COUNTRIES_DATA[trip.country]?.image || DEFAULT_BG_IMAGE})` }}
             ></div>
 
-            {/* Gradient Overlay */}
+            {/* Aurora Gradient Overlay - V2.0 */}
             <div className="absolute inset-x-0 bottom-0 h-4/5 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+            {/* Aurora Glow on Hover */}
+            <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-gradient-to-tl from-indigo-500/20 via-violet-500/10 to-transparent rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
 
             <div className="absolute inset-0 p-4 flex flex-col justify-between text-white">
 

@@ -1,0 +1,314 @@
+/**
+ * Aurora Design System Components - V2.0
+ * Reusable UI components with Aurora gradient styling
+ */
+
+import React from 'react';
+import { Loader2 } from 'lucide-react';
+
+/**
+ * AuroraButton - Primary action button with gradient and hover effects
+ * @param {string} variant - 'primary' | 'secondary' | 'ghost' | 'outline'
+ * @param {string} size - 'sm' | 'md' | 'lg' | 'xl'
+ * @param {boolean} loading - Show loading spinner
+ * @param {boolean} disabled - Disable button
+ * @param {boolean} fullWidth - Full width button
+ * @param {React.ReactNode} icon - Leading icon
+ * @param {React.ReactNode} iconRight - Trailing icon
+ */
+export const AuroraButton = ({
+    children,
+    variant = 'primary',
+    size = 'md',
+    loading = false,
+    disabled = false,
+    fullWidth = false,
+    icon,
+    iconRight,
+    className = '',
+    ...props
+}) => {
+    const baseStyles = `
+        relative inline-flex items-center justify-center gap-2.5
+        font-bold rounded-full transition-all duration-300
+        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
+        disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+        active:scale-[0.98]
+    `;
+
+    const sizeStyles = {
+        sm: 'px-4 py-2 text-xs',
+        md: 'px-6 py-3 text-sm',
+        lg: 'px-8 py-4 text-base',
+        xl: 'px-10 py-5 text-lg',
+    };
+
+    const variantStyles = {
+        primary: `
+            bg-gradient-to-r from-violet-600 via-indigo-600 to-indigo-600
+            hover:from-violet-500 hover:via-indigo-500 hover:to-cyan-500
+            text-white shadow-xl shadow-indigo-600/30
+            hover:shadow-indigo-500/40 hover:-translate-y-0.5
+        `,
+        secondary: `
+            bg-slate-800/60 border border-white/10
+            hover:bg-slate-700/60 hover:border-indigo-500/30
+            text-slate-200 hover:text-white
+            backdrop-blur-xl
+        `,
+        ghost: `
+            bg-transparent hover:bg-indigo-500/10
+            text-slate-400 hover:text-indigo-400
+        `,
+        outline: `
+            bg-transparent border-2 border-indigo-500/50
+            hover:border-indigo-400 hover:bg-indigo-500/10
+            text-indigo-400 hover:text-indigo-300
+        `,
+    };
+
+    return (
+        <button
+            className={`
+                ${baseStyles}
+                ${sizeStyles[size]}
+                ${variantStyles[variant]}
+                ${fullWidth ? 'w-full' : ''}
+                ${className}
+            `}
+            disabled={disabled || loading}
+            {...props}
+        >
+            {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+            ) : icon ? (
+                <span className="transition-transform group-hover:scale-110">{icon}</span>
+            ) : null}
+            <span>{children}</span>
+            {iconRight && !loading && (
+                <span className="transition-all group-hover:translate-x-0.5">{iconRight}</span>
+            )}
+        </button>
+    );
+};
+
+/**
+ * FloatingCard - Elevated card with hover lift effect
+ * @param {string} padding - 'none' | 'sm' | 'md' | 'lg'
+ * @param {boolean} hover - Enable hover lift effect
+ * @param {boolean} glow - Show aurora glow on hover
+ * @param {string} glowColor - Custom glow color class
+ */
+export const FloatingCard = ({
+    children,
+    padding = 'md',
+    hover = true,
+    glow = false,
+    glowColor = 'from-violet-500/10 via-indigo-500/10 to-cyan-500/10',
+    className = '',
+    ...props
+}) => {
+    const paddingStyles = {
+        none: '',
+        sm: 'p-4',
+        md: 'p-6',
+        lg: 'p-8',
+        xl: 'p-10',
+    };
+
+    return (
+        <div
+            className={`
+                relative overflow-hidden
+                bg-slate-900/50 dark:bg-slate-900/60
+                border border-white/5 hover:border-indigo-500/20
+                rounded-3xl backdrop-blur-xl
+                shadow-lg hover:shadow-xl
+                transition-all duration-500
+                ${hover ? 'hover:-translate-y-1' : ''}
+                ${paddingStyles[padding]}
+                ${className}
+            `}
+            {...props}
+        >
+            {glow && (
+                <div className={`
+                    absolute inset-0 bg-gradient-to-br ${glowColor}
+                    opacity-0 group-hover:opacity-100 transition-opacity duration-500
+                    pointer-events-none
+                `} />
+            )}
+            <div className="relative z-10">{children}</div>
+        </div>
+    );
+};
+
+/**
+ * AuroraGradientText - Text with aurora gradient
+ * @param {string} as - HTML element type
+ */
+export const AuroraGradientText = ({
+    children,
+    as: Component = 'span',
+    className = '',
+    ...props
+}) => {
+    return (
+        <Component
+            className={`
+                bg-gradient-to-r from-violet-400 via-indigo-400 to-cyan-400
+                bg-clip-text text-transparent
+                ${className}
+            `}
+            {...props}
+        >
+            {children}
+        </Component>
+    );
+};
+
+/**
+ * AuroraBadge - Small badge/tag with aurora styling
+ * @param {string} variant - 'default' | 'success' | 'warning' | 'error' | 'info'
+ */
+export const AuroraBadge = ({
+    children,
+    variant = 'default',
+    icon,
+    className = '',
+    ...props
+}) => {
+    const variantStyles = {
+        default: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+        success: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+        warning: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+        error: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+        info: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+    };
+
+    return (
+        <span
+            className={`
+                inline-flex items-center gap-1.5
+                px-3 py-1 rounded-full
+                text-xs font-bold uppercase tracking-wider
+                border backdrop-blur-sm
+                ${variantStyles[variant]}
+                ${className}
+            `}
+            {...props}
+        >
+            {icon && <span className="w-3.5 h-3.5">{icon}</span>}
+            {children}
+        </span>
+    );
+};
+
+/**
+ * AuroraInput - Text input with aurora focus styling
+ */
+export const AuroraInput = ({
+    label,
+    error,
+    className = '',
+    ...props
+}) => {
+    return (
+        <div className="space-y-2">
+            {label && (
+                <label className="block text-sm font-bold text-slate-300">
+                    {label}
+                </label>
+            )}
+            <input
+                className={`
+                    w-full px-4 py-3
+                    bg-slate-800/50 border border-white/10
+                    rounded-xl text-white placeholder-slate-500
+                    focus:outline-none focus:border-indigo-500/50
+                    focus:ring-2 focus:ring-indigo-500/20
+                    transition-all duration-300
+                    ${error ? 'border-rose-500/50 focus:border-rose-500/50 focus:ring-rose-500/20' : ''}
+                    ${className}
+                `}
+                {...props}
+            />
+            {error && (
+                <p className="text-xs text-rose-400 font-medium">{error}</p>
+            )}
+        </div>
+    );
+};
+
+/**
+ * AuroraGlow - Decorative aurora glow background element
+ * @param {string} position - 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center'
+ * @param {string} color - 'violet' | 'indigo' | 'cyan' | 'mixed'
+ * @param {string} size - 'sm' | 'md' | 'lg' | 'xl'
+ */
+export const AuroraGlow = ({
+    position = 'top-left',
+    color = 'mixed',
+    size = 'md',
+    className = '',
+}) => {
+    const positionStyles = {
+        'top-left': 'top-[-20%] left-[-15%]',
+        'top-right': 'top-[-20%] right-[-15%]',
+        'bottom-left': 'bottom-[-20%] left-[-15%]',
+        'bottom-right': 'bottom-[-20%] right-[-15%]',
+        'center': 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
+    };
+
+    const colorStyles = {
+        violet: 'from-violet-500/20 to-transparent',
+        indigo: 'from-indigo-500/20 to-transparent',
+        cyan: 'from-cyan-500/20 to-transparent',
+        mixed: 'from-violet-500/15 via-indigo-500/15 to-cyan-500/10',
+    };
+
+    const sizeStyles = {
+        sm: 'w-[30%] h-[30%]',
+        md: 'w-[50%] h-[50%]',
+        lg: 'w-[70%] h-[70%]',
+        xl: 'w-[90%] h-[90%]',
+    };
+
+    return (
+        <div
+            className={`
+                absolute ${positionStyles[position]}
+                ${sizeStyles[size]}
+                bg-gradient-to-br ${colorStyles[color]}
+                blur-[120px] rounded-full
+                pointer-events-none
+                animate-pulse
+                ${className}
+            `}
+            style={{ animationDuration: '6s' }}
+        />
+    );
+};
+
+/**
+ * AuroraDivider - Gradient divider line
+ */
+export const AuroraDivider = ({ className = '' }) => (
+    <div
+        className={`
+            h-px w-full
+            bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent
+            ${className}
+        `}
+    />
+);
+
+export default {
+    AuroraButton,
+    FloatingCard,
+    AuroraGradientText,
+    AuroraBadge,
+    AuroraInput,
+    AuroraGlow,
+    AuroraDivider,
+};

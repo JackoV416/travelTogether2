@@ -533,15 +533,16 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                 />
             </div>
 
-            {/* PWA Install Invite */}
+            {/* PWA Install Invite - Aurora V2.0 */}
             {deferredPrompt && (
                 <div className="animate-fade-in px-2">
-                    <div className={`relative overflow-hidden p-6 rounded-[2rem] border transition-all ${isDarkMode ? 'bg-indigo-900/20 border-indigo-400/20 text-indigo-100 shadow-[0_20px_50px_rgba(0,0,0,0.3)]' : 'bg-white/70 border-indigo-100 shadow-[0_20px_50px_rgba(99,102,241,0.05)]'} backdrop-blur-xl`}>
-                        {/* Decorative Background */}
-                        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+                    <div className={`relative overflow-hidden p-6 rounded-[2rem] border transition-all ${isDarkMode ? 'bg-gradient-to-r from-violet-900/20 via-indigo-900/20 to-cyan-900/20 border-indigo-400/20 text-indigo-100' : 'bg-gradient-to-r from-violet-50/80 via-indigo-50/80 to-cyan-50/80 border-indigo-200/50'} backdrop-blur-xl shadow-xl`}>
+                        {/* Aurora Glow Background */}
+                        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-80 h-80 bg-gradient-to-br from-violet-500/20 via-indigo-500/15 to-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+                        <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/4 w-60 h-60 bg-gradient-to-tr from-cyan-500/10 via-indigo-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
                         <div className="relative flex flex-col md:flex-row items-center gap-6">
-                            <div className="w-16 h-16 flex-shrink-0 flex items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-xl shadow-indigo-500/40">
+                            <div className="w-16 h-16 flex-shrink-0 flex items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-500 shadow-xl shadow-indigo-500/40 group">
                                 <Sparkles className="w-8 h-8 text-white animate-pulse" />
                             </div>
 
@@ -552,10 +553,10 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
 
                             <button
                                 onClick={onInstall}
-                                className="group px-8 py-3.5 bg-indigo-500 hover:bg-indigo-600 text-white font-black rounded-2xl transition-all shadow-lg shadow-indigo-500/30 active:scale-95 whitespace-nowrap flex items-center gap-2"
+                                className="group px-8 py-3.5 bg-gradient-to-r from-violet-500 via-indigo-500 to-indigo-600 hover:from-violet-400 hover:via-indigo-400 hover:to-cyan-400 text-white font-black rounded-full transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-400/40 hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap flex items-center gap-2"
                             >
                                 {t('pwa.install_btn') || '立即安裝 App'}
-                                <Rocket className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                <Rocket className="w-5 h-5 group-hover:rotate-12 transition-transform" />
                             </button>
                         </div>
                     </div>
