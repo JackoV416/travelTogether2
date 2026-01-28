@@ -33,11 +33,16 @@ const LandingPage = ({ onLogin }) => {
                 description={t('landing.seo_desc', 'Plan group trips effortlessly with AI itineraries, shared budgets, and real-time collaboration.')}
             />
 
-            {/* Background Aesthetic Mesh */}
-            <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/10 blur-[120px] rounded-full animate-pulse" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-500/10 blur-[120px] rounded-full" />
-                <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-blue-500/5 blur-[100px] rounded-full" />
+            {/* V2.0 Aurora Gradient Background */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden">
+                {/* Primary Aurora Glow - Purple/Violet */}
+                <div className="absolute top-[-20%] left-[-15%] w-[60%] h-[60%] bg-gradient-to-br from-violet-500/20 via-purple-500/15 to-transparent blur-[150px] rounded-full animate-pulse" style={{ animationDuration: '8s' }} />
+                {/* Secondary Aurora Glow - Indigo/Blue */}
+                <div className="absolute bottom-[-15%] right-[-10%] w-[55%] h-[55%] bg-gradient-to-tl from-indigo-500/20 via-blue-500/15 to-transparent blur-[140px] rounded-full animate-pulse" style={{ animationDuration: '6s', animationDelay: '2s' }} />
+                {/* Tertiary Aurora Glow - Cyan/Teal */}
+                <div className="absolute top-[30%] right-[5%] w-[40%] h-[40%] bg-gradient-to-bl from-cyan-500/10 via-teal-500/10 to-transparent blur-[120px] rounded-full animate-pulse" style={{ animationDuration: '10s', animationDelay: '4s' }} />
+                {/* Accent Glow - Center */}
+                <div className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[80%] h-[50%] bg-gradient-radial from-indigo-500/5 via-transparent to-transparent blur-[100px] rounded-full" />
             </div>
 
             {/* Navbar - Refined Glass Look */}
@@ -77,18 +82,24 @@ const LandingPage = ({ onLogin }) => {
                 </div>
             </nav>
 
-            {/* Hero Section - Balanced Content */}
+            {/* Hero Section - V2.0 Aurora Design */}
             <header className="relative pt-40 pb-20 px-6">
                 <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
-                    <div className="mb-8 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 backdrop-blur-md text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-indigo-300 animate-fade-in">
-                        <Sparkles className="w-3.5 h-3.5" /> {t('landing.new_tag', 'V1.8.2 Aesthetic Update')}
+                    {/* Version Badge - Aurora Border */}
+                    <div className="mb-8 inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-violet-500/10 via-indigo-500/10 to-cyan-500/10 border border-indigo-500/30 backdrop-blur-xl text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-indigo-300 animate-fade-in relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-gradient-to-r from-violet-500/20 via-indigo-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <Sparkles className="w-3.5 h-3.5 relative z-10" />
+                        <span className="relative z-10">{t('landing.new_tag', 'V2.0 Aurora Design')}</span>
                     </div>
 
-                    <h1 className="text-5xl md:text-[5.5rem] font-black mb-8 tracking-tight leading-[1] text-white">
+                    {/* Title - Aurora Gradient Text */}
+                    <h1 className="text-5xl md:text-[5.5rem] font-black mb-8 tracking-tight leading-[1]">
                         {t('landing.title', 'Travel Smarter,\nTogether.').split('\n').map((line, i) => (
                             <React.Fragment key={i}>
                                 {i > 0 && <br />}
-                                {line}
+                                <span className={i === 0 ? 'text-white' : 'bg-gradient-to-r from-violet-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent'}>
+                                    {line}
+                                </span>
                             </React.Fragment>
                         ))}
                     </h1>
@@ -97,18 +108,20 @@ const LandingPage = ({ onLogin }) => {
                         {t('landing.subtitle', 'The all-in-one platform for collaborative trip planning. AI itineraries, real-time budgets, and shared memories.')}
                     </p>
 
+                    {/* CTA Buttons - Aurora Pill Style */}
                     <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto mb-24">
                         <button
                             onClick={onLogin}
-                            className="bg-indigo-600 hover:bg-indigo-500 text-white px-10 py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all shadow-2xl shadow-indigo-600/30 btn-press"
+                            className="relative group bg-gradient-to-r from-violet-600 via-indigo-600 to-indigo-600 hover:from-violet-500 hover:via-indigo-500 hover:to-cyan-500 text-white px-10 py-5 rounded-full font-black text-lg flex items-center justify-center gap-3 transition-all shadow-2xl shadow-indigo-600/40 hover:shadow-indigo-500/50 hover:-translate-y-1 active:translate-y-0"
                         >
-                            <Rocket className="w-5 h-5" />
+                            <Rocket className="w-5 h-5 group-hover:rotate-12 transition-transform" />
                             <span>{t('landing.login_google', 'Start Planning Free')}</span>
+                            <ArrowRight className="w-5 h-5 opacity-0 -ml-2 group-hover:opacity-100 group-hover:ml-0 transition-all" />
                         </button>
 
                         <button
                             onClick={() => window.location.href = '/?view=tutorial'}
-                            className="bg-slate-800/40 hover:bg-slate-800/60 border border-white/5 px-10 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all backdrop-blur-xl text-slate-200"
+                            className="bg-slate-800/40 hover:bg-slate-800/60 border border-white/10 hover:border-indigo-500/30 px-10 py-5 rounded-full font-bold text-lg flex items-center justify-center gap-3 transition-all backdrop-blur-xl text-slate-200 hover:text-white"
                         >
                             <MonitorPlay className="w-5 h-5 text-indigo-400" />
                             {t('landing.demo_mode', 'Try Demo')}
@@ -260,13 +273,18 @@ const LandingPage = ({ onLogin }) => {
 };
 
 const FeatureCard = ({ icon: Icon, title, desc, glowColor }) => (
-    <div className="relative p-10 rounded-[2.5rem] bg-slate-900/40 border border-white/5 hover:border-indigo-500/30 transition-all group overflow-hidden backdrop-blur-xl">
-        <div className={`absolute -right-12 -top-12 w-32 h-32 ${glowColor} blur-3xl group-hover:scale-150 transition-transform duration-700`} />
-        <div className="w-16 h-16 bg-slate-800/50 rounded-[1.5rem] flex items-center justify-center mb-8 border border-white/5 shadow-inner">
-            <Icon className="w-8 h-8 text-indigo-400 group-hover:scale-110 transition-transform" />
+    <div className="relative p-10 rounded-[2.5rem] bg-slate-900/40 border border-white/5 hover:border-indigo-500/30 transition-all duration-500 group overflow-hidden backdrop-blur-xl hover:-translate-y-2">
+        {/* Aurora Glow Effect */}
+        <div className={`absolute -right-12 -top-12 w-40 h-40 ${glowColor} blur-3xl opacity-50 group-hover:opacity-100 group-hover:scale-150 transition-all duration-700`} />
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+        {/* Icon Container - Aurora Border on Hover */}
+        <div className="relative w-16 h-16 bg-slate-800/50 rounded-[1.5rem] flex items-center justify-center mb-8 border border-white/5 shadow-inner group-hover:border-indigo-500/30 transition-colors">
+            <Icon className="w-8 h-8 text-indigo-400 group-hover:text-cyan-400 group-hover:scale-110 transition-all" />
         </div>
-        <h3 className="text-xl font-black mb-4 text-white uppercase tracking-tight">{title}</h3>
-        <p className="text-slate-400 leading-relaxed font-medium text-sm">{desc}</p>
+
+        <h3 className="relative text-xl font-black mb-4 text-white uppercase tracking-tight">{title}</h3>
+        <p className="relative text-slate-400 leading-relaxed font-medium text-sm group-hover:text-slate-300 transition-colors">{desc}</p>
     </div>
 );
 
