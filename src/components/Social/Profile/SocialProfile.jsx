@@ -384,7 +384,7 @@ const SocialProfile = ({ user, isOwnProfile, onEditProfile, isDarkMode, trips = 
             // 2. Legacy Sync: If totalXP is 0 but user has stats, award initial XP
             // This is a simple client-side check for MVP; ideally redundant server-side
             if (stats && ((!user.totalXP || user.totalXP === 0) && (stats.trips > 0 || stats.countries > 0))) {
-                console.log("Syncing Legacy Stats to XP...");
+                // Syncing Legacy Stats to XP...
                 // Calculate estimated XP
                 const legacyXP = (stats.trips * 50) + (stats.countries * 100);
 

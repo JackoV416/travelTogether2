@@ -1,4 +1,5 @@
 @import './styles/design-tokens.css';
+@import './styles/design-system.css'; /* V2.0 Aurora Design System */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
