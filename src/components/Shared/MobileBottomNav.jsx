@@ -50,6 +50,7 @@ const MobileBottomNav = ({
                             return (
                                 <button
                                     key={item.id}
+                                    data-tour={item.id === 'explore' ? 'explore-community' : 'my-trips-view'}
                                     onClick={() => onViewChange && onViewChange(item.id === 'explore' ? 'dashboard' : item.id)}
                                     className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${isActive
                                         ? 'bg-white dark:bg-gray-700 shadow-md text-indigo-600 dark:text-indigo-400'

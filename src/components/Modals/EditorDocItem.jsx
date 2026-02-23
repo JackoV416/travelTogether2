@@ -300,7 +300,7 @@ const EditorDocItem = memo(({
                             onClick={handleRemove}
                             data-html2canvas-ignore="true"
                             className={`p-1.5 ${isDarkTemplate ? 'bg-black/40 text-white hover:text-red-400 hover:bg-black/60' : 'bg-white/80 text-gray-500 hover:text-red-500 hover:bg-white'} rounded-full shadow-sm backdrop-blur-sm transition-all opacity-40 hover:opacity-100`}
-                            title="Remove Item"
+                            title={t('common.tooltips.ai_magic_name')}
                         >
                             <Trash2 className="w-3.5 h-3.5" />
                         </button>

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { UserPlus, X, Check } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
+import AuroraCard from '../Shared/AuroraCard';
 
 const FriendRequestCard = ({ request, onAccept, onReject }) => {
     const { t } = useTranslation();
@@ -13,7 +14,7 @@ const FriendRequestCard = ({ request, onAccept, onReject }) => {
         : 'Recently';
 
     return (
-        <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all">
+        <AuroraCard className="flex items-center justify-between !p-3 hover:shadow-md transition-all border-l-4 border-l-indigo-500" noPadding={false}>
             <div className="flex items-center gap-3">
                 <div className="relative">
                     <img
@@ -21,7 +22,7 @@ const FriendRequestCard = ({ request, onAccept, onReject }) => {
                         alt={request.fromUserName}
                         className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-slate-600"
                     />
-                    <div className="absolute -bottom-1 -right-1 bg-indigo-500 rounded-full p-0.5 border-2 border-white dark:border-slate-800">
+                    <div className="absolute -bottom-1 -right-1 bg-indigo-500 rounded-full p-0.5 border-2 border-white dark:border-slate-800 shadow-sm">
                         <UserPlus className="w-2.5 h-2.5 text-white" />
                     </div>
                 </div>
@@ -40,12 +41,12 @@ const FriendRequestCard = ({ request, onAccept, onReject }) => {
                 </button>
                 <button
                     onClick={() => onAccept(request.id, request)}
-                    className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/20 dark:text-indigo-400 dark:hover:bg-indigo-500/30 transition-colors"
+                    className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/20 dark:text-indigo-400 dark:hover:bg-indigo-500/30 transition-colors shadow-sm"
                 >
                     <Check className="w-4 h-4" />
                 </button>
             </div>
-        </div>
+        </AuroraCard>
     );
 };
 

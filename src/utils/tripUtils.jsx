@@ -1,7 +1,7 @@
 import React from 'react';
 import { format, differenceInDays, parseISO, startOfDay } from 'date-fns';
 import { zhHK } from 'date-fns/locale';
-import { Sun, CloudSun, Snowflake, MapPin, Calendar, Shirt, Moon, CheckCircle2, Cloud, FileText, Shield, Backpack, Plane, Hotel, Ticket } from 'lucide-react';
+import { Sun, CloudSun, Snowflake, MapPin, Calendar, Shirt, Moon, CheckCircle2, Cloud, FileText, Shield, Backpack, Plane, Hotel, Ticket, CloudRain, CloudLightning, AlignJustify, Loader2 } from 'lucide-react';
 import {
     HOLIDAYS_BY_REGION,
     TIMEZONES,
@@ -123,13 +123,14 @@ export const getWeatherForecast = (country, currentTempStr, customDesc, customIc
         return t ? t('trip.weather.clothes.cold') : "厚大衣、圍巾、發熱衣";
     };
 
-    // Helper: Get icon based on temperature
+    // Helper: Get icon based on temperature (V1.9.12: Lucide Icons)
     const getIconForTemp = (temp) => {
         if (temp >= 28) return <Sun className="text-orange-500" />;
         if (temp >= 23) return <Sun className="text-yellow-500" />;
         if (temp >= 18) return <CloudSun className="text-emerald-500" />;
         if (temp >= 12) return <CloudSun className="text-blue-400" />;
-        return <Snowflake className="text-blue-600" />;
+        if (temp >= 0) return <Snowflake className="text-blue-500" />;
+        return <Snowflake className="text-blue-700" />;
     };
 
     // Helper: Get desc based on temperature
@@ -178,7 +179,7 @@ export const getWeatherForecast = (country, currentTempStr, customDesc, customIc
         clothes: "-- | --",
         dayClothes: "--",
         nightClothes: "--",
-        icon: <Sun className="text-gray-400" />,
+        icon: <Loader2 className="animate-spin text-gray-400" />,
         desc: t ? t('trip.weather.loading') : "載入中...",
         outfitIcon: iconUrl
     };

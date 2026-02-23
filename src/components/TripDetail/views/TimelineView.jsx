@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useEffect } from 'react';
 import { MapPin, AlertTriangle, Clock, ArrowRight, CalendarDays, Plane, Hotel, Utensils, Car, ShoppingBag, Sparkles, Brain } from 'lucide-react';
+import { getLocalizedContent } from '../../../utils/tripHelpers';
 
 /**
  * TimelineView: Vertical 24-hour grid for itinerary visualization.
@@ -9,7 +10,7 @@ import { MapPin, AlertTriangle, Clock, ArrowRight, CalendarDays, Plane, Hotel, U
  * - Conflict detection (overlapping items)
  * - Premium Glassmorphism styling & Responsive UI
  */
-const TimelineView = ({ items, isDarkMode, onItemClick, isEditMode, homeOffset = 8, destOffset = 9, trip }) => {
+const TimelineView = ({ items, isDarkMode, onItemClick, isEditMode, homeOffset = 8, destOffset = 9, trip, currentLang }) => {
     // Hour height: Slightly smaller for mobile to see more hours
     const HOUR_HEIGHT = typeof window !== 'undefined' && window.innerWidth < 640 ? 75 : 90;
     const SHOW_DUAL_TIME = homeOffset !== destOffset;
@@ -209,7 +210,7 @@ const TimelineView = ({ items, isDarkMode, onItemClick, isEditMode, homeOffset =
                                         <div className="flex items-center gap-1.5 mb-1">
                                             {item.hasConflict && <AlertTriangle className="w-3 h-3 text-rose-500 animate-pulse shrink-0" />}
                                             <h4 className={`font-bold text-[11px] sm:text-xs leading-tight truncate ${isDarkMode ? 'text-gray-100 group-hover:text-indigo-400' : 'text-gray-800 group-hover:text-indigo-600'}`}>
-                                                {item.name}
+                                                {getLocalizedContent(item.name, currentLang)}
                                             </h4>
                                         </div>
                                         <div className="flex items-center gap-2 text-[9px] sm:text-[10px] font-mono font-bold opacity-60">

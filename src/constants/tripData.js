@@ -90,7 +90,7 @@ export const INSURANCE_RESOURCES = [
 ];
 
 export const AUTHOR_NAME = "Jamie Kwok";
-export const APP_VERSION = "V1.3.1";
+export const APP_VERSION = "V2.0.3";
 export const VERSION_HISTORY = [
     {
         ver: "V1.3.1",
@@ -492,5 +492,43 @@ const SIMULATION_TRIP_TEMPLATE = {
 };
 
 export const SIMULATION_DATA = {
-    ...SIMULATION_TRIP_TEMPLATE
+    ...SIMULATION_TRIP_TEMPLATE,
+    name: { "en": "Japan New Year Trip", "zh-TW": "日本跨年之旅" },
+    // V1.8.0: Smart Packing List
+    packingList: [
+        { id: "p1", category: "clothes", name: { "en": "Heavy Coat", "zh-TW": "厚大衣" }, isChecked: true },
+        { id: "p2", category: "clothes", name: { "en": "Thermal Wear", "zh-TW": "發熱衣" }, isChecked: false },
+        { id: "p3", category: "electronics", name: { "en": "Universal Adapter", "zh-TW": "萬用轉插" }, isChecked: true },
+        { id: "p4", category: "electronics", name: { "en": "Power Bank", "zh-TW": "行動電源" }, isChecked: false },
+        { id: "p5", category: "documents", name: { "en": "Passport", "zh-TW": "護照" }, isChecked: true },
+        { id: "p6", category: "documents", name: { "en": "Visit Japan Web QR", "zh-TW": "Visit Japan Web QR" }, isChecked: false },
+        { id: "p7", category: "toiletries", name: { "en": "Toothbrush", "zh-TW": "牙刷" }, isChecked: true }
+    ],
+    // V1.4.0: Shopping List
+    shoppingList: [
+        { id: "s1", name: { "en": "Tokyo Banana", "zh-TW": "Tokyo Banana" }, isBought: false, price: 1200, currency: "JPY", note: { "en": "Airport", "zh-TW": "機場" } },
+        { id: "s2", name: { "en": "Matcha KitKat", "zh-TW": "抹茶 KitKat" }, isBought: true, price: 300, currency: "JPY", note: { "en": "Don Quijote", "zh-TW": "唐吉訶德" } },
+        { id: "s3", name: { "en": "LeTAO Cheesecake", "zh-TW": "LeTAO 起司蛋糕" }, isBought: false, price: 2400, currency: "JPY", note: { "en": "Otaru", "zh-TW": "小樽" } }
+    ],
+    // V1.2.0: Split Bill Budget
+    budget: [
+        { id: "e1", category: "flight", name: { "en": "Flight Tickets", "zh-TW": "機票" }, cost: 6000, currency: "HKD", payer: "Me", date: "2025-10-15" },
+        { id: "e2", category: "hotel", name: { "en": "Swissotel Deposit", "zh-TW": "酒店訂金" }, cost: 20000, currency: "JPY", payer: "Alex", date: "2025-11-01" },
+        { id: "e3", category: "food", name: { "en": "Convenience Store", "zh-TW": "便利店" }, cost: 1500, currency: "JPY", payer: "Me", date: "2025-12-29" },
+        { id: "e4", category: "transport", name: { "en": "Rapi:t Tickets", "zh-TW": "Rapi:t 車票" }, cost: 2900, currency: "JPY", payer: "Alex", date: "2025-12-29" }
+    ],
+    // V1.9.0: Emergency & Visa
+    visa: {
+        status: "required",
+        type: "Visit Japan Web",
+        expiryDate: "2026-01-04",
+        notes: { "en": "Remember to capture QR code screenshot.", "zh-TW": "記得截圖保存 QR Code。" }
+    },
+    emergency: {
+        police: "110",
+        ambulance: "119",
+        contacts: [
+            { name: { "en": "Embassy", "zh-TW": "辦事處" }, phone: "+81-3-3280-7111", desc: { "en": "Taipei Economic and Cultural Representative Office", "zh-TW": "台北駐日經濟文化代表處" } }
+        ]
+    }
 };

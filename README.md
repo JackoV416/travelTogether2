@@ -1,10 +1,37 @@
-# Travel Together V2 <kbd>V1.9.11</kbd>
+# Travel Together V2 <kbd>V2.0.3</kbd>
 
 [![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://travel-together-v2.vercel.app/)
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
 [![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
 
-> **智能旅遊規劃助手** - 專為多人協作設計。支援即時同步、AI 行程建議與 PWA 離線使用。
+> **智能旅遊規劃助手** - 專為多人協作設計。支援即時同步、AI 行程建議與 PWA 離線使用。全站已升級至 **V2.0 世代**。
+
+### 🚀 V2.0.0: The Social & Chat Evolution (2026-02-23)
+**V2.0.0: [Evolution] 聊天介面與效能大躍進！**
+引入了完整的 Facebook Messenger 即時通訊佈局，加強了桌面版 3 Column 架構與極致的手機版響應式體驗。並經由專業安全審計清除了潛在的 DOM-based XSS 與渲染瓶頸。
+
+### 🌟 V2.0 系列主要更新
+1. **Messenger Layout**: 桌面版重構為清爽的 3-Column 左側選單軌跡 (Navigation Rail)，支援極光深色模式。
+2. **Eager Loading**: Explore Grid 卡片引入智慧 Eager Load 策略，大幅消除 LCP 渲染瓶頸。
+3. **PWA Native Polish**: 底部導航欄全面適配 `safe-area-inset-bottom` 與 PWA 沉浸式體驗。
+
+### 🚀 V1.9.13: Chat Localization & Polish (2026-02-05)
+**V1.9.13: [Localization] Chat UI & Jarvis 全面在地化！**
+對話介面 (Jarvis & 行程群組) 完成廣東話 (zh-HK) 與英文在地化，並優化了錯誤處理與模擬模式提示。
+
+### 🌟 V1.9.13 主要更新
+1.  **Chat Localization**: `ChatModal`, `JarvisChatView`, `TripChatView` 全面支援多語系，不再有硬編碼文字。
+2.  **Robust Error Handling**: 修復 ChatModal 因變數未定義導致的崩潰。
+3.  **Simulation Polish**: 模擬模式下的群聊提示更加友善且在地化。
+
+### 🚀 V1.9.12: Aurora & Visual Integrity (2026-01-28)
+**V1.9.12: [Visual] 全站元件 Aurora 極光化重構！**
+全面統一了 Social Profile, FriendList, TripCard 與 ExploreGrid 的設計語言，採用 AuroraCard 與 Gradient Text 打造極致視覺體驗。
+
+### 🌟 V1.9.12 主要更新
+1.  **Aurora Refactor**: 全面導入 `AuroraCard` 極光卡片組件，統一玻璃擬態與動態光效。
+2.  **Social Polish**: 重構個人檔案頁與好友列表，提升互動質感。
+3.  **Visual Consistency**: 統一 Dashboard 與 Explore 頁面的 Hero Header 與 Typography。
 
 ### 🚀 V1.9.11: PWA & Localization (2026-01-27)
 **V1.9.11: [Polish] PWA 安裝優化與在地化修復！**
@@ -392,13 +419,15 @@ graph TD
 
 ## 📋 版本紀錄 (History)
 
-| **V1.9.10** | **Navigation Hotfix** | 🚀 最新版 |
-| **V1.9.9** | **PWA Polish & Gold Master** | ✅ 已發布 |
-| **V1.9.8** | **Stability & Public Polish** | ✅ 已發布 |
-| **V1.9.7** | **UI Unification & Public Improvements** | ✅ 已發布 |
+| **V2.0.3** | **Security & UI Audit** | 🚀 最新版 |
 | **V1.9.0** | **Social Revolution** | ✅ 已發布 |
-| **V1.8.1** | **Export Modal & UI Polish** | ✅ 已發布 |
-| **V1.5.2** | **Local Trip Logic** | ✅ 已發布 |
+| **V1.8.0** | **Performance Audit** | ✅ 已發布 |
+| **V1.7.0** | **PDF Editor & Expansion** | ✅ 已發布 |
+| **V1.6.0** | **SEO & Tutorial Polish** | ✅ 已發布 |
+| **V1.5.0** | **AI Awakening** | ✅ 已發布 |
+| **V1.4.0** | **Realtime Core** | ✅ 已發布 |
+| **V1.2.0** | **Indigo Glass UI** | ✅ 已發布 |
+| **V1.0.0** | **The Intelligent Era** | ✅ 已發布 |
 
 ---
 
@@ -432,7 +461,6 @@ Travel Together 2 採用 PWA 技術，您可以將網站安裝至手機主畫面
 我們非常重視您的數據安全：
 - **SafeChat™ 端對端身份保護**：基於 Firebase 的訊息傳輸均經過加密處理。
 - **Firestore 鐵壁規則**：嚴格的 Security Rules 確保只有行程成員能存取數據。
-- **Listener Hardening**：V1.8.2/1.8.3 引入了全域監聽器加固，徹底解決 HMR 崩潰與權限報錯問題。
 
 ## 📖 技術文檔 (Developer Docs)
 
@@ -443,4 +471,4 @@ Travel Together 2 採用 PWA 技術，您可以將網站安裝至手機主畫面
 ---
 
 **Author**: [Jamie Kwok](https://github.com/JackoV416)
-**Last Updated**: 2026-01-22
+**Last Updated**: 2026-02-23

@@ -151,7 +151,7 @@ const FilesTab = ({ trip, user, isOwner, language = "zh-TW", isDarkMode, glassCa
                                 onClick={(e) => { e.stopPropagation(); deleteFile(file); }}
                                 disabled={loading}
                                 className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-500/80 backdrop-blur-md text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-red-600 shadow-lg"
-                                title="Delete"
+                                title={t('common.tooltips.delete')}
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
                             </button>

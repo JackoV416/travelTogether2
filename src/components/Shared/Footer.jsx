@@ -17,7 +17,7 @@ const Footer = ({ isDarkMode, onOpenVersion, onLanguageChange }) => {
     const currentLang = i18n.language || 'zh-HK';
 
     return (
-        <footer className={`mt-12 pt-6 pb-24 md:pb-12 border-t text-center text-xs flex flex-col items-center justify-center gap-4 ${isDarkMode ? 'bg-gray-900/50 border-gray-800/50 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-600'} pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-[calc(1.5rem+env(safe-area-inset-bottom))]`}>
+        <footer className={`mt-12 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-[calc(1.5rem+env(safe-area-inset-bottom))] border-t text-center text-xs flex flex-col items-center justify-center gap-4 ${isDarkMode ? 'bg-gray-900/50 border-gray-800/50 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
             {/* Version Row - Unified Premium Header */}
             <div className={`flex flex-wrap gap-2 md:gap-4 items-center justify-center py-2 px-6 rounded-2xl border transition-all ${isDarkMode ? 'bg-gray-800/30 border-white/5' : 'bg-white border-gray-100 shadow-sm'}`}>
                 <div className="flex items-center gap-2">

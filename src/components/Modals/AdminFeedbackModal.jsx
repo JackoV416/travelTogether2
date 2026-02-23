@@ -539,7 +539,7 @@ const AdminFeedbackModal = ({ isOpen, onClose, isDarkMode, adminEmails = [], onU
                                                                         <button
                                                                             onClick={(e) => { e.stopPropagation(); handleGenerateSummary(activeFeedback, false); }}
                                                                             className="text-indigo-500 hover:bg-indigo-500/10 p-1 rounded-full transition-colors"
-                                                                            title="AI Auto-Summarize Title"
+                                                                            title={t('common.tooltips.ai_summarize')}
                                                                         >
                                                                             <Sparkles className="w-3.5 h-3.5" />
                                                                         </button>
@@ -552,7 +552,7 @@ const AdminFeedbackModal = ({ isOpen, onClose, isDarkMode, adminEmails = [], onU
                                                                             <button
                                                                                 onClick={(e) => { e.stopPropagation(); handleCancelAI(); }}
                                                                                 className="p-0.5 hover:bg-red-500/20 rounded-full text-gray-400 hover:text-red-500 transition-colors"
-                                                                                title="停止 Jarvis 分析"
+                                                                                title={t('common.tooltips.stop_jarvis')}
                                                                             >
                                                                                 <X className="w-3 h-3" />
                                                                             </button>
@@ -695,7 +695,7 @@ const AdminFeedbackModal = ({ isOpen, onClose, isDarkMode, adminEmails = [], onU
                                                 <button
                                                     onClick={() => fileInputRef.current?.click()}
                                                     className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
-                                                    title="Upload Image"
+                                                    title={t('common.tooltips.upload_image')}
                                                 >
                                                     <ImageIcon className="w-5 h-5" />
                                                 </button>
@@ -864,13 +864,13 @@ const AdminFeedbackModal = ({ isOpen, onClose, isDarkMode, adminEmails = [], onU
                                                     <button
                                                         onClick={() => handleRemoveAdmin(email)}
                                                         className="p-2 rounded-lg bg-gray-500/10 hover:bg-red-500/10 hover:text-red-500 transition-colors"
-                                                        title="Remove Admin"
+                                                        title={t('common.tooltips.remove_admin')}
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
                                                 )}
                                                 {isOwner && (
-                                                    <div className="p-2 opacity-30 cursor-not-allowed" title="Cannot remove Owner">
+                                                    <div className="p-2 opacity-30 cursor-not-allowed" title={t('common.tooltips.cannot_remove_owner')}>
                                                         <Lock className="w-4 h-4" />
                                                     </div>
                                                 )}

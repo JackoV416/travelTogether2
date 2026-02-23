@@ -13,6 +13,15 @@ import {
 export const getHolidayMap = (region) => HOLIDAYS_BY_REGION[region] || HOLIDAYS_BY_REGION.Global;
 export const getLocalizedCountryName = (country, lang = 'zh-TW') => COUNTRY_TRANSLATIONS[country]?.[lang] || country;
 export const getLocalizedCityName = (city, lang = 'zh-TW') => CITY_TRANSLATIONS[city]?.[lang] || city;
+export const getLocalizedContent = (content, lang = 'zh-TW') => {
+    if (!content) return "";
+    if (typeof content === 'string') return content;
+    if (typeof content === 'object') {
+        const targetLang = lang === 'zh-HK' ? 'zh-TW' : lang; // Fallback HK to TW if needed, or strict match
+        return content[targetLang] || content['en'] || content['zh-TW'] || "";
+    }
+    return "";
+};
 export const getSafeCountryInfo = (country) => COUNTRIES_DATA[country] || COUNTRIES_DATA["Other"];
 
 export const formatDate = (dateStr) => {

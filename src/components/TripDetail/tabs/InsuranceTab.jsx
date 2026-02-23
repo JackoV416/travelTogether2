@@ -1,5 +1,6 @@
 import React from 'react';
 import { Lock, Shield, ArrowUpRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const InsuranceTab = ({
     isDarkMode,
@@ -15,31 +16,32 @@ const InsuranceTab = ({
     glassCard,
     isSimulation
 }) => {
+    const { t } = useTranslation();
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
             <div className={glassCard(isDarkMode) + " p-6"}>
                 <h3 className="font-bold mb-4 flex gap-2">
-                    <Lock className="w-5 h-5" /> 私人保險 (僅自己可見)
+                    <Lock className="w-5 h-5" /> {t('trip.insurance.private_title')}
                 </h3>
                 <div className="space-y-4">
                     <input
                         value={myInsurance.provider || ''}
                         onChange={e => !isSimulation && setMyInsurance({ ...myInsurance, provider: e.target.value })}
-                        placeholder="保險公司"
+                        placeholder={t('trip.insurance.provider_placeholder')}
                         className={inputClasses(isDarkMode)}
                         readOnly={isSimulation}
                     />
                     <input
                         value={myInsurance.policyNo || ''}
                         onChange={e => !isSimulation && setMyInsurance({ ...myInsurance, policyNo: e.target.value })}
-                        placeholder="保單號碼"
+                        placeholder={t('trip.insurance.policy_placeholder')}
                         className={inputClasses(isDarkMode)}
                         readOnly={isSimulation}
                     />
                     <input
                         value={myInsurance.phone || ''}
                         onChange={e => !isSimulation && setMyInsurance({ ...myInsurance, phone: e.target.value })}
-                        placeholder="緊急聯絡電話"
+                        placeholder={t('trip.insurance.phone_placeholder')}
                         className={inputClasses(isDarkMode)}
                         readOnly={isSimulation}
                     />
@@ -52,13 +54,13 @@ const InsuranceTab = ({
                             }`}
                     >
                         <Shield className="w-4 h-4" />
-                        {isSimulation ? "教學展示 (唯讀模式)" : "儲存資料"}
+                        {isSimulation ? t('trip.insurance.save_demo') : t('trip.insurance.save_btn')}
                     </button>
                 </div>
             </div>
             <div className={glassCard(isDarkMode) + " p-6"}>
                 <h3 className="font-bold mb-4 flex gap-2">
-                    <Shield className="w-5 h-5" /> 建議與狀態
+                    <Shield className="w-5 h-5" /> {t('trip.insurance.suggestions_title')}
                 </h3>
                 <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-sm mb-4">
                     {countryInfo.insuranceInfo}
@@ -85,7 +87,7 @@ const InsuranceTab = ({
                         ))}
                 </div>
                 <div className="text-[11px] opacity-60 mt-3">
-                    Jarvis 建議：依所在地先完成 Visit Japan Web 等官方登錄，再補上涵蓋醫療與航班延誤的保單。
+                    {t('trip.insurance.jarvis_tip')}
                 </div>
             </div>
         </div>

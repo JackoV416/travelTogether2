@@ -1,10 +1,9 @@
+import React from 'react';
 import { Plus, Upload, Calendar, Rocket, Search } from 'lucide-react';
 import { useTour } from '../../contexts/TourContext';
 import { useTranslation } from 'react-i18next';
-import { glassCard } from '../../utils/tripUtils';
-import { buttonPrimary, buttonSecondary } from '../../constants/styles';
-import { DEFAULT_BG_IMAGE, COUNTRIES_DATA } from '../../constants/appData';
-import SmartSummaryCard from './SmartSummaryCard';
+import { COUNTRIES_DATA } from '../../constants/appData';
+import { AuroraCard, AuroraGradientText } from '../Shared/AuroraComponents';
 import Kbd from '../Shared/Kbd';
 
 /**
@@ -30,82 +29,89 @@ const DashboardHeader = ({
     return (
         <div className="space-y-6" data-tour="dashboard-header">
             {/* Header: Compact Welcome + Actions */}
-            <div className={`p-6 rounded-3xl ${glassCard(isDarkMode)} relative flex flex-col md:flex-row justify-between items-center gap-6`}>
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 opacity-50 rounded-3xl" />
+            {/* Header: Compact Welcome + Actions */}
+            <AuroraCard className="relative overflow-visible" noPadding={false}>
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 opacity-50 rounded-3xl pointer-events-none" />
 
-                <div className="relative z-10 flex items-center gap-4 w-full md:w-auto">
-                    <div className="p-3 bg-indigo-500/20 text-indigo-500 rounded-2xl">
-                        <Rocket className="w-6 h-6" />
+                <div className="flex flex-col md:flex-row justify-between items-center gap-6 relative z-10 w-full">
+                    <div className="flex items-center gap-4 w-full md:w-auto">
+                        <div className="p-3 bg-indigo-500/20 text-indigo-500 rounded-2xl flex-shrink-0">
+                            <Rocket className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <AuroraGradientText as="h2" className="text-xl font-bold flex items-center gap-2">
+                                {t('dashboard.header.welcome_back')}
+                            </AuroraGradientText>
+                            <p className="opacity-60 text-sm dark:text-gray-300">
+                                {hasTrips
+                                    ? t('dashboard.header.status_count', { count: trips.length })
+                                    : t('dashboard.header.first_trip_prompt')}
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="text-xl font-bold flex items-center gap-2">
-                            {t('dashboard.header.welcome_back')}
-                        </h2>
-                        <p className="opacity-60 text-sm">
-                            {hasTrips
-                                ? t('dashboard.header.status_count', { count: trips.length })
-                                : t('dashboard.header.first_trip_prompt')}
-                        </p>
+
+                    <div className="flex items-center gap-2 sm:gap-3 w-full md:w-auto">
+                        {/* Command Search */}
+                        <div className="relative group flex-1 md:flex-none">
+                            <button
+                                onClick={onOpenCommandPalette}
+                                className={`w-full md:w-auto h-12 md:h-12 px-5 rounded-2xl border transition-all flex items-center justify-center gap-2 ${isDarkMode
+                                    ? 'bg-indigo-950/30 border-indigo-500/20 text-indigo-300 hover:bg-indigo-900/40 hover:text-white shadow-lg shadow-indigo-900/10'
+                                    : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600 hover:shadow-md'} backdrop-blur-xl group md:min-w-[120px]`}
+                            >
+                                <Search className="w-5 h-5" />
+                                <span className="hidden sm:inline text-sm font-bold">{t('dashboard.header.tooltips.search')}</span>
+                            </button>
+                            <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-max px-2.5 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
+                                <span className="text-[10px] font-bold tracking-wide">{t('dashboard.header.tooltips.search')}</span>
+                                <Kbd keys={['⌘', 'K']} className="border-gray-600 bg-gray-700 text-gray-300" />
+                            </div>
+                        </div>
+
+                        {/* Create Trip (Primary Gradient) */}
+                        <div className="relative group flex-1 md:flex-none">
+                            <div data-tour="create-trip" className="inline-block w-full md:w-auto">
+                                <button
+                                    onClick={() => setIsCreateModalOpen(true)}
+                                    className="w-full md:w-auto h-12 md:h-12 px-6 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold transition-all duration-300 shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-[1.02] active:scale-95 border border-white/10 flex items-center justify-center gap-2"
+                                >
+                                    <Plus className="w-5 h-5" />
+                                    <span className="hidden sm:inline font-bold">{t('dashboard.header.new_trip')}</span>
+                                </button>
+                            </div>
+                            <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-max px-2.5 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
+                                <span className="text-[10px] font-bold tracking-wide">{t('dashboard.header.tooltips.new')}</span>
+                                <Kbd keys={['⇧', 'N']} className="border-gray-600 bg-gray-700 text-gray-300" />
+                            </div>
+                        </div>
+
+                        {/* Smart Import (Secondary Outline) */}
+                        <div className="relative group flex-1 md:flex-none">
+                            <div data-tour="smart-import" className="inline-block w-full md:w-auto">
+                                <button
+                                    onClick={() => setIsSmartImportModalOpen(true)}
+                                    className={`w-full md:w-auto h-12 md:h-12 px-5 rounded-2xl border transition-all flex items-center justify-center gap-2 ${isDarkMode
+                                        ? 'bg-emerald-950/30 border-emerald-500/20 text-emerald-400 hover:bg-emerald-900/40 hover:text-emerald-300 hover:border-emerald-400/30 shadow-lg shadow-emerald-900/10'
+                                        : 'bg-white border-slate-200 text-emerald-600 hover:border-emerald-300 hover:shadow-md'} backdrop-blur-xl group`}
+                                >
+                                    <Upload className="w-5 h-5" />
+                                    <span className="hidden sm:inline text-sm font-bold">{t('dashboard.header.smart_import')}</span>
+                                </button>
+                            </div>
+                            <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-max px-2.5 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
+                                <span className="text-[10px] font-bold tracking-wide">{t('dashboard.header.tooltips.import')}</span>
+                                <Kbd keys={['⇧', 'I']} className="border-gray-600 bg-gray-700 text-gray-300" />
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-                <div className="relative z-10 flex items-center gap-2 sm:gap-3 w-full md:w-auto">
-                    {/* Command Search */}
-                    <div className="relative group flex-1 md:flex-none">
-                        <button
-                            onClick={onOpenCommandPalette}
-                            className={`w-full md:w-auto h-12 md:h-12 px-5 rounded-2xl border transition-all flex items-center justify-center gap-2 ${isDarkMode
-                                ? 'bg-indigo-950/30 border-indigo-500/20 text-indigo-300 hover:bg-indigo-900/40 hover:text-white shadow-lg shadow-indigo-900/10'
-                                : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600 hover:shadow-md'} backdrop-blur-xl group`}
-                        >
-                            <Search className="w-5 h-5" />
-                            <span className="hidden sm:inline text-sm font-bold">{t('dashboard.header.tooltips.search') || '搜尋'}</span>
-                        </button>
-                        <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-max px-2.5 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
-                            <span className="text-[10px] font-bold tracking-wide">{t('dashboard.header.tooltips.search')}</span>
-                            <Kbd keys={['⌘', 'K']} className="border-gray-600 bg-gray-700 text-gray-300" />
-                        </div>
-                    </div>
-
-                    {/* Create Trip (Primary Gradient) */}
-                    <div className="relative group flex-1 md:flex-none">
-                        <button
-                            onClick={() => setIsCreateModalOpen(true)}
-                            className="w-full md:w-auto h-12 md:h-12 px-6 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold transition-all duration-300 shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-[1.02] active:scale-95 border border-white/10 flex items-center justify-center gap-2"
-                        >
-                            <Plus className="w-5 h-5" />
-                            <span className="hidden sm:inline font-bold">{t('dashboard.header.new_trip') || '新行程'}</span>
-                        </button>
-                        <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-max px-2.5 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
-                            <span className="text-[10px] font-bold tracking-wide">{t('dashboard.header.tooltips.new')}</span>
-                            <Kbd keys={['⇧', 'N']} className="border-gray-600 bg-gray-700 text-gray-300" />
-                        </div>
-                    </div>
-
-                    {/* Smart Import (Secondary Outline) */}
-                    <div className="relative group flex-1 md:flex-none">
-                        <button
-                            onClick={() => setIsSmartImportModalOpen(true)}
-                            className={`w-full md:w-auto h-12 md:h-12 px-5 rounded-2xl border transition-all flex items-center justify-center gap-2 ${isDarkMode
-                                ? 'bg-emerald-950/30 border-emerald-500/20 text-emerald-400 hover:bg-emerald-900/40 hover:text-emerald-300 hover:border-emerald-400/30 shadow-lg shadow-emerald-900/10'
-                                : 'bg-white border-slate-200 text-emerald-600 hover:border-emerald-300 hover:shadow-md'} backdrop-blur-xl group`}
-                        >
-                            <Upload className="w-5 h-5" />
-                            <span className="hidden sm:inline text-sm font-bold">{t('dashboard.header.smart_import') || '匯入'}</span>
-                        </button>
-                        <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-max px-2.5 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
-                            <span className="text-[10px] font-bold tracking-wide">{t('dashboard.header.tooltips.import')}</span>
-                            <Kbd keys={['⇧', 'I']} className="border-gray-600 bg-gray-700 text-gray-300" />
-                        </div>
-                    </div>
-                </div>
-            </div>
+            </AuroraCard>
 
             {/* Key Reminders: Horizontal Scroll (Miniature) */}
             {hasTrips && (
                 <div className="space-y-3">
                     <div className="flex items-center justify-between px-2">
-                        <h3 className="text-sm font-bold opacity-50 uppercase tracking-wider flex items-center gap-2">
+                        <h3 className="text-sm font-bold opacity-50 uppercase tracking-wider flex items-center gap-2 dark:text-gray-400">
                             <Calendar className="w-4 h-4" /> {t('dashboard.header.key_reminders') || '重點行程'}
                         </h3>
                         <button
@@ -122,10 +128,11 @@ const DashboardHeader = ({
                     {/* Horizontal Scroll Container */}
                     <div className="flex gap-4 overflow-x-auto pb-4 px-1 snap-x hide-scrollbar">
                         {trips.slice(0, 5).map(trip => (
-                            <div
+                            <AuroraCard
                                 key={trip.id}
                                 onClick={() => onSelectTrip(trip)}
-                                className={`min-w-[280px] p-4 rounded-2xl border transition-all cursor-pointer hover:scale-[1.02] active:scale-95 snap-start ${glassCard(isDarkMode)} flex flex-col gap-3 group`}
+                                className="min-w-[280px] p-4 cursor-pointer hover:scale-[1.02] active:scale-95 snap-start flex flex-col gap-3 group"
+                                noPadding={false}
                             >
                                 <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-3">
@@ -133,8 +140,8 @@ const DashboardHeader = ({
                                             {COUNTRIES_DATA[trip.country]?.flag || '🌍'}
                                         </div>
                                         <div>
-                                            <h4 className="font-bold text-sm truncate max-w-[140px] group-hover:text-indigo-500 transition-colors">{trip.name}</h4>
-                                            <p className="text-xs opacity-60">{trip.startDate || 'No Date'} • {trip.city}</p>
+                                            <h4 className="font-bold text-sm truncate max-w-[140px] group-hover:text-indigo-500 transition-colors dark:text-white">{trip.name}</h4>
+                                            <p className="text-xs opacity-60 dark:text-gray-400">{trip.startDate || 'No Date'} • {trip.city}</p>
                                         </div>
                                     </div>
                                     {/* Mini Status Badge */}
@@ -142,7 +149,7 @@ const DashboardHeader = ({
                                 </div>
 
                                 {/* Mini Progress / Stats */}
-                                <div className="flex items-center justify-between text-xs opacity-60 mt-1">
+                                <div className="flex items-center justify-between text-xs opacity-60 mt-1 dark:text-gray-400">
                                     {/* Smart Status: Days to Go or Duration */}
                                     <span>
                                         {(() => {
@@ -165,7 +172,7 @@ const DashboardHeader = ({
                                     </span>
                                     <span>{Object.keys(trip.itinerary || {}).length} {t('common.items_count')}</span>
                                 </div>
-                            </div>
+                            </AuroraCard>
                         ))}
 
                         {/* New Trip Card (Mini) */}
@@ -176,7 +183,7 @@ const DashboardHeader = ({
                             <div className="w-8 h-8 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform">
                                 <Plus className="w-4 h-4" />
                             </div>
-                            <span className="text-xs font-bold opacity-60">{t('common.add')}</span>
+                            <span className="text-xs font-bold opacity-60 dark:text-white">{t('common.add')}</span>
                         </button>
                     </div>
                 </div>

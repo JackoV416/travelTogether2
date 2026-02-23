@@ -328,24 +328,24 @@ export const PUBLIC_TRIPS_DATA = [
 // Generate more specific mock data based on distinct cities to ensure variety
 // This extends the base manually curated list above with procedurally generated ones
 const EXTRA_CITIES = [
-    { city: 'Sydney', country: 'AU', name_fmt: 'Sydney: Harbour & Beaches', zh_fmt: '雪梨：歌劇院與陽光海灘', cost: 18000, tags: ['Nature', 'Beaches'] },
-    { city: 'New York', country: 'US', name_fmt: 'NYC: The City That Never Sleeps', zh_fmt: '紐約：不夜城探索', cost: 28000, tags: ['Urban', 'Shopping', 'Art'] },
-    { city: 'Barcelona', country: 'ES', name_fmt: 'Barcelona: Gaudi & Tapas', zh_fmt: '巴塞隆納：高第建築與塔帕斯', cost: 16000, tags: ['Art', 'Foodie', 'Beach'] },
-    { city: 'Rome', country: 'IT', name_fmt: 'Rome: Eternal City History', zh_fmt: '羅馬：永恆之城歷史漫步', cost: 17000, tags: ['History', 'Culture'] },
-    { city: 'Berlin', country: 'DE', name_fmt: 'Berlin: History & Techno', zh_fmt: '柏林：歷史圍牆與電音文化', cost: 14000, tags: ['History', 'Nightlife'] },
-    { city: 'Vancouver', country: 'CA', name_fmt: 'Vancouver: Mountains & Ocean', zh_fmt: '溫哥華：山海之間的自然之美', cost: 16000, tags: ['Nature', 'Relaxing'] },
-    { city: 'Dubai', country: 'AE', name_fmt: 'Dubai: Desert & Luxury', zh_fmt: '杜拜：沙漠衝沙與奢華購物', cost: 22000, tags: ['Luxury', 'Shopping'] },
-    { city: 'Reykjavik', country: 'IS', name_fmt: 'Iceland: Northern Lights Hunt', zh_fmt: '冰島：追逐北極光之旅', cost: 25000, tags: ['Nature', 'Adventure'] },
-    { city: 'Bali', country: 'ID', name_fmt: 'Bali: Spiritual Retreat', zh_fmt: '峇里島：身心靈放鬆之旅', cost: 6000, tags: ['Relaxing', 'Nature', 'Beach'] },
-    { city: 'Phuket', country: 'TH', name_fmt: 'Phuket: Island Paradise', zh_fmt: '普吉島：熱帶跳島天堂', cost: 5000, tags: ['Beach', 'Relaxing', 'Party'] },
-    { city: 'Sapporo', country: 'JP', name_fmt: 'Sapporo: Winter Wonderland', zh_fmt: '札幌：冬日雪祭與美食', cost: 9000, tags: ['Culture', 'Nature', 'Foodie'] },
-    { city: 'Fukuoka', country: 'JP', name_fmt: 'Fukuoka: Ramen & History', zh_fmt: '福岡：拉麵起源與古城探索', cost: 7000, tags: ['Foodie', 'Culture'] },
-    { city: 'Hokkaido', country: 'JP', name_fmt: 'Hokkaido: Road Trip Escape', zh_fmt: '北海道：廣闊大地自駕遊', cost: 12000, tags: ['Nature', 'Relaxing'] },
-    { city: 'Milan', country: 'IT', name_fmt: 'Milan: Fashion & Cathedrals', zh_fmt: '米蘭：時尚之都與大教堂', cost: 19000, tags: ['Shopping', 'Art', 'Urban'] },
-    { city: 'Venice', country: 'IT', name_fmt: 'Venice: City of Water', zh_fmt: '威尼斯：水都浪漫巡禮', cost: 18000, tags: ['Romance', 'Culture'] },
-    { city: 'Munich', country: 'DE', name_fmt: 'Munich: Beer & Castles', zh_fmt: '慕尼黑：啤酒節與新天鵝堡', cost: 16000, tags: ['Culture', 'History'] },
-    { city: 'Zurich', country: 'CH', name_fmt: 'Zurich: Lakeside Luxury', zh_fmt: '蘇黎世：湖畔奢華與名錶', cost: 25000, tags: ['Luxury', 'Relaxing'] },
-    { city: 'Prague', country: 'CZ', name_fmt: 'Prague: Fairy Tale City', zh_fmt: '布拉格：童話般的古城', cost: 13000, tags: ['History', 'Romance'] }
+    { city: 'Sydney', country: 'AU', name_fmt: 'Sydney: Harbour & Beaches', zh_fmt: '雪梨：歌劇院與陽光海灘', cost: 18000, tags: ['Nature', 'Beaches'], coverImage: 'https://images.unsplash.com/photo-1624138784614-87fd1b6528f8?w=1200&q=80' },
+    { city: 'New York', country: 'US', name_fmt: 'NYC: The City That Never Sleeps', zh_fmt: '紐約：不夜城探索', cost: 28000, tags: ['Urban', 'Shopping', 'Art'], coverImage: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=1200&q=80' },
+    { city: 'Barcelona', country: 'ES', name_fmt: 'Barcelona: Gaudi & Tapas', zh_fmt: '巴塞隆納：高第建築與塔帕斯', cost: 16000, tags: ['Art', 'Foodie', 'Beach'], coverImage: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=1200&q=80' },
+    { city: 'Rome', country: 'IT', name_fmt: 'Rome: Eternal City History', zh_fmt: '羅馬：永恆之城歷史漫步', cost: 17000, tags: ['History', 'Culture'], coverImage: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=1200&q=80' },
+    { city: 'Berlin', country: 'DE', name_fmt: 'Berlin: History & Techno', zh_fmt: '柏林：歷史圍牆與電音文化', cost: 14000, tags: ['History', 'Nightlife'], coverImage: 'https://images.unsplash.com/photo-1599946347371-68eb71b16afc?w=1200&q=80' },
+    { city: 'Vancouver', country: 'CA', name_fmt: 'Vancouver: Mountains & Ocean', zh_fmt: '溫哥華：山海之間的自然之美', cost: 16000, tags: ['Nature', 'Relaxing'], coverImage: 'https://images.unsplash.com/photo-1559511260-66a654ae982a?w=1200&q=80' },
+    { city: 'Dubai', country: 'AE', name_fmt: 'Dubai: Desert & Luxury', zh_fmt: '杜拜：沙漠衝沙與奢華購物', cost: 22000, tags: ['Luxury', 'Shopping'], coverImage: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1200&q=80' },
+    { city: 'Reykjavik', country: 'IS', name_fmt: 'Iceland: Northern Lights Hunt', zh_fmt: '冰島：追逐北極光之旅', cost: 25000, tags: ['Nature', 'Adventure'], coverImage: 'https://images.unsplash.com/photo-1504829857797-ddff29c27927?w=1200&q=80' },
+    { city: 'Bali', country: 'ID', name_fmt: 'Bali: Spiritual Retreat', zh_fmt: '峇里島：身心靈放鬆之旅', cost: 6000, tags: ['Relaxing', 'Nature', 'Beach'], coverImage: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=1200&q=80' },
+    { city: 'Phuket', country: 'TH', name_fmt: 'Phuket: Island Paradise', zh_fmt: '普吉島：熱帶跳島天堂', cost: 5000, tags: ['Beach', 'Relaxing', 'Party'], coverImage: 'https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=1200&q=80' },
+    { city: 'Sapporo', country: 'JP', name_fmt: 'Sapporo: Winter Wonderland', zh_fmt: '札幌：冬日雪祭與美食', cost: 9000, tags: ['Culture', 'Nature', 'Foodie'], coverImage: 'https://images.unsplash.com/photo-1551641506-ee5bf4cb45f1?w=1200&q=80' },
+    { city: 'Fukuoka', country: 'JP', name_fmt: 'Fukuoka: Ramen & History', zh_fmt: '福岡：拉麵起源與古城探索', cost: 7000, tags: ['Foodie', 'Culture'], coverImage: 'https://images.unsplash.com/photo-1624601573012-efb68931cc8f?w=1200&q=80' },
+    { city: 'Hokkaido', country: 'JP', name_fmt: 'Hokkaido: Road Trip Escape', zh_fmt: '北海道：廣闘大地自駕遊', cost: 12000, tags: ['Nature', 'Relaxing'], coverImage: 'https://images.unsplash.com/photo-1612659010523-3a6fb6e9e60e?w=1200&q=80' },
+    { city: 'Milan', country: 'IT', name_fmt: 'Milan: Fashion & Cathedrals', zh_fmt: '米蘭：時尚之都與大教堂', cost: 19000, tags: ['Shopping', 'Art', 'Urban'], coverImage: 'https://images.unsplash.com/photo-1520440229-6469a149ac59?w=1200&q=80' },
+    { city: 'Venice', country: 'IT', name_fmt: 'Venice: City of Water', zh_fmt: '威尼斯：水都浪漫巡禮', cost: 18000, tags: ['Romance', 'Culture'], coverImage: 'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=1200&q=80' },
+    { city: 'Munich', country: 'DE', name_fmt: 'Munich: Beer & Castles', zh_fmt: '慕尼黑：啤酒節與新天鵝堡', cost: 16000, tags: ['Culture', 'History'], coverImage: 'https://images.unsplash.com/photo-1595867818082-083862f3d630?w=1200&q=80' },
+    { city: 'Zurich', country: 'CH', name_fmt: 'Zurich: Lakeside Luxury', zh_fmt: '蘇黎世：湖畔奢華與名錶', cost: 25000, tags: ['Luxury', 'Relaxing'], coverImage: 'https://images.unsplash.com/photo-1515488764276-beab7607c1e6?w=1200&q=80' },
+    { city: 'Prague', country: 'CZ', name_fmt: 'Prague: Fairy Tale City', zh_fmt: '布拉格：童話般的古城', cost: 13000, tags: ['History', 'Romance'], coverImage: 'https://images.unsplash.com/photo-1541849546-216549ae216d?w=1200&q=80' }
 ];
 
 // Append extra derived trips
@@ -360,7 +360,7 @@ EXTRA_CITIES.forEach((item, index) => {
         name_zh: item.zh_fmt,
         country: item.country,
         city: item.city,
-        coverImage: `https://images.unsplash.com/photo-${index % 5 === 0 ? '1476514525535-07fb3b4ae5f1' : index % 5 === 1 ? '1507525428034-b723cf961d3e' : index % 5 === 2 ? '1519681393784-d120267933ba' : index % 5 === 3 ? '1506744038136-46273834b3fb' : '1501785888041-af3ef285b470'}?w=800&q=80`,
+        coverImage: item.coverImage || `https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&q=80`,
         author: {
             name: authorName,
             name_zh: authorNameZh,

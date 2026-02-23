@@ -23,6 +23,7 @@ import SmartExportModal from '../Modals/SmartExportModal';
 import ErrorBoundary from '../Shared/ErrorBoundary';
 import FeedbackModal from '../Modals/FeedbackModal';
 import ImageWithFallback from '../Shared/ImageWithFallback';
+import { AuroraTabs, AuroraBadge, AuroraButton, AuroraGradientText } from '../Shared/AuroraComponents';
 
 
 
@@ -34,7 +35,7 @@ import {
 import { generatePackingList, suggestTransportBetweenSpots } from '../../services/ai-parsing';
 import { useTour } from '../../contexts/TourContext';
 import { optimizeSchedule } from '../../services/ai';
-import { getWeatherInfo, generateWeatherSummary } from '../../services/weather';
+import { getWeatherInfo, generateWeatherSummary } from '../../services/weather.jsx';
 import { notifyTripActivity } from '../../services/activityService'; // V1.9.4 Activity
 import { exportToBeautifulPDF } from '../../services/pdfExport';
 import { COUNTRIES_DATA, DEFAULT_BG_IMAGE, CURRENCIES, INSURANCE_SUGGESTIONS, INSURANCE_RESOURCES, CITY_IMAGES } from '../../constants/appData';
@@ -1646,7 +1647,9 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                         className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105"
                         style={{ backgroundImage: `url(${currentHeaderImage})` }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent z-20" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-slate-900/60 to-transparent z-20" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/30 via-transparent to-purple-900/30 mix-blend-overlay z-20" />
+                    <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-900 to-transparent z-30" />
 
                     {/* Top Bar Actions */}
                     <div className="absolute top-0 inset-x-0 p-4 flex justify-between items-start z-50">
@@ -1667,7 +1670,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                         onClick={undoHistory}
                                         disabled={!canUndo}
                                         className={`p-2 rounded-full transition-colors ${!canUndo ? 'text-white/30 cursor-not-allowed' : 'text-white hover:bg-white/20 active:scale-95'}`}
-                                        title="Undo (Ctrl+Z)"
+                                        title={t('common.tooltips.undo')}
                                     >
                                         <Undo className="w-4 h-4" />
                                     </button>
@@ -1676,7 +1679,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                         onClick={redoHistory}
                                         disabled={!canRedo}
                                         className={`p-2 rounded-full transition-colors ${!canRedo ? 'text-white/30 cursor-not-allowed' : 'text-white hover:bg-white/20 active:scale-95'}`}
-                                        title="Redo (Ctrl+Y)"
+                                        title={t('common.tooltips.redo')}
                                     >
                                         <Redo className="w-4 h-4" />
                                     </button>
@@ -1694,8 +1697,8 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
 
                                         {/* CSS Mini-Menu Reminder / Tooltip */}
                                         <div className="absolute top-full right-0 mt-2 w-32 px-3 py-2 bg-gray-900/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl skew-x-0 origin-top-right transform scale-0 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
-                                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center mb-0.5">Preview</div>
-                                            <div className="text-xs text-white text-center font-medium">預覽公開頁面</div>
+                                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center mb-0.5">{t('trip.preview_mode', 'Preview')}</div>
+                                            <div className="text-xs text-white text-center font-medium">{t('trip.preview_public_page', '預覽公開頁面')}</div>
                                         </div>
                                     </button>
                                 )}
@@ -1739,26 +1742,35 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                     <div className="absolute bottom-0 inset-x-0 p-6 md:p-10 z-40 flex flex-col md:flex-row justify-between items-end gap-6 animate-slide-up-fade">
                         {/* Left: Title & Info */}
                         <div className="space-y-3 max-w-2xl w-full">
-                            <div className="flex items-center gap-2 mb-1">
-                                {trip.isPublic && <span className="bg-emerald-500/20 text-emerald-300 text-[10px] uppercase font-bold px-2.5 py-1 rounded-full border border-emerald-500/30 backdrop-blur-md shadow-sm">Public</span>}
-                                {!trip.isPublic && <span className="bg-white/10 text-gray-300 text-[10px] uppercase font-bold px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-md shadow-sm">Private</span>}
+                            <div className="flex items-center gap-3 mb-2 animate-fade-in">
+                                <AuroraBadge
+                                    variant={trip.isPublic ? 'success' : 'neutral'}
+                                    size="sm"
+                                    interactive={false}
+                                >
+                                    {trip.isPublic ? t('trip.status.public', 'PUBLIC TRIP') : t('trip.status.private', 'PRIVATE TRIP')}
+                                </AuroraBadge>
 
                                 {/* Views Count */}
                                 {(trip.views > 0 || trip.forks > 0) && (
-                                    <div className="flex items-center gap-3 text-xs font-medium text-white/60 ml-2">
-                                        {trip.views > 0 && <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {trip.views}</span>}
-                                        {trip.forks > 0 && <span className="flex items-center gap-1"><GitFork className="w-3 h-3" /> {trip.forks}</span>}
+                                    <div className="flex items-center gap-3 text-xs font-bold text-indigo-200/60">
+                                        {trip.views > 0 && <span className="flex items-center gap-1.5"><Eye className="w-3.5 h-3.5" /> {trip.views}</span>}
+                                        {trip.forks > 0 && <span className="flex items-center gap-1.5"><GitFork className="w-3.5 h-3.5" /> {trip.forks}</span>}
                                     </div>
                                 )}
                             </div>
 
-                            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight drop-shadow-xl leading-tight line-clamp-2">
+                            <AuroraGradientText
+                                as="h1"
+                                className="text-4xl md:text-6xl font-black tracking-tighter leading-tight drop-shadow-2xl"
+                                variant="primary"
+                            >
                                 {trip.name}
-                            </h1>
+                            </AuroraGradientText>
 
                             <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-white/90">
                                 <div className="flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-lg backdrop-blur-sm border border-white/5"><MapPin className="w-4 h-4 text-indigo-400" /> {getLocalizedCityName(trip.city, trip.country, globalSettings.language) || trip.city}</div>
-                                <div className="flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-lg backdrop-blur-sm border border-white/5"><Calendar className="w-4 h-4 text-indigo-400" /> {trip.startDate ? `${formatDate(trip.startDate)} - ${formatDate(trip.endDate)}` : 'Dates not set'}</div>
+                                <div className="flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-lg backdrop-blur-sm border border-white/5"><Calendar className="w-4 h-4 text-indigo-400" /> {trip.startDate ? `${formatDate(trip.startDate)} - ${formatDate(trip.endDate)}` : t('trip.dates_not_set', 'Dates not set')}</div>
 
                                 {/* Active Users Avatars */}
                                 <div className="flex items-center gap-2 pl-2 border-l border-white/20" onClick={() => setIsMemberModalOpen(true)}>
@@ -1776,7 +1788,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                             </div>
 
                             {/* V1.9.7: Intelligent Summary Bar (Header Integration - Responsive) */}
-                            <div className="flex flex-col lg:flex-row items-center lg:gap-4 gap-3 px-5 py-2.5 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl ml-0 lg:ml-4 max-w-2xl w-full lg:w-auto mt-4 lg:mt-0">
+                            <div data-tour="trip-header" className="flex flex-col lg:flex-row items-center lg:gap-4 gap-3 px-5 py-2.5 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl ml-0 lg:ml-4 max-w-2xl w-full lg:w-auto mt-4 lg:mt-0">
                                 {/* Mobile: Top Row (Weather + Time + Clothes all in one line) */}
                                 <div className="flex items-center justify-between w-full lg:w-auto lg:justify-start gap-4">
                                     {/* Weather */}
@@ -1785,11 +1797,11 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                         <div className="text-3xl filter drop-shadow opacity-90">{dailyWeather?.icon || "🌤️"}</div>
                                         <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[9px] font-bold text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">Day</span>
+                                                <span className="text-[9px] font-bold text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">{t('weather.day', '日間')}</span>
                                                 <span className="text-xs font-bold text-white leading-none">{dailyWeather?.maxTemp ? `${dailyWeather.maxTemp}°C` : '--'}</span>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[9px] font-bold text-indigo-300 bg-indigo-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">Night</span>
+                                                <span className="text-[9px] font-bold text-indigo-300 bg-indigo-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">{t('weather.night', '夜間')}</span>
                                                 <span className="text-xs font-bold text-white/80 leading-none">{dailyWeather?.minTemp ? `${dailyWeather.minTemp}°C` : '--'}</span>
                                             </div>
                                         </div>
@@ -1813,10 +1825,10 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                         <>
                                             <div className="hidden lg:block h-8 w-px bg-white/10" />
                                             <div className="hidden sm:flex flex-col justify-center min-w-fit items-end lg:items-start">
-                                                <span className="text-[9px] uppercase tracking-wider text-white/40 font-bold mb-0.5">TIME</span>
+                                                <span className="text-[9px] uppercase tracking-wider text-white/40 font-bold mb-0.5">{t('weather.time', '時區')}</span>
                                                 <div className="flex items-center gap-1.5 text-white/90">
                                                     <Clock className="w-3.5 h-3.5 opacity-80" />
-                                                    <span className="text-xs font-bold whitespace-nowrap">當地 {timeDiff > 0 ? `+${timeDiff}` : timeDiff}h</span>
+                                                    <span className="text-xs font-bold whitespace-nowrap">{t('weather.local', '當地')} {timeDiff > 0 ? `+${timeDiff}` : timeDiff}h</span>
                                                 </div>
                                             </div>
                                         </>
@@ -1829,7 +1841,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                         <div className="hidden lg:block h-8 w-px bg-white/10 mx-1" />
                                         <div className="w-full lg:w-auto lg:flex-1 min-w-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-white/10">
                                             <div className="flex items-center justify-between lg:justify-start gap-2 mb-1 lg:mb-0.5">
-                                                <span className="text-[9px] uppercase tracking-widest text-indigo-300 font-black">DAILY INSIGHT</span>
+                                                <span className="text-[9px] uppercase tracking-widest text-indigo-300 font-black">{t('trip.daily_insight', 'DAILY INSIGHT')}</span>
                                             </div>
                                             <div className="flex items-start gap-2 bg-indigo-500/10 lg:bg-transparent p-2 lg:p-0 rounded-lg lg:rounded-none">
                                                 <Info className="w-3.5 h-3.5 text-indigo-400 mt-0.5 flex-shrink-0" />
@@ -1911,13 +1923,16 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
 
                             {/* Plan Trip Button (Primary) */}
                             <div className="relative">
-                                <button
+                                <AuroraButton
+                                    data-tour="add-item"
                                     onClick={() => setIsPlanMenuOpen(!isPlanMenuOpen)}
-                                    className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black shadow-lg shadow-indigo-900/30 transition-all active:scale-95 border border-indigo-400/20"
+                                    variant="primary"
+                                    size="lg"
+                                    icon={Plus}
+                                    className="px-8 shadow-xl shadow-indigo-500/30"
                                 >
-                                    <Plus className="w-5 h-5" />
-                                    <span className="inline">{t('trip.actions.plan_trip') || '行程規劃'}</span>
-                                </button>
+                                    {t('trip.actions.plan_trip') || '行程規劃'}
+                                </AuroraButton>
                                 {isPlanMenuOpen && (
                                     <>
                                         <div className="fixed inset-0 z-[90]" onClick={() => setIsPlanMenuOpen(false)}></div>
@@ -1926,7 +1941,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                                 <Edit3 className="w-4 h-4 text-blue-500" /> {t('trip.actions.manual_add') || '手動新增'}
                                             </button>
                                             <button onClick={() => { setAIMode('full'); setIsAIModal(true); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-3 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors rounded-xl font-medium dark:text-white text-gray-700">
-                                                <BrainCircuit className="w-4 h-4 text-purple-500" /> Jarvis 建議行程
+                                                <BrainCircuit className="w-4 h-4 text-purple-500" /> {t('trip.actions.jarvis_suggest') || 'Jarvis 建議行程'}
                                             </button>
                                             <button onClick={() => { handleOptimizeSchedule(); setIsPlanMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-3 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors rounded-xl font-medium dark:text-white text-gray-700">
                                                 <Sparkles className="w-4 h-4 text-amber-500" /> {t('trip.actions.jarvis_optimize') || 'Jarvis 排程優化'}
@@ -1943,10 +1958,12 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                 <div className="max-w-7xl mx-auto px-4">
                     {/* Static Tabs Navigation - Wrapped in Container */}
                     <div className="max-w-7xl mx-auto">
-                        <div className="flex items-center justify-between gap-4 mb-4">
-                            {/* Functional Tabs (Scrollable) */}
-                            <div className="flex-1 overflow-x-auto scrollbar-hide flex gap-2 py-1 px-1" style={{ scrollbarWidth: 'none' }} data-tour="tab-nav">
-                                {[
+                        {/* V2.0 Aurora Tabs Navigation */}
+                        <div className="max-w-7xl mx-auto mb-6 sticky top-0 z-40 py-4 bg-gray-900/90 backdrop-blur-md -mx-4 px-4 md:static md:bg-transparent md:backdrop-blur-none md:p-0 md:m-auto">
+                            <AuroraTabs
+                                activeTab={activeTab}
+                                onTabChange={setActiveTab}
+                                tabs={[
                                     { id: 'itinerary', label: t('trip.tabs.itinerary'), icon: Calendar },
                                     { id: 'packing', label: t('trip.tabs.packing'), icon: ShoppingBag },
                                     { id: 'shopping', label: t('trip.tabs.shopping'), icon: ShoppingBag },
@@ -1957,19 +1974,8 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                     { id: 'insurance', label: t('trip.tabs.insurance'), icon: Shield },
                                     { id: 'emergency', label: t('trip.tabs.emergency'), icon: Siren },
                                     { id: 'visa', label: t('trip.tabs.visa'), icon: FileCheck }
-                                ].map(t => (
-                                    <button
-                                        key={t.id}
-                                        onClick={() => setActiveTab(t.id)}
-                                        data-tour={`${t.id}-tab`}
-                                        className={`flex items-center px-4 py-2 rounded-full font-black tracking-tighter text-xs transition-all duration-300 whitespace-nowrap transform hover:scale-105 active:scale-95 ${activeTab === t.id ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-xl shadow-indigo-600/30 scale-105' : (isDarkMode ? 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/60 border border-white/5' : 'bg-gray-100/80 text-gray-600 hover:bg-gray-100')}`}
-                                    >
-                                        <t.icon className="w-4 h-4 mr-2" />{t.label}
-                                    </button>
-                                ))}
-
-                            </div>
-
+                                ]}
+                            />
                         </div>
                         {/* Footprints Tab (Replaces Journal) */}
                         {
@@ -2074,6 +2080,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                     buttonPrimary={buttonPrimary}
                                     glassCard={glassCard}
                                     isSimulation={isSimulation}
+                                    currentLang={currentLang}
                                 />
                             )
                         }
@@ -2093,6 +2100,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                     onSaveVisa={handleSaveVisa}
                                     inputClasses={inputClasses}
                                     glassCard={glassCard}
+                                    currentLang={currentLang}
                                 />
                             )
                         }
@@ -2107,6 +2115,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                     emergencyInfoContent={emergencyInfoContent}
                                     glassCard={glassCard}
                                     trip={trip}
+                                    currentLang={currentLang}
                                 />
                             )
                         }
@@ -2124,6 +2133,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                     onOpenSmartImport={onOpenSmartImport}
                                     onOpenSmartExport={() => setIsSmartExportOpen(true)}
                                     onAddItem={() => { setAddType('expense'); setIsAddModal(true); }}
+                                    currentLang={currentLang}
                                 />
                             )
                         }
@@ -2172,6 +2182,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                     onGenerateList={handleGeneratePackingList}
                                     onClearList={handleClearPackingList}
                                     glassCard={glassCard}
+                                    currentLang={currentLang}
                                 />
                             )
                         }
@@ -2190,6 +2201,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                     glassCard={glassCard}
                                     onOpenSmartImport={onOpenSmartImport}
                                     onOpenSmartExport={() => setIsSmartExportOpen(true)}
+                                    currentLang={currentLang}
                                 />
                             )
                         }
@@ -2291,7 +2303,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                         >
                             {/* Header */}
                             <div className="flex justify-between items-center mb-6 pl-2">
-                                <span className="text-sm font-black tracking-wide opacity-80 uppercase">More Features</span>
+                                <span className="text-sm font-black tracking-wide opacity-80 uppercase">{t('trip.mobile.more_features', 'More Features')}</span>
                                 <div className="w-10 h-1 bg-gray-300/30 rounded-full mx-auto absolute left-1/2 -translate-x-1/2 top-3" />
                             </div>
 

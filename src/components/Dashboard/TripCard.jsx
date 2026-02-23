@@ -1,8 +1,9 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { MapPin as MapIcon, Calendar, Shirt, Sun, Moon, CheckCircle2, Cloud, FileText } from 'lucide-react';
-import { getLocalizedCountryName, getLocalizedCityName, formatDate, getTripSummary, glassCard, getSmartTips } from '../../utils/tripUtils';
+import { getLocalizedCountryName, getLocalizedCityName, formatDate, getTripSummary, getSmartTips } from '../../utils/tripUtils';
 import { COUNTRIES_DATA, DEFAULT_BG_IMAGE } from '../../constants/appData';
+import { AuroraCard } from '../Shared/AuroraComponents';
 
 const TripCard = ({ trip, currentLang, onSelect, setGlobalBg, cardWeather, isDarkMode }) => {
     const { t } = useTranslation();
@@ -53,15 +54,23 @@ const TripCard = ({ trip, currentLang, onSelect, setGlobalBg, cardWeather, isDar
     const dateRange = `${formatDate(trip.startDate)} - ${formatDate(trip.endDate)}`;
 
     return (
-        <div
+        <AuroraCard
             onClick={() => { setGlobalBg(COUNTRIES_DATA[trip.country]?.image || DEFAULT_BG_IMAGE); onSelect(trip); }}
-            className={`h-64 relative overflow-hidden group cursor-pointer ${glassCard(isDarkMode)} border-white/5 hover:border-indigo-500/30 bg-slate-900/40 backdrop-blur-3xl shadow-2xl shadow-black/40 hover:shadow-indigo-500/20 transition-all duration-500 hover:-translate-y-1`}
+            className="h-64 cursor-pointer hover:-translate-y-1 hover:shadow-indigo-500/20 group"
+            noPadding={true}
         >
-            {/* Background Image */}
-            <div
-                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
-                style={{ backgroundImage: `url(${COUNTRIES_DATA[trip.country]?.image || DEFAULT_BG_IMAGE})` }}
-            ></div>
+            {/* Background Image with Fallback Logic */}
+            <div className="absolute inset-0">
+                <img
+                    src={COUNTRIES_DATA[trip.country]?.image || DEFAULT_BG_IMAGE}
+                    alt={trip.country}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = DEFAULT_BG_IMAGE;
+                    }}
+                />
+            </div>
 
             {/* Aurora Gradient Overlay - V2.0 */}
             <div className="absolute inset-x-0 bottom-0 h-4/5 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
@@ -123,12 +132,16 @@ const TripCard = ({ trip, currentLang, onSelect, setGlobalBg, cardWeather, isDar
                                     <div className="flex items-center gap-2 w-1/2 justify-center border-r border-white/5 pr-2">
                                         <Sun className="w-3.5 h-3.5 text-amber-400" />
                                         <span className="text-sm font-bold">{cardWeather.temp.split('/')[0].trim()}</span>
-                                        <span className="opacity-50 text-[10px] scale-90">{cardWeather.icon}</span>
+                                        <div className="w-3.5 h-3.5 flex items-center justify-center opacity-70 [&>svg]:w-full [&>svg]:h-full">
+                                            {cardWeather.icon}
+                                        </div>
                                     </div>
                                     <div className="flex items-center gap-2 w-1/2 justify-center pl-2">
                                         <Moon className="w-3.5 h-3.5 text-indigo-400" />
                                         <span className="text-sm font-bold">{(cardWeather.temp.split('/')[1] || '').trim() || '--'}</span>
-                                        <span className="opacity-50 text-[10px] scale-90">{cardWeather.icon}</span>
+                                        <div className="w-3.5 h-3.5 flex items-center justify-center opacity-70 [&>svg]:w-full [&>svg]:h-full">
+                                            {cardWeather.icon}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -168,7 +181,7 @@ const TripCard = ({ trip, currentLang, onSelect, setGlobalBg, cardWeather, isDar
                     </div>
                 </div>
             </div>
-        </div>
+        </AuroraCard>
     );
 };
 

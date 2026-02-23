@@ -92,16 +92,36 @@ export default defineConfig({
       }
     })
   ],
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      'react-i18next',
+      'i18next',
+      'lucide-react',
+      'firebase/app',
+      'firebase/auth',
+      'firebase/firestore',
+      'firebase/storage'
+    ],
+    exclude: [
+      // Exclude large data files from pre-bundling to speed up dev server
+      '@/constants/appData',
+      '@/constants/tripData',
+      '@/constants/masterCityDB'
+    ]
+  },
   server: {
-    port: 5174,
+    port: 5175,
     strictPort: true,
+    host: true,
     hmr: {
-      protocol: 'ws',
-      host: 'localhost',
-      port: 5174
+      // Reduce HMR overhead for large files
+      overlay: false
     },
     headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+      'Cross-Origin-Opener-Policy': 'unsafe-none',
       'Cross-Origin-Embedder-Policy': 'unsafe-none'
     }
   },
@@ -127,7 +147,7 @@ export default defineConfig({
   },
   define: {
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
-    __APP_VERSION__: JSON.stringify('V1.8.3')
+    __APP_VERSION__: JSON.stringify('V2.0.1')
   }
 })
 // Force Restart: Mon Jan 12 16:56:41 HKT 2026

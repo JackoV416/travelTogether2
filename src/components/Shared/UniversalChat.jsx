@@ -40,9 +40,12 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, activeTab = 't
     }, [isOpen]);
 
     // V1.2.2: Real-time Message Listener for Trip Chat (V1.2.24: Simulation Support)
+    // Fix: Unstable trip.chatMessages causing infinite loop. Serialize for stable dependency.
+    const chatMessagesStr = JSON.stringify(trip?.chatMessages || []);
+
     useEffect(() => {
         if (!isOpen || activeTab !== 'trip' || !trip?.id) {
-            setMessages([]);
+            setMessages(prev => prev.length === 0 ? prev : []);
             return;
         }
 
@@ -62,7 +65,13 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, activeTab = 't
                     type: 'text'
                 };
             });
-            setMessages(simMessages);
+
+            // Only update if content changed
+            setMessages(prev => {
+                if (JSON.stringify(prev) === JSON.stringify(simMessages)) return prev;
+                return simMessages;
+            });
+
             setIsLoading(false);
             setTimeout(() => {
                 scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -92,7 +101,7 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, activeTab = 't
         });
 
         return () => unsubscribe();
-    }, [isOpen, activeTab, trip?.id, trip?.chatMessages]);
+    }, [isOpen, activeTab, trip?.id, chatMessagesStr]);
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
@@ -225,20 +234,48 @@ const UniversalChat = ({ isOpen, onClose, trip, user, isDarkMode, activeTab = 't
         } catch (error) {
             console.error("Jarvis AI error:", error);
 
-            if (error.message === 'Operation aborted') {
+            if (error.message === 'Operation aborted' || error.message === AI_ERRORS.ABORTED) {
                 const abortedMsg = {
                     id: Date.now() + 1,
                     role: 'jarvis',
-                    text: '已取消操作。',
+                    text: t('chat.jarvis.cancel_generation') || '已取消操作。',
                     isError: true,
                     time: new Date().toISOString()
                 };
                 setJarvisMessages(prev => [...prev, abortedMsg]);
+                setIsJarvisThinking(false);
+                setJarvisProgress({ message: '', percent: 0 });
                 return;
             }
 
-            // Parse error for user-friendly message
-            let errorText = '抱歉，我暫時無法回應。請稍後再試，或聯繫客服支援。';
+            // --- V2.0.2 AI Quota Handling Enhancement ---
+            let errorText = t('common.report_issue') || '抱歉，我暫時無法回應。請稍後再試，或聯繫客服支援。';
+
+            if (error.message && error.message.includes(AI_ERRORS.QUOTA)) {
+                // Determine usage context dynamically from localStorage
+                let used = 5, total = 5;
+                try {
+                    const usageData = JSON.parse(localStorage.getItem('travelTogether_aiUsage') || '{}');
+                    used = usageData.count || 5;
+
+                    const settingsData = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+                    if (settingsData.userGeminiLimit) {
+                        total = parseInt(settingsData.userGeminiLimit);
+                    }
+                } catch (e) { }
+
+                errorText = t('quota.limit_reached', { used, total });
+
+                // Also trigger a UI toast for high visibility
+                toast.error(errorText, {
+                    duration: 6000,
+                    icon: '🛑',
+                    style: { background: '#ef4444', color: '#fff', borderRadius: '12px' }
+                });
+            } else {
+                errorText = t('common.report_issue') + ' (' + (error.message || 'Error') + ')';
+            }
+            // ------------------------------------------
             let isQuotaError = false;
 
             const errorMsg = error.message || '';

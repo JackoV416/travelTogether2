@@ -8,15 +8,17 @@ import { Shirt, Footprints, ShoppingBag, PieChart, Image as ImageIcon, Map as Ma
 import { format } from 'date-fns';
 import { zhHK, enUS, zhTW } from 'date-fns/locale';
 import { getLocalizedCountryName, getLocalizedCityName, getTripSummary, getDaysArray, getWeatherForecast, buildDailyReminder, getTimeDiff, getSafeCountryInfo, getHolidayMap, glassCard } from '../../utils/tripUtils'; // Adjust path
-import { getWeather, getWeatherInfo } from '../../services/weather';
+import { getWeather, getWeatherInfo } from '../../services/weather.jsx';
 import { ItineraryTab, BudgetTab, ShoppingTab, PackingTab, FootprintsTab, GalleryTab } from '../TripDetail/tabs'; // Reuse existing Tabs
 import { CITY_IMAGES, COUNTRIES_DATA, DEFAULT_BG_IMAGE, CITY_COORDS } from '../../constants/appData';
+import { AuroraGradientText, AuroraButton } from '../Shared/AuroraComponents';
 import { SEO } from '../Shared/SEO'; // Import SEO Component
 // You might need to adjust imports depending on your folder link
 // Assuming ItineraryTab is at ../TripDetail/tabs/ItineraryTab
 
 import { forkTrip } from '../../services/forkTrip'; // V1.9.0
 import ErrorPage from '../Shared/ErrorPage'; // V1.9.2
+import { getMockTripDetails } from '../../constants/publicTripsData'; // V1.9.12: Mock trip support
 
 const PublicTripView = ({ user, isDarkMode, tripId: propTripId, setGlobalBg }) => {
     const { tripId: paramTripId } = useParams();
@@ -63,6 +65,28 @@ const PublicTripView = ({ user, isDarkMode, tripId: propTripId, setGlobalBg }) =
     useEffect(() => {
         const fetchTrip = async () => {
             setError(null);
+
+            // V1.9.12: Handle Mock Trip IDs locally (no Firebase call needed)
+            if (tripId?.startsWith('mock_')) {
+                try {
+                    const mockData = getMockTripDetails(tripId, i18n.language);
+                    if (mockData) {
+                        setTrip({
+                            id: tripId,
+                            isPublic: true,
+                            isMock: true,
+                            ...mockData
+                        });
+                        setLoading(false);
+                        return; // Exit early - no Firebase needed
+                    }
+                } catch (mockErr) {
+                    console.warn('Mock trip generation failed:', mockErr);
+                    // Fall through to Firebase fetch as fallback
+                }
+            }
+
+            // Standard Firebase fetch for real trips
             try {
                 const docRef = doc(db, 'trips', tripId);
                 const docSnap = await getDoc(docRef);
@@ -114,7 +138,7 @@ const PublicTripView = ({ user, isDarkMode, tripId: propTripId, setGlobalBg }) =
         if (tripId) {
             fetchTrip();
         }
-    }, [tripId, user]);
+    }, [tripId, user, i18n.language]);
 
     // Fetch Profiles (Owner & Members)
     useEffect(() => {
@@ -312,9 +336,13 @@ const PublicTripView = ({ user, isDarkMode, tripId: propTripId, setGlobalBg }) =
                                     <Globe className="w-3.5 h-3.5" />
                                     <span>{t('trip.public_view', 'PUBLIC ITINERARY')}</span>
                                 </div>
-                                <h1 className="text-3xl md:text-5xl font-black text-white mb-2 leading-tight drop-shadow-sm">
-                                    {trip.name}
-                                </h1>
+                                <AuroraGradientText
+                                    as="h1"
+                                    className="text-3xl md:text-5xl font-black text-white mb-2 leading-tight drop-shadow-sm"
+                                    variant="primary"
+                                >
+                                    {i18n.language?.includes('zh') && trip.name_zh ? trip.name_zh : trip.name}
+                                </AuroraGradientText>
                                 <div className="flex flex-wrap items-center gap-4 text-white/80 text-sm md:text-base font-medium">
                                     <span className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
                                         <Calendar className="w-4 h-4" />
@@ -333,14 +361,16 @@ const PublicTripView = ({ user, isDarkMode, tripId: propTripId, setGlobalBg }) =
                                 <div className="flex items-center justify-between w-full lg:w-auto lg:justify-start gap-4">
                                     {/* Weather - Day/Night Split */}
                                     <div className="flex items-center gap-3 min-w-fit">
-                                        <div className="text-3xl filter drop-shadow opacity-90">{dailyWeather?.icon || "🌤️"}</div>
+                                        <div className="w-10 h-10 flex items-center justify-center text-white/90 drop-shadow-md text-3xl [&_svg]:w-8 [&_svg]:h-8">
+                                            {dailyWeather?.icon || "🌤️"}
+                                        </div>
                                         <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[9px] font-bold text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">Day</span>
+                                                <span className="text-[9px] font-bold text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">{t('weather.day', '日間')}</span>
                                                 <span className="text-xs font-bold text-white leading-none">{dailyWeather?.maxTemp ? `${dailyWeather.maxTemp}°C` : '--'}</span>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[9px] font-bold text-indigo-300 bg-indigo-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">Night</span>
+                                                <span className="text-[9px] font-bold text-indigo-300 bg-indigo-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">{t('weather.night', '夜間')}</span>
                                                 <span className="text-xs font-bold text-white/80 leading-none">{dailyWeather?.minTemp ? `${dailyWeather.minTemp}°C` : '--'}</span>
                                             </div>
                                         </div>
@@ -364,10 +394,10 @@ const PublicTripView = ({ user, isDarkMode, tripId: propTripId, setGlobalBg }) =
                                         <>
                                             <div className="hidden lg:block h-8 w-px bg-white/10" />
                                             <div className="flex flex-col justify-center min-w-fit items-end lg:items-start">
-                                                <span className="text-[9px] uppercase tracking-wider text-white/40 font-bold mb-0.5">TIME</span>
+                                                <span className="text-[9px] uppercase tracking-wider text-white/40 font-bold mb-0.5">{t('weather.time', '時區')}</span>
                                                 <div className="flex items-center gap-1.5 text-white/90">
                                                     <Clock className="w-3.5 h-3.5 opacity-80" />
-                                                    <span className="text-xs font-bold whitespace-nowrap">當地 {timeDiff > 0 ? `+${timeDiff}` : timeDiff}h</span>
+                                                    <span className="text-xs font-bold whitespace-nowrap">{t('weather.local', '當地')} {timeDiff > 0 ? `+${timeDiff}` : timeDiff}h</span>
                                                 </div>
                                             </div>
                                         </>
@@ -378,15 +408,31 @@ const PublicTripView = ({ user, isDarkMode, tripId: propTripId, setGlobalBg }) =
 
                             {/* Action Buttons */}
                             <div className="flex items-center gap-3">
+                                {/* Share Button */}
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(window.location.href);
+                                        // Optional: Add toast notification here if available
+                                        alert(t('common.link_copied', 'Link copied to clipboard!'));
+                                    }}
+                                    className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md border border-white/10 transition-all active:scale-95"
+                                    title={t('trip.actions.share', 'Share')}
+                                >
+                                    <Share2 className="w-5 h-5" />
+                                </button>
+
                                 {user ? (
-                                    <button
+                                    <AuroraButton
                                         onClick={handleFork}
                                         disabled={isForking}
-                                        className={`flex items-center gap-2 px-6 py-3 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/20 transition-all transform hover:scale-105 active:scale-95 ${isForking ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                        variant="primary"
+                                        size="lg"
+                                        icon={isForking ? Loader2 : GitFork}
+                                        loading={isForking}
+                                        className="shadow-xl shadow-indigo-500/30"
                                     >
-                                        {isForking ? <Loader2 className="w-5 h-5 animate-spin" /> : <GitFork className="w-5 h-5" />}
-                                        <span>{isForking ? t('trip.forking', '複製中...') : t('trip.fork_trip', '複製此行程')}</span>
-                                    </button>
+                                        {isForking ? t('trip.forking', '複製中...') : t('trip.fork_trip', '複製此行程')}
+                                    </AuroraButton>
                                 ) : (
                                     <button
                                         onClick={() => navigate('/login?redirect=/trip/' + tripId)}
@@ -439,7 +485,7 @@ const PublicTripView = ({ user, isDarkMode, tripId: propTripId, setGlobalBg }) =
                                             </div>
                                         )}
                                         <div className="absolute -bottom-1 -right-1 bg-indigo-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold border border-white dark:border-gray-800">
-                                            OWNER
+                                            {t('trip.roles.owner', 'OWNER')}
                                         </div>
                                     </div>
                                     <div>
@@ -499,11 +545,11 @@ const PublicTripView = ({ user, isDarkMode, tripId: propTripId, setGlobalBg }) =
                     </div>
 
                     <div className="flex items-center gap-6 text-sm font-medium opacity-70">
-                        <div className="flex items-center gap-1.5" title="Views">
+                        <div className="flex items-center gap-1.5" title={t('common.tooltips.views')}>
                             <Eye className="w-4 h-4" />
                             <span>{trip.viewCount || 0}</span>
                         </div>
-                        <div className="flex items-center gap-1.5" title="Forks">
+                        <div className="flex items-center gap-1.5" title={t('common.tooltips.forks')}>
                             <GitFork className="w-4 h-4" />
                             <span>{trip.forkCount || 0}</span>
                         </div>

@@ -66,25 +66,23 @@ if (API_KEYS.length === 0) {
     console.warn("[Gemini AI] No valid API keys found. Add VITE_GEMINI_API_KEY to .env");
 }
 
-// V1.4.4: Model priority chain - Updated to current models
+// V2.0.2: Model priority chain - Updated to Gemini 3.1
 const MODEL_CHAIN = [
     ...(getStoredModel() ? [getStoredModel()] : []), // User's custom model comes first!
-    "gemini-2.5-flash",       // FAST: Current fastest model
-    "gemini-2.5-flash-lite",  // BACKUP: Lower limits but available
-    "gemini-1.5-flash",       // STABLE: Reliable fallback
-    "gemini-1.5-pro",         // HIGH-IQ: Complex tasks fallback
+    "gemini-3.1-flash",       // FAST: Current fastest model
+    "gemini-3.1-flash-lite",  // BACKUP: Lower limits but available
+    "gemini-3.1-pro",         // HIGH-IQ: Complex tasks fallback
 ];
 
 let currentKeyIndex = 0;
 let currentModelIndex = 0;
 
-// V1.4.4: Enhanced MODEL_LIMITS with all current models
+// V2.0.2: Enhanced MODEL_LIMITS with Gemini 3.1 models
 const MODEL_LIMITS = {
     "default": { RPM: 2, TPM: 32000, RPD: 50 },
-    "gemini-2.5-flash": { RPM: 5, TPM: 250000, RPD: 20 },
-    "gemini-2.5-flash-lite": { RPM: 10, TPM: 250000, RPD: 20 },
-    "gemini-1.5-flash": { RPM: 5, TPM: 250000, RPD: 20 },
-    "gemini-1.5-pro": { RPM: 2, TPM: 32000, RPD: 50 },
+    "gemini-3.1-flash": { RPM: 5, TPM: 250000, RPD: 20 },
+    "gemini-3.1-flash-lite": { RPM: 10, TPM: 250000, RPD: 20 },
+    "gemini-3.1-pro": { RPM: 2, TPM: 32000, RPD: 50 },
 };
 
 // Internal tracker: Map<modelName, { timestamps: [], tokens: [] }>

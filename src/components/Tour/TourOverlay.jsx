@@ -32,7 +32,8 @@ const TourOverlay = ({ isDarkMode }) => {
         }
 
         let retryCount = 0;
-        const maxRetries = 20; // 2 seconds total
+        const maxRetries = 30; // 4.5 seconds total
+        const retryInterval = 150; // Check every 150ms
 
 
         const handleComplete = () => {
@@ -57,12 +58,14 @@ const TourOverlay = ({ isDarkMode }) => {
                 target.scrollIntoView({ behavior: 'smooth', block: 'center' });
             } else if (retryCount < maxRetries) {
                 retryCount++;
-                setTimeout(findTarget, 100);
+                setTimeout(findTarget, retryInterval);
+            } else {
+                console.warn(`Tour: Target not found after ${maxRetries} retries:`, currentStepData.target);
             }
         };
 
-        // Initial find
-        const timer = setTimeout(findTarget, 300);
+        // Initial find - wait longer for navigation to complete
+        const timer = setTimeout(findTarget, 600);
 
         // Update on resize/scroll
         const handleInteraction = () => {

@@ -1,8 +1,9 @@
 import React from 'react';
 import { Plus, Globe, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { glassCard, getWeatherForecast } from '../../utils/tripUtils';
+import { getWeatherForecast } from '../../utils/tripUtils';
 import { buttonPrimary, buttonSecondary } from '../../constants/styles';
+import { AuroraCard, AuroraGradientText } from '../Shared/AuroraComponents';
 import TripCard from './TripCard';
 import SkeletonLoader from '../Shared/SkeletonLoader';
 import EmptyState from '../Shared/EmptyState';
@@ -31,13 +32,36 @@ const TripsGrid = ({
     setIsSmartImportModalOpen,
     setIsSmartExportOpen,
     setIsCreateModalOpen,
-    searchFilter
+    searchFilter,
+    isMockMode
 }) => {
     const { t } = useTranslation();
+
+    // V1.2.4: Mock Trip for Tutorial
+    const displayTrips = React.useMemo(() => {
+        if (isMockMode && trips.length === 0) {
+            return [{
+                id: 'mock-trip',
+                name: 'Tokyo Adventure (Tutorial)',
+                country: 'Japan',
+                city: 'Tokyo',
+                startDate: new Date().toISOString(),
+                endDate: new Date(Date.now() + 86400000 * 5).toISOString(),
+                image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&q=80',
+                isMock: true
+            }];
+        }
+        return trips;
+    }, [trips, isMockMode]);
+
     return (
         <div data-tour="dashboard-overview">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-                <h2 className="text-2xl font-bold border-l-4 border-indigo-500 pl-3">{t('dashboard.my_trips') || '我的行程'}</h2>
+            {/* Header: Aurora Style */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6 px-2">
+                <AuroraGradientText as="h2" className="text-xl font-black flex items-center gap-2">
+                    <span className="text-2xl">✈️</span> {t('dashboard.my_trips') || '我的行程'}
+                </AuroraGradientText>
+
                 <div className="flex gap-2">
                     <button
                         onClick={() => setIsSmartImportModalOpen(true)}
@@ -60,14 +84,18 @@ const TripsGrid = ({
                 </div>
             </div>
 
-            {/* Search Filter Bar */}
-            {searchFilter && <div className="mb-2">{searchFilter}</div>}
+            {/* Search Filter Bar: Unified Design */}
+            {searchFilter && (
+                <AuroraCard className="p-4 mb-6 relative z-30" noPadding={false}>
+                    {searchFilter}
+                </AuroraCard>
+            )}
 
             {loadingTrips ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <SkeletonLoader type="card" count={3} isDarkMode={isDarkMode} />
                 </div>
-            ) : trips.length === 0 ? (
+            ) : displayTrips.length === 0 ? (
                 <EmptyState
                     icon={Globe}
                     title={t('empty.title', '尚無行程')}
@@ -78,7 +106,7 @@ const TripsGrid = ({
                 />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {trips.map((trip, index) => (
+                    {displayTrips.map((trip, index) => (
                         <div
                             key={trip.id}
                             className="animate-fade-in"
@@ -98,15 +126,16 @@ const TripsGrid = ({
                             />
                         </div>
                     ))}
-                    <div
-                        className={`${glassCard(isDarkMode)} h-64 flex flex-col items-center justify-center text-center opacity-40 hover:opacity-100 cursor-pointer border-dashed border-white/20 hover:border-indigo-500/50 transition-all`}
+                    <AuroraCard
+                        className="h-64 flex flex-col items-center justify-center text-center opacity-40 hover:opacity-100 cursor-pointer border-dashed border-2 border-slate-300 dark:border-white/20 hover:border-indigo-500 dark:hover:border-indigo-500 transition-all bg-transparent shadow-none hover:shadow-lg hover:shadow-indigo-500/10"
                         onClick={() => setIsCreateModalOpen(true)}
+                        noPadding={false}
                     >
-                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                            <Plus className="w-6 h-6 text-indigo-400" />
+                        <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                            <Plus className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
                         </div>
-                        <p className="font-bold text-slate-400 group-hover:text-white transition-colors">{t('dashboard.create_more') || '建立更多行程'}</p>
-                    </div>
+                        <p className="font-bold text-slate-500 dark:text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-white transition-colors">{t('dashboard.create_more') || '建立更多行程'}</p>
+                    </AuroraCard>
                 </div>
             )}
         </div>

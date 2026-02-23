@@ -4,12 +4,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import SearchFilterBar from '../../Shared/SearchFilterBar';
 import EmptyState from '../../Shared/EmptyState';
 // Duplicate Search removed
-import {
-    Map as MapIcon, MapPinned, List, Navigation, PlaneTakeoff, Hotel, Utensils, Plane,
-    Bus, ShoppingBag, Clock, CalendarDays, GripVertical, MapPin, Car, Route, Train, Wand2,
-    Plus, Sparkles, BrainCircuit, Edit3, Info, AlertTriangle, Quote, CheckSquare, Trash2, ExternalLink, FileText, Loader2, ArrowRight,
-    Undo2, Redo2, History, LogOut, LogIn, Sun, Moon, Shirt, Columns, KanbanSquare, MonitorPlay
-} from 'lucide-react';
+import { Search, CalendarDays, Filter, Plus, Clock, Map as MapIcon, RotateCcw, MoreHorizontal, ArrowRight, Share2, Sparkles, AlertTriangle, Shirt, Sun, Moon, Info, GripVertical, CheckSquare, Edit3, Trash2, List, KanbanSquare, MonitorPlay, Columns, Link, BrainCircuit, Undo2, Redo2, Loader2, LogIn, LogOut } from 'lucide-react';
 import BoardView from '../views/BoardView';
 import MapView2 from '../views/MapView2';
 import { CURRENCIES, COUNTRIES_DATA, CITY_COORDS } from '../../../constants/appData';
@@ -27,6 +22,7 @@ import { formatTime, parseTime, detectTimeConflicts } from '../../../utils/timeU
 import { generateDailyAnalysis, suggestTransportBetweenSpots } from '../../../services/ai-parsing';
 import { useTour } from '../../../contexts/TourContext'; // Fix: Import useTour
 import ItemDetailModal from '../../Modals/ItemDetailModal';
+import { AuroraCard, AuroraTabs } from '../../Shared/AuroraComponents';
 
 
 
@@ -722,26 +718,28 @@ const ItineraryTab = ({
                                     <button
                                         key={d}
                                         onClick={() => setSelectDate(d)}
-                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all text-left group relative overflow-hidden ${isActive
-                                            ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-500/30 scale-100 ring-2 ring-indigo-400/30'
-                                            : (isDarkMode ? 'bg-gray-800/40 border-transparent hover:bg-gray-800 text-gray-400 hover:text-gray-200' : 'bg-white/60 border-transparent hover:bg-white text-gray-500 hover:text-gray-800')
+                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all text-left group relative overflow-hidden mb-2 ${isActive
+                                            ? 'bg-gradient-to-r from-indigo-600/90 to-purple-600/90 text-white border-white/20 shadow-lg shadow-indigo-500/20 backdrop-blur-md'
+                                            : 'bg-gray-800/20 border-white/5 hover:bg-gray-800/40 text-gray-400 hover:text-gray-200 backdrop-blur-sm'
                                             }`}
                                     >
-                                        <div>
-                                            <div className={`text-[10px] font-bold uppercase mb-0.5 ${isActive ? 'opacity-80' : 'opacity-50'}`}>{getWeekday(d, t)}</div>
+                                        <div className="relative z-10">
+                                            <div className={`text-[10px] font-bold uppercase mb-0.5 ${isActive ? 'text-indigo-200' : 'opacity-50'}`}>{getWeekday(d, t)}</div>
                                             <div className="font-black text-sm">{formatDate(d)}</div>
                                         </div>
-                                        <div className="flex flex-col items-end gap-1">
+                                        <div className="flex flex-col items-end gap-1 relative z-10">
                                             {(dName || hName) && (
-                                                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold truncate max-w-[80px] ${isActive ? 'bg-white/20 text-white' : 'bg-red-500/10 text-red-500'}`}>
+                                                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold truncate max-w-[80px] ${isActive ? 'bg-indigo-400/30 text-indigo-100 border border-indigo-300/20' : 'bg-red-500/10 text-red-400 border border-red-500/10'}`}>
                                                     {dName || hName}
                                                 </span>
                                             )}
-                                            {hasItems && !isActive && <div className={`w-1.5 h-1.5 rounded-full ${isDarkMode ? 'bg-indigo-400' : 'bg-indigo-500'}`} />}
+                                            {hasItems && !isActive && <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />}
                                         </div>
 
-                                        {/* Decoration for active state */}
-                                        {isActive && <div className="absolute right-0 top-0 bottom-0 w-1 bg-white/20"></div>}
+                                        {/* Aurora Glow Effect for Active */}
+                                        {isActive && (
+                                            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/20 via-purple-500/10 to-transparent pointer-events-none" />
+                                        )}
                                     </button>
                                 );
                             })}
@@ -785,8 +783,8 @@ const ItineraryTab = ({
                                 </span>
                             </button>
 
-                            {/* V1.2.6 View Switcher (Mobile Polished) */}
-                            <div className="flex items-center gap-1 p-1 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-x-auto scrollbar-hide w-full sm:w-auto max-w-full" data-tour="view-switcher">
+                            {/* V2.0 View Switcher (Aurora Style) */}
+                            <div className="flex items-center gap-1 p-1.5 bg-gray-900/60 backdrop-blur-xl rounded-full border border-white/10 shadow-lg overflow-x-auto scrollbar-hide w-full sm:w-auto max-w-full" data-tour="view-toggle">
                                 {[
                                     { id: 'list', icon: List, label: 'list' },
                                     { id: 'board', icon: Columns, label: 'board' },
@@ -797,14 +795,13 @@ const ItineraryTab = ({
                                     <button
                                         key={view.id}
                                         onClick={() => !isEditMode && setViewMode(view.id)}
-                                        className={`px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all outline-none relative whitespace-nowrap flex-shrink-0 ${viewMode === view.id
-                                            ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm z-10 font-bold'
-                                            : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5'
-                                            } ${isEditMode && viewMode !== view.id ? 'opacity-40 cursor-not-allowed grayscale' : ''}`}
-                                        title={isEditMode ? t('trip.actions.finish_edit_first') : t(`trip.views.${view.label}`)}
+                                        className={`p-2 rounded-full flex items-center justify-center transition-all outline-none relative flex-shrink-0 ${viewMode === view.id
+                                            ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg'
+                                            : 'text-gray-400 hover:text-white hover:bg-white/10'
+                                            } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        title={view.label}
                                     >
                                         <view.icon className="w-4 h-4" />
-                                        <span className="text-[10px] uppercase font-bold inline">{t(`trip.views.${view.label}`)}</span>
                                     </button>
                                 ))}
                             </div>
@@ -1271,8 +1268,8 @@ const ItineraryTab = ({
                                         {...droppableProvided.droppableProps}
                                         className={`relative space-y-4 pt-4 pb-6 pl-0 md:pl-4 rounded-2xl ${isDarkMode ? 'bg-gray-900/30' : 'bg-white/40'} backdrop-blur-sm p-4 border ${isDarkMode ? 'border-white/5' : 'border-gray-100'}`}
                                     >
-                                        {/* Timeline connector line */}
-                                        <div className={`absolute left-[25px] md:left-[39px] top-8 bottom-8 w-[3px] rounded-full ${isDarkMode ? 'bg-gradient-to-b from-indigo-500/40 via-indigo-500/20 to-transparent' : 'bg-gradient-to-b from-indigo-400/50 via-indigo-300/30 to-transparent'}`}></div>
+                                        {/* Timeline connector line (Aurora Glow) */}
+                                        <div className={`absolute left-[25px] md:left-[39px] top-8 bottom-8 w-[2px] rounded-full ${isDarkMode ? 'bg-gradient-to-b from-indigo-500 via-purple-500/50 to-transparent shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'bg-gradient-to-b from-indigo-400 via-purple-400/50 to-transparent shadow-[0_0_10px_rgba(99,102,241,0.3)]'}`}></div>
                                         {filteredItems.length === 0 ? (
                                             <EmptyState
                                                 icon={searchValue ? Search : CalendarDays}
@@ -1324,14 +1321,14 @@ const ItineraryTab = ({
                                                                         )}
                                                                         {/* Time Bubble & Line Connector (Unified) */}
                                                                         <div className="absolute left-0 top-0 flex flex-col items-center w-[36px] md:w-[60px]">
-                                                                            <div className={`mt-0 px-2 py-1 rounded-full text-[10px] font-bold tracking-tight z-20 shadow-sm border
-                                                        ${(item.type === 'flight' || (item.name || '').includes('航空')) ? 'bg-blue-600 text-white border-blue-400/30' :
-                                                                                    (item.type === 'immigration' || (item.name || '').includes('入境') || (item.name || '').includes('海關')) ? 'bg-amber-600 text-white border-amber-400/30' :
-                                                                                        ((item.name || '').includes('metro') || (item.name || '').includes('地鐵') || (item.name || '').includes('都營') || (item.name || '').includes('MTR')) ? 'bg-teal-600 text-white border-teal-400/30' :
-                                                                                            (item.type === 'train' || (item.name || '').includes('jr') || (item.name || '').includes('鐵') || (item.name || '').includes('express')) ? 'bg-emerald-600 text-white border-emerald-400/30' :
-                                                                                                (item.type === 'walk' || (item.name || '').includes('步')) ? 'bg-purple-600 text-white border-purple-400/30' :
-                                                                                                    'bg-indigo-600 text-white border-indigo-400/30'} 
-                                                        ${isDarkMode ? 'shadow-lg shadow-black/20' : ''}`}>
+                                                                            <div className={`relative mt-0 px-2.5 py-1.5 rounded-full text-[10px] font-black tracking-wider z-20 border backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl
+                                                                                ${(item.type === 'flight' || (item.name || '').includes('航空')) ? 'bg-blue-500/90 border-blue-400 text-white shadow-blue-500/40' :
+                                                                                    (item.type === 'immigration' || (item.name || '').includes('入境') || (item.name || '').includes('海關')) ? 'bg-amber-500/90 border-amber-400 text-white shadow-amber-500/40' :
+                                                                                        ((item.name || '').includes('metro') || (item.name || '').includes('地鐵') || (item.name || '').includes('都營') || (item.name || '').includes('MTR')) ? 'bg-teal-500/90 border-teal-400 text-white shadow-teal-500/40' :
+                                                                                            (item.type === 'train' || (item.name || '').includes('jr') || (item.name || '').includes('鐵') || (item.name || '').includes('express')) ? 'bg-emerald-500/90 border-emerald-400 text-white shadow-emerald-500/40' :
+                                                                                                (item.type === 'walk' || (item.name || '').includes('步')) ? 'bg-purple-500/90 border-purple-400 text-white shadow-purple-500/40' :
+                                                                                                    'bg-indigo-500/90 border-indigo-400 text-white shadow-indigo-500/40'}`}
+                                                                            >
                                                                                 {item.details?.time || item.time || "--:--"}
                                                                             </div>
                                                                         </div>
@@ -1342,6 +1339,7 @@ const ItineraryTab = ({
                                                                                 isDarkMode={isDarkMode}
                                                                                 dayHotel={dayHotel}
                                                                                 onEdit={(item) => onEditItem(item)}
+                                                                                language={currentLang}
                                                                             />
                                                                         </div>
 
@@ -1431,15 +1429,15 @@ const ItineraryTab = ({
 
                                                                     {/* Time Bubble & Line Connector */}
                                                                     <div className="absolute left-0 top-0 flex flex-col items-center w-[36px] md:w-[60px]">
-                                                                        <div className={`mt-0 px-2 py-1 rounded-full text-[10px] font-bold tracking-tight z-20 shadow-sm border
-                                                        ${item.type === 'hotel' ? 'bg-rose-600 text-white border-rose-400/30' :
-                                                                                item.type === 'food' ? 'bg-amber-600 text-white border-amber-400/30' :
-                                                                                    item.type === 'shopping' ? 'bg-fuchsia-600 text-white border-fuchsia-400/30' :
-                                                                                        (item.type === 'activity' || item.type === 'spot') ? 'bg-cyan-600 text-white border-cyan-400/30' :
-                                                                                            item.type === 'flight' ? 'bg-indigo-600 text-white border-indigo-400/30' :
-                                                                                                item.type === 'transport' ? 'bg-purple-600 text-white border-purple-400/30' :
-                                                                                                    'bg-gray-600 text-white border-gray-400/30'} 
-                                                        ${isDarkMode ? 'shadow-lg shadow-black/20' : ''}`}>
+                                                                        <div className={`relative mt-0 px-2.5 py-1.5 rounded-full text-[10px] font-black tracking-wider z-20 border backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl
+                                                                            ${item.type === 'hotel' ? 'bg-rose-500/90 border-rose-400 text-white shadow-rose-500/40' :
+                                                                                item.type === 'food' ? 'bg-amber-500/90 border-amber-400 text-white shadow-amber-500/40' :
+                                                                                    item.type === 'shopping' ? 'bg-fuchsia-500/90 border-fuchsia-400 text-white shadow-fuchsia-500/40' :
+                                                                                        (item.type === 'activity' || item.type === 'spot') ? 'bg-cyan-500/90 border-cyan-400 text-white shadow-cyan-500/40' :
+                                                                                            item.type === 'flight' ? 'bg-indigo-500/90 border-indigo-400 text-white shadow-indigo-500/40' :
+                                                                                                item.type === 'transport' ? 'bg-purple-500/90 border-purple-400 text-white shadow-purple-500/40' :
+                                                                                                    'bg-gray-600/90 border-gray-500 text-white shadow-gray-500/40'}`}
+                                                                        >
                                                                             {item.details?.time || item.time || "--:--"}
                                                                         </div>
                                                                     </div>
@@ -1449,6 +1447,7 @@ const ItineraryTab = ({
                                                                             item={item}
                                                                             isDarkMode={isDarkMode}
                                                                             onEdit={(item) => onEditItem(item)}
+                                                                            currentLang={currentLang}
                                                                         />
                                                                     </div>
 
@@ -1492,6 +1491,7 @@ const ItineraryTab = ({
                                 trip={trip}
                                 isDarkMode={isDarkMode}
                                 onItemClick={(item) => setActiveDetailItem(item)}
+                                currentLang={currentLang}
                             />
                         </div>
                     )}
@@ -1504,6 +1504,7 @@ const ItineraryTab = ({
                             isDarkMode={isDarkMode}
                             isEditMode={isEditMode}
                             onItemClick={(item) => setActiveDetailItem(item)}
+                            currentLang={currentLang}
                         />
                     )}
 
@@ -1542,6 +1543,7 @@ const ItineraryTab = ({
                             onItemClick={(item) => setActiveDetailItem(item)}
                             homeOffset={8} // Default HK
                             destOffset={trip.timezoneOffset || 9}
+                            currentLang={currentLang}
                         />
                     )}
 
@@ -1558,7 +1560,7 @@ const ItineraryTab = ({
                         </div>
                     )}
                 </div> {/* End Main Content Column */}
-            </div> {/* End Layout Wrapper */}
+            </div > {/* End Layout Wrapper */}
         </div >
     );
 };

@@ -9,12 +9,39 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "1.9.11";
-export const APP_VERSION_TAG = "PWA & Localization";
-export const APP_LAST_UPDATE = "2026-01-26";
-export const JARVIS_VERSION = "V0.0.5-Beta";
+export const APP_VERSION = "2.0.3";
+export const APP_VERSION_TAG = "i18n Fix & UX Polish";
+export const APP_LAST_UPDATE = "2026-02-23";
+export const JARVIS_VERSION = "V0.0.6-Beta";
 
 export const JARVIS_VERSION_HISTORY = [
+    {
+        ver: "V0.0.6-Beta",
+        date: "2026-02-23",
+        tag: "Gemini 3.1 API Upgrade",
+        desc: {
+            "zh-TW": "升級至 Gemini 3.1 API，三模式智能切換",
+            "zh-HK": "升級至 Gemini 3.1 API，三模式智能切換",
+            "en": "Gemini 3.1 API Upgrade with Smart Model Switching"
+        },
+        details: {
+            "zh-TW": [
+                "🤖 Engine: 升級至 Gemini 3.1 系列模型 (Flash / Flash-Lite / Pro)",
+                "⚡ Smart Switch: Flash 模型優先，額度觸頂自動 Fallback 至 Flash-Lite",
+                "🧠 Intelligence: Pro 模型處理複雜行程解析任務"
+            ],
+            "zh-HK": [
+                "🤖 Engine: 升級至 Gemini 3.1 系列模型 (Flash / Flash-Lite / Pro)",
+                "⚡ Smart Switch: Flash 模型優先，額度觸頂自動 Fallback 至 Flash-Lite",
+                "🧠 Intelligence: Pro 模型處理複雜行程解析任務"
+            ],
+            "en": [
+                "🤖 Engine: Upgraded to Gemini 3.1 model series (Flash / Flash-Lite / Pro)",
+                "⚡ Smart Switch: Flash-first strategy with auto-fallback to Flash-Lite on quota hit",
+                "🧠 Intelligence: Pro model reserved for complex itinerary parsing tasks"
+            ]
+        }
+    },
     {
         ver: "V0.0.5-Beta",
         date: "2026-01-16",
@@ -96,6 +123,111 @@ export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086
 
 export const VERSION_HISTORY = [
     {
+        ver: "V2.0.3",
+        date: "2026-02-23",
+        tag: "i18n Fix & UX Polish",
+        desc: {
+            "zh-TW": "i18n 結構修復與使用者體驗優化",
+            "zh-HK": "i18n 結構修復同使用者體驗優化",
+            "en": "i18n Structure Fix & UX Polish"
+        },
+        details: {
+            "zh-TW": [
+                "🐛 Fix: 修復 i18n.js 資源物件結構錯誤，zh 與 zh-HK 翻譯重新正常運作",
+                "🌐 i18n: 本地化所有 Header 浮動提示（Tutorial、Guide、Messages、Notifs 等）",
+                "⌨️ UX: 新增訊息按鈕 ⌘G 快捷鍵，統一所有功能快捷鍵覆蓋"
+            ],
+            "zh-HK": [
+                "🐛 Fix: 修復 i18n.js 資源物件結構錯誤，zh 同 zh-HK 翻譯重新正常運作",
+                "🌐 i18n: 本地化晒所有 Header 浮動提示（Tutorial、Guide、Messages、Notifs 等）",
+                "⌨️ UX: 新增訊息按鈕 ⌘G 快捷鍵，統一晒所有功能快捷鍵"
+            ],
+            "en": [
+                "🐛 Fix: Repaired broken i18n.js resources object structure; zh & zh-HK translations restored",
+                "🌐 i18n: Localized all Header hover tooltips (Tutorial, Guide, Messages, Notifs, Menu etc.)",
+                "⌨️ UX: Added ⌘G shortcut for Messages; completed keyboard shortcut coverage across all header actions"
+            ]
+        }
+    },
+    {
+        ver: "V2.0.2",
+        date: "2026-02-23",
+        tag: "Security & Performance Audit",
+        desc: {
+            "zh-TW": "終極資安與效能審計",
+            "zh-HK": "終極資安同效能審計",
+            "en": "Ultimate Security & Performance Audit"
+        },
+        details: {
+            "zh-TW": [
+                "🛡️ Security: 移除 MapView 潛在的 XSS 漏洞，強化 DOM 安全",
+                "⚡ Perf: 探索網格首屏載入 (LCP) 改為 Eager Load，極速渲染",
+                "🔍 SEO: 優化 index.html OpenGraph 標籤支援"
+            ],
+            "zh-HK": [
+                "🛡️ Security: 移除 MapView 潛在嘅 XSS 漏洞，強化 DOM 安全",
+                "⚡ Perf: 探索網格首屏載入 (LCP) 改為 Eager Load，極速渲染",
+                "🔍 SEO: 優化 index.html OpenGraph 標籤支援"
+            ],
+            "en": [
+                "🛡️ Security: Patched MapView XSS vulnerabilities for DOM safety",
+                "⚡ Perf: Implemented Eager Loading for LCP optimization in Explore Grid",
+                "🔍 SEO: Upgraded OpenGraph tags in index.html for better discovery"
+            ]
+        }
+    },
+    {
+        ver: "V1.9.14",
+        date: "2026-02-11",
+        tag: "Localization",
+        desc: {
+            "zh-TW": "全球在地化審計",
+            "zh-HK": "全球在地化審計",
+            "en": "Global Localization Audit"
+        },
+        details: {
+            "zh-TW": [
+                "🌐 i18n: 完成 TripDetail 所有分頁的全面在地化",
+                "✨ UI: 優化預算與匯率計算機的多語言顯示"
+            ],
+            "zh-HK": [
+                "🌐 i18n: 完成 TripDetail 所有分頁嘅全面在地化",
+                "✨ UI: 優化預算同匯率計算機嘅多語言顯示"
+            ],
+            "en": [
+                "🌐 i18n: Complete localization for all TripDetail tabs",
+                "✨ UI: Optimized multilingual display for Calculators"
+            ]
+        }
+    },
+    {
+        ver: "V1.9.12",
+        date: "2026-01-28",
+        tag: "Aurora & Visual Integrity",
+        desc: {
+            "zh-TW": "全站元件 Aurora 極光化重構",
+            "zh-HK": "全站元件 Aurora 極光化重構",
+            "en": "Visual Integrity & Aurora Refactor"
+        },
+        details: {
+            "zh-TW": [
+                "🎨 Social: Profile, FriendList 全面極光化 (AuroraCard)",
+                "📊 Dashboard: TripCard, ExploreGrid 視覺統一與效能優化",
+                "✨ UI: 引入 AuroraGradientText 提升標題質感"
+            ],
+            "zh-HK": [
+                "🎨 Social: Profile, FriendList 全面極光化 (AuroraCard)",
+                "📊 Dashboard: TripCard, ExploreGrid 視覺統一與效能優化",
+                "✨ UI: 引入 AuroraGradientText 提升標題質感"
+            ],
+            "en": [
+                "🎨 Social: Refactored Profile & FriendList with Aurora Design",
+                "📊 Dashboard: Unified visual language for TripCard & ExploreGrid",
+                "✨ UI: Enhanced headers with AuroraGradientText"
+            ]
+        }
+    },
+    {
         ver: "V1.9.11",
         date: "2026-01-27",
         tag: "PWA & Localization",
@@ -119,6 +251,7 @@ export const VERSION_HISTORY = [
             ]
         }
     },
+
     {
         ver: "V1.9.10",
         date: "2026-01-26",
@@ -349,6 +482,97 @@ export const VERSION_HISTORY = [
                 "🔧 Config: Fixed COOP/COEP headers blocking Google Login Popup auto-close",
                 "🖱️ Landing: Fixed unresponsive Play button on Dashboard Mockup"
             ]
+        }
+    },
+
+    {
+        ver: "V1.8.0",
+        date: "2026-01-21",
+        tag: "Performance Legacy",
+        desc: {
+            "zh-TW": "全面效能審計與懶載入架構",
+            "zh-HK": "全面效能審計同懶載入架構",
+            "en": "Performance Audit & Lazy Loading"
+        },
+        details: {
+            "zh-TW": ["⚡ Perf: 實施 Global Lazy Loading 優化 LCP", "📦 Build: Vite Chunk Splitting 策略優化"],
+            "zh-HK": ["⚡ Perf: 實施 Global Lazy Loading 優化 LCP", "📦 Build: Vite Chunk Splitting 策略優化"],
+            "en": ["⚡ Perf: Implemented Global Lazy Loading for LCP", "📦 Build: Optimized Vite Chunk Splitting"]
+        }
+    },
+    {
+        ver: "V1.7.0",
+        date: "2026-01-21",
+        tag: "PDF Editor",
+        desc: {
+            "zh-TW": "PDF 預覽編輯與功能擴展",
+            "zh-HK": "PDF 預覽編輯同功能擴展",
+            "en": "PDF Preview Editor & Expansion"
+        },
+        details: {
+            "zh-TW": ["📄 PDF: 新增 5 種樣式預覽與拖拽排序", "✏️ Edit: 支援 Word-like 行內編輯"],
+            "zh-HK": ["📄 PDF: 新增 5 種樣式預覽同拖拽排序", "✏️ Edit: 支援 Word-like 行內編輯"],
+            "en": ["📄 PDF: Added 5 style previews & drag-drop", "✏️ Edit: Supported Word-like inline editing"]
+        }
+    },
+    {
+        ver: "V1.6.0",
+        date: "2026-01-16",
+        tag: "SEO & Tutorial",
+        desc: {
+            "zh-TW": "網站效能與 SEO 極致打磨",
+            "zh-HK": "網站效能同 SEO 極致打磨",
+            "en": "Performance Polish & SEO"
+        },
+        details: {
+            "zh-TW": ["🔍 SEO: 引入 React Helmet 與 Sitemap", "🎓 UX: 完善 Driver.js 新手引導流程"],
+            "zh-HK": ["🔍 SEO: 引入 React Helmet 同 Sitemap", "🎓 UX: 完善 Driver.js 新手引導流程"],
+            "en": ["🔍 SEO: Integrated React Helmet & Sitemap", "🎓 UX: Polished Driver.js repository"]
+        }
+    },
+    {
+        ver: "V1.5.0",
+        date: "2026-01-10",
+        tag: "AI Awakening",
+        desc: {
+            "zh-TW": "Gemini AI 核心整合",
+            "zh-HK": "Gemini AI 核心整合",
+            "en": "Gemini AI Core Integration"
+        },
+        details: {
+            "zh-TW": ["🤖 AI: 接入 Google Gemini 1.5 Flash 視覺模型", "✨ Gen: 實裝 AI 行程生成器"],
+            "zh-HK": ["🤖 AI: 接入 Google Gemini 1.5 Flash 視覺模型", "✨ Gen: 實裝 AI 行程生成器"],
+            "en": ["🤖 AI: Integrated Google Gemini 1.5 Flash Vision Model", "✨ Gen: Implemented AI Itinerary Generator"]
+        }
+    },
+    {
+        ver: "V1.4.0",
+        date: "2026-01-05",
+        tag: "Realtime Core",
+        desc: {
+            "zh-TW": "即時協作核心升級",
+            "zh-HK": "即時協作核心升級",
+            "en": "Realtime Collaboration Core"
+        },
+        details: {
+            "zh-TW": ["🔄 Sync: Firestore 實時監聽與 Optimistic UI", "👥 Collab: 多人協作游標與狀態同步"],
+            "zh-HK": ["🔄 Sync: Firestore 實時監聽同 Optimistic UI", "👥 Collab: 多人協作游標同狀態同步"],
+            "en": ["🔄 Sync: Firestore Realtime Listeners & Optimistic UI", "👥 Collab: Multi-user cursor & state sync"]
+        }
+    },
+    {
+        ver: "V1.2.0",
+        date: "2025-12-20",
+        tag: "Indigo Glass",
+        desc: {
+            "zh-TW": "Indigo Glass 設計語言",
+            "zh-HK": "Indigo Glass 設計語言",
+            "en": "Indigo Glass Design System"
+        },
+        details: {
+            "zh-TW": ["🎨 UI: 全站導入 Indigo Glass 玻璃擬態設計", "🌙 Dark: 完美支援深色模式"],
+            "zh-HK": ["🎨 UI: 全站導入 Indigo Glass 玻璃擬態設計", "🌙 Dark: 完美支援深色模式"],
+            "en": ["🎨 UI: Introduced Indigo Glass Design System", "🌙 Dark: Full Dark Mode support"]
         }
     }
 ];

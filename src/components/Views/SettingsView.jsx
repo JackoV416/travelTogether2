@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, BrainCircuit, Lock, Sparkles, Eye, EyeOff, RotateCcw, GripVertical, Server, ShieldCheck, Activity, User, Trash2, WifiOff, Save, AlertTriangle, Settings, LayoutGrid, ChevronRight, AlertCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, BrainCircuit, Lock, Sparkles, Eye, EyeOff, RotateCcw, GripVertical, Server, ShieldCheck, Activity, User, Trash2, WifiOff, Save, AlertTriangle, Settings, LayoutGrid, ChevronRight, AlertCircle, RefreshCw, Layers } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { CURRENCIES, TIMEZONES, LANGUAGE_OPTIONS, APP_VERSION, JARVIS_VERSION } from '../../constants/appData';
 import { inputClasses } from '../../utils/tripUtils';
 import { getUserQuotaStatus, getSystemAnalytics } from '../../services/ai-quota';
 import { updateUserProfile, deleteUserAccount, saveUserSettings, loadUserSettings, uploadUserAvatar } from '../../services/accountService';
 import { isOnline, subscribeNetworkStatus } from '../../utils/networkUtils';
+import { useTour } from '../../contexts/TourContext';
 import JarvisLogo from '../Shared/JarvisLogo';
+import AuroraGradientText from '../Shared/AuroraGradientText';
+import { generateAuroraTheme, applyTheme } from '../../utils/themeUtils';
 // Widget Components
 import {
     WeatherWidget,
@@ -45,6 +48,7 @@ const DEFAULT_WIDGETS = [
 const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, initialTab = 'general', user, isAdmin, exchangeRates, weatherData }) => {
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState(initialTab);
+    const { startTour } = useTour();
     const [intelTab, setIntelTab] = useState('usage'); // V1.2.3: Intelligence Sub-tabs
     const [expandedProvider, setExpandedProvider] = useState(null); // V1.2.8
 
@@ -153,6 +157,14 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
         };
     }, [activeTab, user?.uid, isAdmin]);
 
+    // V2.0: Apply Theme on Load
+    useEffect(() => {
+        if (globalSettings.themeColor) {
+            const theme = generateAuroraTheme(globalSettings.themeColor);
+            applyTheme(theme);
+        }
+    }, []);
+
     // V1.2.8: Migration Effect for AI Keys
     useEffect(() => {
         if (!globalSettings.aiKeys || Object.keys(globalSettings.aiKeys).length === 0) {
@@ -230,6 +242,94 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
 
                     {activeTab === 'general' && (
                         <div className="space-y-8 animate-fade-in">
+                            {/* V2.0: Dynamic Theme Picker */}
+                            <div className="max-w-lg p-6 rounded-2xl border border-indigo-500/10 bg-indigo-500/5">
+                                <AuroraGradientText className="text-lg font-bold mb-2">{t('settings.theme.title', 'Aurora Theme Color')}</AuroraGradientText>
+                                <p className="text-xs opacity-60 mb-4">{t('settings.theme.desc', 'Choose a primary color, and Aurora will generate a complete theme palette for you.')}</p>
+
+                                {/* Presets Row */}
+                                <div className="flex items-center gap-3 mb-4 overflow-x-auto pb-2 scrollbar-hide">
+                                    {[
+                                        { color: '#6366F1', name: 'Indigo' },
+                                        { color: '#A855F7', name: 'Purple' },
+                                        { color: '#EC4899', name: 'Pink' },
+                                        { color: '#3B82F6', name: 'Blue' },
+                                        { color: '#14B8A6', name: 'Teal' },
+                                        { color: '#F97316', name: 'Orange' }
+                                    ].map((preset) => (
+                                        <button
+                                            key={preset.color}
+                                            onClick={() => {
+                                                setGlobalSettings({ ...globalSettings, themeColor: preset.color });
+                                                const theme = generateAuroraTheme(preset.color);
+                                                applyTheme(theme);
+                                                const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+                                                localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, themeColor: preset.color }));
+                                            }}
+                                            className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${globalSettings.themeColor === preset.color ? 'border-white ring-2 ring-indigo-500 shadow-lg scale-110' : 'border-transparent opacity-80 hover:opacity-100'}`}
+                                            style={{ backgroundColor: preset.color }}
+                                            title={preset.name}
+                                        />
+                                    ))}
+                                </div>
+
+                                <div className="flex items-center gap-4 border-t border-indigo-500/10 pt-4">
+                                    <input
+                                        type="color"
+                                        value={globalSettings.themeColor || '#6366F1'}
+                                        onChange={(e) => {
+                                            const color = e.target.value;
+                                            setGlobalSettings({ ...globalSettings, themeColor: color });
+                                            const theme = generateAuroraTheme(color);
+                                            applyTheme(theme);
+
+                                            // Save to local storage
+                                            const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+                                            localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, themeColor: color }));
+                                        }}
+                                        className="w-10 h-10 rounded-full cursor-pointer border-none p-0 overflow-hidden bg-transparent shadow-sm"
+                                        title={t('settings.theme.custom', 'Custom Color')}
+                                    />
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider opacity-70">{t('settings.theme.current', 'CURRENT PRIMARY')}</span>
+                                        <span className="font-mono text-xs font-bold">{globalSettings.themeColor || '#6366F1'}</span>
+                                    </div>
+
+                                    <button
+                                        onClick={() => {
+                                            const defaultColor = '#6366F1'; // Aurora Indigo Default
+                                            setGlobalSettings({ ...globalSettings, themeColor: defaultColor });
+                                            const theme = generateAuroraTheme(defaultColor);
+                                            applyTheme(theme);
+
+                                            const current = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
+                                            localStorage.setItem('travelTogether_settings', JSON.stringify({ ...current, themeColor: defaultColor }));
+                                        }}
+                                        className="ml-auto text-xs text-indigo-400 hover:text-indigo-300 underline"
+                                    >
+                                        {t('settings.theme.reset', 'Reset to Default')}
+                                    </button>
+                                </div>
+                                {/* Save Button (Visual Feedback) */}
+                                <div className="mt-6 flex justify-end border-t border-white/5 pt-4">
+                                    <button
+                                        onClick={(e) => {
+                                            const btn = e.currentTarget;
+                                            const originalText = t('common.save');
+                                            btn.innerText = originalText + 'd!';
+                                            btn.className = "px-6 py-2 rounded-xl bg-green-500 text-white font-medium text-sm transition-all shadow-lg shadow-green-500/20";
+                                            setTimeout(() => {
+                                                btn.innerText = originalText;
+                                                btn.className = "px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-500/20 active:scale-95";
+                                            }, 2000);
+                                        }}
+                                        className="px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-500/20 active:scale-95"
+                                    >
+                                        {t('common.save')}
+                                    </button>
+                                </div>
+                            </div>
+
                             <div className="max-w-lg">
                                 <label className="block text-xs font-bold opacity-70 uppercase tracking-wider mb-2 ml-1">{t('settings.general.currency')}</label>
                                 <select value={globalSettings.currency} onChange={e => setGlobalSettings({ ...globalSettings, currency: e.target.value })} className={inputClasses(isDarkMode) + " cursor-pointer appearance-none"}>
@@ -290,6 +390,27 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                         className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all flex items-center gap-2"
                                     >
                                         <RotateCcw className="w-3 h-3" /> 開始導覽
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Simulation Example (Mock Tour) */}
+                            <div className="max-w-lg p-4 rounded-xl border border-violet-500/20 bg-violet-500/5">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <div className="font-bold text-sm flex items-center gap-2">
+                                            <span>🧩</span> {t('app.menu.tutorial') || '模擬例子'}
+                                        </div>
+                                        <div className="text-xs opacity-60 mt-0.5">{t('tour.welcome.desc') || '跟住 steps 學識點用 Travel Together！'}</div>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            if (onBack) onBack();
+                                            startTour();
+                                        }}
+                                        className="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold transition-all flex items-center gap-2"
+                                    >
+                                        <Layers className="w-3 h-3" /> {t('common.start_now') || '開始'}
                                     </button>
                                 </div>
                             </div>
@@ -632,7 +753,7 @@ const SettingsView = ({ globalSettings, setGlobalSettings, isDarkMode, onBack, i
                                                                         <a
                                                                             href={p.url}
                                                                             target="_blank"
-                                                                            rel="noreferrer"
+                                                                            rel="noopener noreferrer"
                                                                             className="px-4 py-3 rounded-xl bg-indigo-500/10 text-indigo-500 text-xs font-bold hover:bg-indigo-500/20 transition-all flex items-center gap-2"
                                                                         >
                                                                             獲取 Key

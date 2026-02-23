@@ -10,10 +10,39 @@ import { SEO } from '../Shared/SEO';
 
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 
+const RevealOnScroll = ({ children, className = "", delay = 0, threshold = 0.1 }) => {
+    const [isVisible, setIsVisible] = useState(false);
+    const ref = React.useRef(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting) {
+                setIsVisible(true);
+                observer.disconnect();
+            }
+        }, { threshold });
+
+        if (ref.current) observer.observe(ref.current);
+        return () => observer.disconnect();
+    }, [threshold]);
+
+    return (
+        <div
+            ref={ref}
+            className={`transition-all duration-1000 ease-out transform ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'} ${className}`}
+            style={{ transitionDelay: `${delay}ms` }}
+        >
+            {children}
+        </div>
+    );
+};
+
+// ... existing LandingPage component ... only wrapping visible parts
+
 const LandingPage = ({ onLogin }) => {
     const { t } = useTranslation();
     const [scrolled, setScrolled] = useState(false);
-    const { isInstallable, install } = usePWAInstall();
+    const { isInstallable, install } = usePWAInstall(); // V1.9.9 PWA Logic
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -46,6 +75,7 @@ const LandingPage = ({ onLogin }) => {
             </div>
 
             {/* Navbar - Refined Glass Look */}
+            {/* ... Navbar code unchanged ... */}
             <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-slate-950/80 backdrop-blur-2xl border-b border-white/5 py-3' : 'bg-transparent py-6'}`}>
                 <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
                     <div className="flex items-center gap-2.5 group cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
@@ -86,187 +116,209 @@ const LandingPage = ({ onLogin }) => {
             <header className="relative pt-40 pb-20 px-6">
                 <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
                     {/* Version Badge - Aurora Border */}
-                    <div className="mb-8 inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-violet-500/10 via-indigo-500/10 to-cyan-500/10 border border-indigo-500/30 backdrop-blur-xl text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-indigo-300 animate-fade-in relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-r from-violet-500/20 via-indigo-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <Sparkles className="w-3.5 h-3.5 relative z-10" />
-                        <span className="relative z-10">{t('landing.new_tag', 'V2.0 Aurora Design')}</span>
-                    </div>
+                    <RevealOnScroll>
+                        <div className="mb-8 inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-violet-500/10 via-indigo-500/10 to-cyan-500/10 border border-indigo-500/30 backdrop-blur-xl text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-indigo-300 relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-gradient-to-r from-violet-500/20 via-indigo-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            <Sparkles className="w-3.5 h-3.5 relative z-10" />
+                            <span className="relative z-10">{t('landing.new_tag', 'V2.0 Aurora Design')}</span>
+                        </div>
+                    </RevealOnScroll>
 
                     {/* Title - Aurora Gradient Text */}
-                    <h1 className="text-5xl md:text-[5.5rem] font-black mb-8 tracking-tight leading-[1]">
-                        {t('landing.title', 'Travel Smarter,\nTogether.').split('\n').map((line, i) => (
-                            <React.Fragment key={i}>
-                                {i > 0 && <br />}
-                                <span className={i === 0 ? 'text-white' : 'bg-gradient-to-r from-violet-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent'}>
-                                    {line}
-                                </span>
-                            </React.Fragment>
-                        ))}
-                    </h1>
+                    <RevealOnScroll delay={100}>
+                        <h1 className="text-5xl md:text-[5.5rem] font-black mb-8 tracking-tight leading-[1]">
+                            {t('landing.title', 'Travel Smarter,\nTogether.').split('\n').map((line, i) => (
+                                <React.Fragment key={i}>
+                                    {i > 0 && <br />}
+                                    <span className={i === 0 ? 'text-white' : 'bg-gradient-to-r from-violet-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent'}>
+                                        {line}
+                                    </span>
+                                </React.Fragment>
+                            ))}
+                        </h1>
+                    </RevealOnScroll>
 
-                    <p className="text-lg md:text-xl text-slate-400 mb-12 max-w-2xl leading-relaxed font-medium">
-                        {t('landing.subtitle', 'The all-in-one platform for collaborative trip planning. AI itineraries, real-time budgets, and shared memories.')}
-                    </p>
+                    <RevealOnScroll delay={200}>
+                        <p className="text-lg md:text-xl text-slate-400 mb-12 max-w-2xl leading-relaxed font-medium">
+                            {t('landing.subtitle', 'The all-in-one platform for collaborative trip planning. AI itineraries, real-time budgets, and shared memories.')}
+                        </p>
+                    </RevealOnScroll>
 
                     {/* CTA Buttons - Aurora Pill Style */}
-                    <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto mb-24">
-                        <button
-                            onClick={onLogin}
-                            className="relative group bg-gradient-to-r from-violet-600 via-indigo-600 to-indigo-600 hover:from-violet-500 hover:via-indigo-500 hover:to-cyan-500 text-white px-10 py-5 rounded-full font-black text-lg flex items-center justify-center gap-3 transition-all shadow-2xl shadow-indigo-600/40 hover:shadow-indigo-500/50 hover:-translate-y-1 active:translate-y-0"
-                        >
-                            <Rocket className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                            <span>{t('landing.login_google', 'Start Planning Free')}</span>
-                            <ArrowRight className="w-5 h-5 opacity-0 -ml-2 group-hover:opacity-100 group-hover:ml-0 transition-all" />
-                        </button>
+                    <RevealOnScroll delay={300}>
+                        <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto mb-24">
+                            <button
+                                onClick={onLogin}
+                                className="relative group bg-gradient-to-r from-violet-600 via-indigo-600 to-indigo-600 hover:from-violet-500 hover:via-indigo-500 hover:to-cyan-500 text-white px-10 py-5 rounded-full font-black text-lg flex items-center justify-center gap-3 transition-all shadow-2xl shadow-indigo-600/40 hover:shadow-indigo-500/50 hover:-translate-y-1 active:translate-y-0"
+                            >
+                                <Rocket className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                                <span>{t('landing.login_google', 'Start Planning Free')}</span>
+                                <ArrowRight className="w-5 h-5 opacity-0 -ml-2 group-hover:opacity-100 group-hover:ml-0 transition-all" />
+                            </button>
 
-                        <button
-                            onClick={() => window.location.href = '/?view=tutorial'}
-                            className="bg-slate-800/40 hover:bg-slate-800/60 border border-white/10 hover:border-indigo-500/30 px-10 py-5 rounded-full font-bold text-lg flex items-center justify-center gap-3 transition-all backdrop-blur-xl text-slate-200 hover:text-white"
-                        >
-                            <MonitorPlay className="w-5 h-5 text-indigo-400" />
-                            {t('landing.demo_mode', 'Try Demo')}
-                        </button>
-                    </div>
+                            <button
+                                onClick={() => window.location.href = '/?view=tutorial'}
+                                className="bg-slate-800/40 hover:bg-slate-800/60 border border-white/10 hover:border-indigo-500/30 px-10 py-5 rounded-full font-bold text-lg flex items-center justify-center gap-3 transition-all backdrop-blur-xl text-slate-200 hover:text-white"
+                            >
+                                <MonitorPlay className="w-5 h-5 text-indigo-400" />
+                                {t('landing.demo_mode', 'Try Demo')}
+                            </button>
+                        </div>
+                    </RevealOnScroll>
 
                     {/* Dashboard Mockup - Glass Frame */}
-                    <div className="w-full max-w-6xl relative group perspective-1000">
-                        <div className="absolute -inset-1 bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 blur-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-1000" />
-                        <div className="relative rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] bg-slate-900/50 backdrop-blur-3xl aspect-[16/10] md:aspect-[21/9] transform group-hover:rotate-x-1 transition-transform duration-700">
-                            <ImageWithFallback
-                                src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1600"
-                                className="w-full h-full object-cover opacity-80"
-                                alt="Travel Dashboard"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent" />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <button
-                                    onClick={() => window.location.href = '/?view=tutorial'}
-                                    className="w-16 h-16 md:w-20 md:h-20 bg-white/10 backdrop-blur-2xl rounded-full flex items-center justify-center border border-white/20 hover:scale-110 transition-all group/play cursor-pointer z-20"
-                                    aria-label="Start Demo"
-                                >
-                                    <MonitorPlay className="w-8 h-8 md:w-10 md:h-10 text-white group-hover/play:text-indigo-400 transition-colors" />
-                                </button>
+                    <RevealOnScroll delay={400} className="w-full flex justify-center">
+                        <div className="w-full max-w-6xl relative group perspective-1000">
+                            <div className="absolute -inset-1 bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 blur-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-1000" />
+                            <div className="relative rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] bg-slate-900/50 backdrop-blur-3xl aspect-[16/10] md:aspect-[21/9] transform group-hover:rotate-x-1 transition-transform duration-700">
+                                <ImageWithFallback
+                                    src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1600"
+                                    className="w-full h-full object-cover opacity-80"
+                                    alt="Travel Dashboard"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <button
+                                        onClick={() => window.location.href = '/?view=tutorial'}
+                                        className="w-16 h-16 md:w-20 md:h-20 bg-white/10 backdrop-blur-2xl rounded-full flex items-center justify-center border border-white/20 hover:scale-110 transition-all group/play cursor-pointer z-20"
+                                        aria-label="Start Demo"
+                                    >
+                                        <MonitorPlay className="w-8 h-8 md:w-10 md:h-10 text-white group-hover/play:text-indigo-400 transition-colors" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </RevealOnScroll>
                 </div>
             </header>
 
             {/* Features Section - Modern Grid */}
             <section id="features" className="py-32 px-6 max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <FeatureCard
-                        icon={Users}
-                        title={t('landing.features.collab_title', 'Real-time Collab')}
-                        desc={t('landing.features.collab_desc', 'Plan with friends in real-time. Sync instantly.')}
-                        glowColor="bg-blue-500/20"
-                    />
-                    <FeatureCard
-                        icon={BrainCircuit}
-                        title={t('landing.features.ai_title', 'AI Power')}
-                        desc={t('landing.features.ai_desc', 'Generate smart itineraries with Gemini AI.')}
-                        glowColor="bg-indigo-500/20"
-                    />
-                    <FeatureCard
-                        icon={MapPinned}
-                        title={t('landing.features.footprints_title', 'Visual Memories')}
-                        desc={t('landing.features.footprints_desc', 'Track your footprints and visualize your journey.')}
-                        glowColor="bg-emerald-500/20"
-                    />
-                </div>
+                <RevealOnScroll threshold={0.2}>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <FeatureCard
+                            icon={Users}
+                            title={t('landing.features.collab_title', 'Real-time Collab')}
+                            desc={t('landing.features.collab_desc', 'Plan with friends in real-time. Sync instantly.')}
+                            glowColor="bg-blue-500/20"
+                        />
+                        <FeatureCard
+                            icon={BrainCircuit}
+                            title={t('landing.features.ai_title', 'AI Power')}
+                            desc={t('landing.features.ai_desc', 'Generate smart itineraries with Gemini AI.')}
+                            glowColor="bg-indigo-500/20"
+                        />
+                        <FeatureCard
+                            icon={MapPinned}
+                            title={t('landing.features.footprints_title', 'Visual Memories')}
+                            desc={t('landing.features.footprints_desc', 'Track your footprints and visualize your journey.')}
+                            glowColor="bg-emerald-500/20"
+                        />
+                    </div>
+                </RevealOnScroll>
             </section>
 
             {/* Comparison - Side by Side Glass */}
             <section id="comparison" className="py-32 px-6 bg-slate-900/20 border-y border-white/5 relative">
                 <div className="max-w-5xl mx-auto">
-                    <div className="text-center mb-20">
-                        <h2 className="text-4xl md:text-5xl font-black mb-6 tracking-tight text-white">
-                            {t('landing.comparison.title', 'Stop planning like it\'s 2005')}
-                        </h2>
-                        <p className="text-slate-500 uppercase tracking-[0.2em] text-xs font-black">
-                            {t('landing.comparison.subtitle', 'Why switch from spreadsheets and messy chats?')}
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-slate-900/40 border border-white/5 rounded-[2.5rem] p-10 backdrop-blur-xl">
-                            <h3 className="text-slate-500 font-black mb-8 flex items-center gap-3 uppercase tracking-wider text-sm">
-                                <X className="w-5 h-5 text-red-500" />
-                                {t('landing.comparison.old_title', 'The Old Way')}
-                            </h3>
-                            <ul className="space-y-6 text-slate-400 font-medium">
-                                <ComparisonItem icon="❌" text={t('landing.comparison.old_1', 'Scattered Excel files')} />
-                                <ComparisonItem icon="❌" text={t('landing.comparison.old_2', 'Endless WhatsApp debates')} />
-                                <ComparisonItem icon="❌" text={t('landing.comparison.old_3', 'Manual budget tracking')} />
-                                <ComparisonItem icon="❌" text={t('landing.comparison.old_4', 'Static PDF exports')} />
-                            </ul>
+                    <RevealOnScroll>
+                        <div className="text-center mb-20">
+                            <h2 className="text-4xl md:text-5xl font-black mb-6 tracking-tight text-white">
+                                {t('landing.comparison.title', 'Stop planning like it\'s 2005')}
+                            </h2>
+                            <p className="text-slate-500 uppercase tracking-[0.2em] text-xs font-black">
+                                {t('landing.comparison.subtitle', 'Why switch from spreadsheets and messy chats?')}
+                            </p>
                         </div>
+                    </RevealOnScroll>
 
-                        <div className="bg-indigo-600/5 border border-indigo-500/20 rounded-[2.5rem] p-10 backdrop-blur-2xl relative overflow-hidden ring-1 ring-indigo-500/20">
-                            <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/10 blur-[80px]" />
-                            <h3 className="text-indigo-400 font-black mb-8 flex items-center gap-3 uppercase tracking-wider text-sm">
-                                <Check className="w-5 h-5 text-indigo-500" />
-                                {t('landing.comparison.new_title', 'The Travel Together Way')}
-                            </h3>
-                            <ul className="space-y-6 text-slate-200 font-bold">
-                                <ComparisonItem icon="✅" text={t('landing.comparison.new_1', 'Single unified itinerary')} />
-                                <ComparisonItem icon="✅" text={t('landing.comparison.new_2', 'Built-in group voting & chat')} />
-                                <ComparisonItem icon="✅" text={t('landing.comparison.new_3', 'Real-time expense splitting')} />
-                                <ComparisonItem icon="✅" text={t('landing.comparison.new_4', 'Interactive A4 editor')} />
-                            </ul>
+                    <RevealOnScroll delay={100} threshold={0.2}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="bg-slate-900/40 border border-white/5 rounded-[2.5rem] p-10 backdrop-blur-xl">
+                                <h3 className="text-slate-500 font-black mb-8 flex items-center gap-3 uppercase tracking-wider text-sm">
+                                    <X className="w-5 h-5 text-red-500" />
+                                    {t('landing.comparison.old_title', 'The Old Way')}
+                                </h3>
+                                <ul className="space-y-6 text-slate-400 font-medium">
+                                    <ComparisonItem icon="❌" text={t('landing.comparison.old_1', 'Scattered Excel files')} />
+                                    <ComparisonItem icon="❌" text={t('landing.comparison.old_2', 'Endless WhatsApp debates')} />
+                                    <ComparisonItem icon="❌" text={t('landing.comparison.old_3', 'Manual budget tracking')} />
+                                    <ComparisonItem icon="❌" text={t('landing.comparison.old_4', 'Static PDF exports')} />
+                                </ul>
+                            </div>
+
+                            <div className="bg-indigo-600/5 border border-indigo-500/20 rounded-[2.5rem] p-10 backdrop-blur-2xl relative overflow-hidden ring-1 ring-indigo-500/20">
+                                <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/10 blur-[80px]" />
+                                <h3 className="text-indigo-400 font-black mb-8 flex items-center gap-3 uppercase tracking-wider text-sm">
+                                    <Check className="w-5 h-5 text-indigo-500" />
+                                    {t('landing.comparison.new_title', 'The Travel Together Way')}
+                                </h3>
+                                <ul className="space-y-6 text-slate-200 font-bold">
+                                    <ComparisonItem icon="✅" text={t('landing.comparison.new_1', 'Single unified itinerary')} />
+                                    <ComparisonItem icon="✅" text={t('landing.comparison.new_2', 'Built-in group voting & chat')} />
+                                    <ComparisonItem icon="✅" text={t('landing.comparison.new_3', 'Real-time expense splitting')} />
+                                    <ComparisonItem icon="✅" text={t('landing.comparison.new_4', 'Interactive A4 editor')} />
+                                </ul>
+                            </div>
                         </div>
-                    </div>
+                    </RevealOnScroll>
                 </div>
             </section>
 
             {/* FAQ - Minimal Glass Accordion */}
             <section id="faq" className="py-32 px-6 max-w-4xl mx-auto">
-                <div className="flex items-center gap-4 mb-16 px-4">
-                    <div className="w-12 h-12 bg-indigo-600/20 rounded-2xl flex items-center justify-center">
-                        <HelpCircle className="w-6 h-6 text-indigo-400" />
+                <RevealOnScroll>
+                    <div className="flex items-center gap-4 mb-16 px-4">
+                        <div className="w-12 h-12 bg-indigo-600/20 rounded-2xl flex items-center justify-center">
+                            <HelpCircle className="w-6 h-6 text-indigo-400" />
+                        </div>
+                        <div>
+                            <h2 className="text-3xl font-black text-white">{t('landing.faq.title', 'Got Questions?')}</h2>
+                            <p className="text-slate-500 text-sm font-medium">{t('landing.faq.subtitle', 'Everything you need to know about Travel Together')}</p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="text-3xl font-black text-white">{t('landing.faq.title', 'Got Questions?')}</h2>
-                        <p className="text-slate-500 text-sm font-medium">{t('landing.faq.subtitle', 'Everything you need to know about Travel Together')}</p>
+                </RevealOnScroll>
+
+                <RevealOnScroll delay={100} threshold={0.2}>
+                    <div className="bg-slate-900/20 border border-white/5 rounded-[2.5rem] overflow-hidden backdrop-blur-xl">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => {
+                            const q = t(`landing.faq.q${i}`);
+                            const a = t(`landing.faq.a${i}`);
+                            // Only render if the question exists and isn't just the key (fallback)
+                            if (!q || q === `landing.faq.q${i}`) return null;
+
+                            // Check if it's the last item to avoid border (we need actual count of rendered items)
+                            return <FAQItem key={i} q={q} a={a} />;
+                        })}
                     </div>
-                </div>
-
-                <div className="bg-slate-900/20 border border-white/5 rounded-[2.5rem] overflow-hidden backdrop-blur-xl">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => {
-                        const q = t(`landing.faq.q${i}`);
-                        const a = t(`landing.faq.a${i}`);
-                        // Only render if the question exists and isn't just the key (fallback)
-                        if (!q || q === `landing.faq.q${i}`) return null;
-
-                        // Check if it's the last item to avoid border (we need actual count of rendered items)
-                        return <FAQItem key={i} q={q} a={a} />;
-                    })}
-                </div>
+                </RevealOnScroll>
             </section>
 
             {/* Final CTA */}
             <section className="py-32 px-6 text-center border-t border-white/5 relative overflow-hidden bg-slate-950">
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-indigo-600/10 blur-[120px] rounded-full -z-10" />
 
-                <h2 className="text-4xl md:text-6xl font-black mb-8 text-white">{t('landing.cta_title', 'Your journey starts here.')}</h2>
-                <p className="text-slate-400 mb-12 max-w-xl mx-auto text-lg leading-relaxed">{t('landing.cta_desc', 'Join thousands of travelers planning their perfect trips together.')}</p>
+                <RevealOnScroll>
+                    <h2 className="text-4xl md:text-6xl font-black mb-8 text-white">{t('landing.cta_title', 'Your journey starts here.')}</h2>
+                    <p className="text-slate-400 mb-12 max-w-xl mx-auto text-lg leading-relaxed">{t('landing.cta_desc', 'Join thousands of travelers planning their perfect trips together.')}</p>
 
-                <button
-                    onClick={onLogin}
-                    className="group bg-white text-slate-950 px-12 py-5 rounded-2xl font-black text-xl shadow-2xl hover:shadow-white/10 active:scale-95 transition-all flex items-center gap-3 mx-auto"
-                >
-                    {t('landing.login_google', 'Start Planning Free')}
-                    <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-                </button>
+                    <button
+                        onClick={onLogin}
+                        className="group bg-white text-slate-950 px-12 py-5 rounded-2xl font-black text-xl shadow-2xl hover:shadow-white/10 active:scale-95 transition-all flex items-center gap-3 mx-auto"
+                    >
+                        {t('landing.login_google', 'Start Planning Free')}
+                        <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                </RevealOnScroll>
 
-                <div className="mt-32 pt-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 max-w-7xl mx-auto text-slate-500 text-xs font-bold uppercase tracking-widest">
+                <RevealOnScroll delay={200} className="mt-32 pt-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 max-w-7xl mx-auto text-slate-500 text-xs font-bold uppercase tracking-widest">
                     <span>© 2026 TRAVEL TOGETHER. CRAFTED BY JAMIE KWOK.</span>
                     <div className="flex gap-8">
                         <a href="#" className="hover:text-white transition-colors">Privacy</a>
                         <a href="#" className="hover:text-white transition-colors">Terms</a>
                         <a href="#" className="hover:text-white transition-colors">Contact</a>
                     </div>
-                </div>
+                </RevealOnScroll>
             </section>
         </div>
     );

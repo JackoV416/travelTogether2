@@ -10,6 +10,8 @@ import { BarChart3, List as ListIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import BudgetCharts from './BudgetCharts';
 
+import { getLocalizedContent } from '../../../utils/tripHelpers';
+
 const BudgetTab = ({
     trip,
     isDarkMode,
@@ -21,6 +23,7 @@ const BudgetTab = ({
     onOpenSmartImport,
     onOpenSmartExport,
     onAddItem, // V1.2.6
+    currentLang, // Received from parent
     readOnly = false // V1.9.8 Public View Support
 }) => {
     const { t, i18n } = useTranslation();
@@ -31,14 +34,14 @@ const BudgetTab = ({
 
     const filters = [{
         key: 'category',
-        label: '類別',
+        label: t('trip.budget.category_label'),
         options: [
-            { value: 'food', label: '餐飲' },
-            { value: 'transport', label: '交通' },
-            { value: 'shopping', label: '購物' },
-            { value: 'hotel', label: '住宿' },
-            { value: 'flight', label: '機票' },
-            { value: 'spot', label: '門票/景點' }
+            { value: 'food', label: t('trip.budget.category_food') },
+            { value: 'transport', label: t('trip.budget.category_transport') },
+            { value: 'shopping', label: t('trip.budget.category_shopping') },
+            { value: 'hotel', label: t('trip.budget.category_hotel') },
+            { value: 'flight', label: t('trip.budget.category_flight') },
+            { value: 'spot', label: t('trip.budget.category_spot') }
         ]
     }];
 
@@ -56,7 +59,7 @@ const BudgetTab = ({
 
     const filteredBudget = (trip.budget || []).filter(item => {
         const matchesSearch = !searchValue ||
-            (item.name || item.desc || "").toLowerCase().includes(searchValue.toLowerCase()) ||
+            (getLocalizedContent(item.name, currentLang) || item.desc || "").toLowerCase().includes(searchValue.toLowerCase()) ||
             (item.payer || "").toLowerCase().includes(searchValue.toLowerCase());
 
         const matchesFilter = activeFilters.category === 'all' || item.category === activeFilters.category;
@@ -65,10 +68,11 @@ const BudgetTab = ({
 
     return (
         <div className="space-y-6 animate-fade-in pb-10">
+            {/* ... (Search bar) */}
             <SearchFilterBar
                 searchValue={searchValue}
                 onSearchChange={setSearchValue}
-                placeholder="搜尋支出項目、付款人..."
+                placeholder={t('trip.budget.search_placeholder')}
                 filters={filters}
                 activeFilters={activeFilters}
                 onFilterChange={(key, val) => setActiveFilters(prev => ({ ...prev, [key]: val }))}
@@ -76,7 +80,7 @@ const BudgetTab = ({
                 isDarkMode={isDarkMode}
             />
 
-            {/* View Toggle */}
+            {/* ... (View Toggle) */}
             <div className="flex justify-between items-center mb-4">
                 {!readOnly ? (
                     <button
@@ -84,7 +88,7 @@ const BudgetTab = ({
                         data-tour="add-expense"
                         className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg active:scale-95"
                     >
-                        <Plus className="w-4 h-4" /> <span>新增支出</span>
+                        <Plus className="w-4 h-4" /> <span>{t('trip.budget.add_expense')}</span>
                     </button>
                 ) : <div></div>}
 
@@ -93,13 +97,13 @@ const BudgetTab = ({
                         onClick={() => setViewMode('list')}
                         className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 ${viewMode === 'list' ? 'bg-white dark:bg-gray-700 shadow-sm text-indigo-500' : 'text-gray-500 hover:text-gray-700'}`}
                     >
-                        <ListIcon className="w-3.5 h-3.5" /> 列表
+                        <ListIcon className="w-3.5 h-3.5" /> {t('trip.budget.view_list')}
                     </button>
                     <button
                         onClick={() => setViewMode('chart')}
                         className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 ${viewMode === 'chart' ? 'bg-white dark:bg-gray-700 shadow-sm text-indigo-500' : 'text-gray-500 hover:text-gray-700'}`}
                     >
-                        <BarChart3 className="w-3.5 h-3.5" /> 圖表分析
+                        <BarChart3 className="w-3.5 h-3.5" /> {t('trip.budget.view_chart')}
                     </button>
                 </div>
             </div>
@@ -113,24 +117,24 @@ const BudgetTab = ({
                 />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-tour="budget-content">
-                    {/* Main Stats Card */}
+                    {/* ... (Stats) */}
                     <div className={`${glassCard(isDarkMode)} p-8 md:col-span-1 flex flex-col items-center justify-center relative overflow-hidden group`}>
                         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform">
                             <TrendingUp className="w-24 h-24" />
                         </div>
-                        <div className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-2">Total Accumulated Spend</div>
+                        <div className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-2">{t('trip.budget.total_accumulated')}</div>
                         <div className="text-4xl font-black font-mono tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
                             ${Math.round(debtInfo.totalSpent).toLocaleString()}
                         </div>
                         <div className="mt-4 flex items-center gap-2 text-[10px] bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded-full font-bold">
-                            <PieChart className="w-3 h-3" /> 各半拆數模式已啟用
+                            <PieChart className="w-3 h-3" /> {t('trip.budget.split_mode')}
                         </div>
                     </div>
 
                     {/* Balance List */}
                     <div className={`${glassCard(isDarkMode)} p-6 md:col-span-2`}>
                         <h3 className="text-sm font-black uppercase tracking-widest mb-4 flex items-center gap-2">
-                            <RefreshCw className="w-4 h-4 text-indigo-500" /> 債務與結算
+                            <RefreshCw className="w-4 h-4 text-indigo-500" /> {t('trip.budget.debts_title')}
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {Object.entries(debtInfo.balances).map(([name, bal]) => (
@@ -145,7 +149,7 @@ const BudgetTab = ({
                                         <div className={`text-sm font-black font-mono ${bal >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                                             {bal >= 0 ? `+ $${Math.round(bal)}` : `- $${Math.round(Math.abs(bal))}`}
                                         </div>
-                                        <div className="text-[9px] opacity-40 uppercase font-black">{bal >= 0 ? 'To Receive' : 'To Pay'}</div>
+                                        <div className="text-[9px] opacity-40 uppercase font-black">{bal >= 0 ? t('trip.budget.to_receive') : t('trip.budget.to_pay')}</div>
                                     </div>
                                 </div>
                             ))}
@@ -159,9 +163,9 @@ const BudgetTab = ({
                 <div className={`${glassCard(isDarkMode)} overflow-hidden`}>
                     <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
                         <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                            <List className="w-4 h-4 text-indigo-500" /> 支出明細摘要
+                            <List className="w-4 h-4 text-indigo-500" /> {t('trip.budget.summary_title')}
                         </h3>
-                        <span className="text-[10px] opacity-50 font-bold uppercase">{filteredBudget.length} Records</span>
+                        <span className="text-[10px] opacity-50 font-bold uppercase">{filteredBudget.length} {t('trip.budget.records')}</span>
                     </div>
 
                     <div className="divide-y divide-white/5 max-h-[400px] overflow-y-auto custom-scrollbar">
@@ -179,7 +183,7 @@ const BudgetTab = ({
                                     )}
                                     <div className="min-w-0 flex-1">
                                         <div className="font-bold text-sm tracking-tight truncate">
-                                            {isZh && b.name_zh ? b.name_zh : (b.name || b.desc)}
+                                            {getLocalizedContent(b.name, currentLang) || b.desc}
                                         </div>
                                         <div className="flex flex-wrap gap-2 mt-1">
                                             <span className="text-[10px] font-bold text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded uppercase tracking-tighter">{b.payer}</span>
@@ -196,8 +200,8 @@ const BudgetTab = ({
                         {filteredBudget.length === 0 && (
                             <EmptyState
                                 icon={searchValue ? Search : DollarSign}
-                                title={searchValue ? "找不到相關支出" : "尚未有支出紀錄"}
-                                description={searchValue ? `找不到與「${searchValue}」相關的項目，請嘗試其他關鍵字。` : "開始記錄您的旅行開支，讓預算管控更輕鬆。"}
+                                title={searchValue ? t('trip.budget.empty_search') : t('trip.budget.empty_title')}
+                                description={searchValue ? t('trip.budget.empty_search_desc', { keyword: searchValue }) : t('trip.budget.empty_desc')}
                                 isDarkMode={isDarkMode}
                             />
                         )}

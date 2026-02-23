@@ -2,6 +2,7 @@ import React, { useMemo, useState, forwardRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MapPin, Clock, CalendarDays, Plus, GripVertical } from 'lucide-react';
 import { getWeekday, formatDate, getLocalizedCityName } from '../../../utils/tripUtils';
+import { getLocalizedContent } from '../../../utils/tripHelpers';
 import {
     DndContext,
     DragOverlay,
@@ -22,7 +23,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 /* Kanban Card Component (Presentation) */
-const KanbanCard = forwardRef(({ item, isDarkMode, onItemClick, isDragging, isEditMode, style, ...props }, ref) => {
+const KanbanCard = forwardRef(({ item, isDarkMode, onItemClick, isDragging, isEditMode, style, currentLang, ...props }, ref) => {
     return (
         <div
             ref={ref}
@@ -53,14 +54,14 @@ const KanbanCard = forwardRef(({ item, isDarkMode, onItemClick, isDragging, isEd
 
                 <div className="font-bold text-sm leading-tight line-clamp-2 mt-2">
                     {/* eslint-disable-next-line no-misleading-character-class */}
-                    {item.name.replace(/^[\u0020-\u007E\u00A0-\u00FF\u0100-\u017F\u0180-\u024F\u2C60-\u2C7F\uA720-\uA7FF\uAB30-\uAB6F\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}]+\s*/u, '').replace(/^[✈️🏨🚆🍽️⛩️🛍️🎢🛂]+\s*/u, '')}
+                    {getLocalizedContent(item.name, currentLang)?.replace(/^[\u0020-\u007E\u00A0-\u00FF\u0100-\u017F\u0180-\u024F\u2C60-\u2C7F\uA720-\uA7FF\uAB30-\uAB6F\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}]+\s*/u, '').replace(/^[✈️🏨🚆🍽️⛩️🛍️🎢🛂]+\s*/u, '')}
                 </div>
 
                 {/* Location */}
                 {item.details?.location && (
                     <div className="flex items-center gap-1 text-[10px] opacity-60 truncate mt-1">
                         <MapPin className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{item.details.location}</span>
+                        <span className="truncate">{getLocalizedContent(item.details.location, currentLang)}</span>
                     </div>
                 )}
 
@@ -75,7 +76,7 @@ const KanbanCard = forwardRef(({ item, isDarkMode, onItemClick, isDragging, isEd
                 {/* Notes Preview */}
                 {item.details?.notes && (
                     <div className={`text-[10px] p-1.5 rounded line-clamp-2 italic mt-1 ${isDarkMode ? 'bg-black/20 text-gray-400' : 'bg-gray-50 text-gray-500'}`}>
-                        "{item.details.notes}"
+                        "{getLocalizedContent(item.details.notes, currentLang)}"
                     </div>
                 )}
 
@@ -94,7 +95,7 @@ const KanbanCard = forwardRef(({ item, isDarkMode, onItemClick, isDragging, isEd
 
 
 // Sortable Item Component
-const SortableItem = ({ item, isDarkMode, onItemClick, isEditMode }) => {
+const SortableItem = ({ item, isDarkMode, onItemClick, isEditMode, currentLang }) => {
     const {
         attributes,
         listeners,
@@ -120,6 +121,7 @@ const SortableItem = ({ item, isDarkMode, onItemClick, isEditMode }) => {
             onItemClick={onItemClick}
             isDragging={isDragging}
             isEditMode={isEditMode}
+            currentLang={currentLang}
             {...attributes}
             {...(isEditMode ? listeners : {})}
         />
@@ -172,6 +174,7 @@ const DroppableColumn = ({ date, items, isDarkMode, onItemClick, onAddItem, isEd
                             isDarkMode={isDarkMode}
                             onItemClick={onItemClick}
                             isEditMode={isEditMode}
+                            currentLang={currentLang}
                         />
                     ))}
                 </div>
@@ -309,6 +312,7 @@ const KanbanView = ({ items, days, isDarkMode, onItemClick, onAddItem, onMoveIte
                         item={activeItem}
                         isDarkMode={isDarkMode}
                         isDragging={true}
+                        currentLang={currentLang}
                         style={{ cursor: 'grabbing', width: '280px' }} // Fixed width for overlay
                     />
                 ) : null}

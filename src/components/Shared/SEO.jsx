@@ -10,7 +10,7 @@ export const SEO = ({ title, description, image, url, type = 'website', children
     // Use default values if not provided
     const metaTitle = title ? `${title} | ${siteTitle}` : siteTitle;
     const metaDesc = description || t('seo.default_desc', "Your smart travel companion for group trips.");
-    const metaImage = image || "https://travel-together-2.web.app/og-image-default.jpg"; // Placeholder
+    const metaImage = image || "https://travel-together-v2.vercel.app/og-image.jpg"; // Updated to Vercel
     const metaUrl = url || window.location.href;
 
     return (

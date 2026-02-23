@@ -1,5 +1,6 @@
 import React from 'react';
 import { Camera, MapPin, Heart } from 'lucide-react';
+import { AuroraCard, AuroraGradientText } from '../../Shared/AuroraComponents';
 
 const PhotoGallery = ({ isDarkMode, trips = [] }) => {
     // Extract photos from trips (Cover Images for now)
@@ -19,24 +20,24 @@ const PhotoGallery = ({ isDarkMode, trips = [] }) => {
 
     if (photos.length === 0) {
         return (
-            <div className={`p-8 rounded-3xl border text-center ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <AuroraCard className="p-8 text-center border-dashed border-2 bg-transparent text-slate-500">
                 <Camera className="w-12 h-12 mx-auto mb-4 opacity-30" />
                 <h3 className="font-bold opacity-70">暫無相片</h3>
                 <p className="text-sm opacity-50">建立行程並上傳封面圖片，這裡就會顯示您的旅途回憶。</p>
-            </div>
+            </AuroraCard>
         );
     }
 
     return (
         <div className="space-y-6">
-            <div className={`p-6 rounded-3xl border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <AuroraCard className="p-6">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h3 className="text-xl font-black mb-1 flex items-center gap-2">
+                        <AuroraGradientText as="h3" className="text-xl font-black mb-1 flex items-center gap-2">
                             <Camera className="w-5 h-5 text-indigo-500" />
                             旅途回憶 (Memories)
-                        </h3>
-                        <p className="text-sm opacity-60">珍藏的 1,240 張照片</p>
+                        </AuroraGradientText>
+                        <p className="text-sm opacity-60">珍藏的 {photos.length} 張照片</p>
                     </div>
                     <button className="px-4 py-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-500 font-bold text-xs transition-all">
                         管理相簿
@@ -46,7 +47,7 @@ const PhotoGallery = ({ isDarkMode, trips = [] }) => {
                 {/* Masonry Grid Simulation using columns */}
                 <div className="columns-2 sm:columns-3 gap-4 space-y-4">
                     {photos.map((photo) => (
-                        <div key={photo.id} className="relative group break-inside-avoid rounded-2xl overflow-hidden mb-4 cursor-pointer">
+                        <div key={photo.id} className="relative group break-inside-avoid rounded-2xl overflow-hidden mb-4 cursor-pointer shadow-md hover:shadow-xl transition-all">
                             <img
                                 src={photo.url}
                                 alt={photo.location}
@@ -69,7 +70,7 @@ const PhotoGallery = ({ isDarkMode, trips = [] }) => {
                         </div>
                     ))}
                 </div>
-            </div>
+            </AuroraCard>
         </div>
     );
 };

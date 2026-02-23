@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plane, Train, Bus, Car, Ship, CheckCircle2, Clock, Footprints, MapPin, ArrowRight, Pencil, Ticket, Undo2, Stamp, DollarSign, Navigation, Sparkles } from 'lucide-react';
 import { formatDuration, getSmartItemImage, getGoogleMapsDirectionsUrl, getTransportAdvice, getNearbyAttractionHint } from '../../../utils/tripUtils';
+import { getLocalizedContent } from '../../../utils/tripHelpers';
 import { useTranslation } from 'react-i18next';
 
 // Mini-map for airport codes (Could be moved to appData)
@@ -14,6 +15,8 @@ const AIRPORT_NAMES = {
 };
 
 const TransportCard = ({ item, isDarkMode, dayHotel, onEdit, language = 'zh-TW' }) => {
+    // Ensure we use the passed language for consistent localization
+    const currentLang = language;
     const { t } = useTranslation();
     // 1. Color & Icon Logic
     const getTheme = () => {
@@ -164,10 +167,7 @@ const TransportCard = ({ item, isDarkMode, dayHotel, onEdit, language = 'zh-TW' 
 
     // Localization Helper for details properties
     const getDetail = (key) => {
-        if (language === 'zh-TW' || language === 'zh-HK' || language.includes('zh')) {
-            return item.details?.[`${key}_zh`] || item.details?.[key];
-        }
-        return item.details?.[key];
+        return getLocalizedContent(item.details?.[key], currentLang);
     };
 
 
@@ -204,7 +204,7 @@ const TransportCard = ({ item, isDarkMode, dayHotel, onEdit, language = 'zh-TW' 
                     {/* Line 1: Localized Name / Airline */}
                     <div className="flex justify-between items-start gap-2">
                         <h3 className={`text-sm font-black truncate leading-none ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                            {getDetail('name') || item.name}
+                            {getLocalizedContent(item.name, currentLang)}
                         </h3>
                         {item.cost > 0 && (
                             <div className="flex items-center gap-0.5 text-xs font-bold text-emerald-500 shrink-0">
@@ -323,7 +323,7 @@ const TransportCard = ({ item, isDarkMode, dayHotel, onEdit, language = 'zh-TW' 
                 {/* Line 7: Tags - MOVED OUTSIDE space-y-1 to correctly respect mt-auto */}
                 <div className="flex items-center gap-1.5 mt-auto pt-2 overflow-hidden">
                     {(() => {
-                        const tags = isZh ? (item.details?.tags_zh || item.details?.tags) : item.details?.tags;
+                        const tags = (currentLang?.includes('zh') && item.details?.tags_zh) ? item.details?.tags_zh : item.details?.tags;
                         const displayTags = (tags?.length > 0 ? tags : [theme.label]);
                         return displayTags.slice(0, 3).map((tag, i) => (
                             <span key={i} className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter ${theme.accent} ${theme.bg} border ${theme.border}`}>

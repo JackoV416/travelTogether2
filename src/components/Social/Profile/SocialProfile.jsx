@@ -3,6 +3,7 @@ import { Map, Image, Award, Share2, Grid, UserPlus, Settings, Upload, Move, Chec
 import { doc, getDoc, updateDoc, onSnapshot, collection, query, where } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../../firebase';
+import { AuroraCard, AuroraGradientText } from '../../Shared/AuroraComponents';
 import FootprintsLeafletMap from './FootprintsLeafletMap';
 import PhotoGallery from './PhotoGallery';
 import BadgesDisplay from './BadgesDisplay';
@@ -16,10 +17,12 @@ import { getUserAchievements, calculateLevel, checkAndUnlockAchievements } from 
 import AchievementGrid from '../../Badges/AchievementGrid'; // V1.9.3
 import BadgeDetailModal from '../../Badges/BadgeDetailModal'; // V1.9.3
 import LevelProgress from '../../Badges/LevelProgress'; // V1.9.3
+import { useTour } from '../../../contexts/TourContext';
 
 const SocialProfile = ({ user, isOwnProfile, onEditProfile, isDarkMode, trips = [], currentUser, onOpenPrivateChat }) => {
     // currentUser is now passed as a prop
     const { t } = useTranslation();
+    const { isMockMode } = useTour();
     const bannerInputRef = useRef(null);
     const [bannerPosition, setBannerPosition] = useState(user?.bannerPosition || 50);
     const [activeTab, setActiveTab] = useState('footprints');
@@ -375,6 +378,8 @@ const SocialProfile = ({ user, isOwnProfile, onEditProfile, isDarkMode, trips = 
     // Load Achievements & Sync Legacy Stats (One-time)
     useEffect(() => {
         if (!user?.uid) return;
+        // Skip Firestore operations for mock tour users
+        if (user.uid === 'mock-tour-user') return;
 
         const syncAndLoad = async () => {
             // 1. Load Achievements
@@ -422,7 +427,7 @@ const SocialProfile = ({ user, isOwnProfile, onEditProfile, isDarkMode, trips = 
     return (
         <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-8 animate-fade-in pb-24">
             {/* Profile Header Card */}
-            <div className={`relative overflow-hidden rounded-3xl border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-xl`}>
+            <AuroraCard className="relative overflow-hidden shadow-xl" noPadding data-tour="profile-header">
                 {/* Cover Image - Use user.bannerURL if available */}
                 <div className="h-48 sm:h-64 bg-gray-200 relative overflow-hidden group">
                     {/* Hidden File Input */}
@@ -520,8 +525,9 @@ const SocialProfile = ({ user, isOwnProfile, onEditProfile, isDarkMode, trips = 
                             </button>
                         )}
                         {/* Message Button (V1.9.2) - Moved to top level */}
-                        {currentUser && currentUser.uid !== user.uid && onOpenPrivateChat && (
+                        {(currentUser && (currentUser.uid !== user.uid || isMockMode) && onOpenPrivateChat) && (
                             <button
+                                data-tour="private-chat-btn"
                                 onClick={() => onOpenPrivateChat(user)}
                                 className="p-2 rounded-full bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500 hover:text-white backdrop-blur-sm transition-all"
                                 title={t('chat.send_message', 'Message')}
@@ -534,6 +540,7 @@ const SocialProfile = ({ user, isOwnProfile, onEditProfile, isDarkMode, trips = 
                             <>
                                 {friendStatus === 'none' && (
                                     <button
+                                        data-tour="add-friend-btn"
                                         onClick={handleAddFriend}
                                         className="p-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-indigo-500/30"
                                         title={t('friends.add_friend')}
@@ -672,7 +679,7 @@ const SocialProfile = ({ user, isOwnProfile, onEditProfile, isDarkMode, trips = 
                     </div>
 
                     {/* Navigation Tabs */}
-                    <div className="flex items-center justify-center sm:justify-start gap-2 border-t border-gray-100 dark:border-gray-700/50 pt-2 overflow-x-auto">
+                    <div className="flex items-center justify-center sm:justify-start gap-2 border-t border-gray-100 dark:border-gray-700/50 pt-2 overflow-x-auto" data-tour="profile-tabs">
                         <TabButton
                             id="footprints"
                             label={t('profile.tabs.footprints')}
@@ -707,16 +714,16 @@ const SocialProfile = ({ user, isOwnProfile, onEditProfile, isDarkMode, trips = 
                         />
                     </div>
                 </div>
-            </div>
+            </AuroraCard>
 
             {/* Tab Content */}
             <div className="animate-fade-in-up">
                 {activeTab === 'footprints' && (
-                    <div className={`rounded-3xl border overflow-hidden relative ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-xl`}>
+                    <AuroraCard className="overflow-hidden relative shadow-xl" noPadding>
                         {/* Header Overlay */}
                         <div className="absolute top-6 left-6 z-10 pointer-events-none">
-                            <h3 className="text-xl font-black mb-1 drop-shadow-md">{t('profile.map.title')}</h3>
-                            <p className="text-sm opacity-80 font-medium drop-shadow-sm">
+                            <h3 className="text-xl font-black mb-1 drop-shadow-md text-slate-800 dark:text-white">{t('profile.map.title')}</h3>
+                            <p className="text-sm opacity-80 font-medium drop-shadow-sm text-slate-600 dark:text-gray-300">
                                 {t('profile.map.stats_desc', { count: stats.countries, percent: Math.round((stats.countries / 195) * 100) + 30 })}
                             </p>
                         </div>
@@ -735,11 +742,11 @@ const SocialProfile = ({ user, isOwnProfile, onEditProfile, isDarkMode, trips = 
                             <StatItem label={t('profile.map.continents.africa')} value={continentStats?.Africa || 0} />
                             <StatItem label={t('profile.map.continents.oceania')} value={continentStats?.Oceania || 0} />
                         </div>
-                    </div>
+                    </AuroraCard>
                 )}
                 {activeTab === 'gallery' && <PhotoGallery isDarkMode={isDarkMode} trips={trips.filter(t => t.members?.some(m => (m.id === targetUid || m.uid === targetUid)))} />}
                 {activeTab === 'badges' && (
-                    <div className={`p-6 rounded-3xl border min-h-[500px] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} shadow-xl transition-all`}>
+                    <AuroraCard className="min-h-[500px] shadow-xl transition-all">
                         {/* Level Header */}
                         <LevelProgress user={user} totalXP={userXP} />
 
@@ -754,12 +761,12 @@ const SocialProfile = ({ user, isOwnProfile, onEditProfile, isDarkMode, trips = 
                             achievements={achievements}
                             onBadgeClick={setSelectedBadge}
                         />
-                    </div>
+                    </AuroraCard>
                 )}
                 {activeTab === 'friends' && (
-                    <div className={`p-6 rounded-3xl border min-h-[500px] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} shadow-xl transition-all`}>
+                    <AuroraCard className="min-h-[500px] shadow-xl transition-all">
                         <FriendList activeTab={activeTab} />
-                    </div>
+                    </AuroraCard>
                 )}
             </div>
 
@@ -778,9 +785,9 @@ const SocialProfile = ({ user, isOwnProfile, onEditProfile, isDarkMode, trips = 
 const TabButton = ({ id, label, icon: Icon, activeTab, setActiveTab, isDarkMode }) => (
     <button
         onClick={() => setActiveTab(id)}
-        className={`flex items-center gap-2 px-4 py-3 rounded-xl font-bold text-sm transition-all whitespace-nowrap ${activeTab === id
-            ? (isDarkMode ? 'bg-white/10 text-white' : 'bg-gray-900 text-white shadow-lg shadow-gray-900/20')
-            : 'opacity-60 hover:opacity-100 hover:bg-gray-500/5'
+        className={`flex items-center gap-2 px-4 py-3 rounded-full font-bold text-sm transition-all whitespace-nowrap ${activeTab === id
+            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/40 transform scale-105'
+            : 'opacity-60 hover:opacity-100 hover:bg-white/10 text-slate-500 dark:text-slate-400'
             }`}
     >
         <Icon className="w-4 h-4" />

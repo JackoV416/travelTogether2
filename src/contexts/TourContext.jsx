@@ -15,13 +15,24 @@ import {
     AlertTriangle,
     Sparkles,
     MessageCircle,
-    Users
+    Users,
+    FileInput,
+    LayoutDashboard,
+    Globe,
+    User,
+    Grid,
+    UserPlus,
+    ShoppingBag,
+    Image,
+    Shield,
+    Siren
 } from 'lucide-react';
 
 /**
  * TourContext - Manages the interactive product tour state
  * Provides tour control across the entire app
  */
+
 const TourContext = createContext(null);
 
 export const useTour = () => {
@@ -60,7 +71,40 @@ export const TOUR_STEPS = [
         isWelcome: true,
         type: 'general'
     },
-    // Step 1: Create Your First Trip
+    // Step 1: Explore Community (Dashboard)
+    {
+        id: 'explore-community',
+        target: '[data-tour="explore-community"]',
+        titleKey: 'tour.explore_community.title',
+        descKey: 'tour.explore_community.desc',
+        page: 'dashboard',
+        position: 'bottom',
+        icon: Globe,
+        type: 'feature'
+    },
+    // Step 2: Switch to My Trips (Dashboard)
+    {
+        id: 'my-trips-view',
+        target: '[data-tour="my-trips-view"]',
+        titleKey: 'tour.my_trips_view.title',
+        descKey: 'tour.my_trips_view.desc',
+        page: 'dashboard',
+        position: 'bottom',
+        icon: LayoutDashboard,
+        type: 'feature'
+    },
+    // Step 3: Smart Import (Dashboard)
+    {
+        id: 'smart-import',
+        target: '[data-tour="smart-import"]',
+        titleKey: 'tour.smart_import.title',
+        descKey: 'tour.smart_import.desc',
+        page: 'dashboard',
+        position: 'bottom',
+        icon: FileInput,
+        type: 'feature'
+    },
+    // Step 4: Create Your First Trip
     {
         id: 'create-trip',
         target: '[data-tour="create-trip"]',
@@ -71,7 +115,7 @@ export const TOUR_STEPS = [
         icon: Plus,
         type: 'action'
     },
-    // Step 1.1: Create Trip Modal - Country
+    // Step 4.1: Create Trip Modal - Country
     {
         id: 'create-trip-country',
         target: '[data-tour="create-trip-country"]',
@@ -82,7 +126,7 @@ export const TOUR_STEPS = [
         icon: Map,
         type: 'action'
     },
-    // Step 1.2: Create Trip Modal - Dates
+    // Step 4.2: Create Trip Modal - Dates
     {
         id: 'create-trip-dates',
         target: '[data-tour="create-trip-dates"]',
@@ -93,7 +137,18 @@ export const TOUR_STEPS = [
         icon: Calendar,
         type: 'action'
     },
-    // Step 2: Trip Card
+    // Step 4.3: Create Trip Modal - AI
+    {
+        id: 'create-trip-ai',
+        target: '[data-tour="create-trip-ai"]',
+        titleKey: 'tour.create_trip_ai.title',
+        descKey: 'tour.create_trip_ai.desc',
+        page: 'dashboard',
+        position: 'bottom',
+        icon: Sparkles,
+        type: 'action'
+    },
+    // Step 5: Trip Card
     {
         id: 'trip-card',
         target: '[data-tour="trip-card"]',
@@ -105,31 +160,43 @@ export const TOUR_STEPS = [
         icon: Layers,
         type: 'navigation'
     },
-    // Step 3: Invite Members (NEW)
+    // Step 5.1: Trip Header (Trip Detail)
     {
-        id: 'invite-members',
-        target: '[data-tour="invite-members"]',
-        titleKey: 'tour.invite_members.title',
-        descKey: 'tour.invite_members.desc',
+        id: 'trip-header',
+        target: '[data-tour="trip-header"]',
+        titleKey: 'tour.trip_header.title',
+        descKey: 'tour.trip_header.desc',
         page: 'trip-detail',
         position: 'bottom',
-        icon: Users,
-        type: 'feature'
+        icon: Layout,
+        type: 'general'
     },
-    // Step 4: Ask Jarvis (AI)
+    // Step 5.2: Add Item (Trip Detail)
     {
-        id: 'ask-jarvis',
-        target: '[data-tour="ask-jarvis-daily"]',
-        titleKey: 'tour.ask_jarvis.title',
-        descKey: 'tour.ask_jarvis.desc',
+        id: 'add-item',
+        target: '[data-tour="add-item"]',
+        titleKey: 'tour.add_item.title',
+        descKey: 'tour.add_item.desc',
         page: 'trip-detail',
         position: 'left',
-        icon: BrainCircuit,
-        type: 'ai'
+        icon: PlusCircle,
+        type: 'action'
     },
-    // Step 5: Budget (Brief Mention)
+    // Step 5.3: Itinerary Tab Content (Trip Detail)
     {
-        id: 'budget-content',
+        id: 'itinerary-tab',
+        target: '[data-tour="itinerary-content"]',
+        titleKey: 'tour.itinerary_tab.title',
+        descKey: 'tour.itinerary_tab.desc',
+        page: 'trip-detail',
+        tab: 'itinerary',
+        position: 'top',
+        icon: Calendar,
+        type: 'feature'
+    },
+    // Step 5.4: Budget Tab (Trip Detail)
+    {
+        id: 'budget-tab',
         target: '[data-tour="budget-content"]',
         titleKey: 'tour.budget_tab.title',
         descKey: 'tour.budget_tab.desc',
@@ -137,9 +204,111 @@ export const TOUR_STEPS = [
         tab: 'budget',
         position: 'top',
         icon: Wallet,
-        type: 'budget'
+        type: 'feature'
     },
-    // Step 6: Finish
+    // Step 5.5: Packing Tab (Trip Detail)
+    {
+        id: 'packing-tab',
+        target: '[data-tour="packing-content"]',
+        titleKey: 'tour.packing_tab.title',
+        descKey: 'tour.packing_tab.desc',
+        page: 'trip-detail',
+        tab: 'packing',
+        position: 'top',
+        icon: ShoppingBag,
+        type: 'feature'
+    },
+    // Step 5.6: Gallery Tab (Trip Detail)
+    {
+        id: 'gallery-tab',
+        target: '[data-tour="gallery-content"]',
+        titleKey: 'tour.gallery_tab.title',
+        descKey: 'tour.gallery_tab.desc',
+        page: 'trip-detail',
+        tab: 'gallery',
+        position: 'top',
+        icon: Image,
+        type: 'feature'
+    },
+    // Step 5.7: Emergency Tab (Trip Detail)
+    {
+        id: 'emergency-tab',
+        target: '[data-tour="emergency-content"]',
+        titleKey: 'tour.emergency_tab.title',
+        descKey: 'tour.emergency_tab.desc',
+        page: 'trip-detail',
+        tab: 'emergency',
+        position: 'top',
+        icon: Siren,
+        type: 'feature'
+    },
+    // Step 6: Profile - Header
+    {
+        id: 'profile-header',
+        target: '[data-tour="profile-header"]',
+        titleKey: 'tour.profile_header.title',
+        descKey: 'tour.profile_header.desc',
+        page: 'profile',
+        position: 'bottom',
+        icon: User,
+        type: 'general'
+    },
+    // Step 7: Profile - Tabs
+    {
+        id: 'profile-tabs',
+        target: '[data-tour="profile-tabs"]',
+        titleKey: 'tour.profile_tabs.title',
+        descKey: 'tour.profile_tabs.desc',
+        page: 'profile',
+        position: 'top',
+        icon: Grid,
+        type: 'navigation'
+    },
+    // Step 8: Add Friend (Mock Profile)
+    {
+        id: 'add-friend',
+        target: '[data-tour="add-friend-btn"]',
+        titleKey: 'tour.add_friend.title',
+        descKey: 'tour.add_friend.desc',
+        page: 'mock-profile',
+        position: 'left',
+        icon: UserPlus,
+        type: 'action'
+    },
+    // Step 9: Profile - Private Chat
+    {
+        id: 'private-chat',
+        target: '[data-tour="private-chat-btn"]',
+        titleKey: 'tour.private_chat.title',
+        descKey: 'tour.private_chat.desc',
+        page: 'mock-profile',
+        position: 'left',
+        icon: MessageCircle,
+        type: 'feature'
+    },
+    // Step 10: Jarvis AI Chat (Dashboard)
+    {
+        id: 'jarvis-chat',
+        target: '[data-tour="jarvis-chat"]',
+        titleKey: 'tour.jarvis_chat.title',
+        descKey: 'tour.jarvis_chat.desc',
+        page: 'dashboard',
+        position: 'left',
+        icon: BrainCircuit,
+        type: 'feature'
+    },
+    // Step 11: Friends & Chat (Dashboard - Chat Modal)
+    {
+        id: 'friends-chat',
+        target: '[data-tour="chat-window"]',
+        titleKey: 'tour.friends_chat.title',
+        descKey: 'tour.friends_chat.desc',
+        page: 'dashboard',
+        position: 'top',
+        icon: Users,
+        type: 'feature'
+    },
+    // Step 12: Finish
     {
         id: 'finish',
         target: null,
@@ -195,7 +364,10 @@ export const TourProvider = ({ children, onNavigate }) => {
                 onNavigate(nextStepData);
             }
 
-            setCurrentStep(prev => prev + 1);
+            // Delay step change to allow navigation and DOM update
+            setTimeout(() => {
+                setCurrentStep(prev => prev + 1);
+            }, 500); // Wait for page transition
         } else {
             endTour();
         }

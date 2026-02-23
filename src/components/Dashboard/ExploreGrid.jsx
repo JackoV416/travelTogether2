@@ -1,8 +1,10 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Heart, Eye, MapPin, User, Loader2 } from 'lucide-react';
-import { glassCard, getLocalizedCityName, getTripSeasonDisplay } from '../../utils/tripUtils';
+import { getLocalizedCityName, getTripSeasonDisplay } from '../../utils/tripUtils';
 import { PUBLIC_TRIPS_DATA, generateRandomMockTrips } from '../../constants/publicTripsData';
+import { AuroraCard, AuroraGradientText } from '../Shared/AuroraComponents';
+import { DEFAULT_BG_IMAGE } from '../../constants/appData';
 import FilterMenu from './FilterMenu';
 
 /**
@@ -247,12 +249,12 @@ const ExploreGrid = ({ isDarkMode, onSelectTrip, userTrips }) => {
 
     return (
         <div className="space-y-6">
-            <h3 className="text-xl font-bold flex items-center gap-2 px-2">
+            <AuroraGradientText as="h3" className="text-xl font-black flex items-center gap-2 px-2">
                 <span className="text-2xl">🌍</span> {t('dashboard.explore_community') || 'Explore Community'}
-            </h3>
+            </AuroraGradientText>
 
             {/* Smart Filter Bar */}
-            <div className={`p-4 rounded-2xl border ${glassCard(isDarkMode)} space-y-4 relative z-50`}>
+            <AuroraCard className="p-4 space-y-4 relative z-50">
                 <div className="flex flex-col md:flex-row gap-4">
                     {/* Search */}
                     <div className="flex-1 relative group">
@@ -284,23 +286,29 @@ const ExploreGrid = ({ isDarkMode, onSelectTrip, userTrips }) => {
                         onFilterChange={handleFilterChange}
                     />
                 </div>
-            </div>
+            </AuroraCard>
 
             {/* Masonry Layout */}
             <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
-                {visibleTrips.map((trip) => (
-                    <div
+                {visibleTrips.map((trip, idx) => (
+                    <AuroraCard
                         key={trip.id}
                         onClick={() => onSelectTrip && onSelectTrip(trip)}
-                        className={`break-inside-avoid mb-4 rounded-3xl overflow-hidden border transition-all duration-500 hover:scale-[1.03] cursor-pointer group relative ${glassCard(isDarkMode)} border-white/5 shadow-2xl shadow-black/40 animate-fade-in`}
+                        className="break-inside-avoid mb-4 overflow-hidden cursor-pointer group relative shadow-2xl shadow-black/40 animate-fade-in hover:scale-[1.03] transition-transform duration-500"
+                        noPadding={true}
                     >
                         {/* Image Cover */}
                         <div className="relative aspect-[3/4] overflow-hidden">
                             <img
-                                src={trip.coverImage}
+                                src={trip.coverImage || DEFAULT_BG_IMAGE}
                                 alt={trip.name}
                                 className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-115"
-                                loading="lazy"
+                                loading={idx < 4 ? "eager" : "lazy"}
+                                fetchpriority={idx < 4 ? "high" : "auto"}
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = DEFAULT_BG_IMAGE;
+                                }}
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent opacity-90" />
 
@@ -354,7 +362,7 @@ const ExploreGrid = ({ isDarkMode, onSelectTrip, userTrips }) => {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </AuroraCard>
                 ))}
             </div>
 

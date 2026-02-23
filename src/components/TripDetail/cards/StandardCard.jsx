@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { MapPin, Utensils, ShoppingBag, Hotel, Star, Clock, Pencil, DollarSign, Heart, Navigation } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getSmartItemImage, formatDuration, getTransportAdvice, getGoogleMapsSearchUrl } from '../../../utils/tripUtils';
+import { getLocalizedContent } from '../../../utils/tripHelpers';
 
-const StandardCard = ({ item, isDarkMode, onEdit }) => {
+const StandardCard = ({ item, isDarkMode, onEdit, currentLang }) => {
     const { t, i18n } = useTranslation();
-    const isChinese = i18n.language && i18n.language.includes('zh');
-    const displayTitle = (isChinese && item.name_zh) ? item.name_zh : item.name;
+    const displayTitle = getLocalizedContent(item.name, currentLang);
     const bgImage = getSmartItemImage(item);
 
     // Type-based colors
@@ -67,10 +67,7 @@ const StandardCard = ({ item, isDarkMode, onEdit }) => {
 
     // Localization Helper
     const getDetail = (key) => {
-        if (isChinese) {
-            return item.details?.[`${key}_zh`] || item.details?.[key];
-        }
-        return item.details?.[key];
+        return getLocalizedContent(item.details?.[key], currentLang);
     };
 
     return (
@@ -92,7 +89,7 @@ const StandardCard = ({ item, isDarkMode, onEdit }) => {
                     }
                 }}
                 className="absolute top-2 right-2 z-30 p-2 rounded-full bg-black/20 backdrop-blur-md hover:bg-white/20 transition-all active:scale-90 group-hover:opacity-100 md:opacity-0 opacity-100"
-                title="Save to Board"
+                title={t('common.tooltips.save_to_board')}
             >
                 <Heart className="w-5 h-5 text-white transition-colors" />
             </button>
@@ -118,7 +115,7 @@ const StandardCard = ({ item, isDarkMode, onEdit }) => {
                 {/* Virtual Badge */}
                 {item.isVirtual && (
                     <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-sm rounded text-[9px] font-black text-white uppercase tracking-wider border border-white/20">
-                        {isChinese ? '續住' : 'STAY'}
+                        {currentLang?.includes('zh') ? '續住' : 'STAY'}
                     </div>
                 )}
             </div>
@@ -154,7 +151,7 @@ const StandardCard = ({ item, isDarkMode, onEdit }) => {
                     {/* Line 3: Duration / Capacity / Smart Info */}
                     <div className="flex items-center gap-2 text-[9px] font-black text-indigo-400/90">
                         <Clock className="w-2.5 h-2.5" />
-                        <span>{isChinese ? '停留約' : 'Stay approx'} {formatDuration(item.details?.duration || 60)}</span>
+                        <span>{currentLang?.includes('zh') ? '停留約' : 'Stay approx'} {formatDuration(item.details?.duration || 60)}</span>
                         {item.details?.rating && (
                             <span className="flex items-center gap-0.5 text-yellow-500 ml-1 border-l border-white/10 pl-2">
                                 {Number(item.details.rating).toFixed(1)} ★
@@ -182,7 +179,7 @@ const StandardCard = ({ item, isDarkMode, onEdit }) => {
 
                     {/* Line 5: Time Range & Total Duration - Matched with TransportCard */}
                     <div className="flex items-center gap-2 text-[10px] font-black tracking-tight uppercase whitespace-nowrap">
-                        <span className={`px-1.5 py-0.5 rounded border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-gray-200'} ${theme.accent}`}>
+                        <span title={t('common.tooltips.remove_item')} className={`px-1.5 py-0.5 rounded border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-gray-200'} ${theme.accent}`}>
                             {item.details?.time || item.time || "00:00"} — {item.details?.endTime || "..."}
                         </span>
                         <span className="opacity-20">/</span>
@@ -191,7 +188,7 @@ const StandardCard = ({ item, isDarkMode, onEdit }) => {
 
                     {/* Line 6: Other Info / Notes / Insight */}
                     <p className="text-[10px] opacity-60 line-clamp-1 leading-normal italic font-medium tracking-tight">
-                        {getDetail('insight') || getDetail('desc') || getDetail('notes') || (isChinese ? "暫無詳細資料。" : "No extra data provided.")}
+                        {getDetail('insight') || getDetail('desc') || getDetail('notes') || (currentLang?.includes('zh') ? "暫無詳細資料。" : "No extra data provided.")}
                     </p>
 
                 </div>
@@ -199,9 +196,16 @@ const StandardCard = ({ item, isDarkMode, onEdit }) => {
                 {/* Line 7: Tags / Badges - MOVED OUTSIDE space-y-1 */}
                 <div className="flex items-center gap-1.5 mt-auto pt-2 overflow-hidden">
                     {(() => {
-                        const tags = isChinese ? (item.details?.tags_zh || item.details?.tags) : item.details?.tags;
-                        return tags?.length > 0 ? (
-                            tags.slice(0, 3).map((tag, i) => (
+                        const tags = item.details?.tags; // tags should be handled by getLocalizedContent if they were object, but usually tags are array of strings. 
+                        // Assuming tags are simple strings for now or we need specific tag localization logic if tags are bilingual objects?
+                        // Mock data shows tags as array of strings like ["Shopping", "Mall"]. 
+                        // If we want localized tags, we need to update data structure or use translation keys.
+                        // For now keep as is or assume tags might be updated later. 
+                        // Actually, code had: isChinese ? (item.details?.tags_zh || item.details?.tags) : item.details?.tags;
+                        // Let's replicate this logic using currentLang check for now as tags might be separate arrays.
+                        const tagsList = (currentLang?.includes('zh') && item.details?.tags_zh) ? item.details?.tags_zh : item.details?.tags;
+                        return tagsList?.length > 0 ? (
+                            tagsList.slice(0, 3).map((tag, i) => (
                                 <span key={i} className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter ${theme.accent} ${theme.bg} border ${theme.border}`}>
                                     #{tag}
                                 </span>

@@ -10,7 +10,8 @@ import {
     query,
     where,
     getDocs,
-    writeBatch
+    writeBatch,
+    runTransaction
 } from 'firebase/firestore';
 import { BADGES_DATA, LEVEL_THRESHOLDS } from '../constants/badges';
 
@@ -114,7 +115,7 @@ export const checkAndUnlockAchievements = async (userId, type, currentValue = nu
         // However, we can approximate or use a transaction reading the doc first.
 
         // Transaction approach to ensure Level is updated with XP
-        await cn.runTransaction(db, async (transaction) => {
+        await runTransaction(db, async (transaction) => {
             const userDoc = await transaction.get(userRef);
             if (!userDoc.exists()) return;
 

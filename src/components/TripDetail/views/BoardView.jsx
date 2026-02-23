@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { MapPin, Clock, MoreHorizontal, Heart, MessageCircle, Share2, Calendar, Info } from 'lucide-react';
 import { formatTime } from '../../../utils/tripUtils';
+import { getLocalizedContent } from '../../../utils/tripHelpers';
 
-const BoardView = ({ items, days, isDarkMode, onItemClick, isEditMode }) => {
+const BoardView = ({ items, days, isDarkMode, onItemClick, isEditMode, currentLang }) => {
     // Separate items into columns for manual masonry or use CSS columns
     // CSS columns is easier for pure display.
     const [notification, setNotification] = useState(null);
@@ -46,7 +47,7 @@ const BoardView = ({ items, days, isDarkMode, onItemClick, isEditMode }) => {
                             </div>
                             <div className="text-white font-bold text-2xl drop-shadow-md truncate">
                                 {/* eslint-disable-next-line no-misleading-character-class */}
-                                {item.name.replace(/^[\u0020-\u007E\u00A0-\u00FF\u0100-\u017F\u0180-\u024F\u2C60-\u2C7F\uA720-\uA7FF\uAB30-\uAB6F\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}]+\s*/u, '').replace(/^[✈️🏨🚆🍽️⛩️🛍️🎢🛂]+\s*/u, '')}
+                                {getLocalizedContent(item.name, currentLang)?.replace(/^[\u0020-\u007E\u00A0-\u00FF\u0100-\u017F\u0180-\u024F\u2C60-\u2C7F\uA720-\uA7FF\uAB30-\uAB6F\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}]+\s*/u, '').replace(/^[✈️🏨🚆🍽️⛩️🛍️🎢🛂]+\s*/u, '')}
                             </div>
                             <div className="text-white/80 text-[10px] font-mono flex items-center gap-1">
                                 <span className="bg-black/20 px-1.5 py-0.5 rounded backdrop-blur-sm">{item.type.toUpperCase()}</span>
@@ -74,14 +75,14 @@ const BoardView = ({ items, days, isDarkMode, onItemClick, isEditMode }) => {
                             {item.details?.location && (
                                 <div className="flex items-start gap-1.5 text-xs">
                                     <MapPin className="w-3.5 h-3.5 text-indigo-400 mt-0.5 shrink-0" />
-                                    <span className="opacity-80 leading-relaxed line-clamp-2">{item.details.location}</span>
+                                    <span className="opacity-80 leading-relaxed line-clamp-2">{getLocalizedContent(item.details.location, currentLang)}</span>
                                 </div>
                             )}
 
                             {/* Notes Preview (if any) */}
                             {item.details?.notes && (
                                 <div className={`text-xs p-2 rounded-lg italic line-clamp-3 ${isDarkMode ? 'bg-black/20 text-gray-400' : 'bg-gray-50 text-gray-500'}`}>
-                                    "{item.details.notes}"
+                                    "{getLocalizedContent(item.details.notes, currentLang)}"
                                 </div>
                             )}
 

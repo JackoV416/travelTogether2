@@ -128,7 +128,7 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
         >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* 1. Trip Name */}
-                <div className="md:col-span-2 relative">
+                <div className="md:col-span-2 relative" data-tour="create-trip-name">
                     <AuroraInput
                         label={t('trip.create_modal.trip_name')}
                         value={form.name}
@@ -146,7 +146,7 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
                 </div>
 
                 {/* 2. Destinations */}
-                <div className="md:col-span-2 space-y-6">
+                <div className="md:col-span-2 space-y-6" data-tour="create-trip-country">
                     <div className="flex justify-between items-center px-1">
                         <label className="text-xs font-bold text-indigo-300 uppercase tracking-wider">{t('trip.create_modal.destinations')}</label>
                         <button
@@ -311,7 +311,7 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
                 </div>
 
                 {/* 3. Dates */}
-                <div className="md:col-span-2 space-y-2">
+                <div className="md:col-span-2 space-y-2" data-tour="create-trip-dates">
                     <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider ml-1">{t('trip.create_modal.trip_dates')}</label>
                     <DateRangePicker
                         startDate={form.startDate}
@@ -327,7 +327,7 @@ const CreateTripModal = ({ isOpen, onClose, form, onInputChange, onMultiSelect, 
                 </div>
 
                 {/* 4. AI Toggle */}
-                <div className="md:col-span-2">
+                <div className="md:col-span-2" data-tour="create-trip-ai">
                     <div
                         className={`flex items-center gap-4 p-5 rounded-2xl border transition-all cursor-pointer group ${form.isAI ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-slate-800/30 border-white/5 hover:bg-slate-800/50'}`}
                         onClick={() => onInputChange('isAI', !form.isAI)}

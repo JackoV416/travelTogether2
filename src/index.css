@@ -20,6 +20,15 @@
     -webkit-text-size-adjust: 100%;
     /* Ensure full height usage */
     min-height: 100dvh;
+    /* PWA Mobile: Prevent horizontal scroll */
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  
+  #root {
+    /* Ensure root container doesn't overflow */
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 }
 

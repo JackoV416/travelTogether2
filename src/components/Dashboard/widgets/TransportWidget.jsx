@@ -1,49 +1,60 @@
 import React from 'react';
-import { Train } from 'lucide-react';
-import { glassCard } from '../../../utils/tripUtils';
+import { Train, Tag } from 'lucide-react';
 import SkeletonLoader from '../../Shared/SkeletonLoader';
+import { AuroraCard, AuroraGradientText } from '../../Shared/AuroraComponents';
 
 /**
- * TransportWidget - 顯示交通票券
+ * TransportWidget - 顯示交通票券 (Aurora Style)
  * @param {boolean} isDarkMode - Dark mode state
  * @param {Array} transports - Transports array
  * @param {boolean} loadingTransports - Loading state
  */
 const TransportWidget = ({ isDarkMode, transports, loadingTransports }) => {
     return (
-        <div className="break-inside-avoid shadow-xl">
-            <div className={`${glassCard(isDarkMode)} p-6 flex flex-col overflow-hidden`}>
-                <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500 rounded-t-2xl"></div>
-                <div className="flex justify-between items-center mb-6 relative z-10">
-                    <h4 className="font-bold flex items-center gap-2 text-indigo-400">
-                        <Train className="w-5 h-5" /> 交通票券
-                    </h4>
-                    <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></div>
-                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold font-mono tracking-wider ${isDarkMode ? 'bg-white/5 text-white/40 border border-white/10' : 'bg-black/5 text-black/40 border border-black/5'}`}>
-                            TICKETS
-                        </span>
+        <div className="break-inside-avoid shadow-xl h-full">
+            <AuroraCard className="h-full flex flex-col !p-0 overflow-hidden" noPadding>
+                {/* Header Gradient */}
+                <div className="bg-gradient-to-r from-violet-600/20 via-indigo-600/20 to-blue-600/20 p-6 pb-4">
+                    <div className="flex justify-between items-center mb-2">
+                        <AuroraGradientText as="h4" className="font-bold flex items-center gap-2 text-lg">
+                            <Train className="w-5 h-5 text-indigo-400" /> 交通票券
+                        </AuroraGradientText>
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.5)]"></div>
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold font-mono tracking-wider bg-black/20 text-white/50 border border-white/5 backdrop-blur-sm">
+                                TICKETS
+                            </span>
+                        </div>
                     </div>
                 </div>
-                <div className="space-y-2">
+
+                <div className="space-y-4 flex-1 overflow-y-auto p-6 pt-2 custom-scrollbar">
                     {loadingTransports ? (
-                        <div className="space-y-2">
+                        <div className="space-y-2 mt-2">
                             <SkeletonLoader type="list-item" count={3} isDarkMode={isDarkMode} />
                         </div>
                     ) : (
                         transports.map((t, i) => (
-                            <a key={i} href={t.url} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-all flex items-center justify-between gap-2 group">
-                                <div className="flex-1 min-w-0">
-                                    <div className="font-semibold text-sm group-hover:text-violet-400 transition-colors">{t.name}</div>
-                                    <div className="text-[10px] opacity-50">{t.provider} • {t.details}</div>
+                            <a key={i} href={t.url} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 hover:border-violet-500/30 transition-all flex items-center justify-between gap-3 group relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-violet-500/0 to-violet-500/0 group-hover:via-violet-500/5 transition-all duration-500" />
+
+                                <div className="flex-1 min-w-0 relative z-10">
+                                    <div className="font-bold text-sm text-white group-hover:text-violet-300 transition-colors">{t.name}</div>
+                                    <div className="text-[10px] opacity-60 text-slate-300 flex items-center gap-2 mt-1">
+                                        <span className="bg-white/10 px-1.5 py-0.5 rounded text-slate-200">{t.provider}</span>
+                                        <span className="truncate">{t.details}</span>
+                                    </div>
                                 </div>
-                                <span className="font-bold text-sm text-violet-400">{t.price}</span>
+                                <div className="flex flex-col items-end gap-1 relative z-10">
+                                    <span className="font-black text-sm text-violet-300 group-hover:text-violet-200 transition-colors">{t.price}</span>
+                                    <Tag className="w-3 h-3 text-white/20 group-hover:text-violet-400 transition-colors" />
+                                </div>
                             </a>
                         ))
                     )}
+                    <div className="mt-3 text-[9px] opacity-30 text-center text-white pb-2">Data: Rome2Rio / Official Sites</div>
                 </div>
-                <div className="mt-3 text-[9px] opacity-40 text-center">Data: Rome2Rio / Official Sites</div>
-            </div>
+            </AuroraCard>
         </div>
     );
 };

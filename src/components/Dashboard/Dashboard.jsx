@@ -38,7 +38,7 @@ import SearchFilterBar from './SearchFilterBar';
 
 
 
-const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSettings, setGlobalBg, globalSettings, exchangeRates, weatherData, isLoadingWeather, isBanned, onOpenCommandPalette, deferredPrompt, onInstall, shouldStartProductTour, onProductTourStarted, onOpenChat, setChatInitialTab, forcedViewMode, allTrips, loadingAllTrips, friendRequestCount = 0 }) => {
+const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSettings, setGlobalBg, globalSettings, exchangeRates, weatherData, isLoadingWeather, isBanned, onOpenCommandPalette, deferredPrompt, onInstall, shouldStartProductTour, onProductTourStarted, onOpenChat, setChatInitialTab, forcedViewMode, isMockMode = false, allTrips, loadingAllTrips, friendRequestCount = 0 }) => {
     const {
         trips, loadingTrips, newsData, loadingNews,
         hotels, loadingHotels, flights, loadingFlights,
@@ -566,29 +566,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
             {/* Dashboard Tabs & Content */}
             <div className="animate-fade-in relative z-0 space-y-6">
 
-                {/* Tab Navigation */}
-                {!forcedViewMode && (
-                    <div className="flex items-center justify-center gap-2 mb-10">
-                        <button
-                            onClick={() => setViewMode('explore')}
-                            className={`px-8 py-3 rounded-full font-black text-xs tracking-widest uppercase transition-all duration-500 transform ${viewMode === 'explore'
-                                ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-xl shadow-indigo-500/30 scale-105 border border-indigo-400/20'
-                                : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/60 hover:text-white border border-white/5 backdrop-blur-md'
-                                }`}
-                        >
-                            🌍 {t('dashboard.explore_community') || 'Explore Community'}
-                        </button>
-                        <button
-                            onClick={() => setViewMode('my_trips')}
-                            className={`px-8 py-3 rounded-full font-black text-xs tracking-widest uppercase transition-all duration-500 transform ${viewMode === 'my_trips'
-                                ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-xl shadow-indigo-500/30 scale-105 border border-indigo-400/20'
-                                : 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/60 hover:text-white border border-white/5 backdrop-blur-md'
-                                }`}
-                        >
-                            ✈️ {t('dashboard.my_trips') || 'My Trips'}
-                        </button>
-                    </div>
-                )}
+                {/* View switcher removed — Header.jsx handles desktop, MobileBottomNav handles mobile */}
 
                 {viewMode === 'explore' ? (
                     <div className="animate-fade-in">
@@ -620,6 +598,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                                     currentFilter={filterOption}
                                 />
                             }
+                            isMockMode={isMockMode}
                         />
                     </div>
                 )}

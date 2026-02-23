@@ -144,10 +144,11 @@ export const sendMessage = async (conversationId, senderId, text, imageFile = nu
  * @param {function} callback
  */
 export const listenToConversations = (userId, callback) => {
+    // FIX: Remove orderBy to avoid "Missing Index" error. Sort client-side instead.
     const q = query(
         collection(db, CONVERSATIONS_COLLECTION),
-        where('participants', 'array-contains', userId),
-        orderBy('updatedAt', 'desc')
+        where('participants', 'array-contains', userId)
+        // orderBy('updatedAt', 'desc') // Removed to bypass index requirement
     );
 
     return onSnapshot(q, (snapshot) => {
@@ -155,6 +156,14 @@ export const listenToConversations = (userId, callback) => {
             id: doc.id,
             ...doc.data()
         }));
+
+        // Client-side sort (Newest first)
+        conversations.sort((a, b) => {
+            const timeA = a.updatedAt?.toMillis ? a.updatedAt.toMillis() : (a.updatedAt?.seconds * 1000 || 0);
+            const timeB = b.updatedAt?.toMillis ? b.updatedAt.toMillis() : (b.updatedAt?.seconds * 1000 || 0);
+            return timeB - timeA;
+        });
+
         callback(conversations);
     });
 };

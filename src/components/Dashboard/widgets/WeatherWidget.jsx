@@ -1,11 +1,12 @@
 import React from 'react';
 import { CloudSun } from 'lucide-react';
-import { glassCard, getLocalizedCityName, getLocalCityTime } from '../../../utils/tripUtils';
+import { getLocalizedCityName, getLocalCityTime } from '../../../utils/tripUtils';
 import { CITY_COORDS, INFO_DB } from '../../../constants/appData';
 import SkeletonLoader from '../../Shared/SkeletonLoader';
+import { AuroraCard, AuroraGradientText } from '../../Shared/AuroraComponents'; // Aurora Import
 
 /**
- * WeatherWidget - 顯示當地天氣與時間
+ * WeatherWidget - 顯示當地天氣與時間 (Aurora Style)
  * @param {boolean} isDarkMode - Dark mode state
  * @param {Object} weatherData - Weather data object keyed by city
  * @param {boolean} isLoadingWeather - Weather loading state
@@ -16,24 +17,26 @@ const WeatherWidget = ({ isDarkMode, weatherData, isLoadingWeather, currentLang 
     const displayCities = Object.keys(CITY_COORDS);
 
     return (
-        <div className="break-inside-avoid shadow-xl">
-            <div className={`${glassCard(isDarkMode)} p-6 flex flex-col bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-transparent max-h-[500px] overflow-hidden`}>
-                <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500/90 rounded-t-2xl"></div>
-                <div className="flex items-center justify-between mb-6 relative z-10">
-                    <h4 className="font-bold flex items-center gap-2 text-indigo-400">
-                        <CloudSun className="w-5 h-5" /> 天氣預報
-                    </h4>
-                    <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold font-mono tracking-wider ${isDarkMode ? 'bg-white/5 text-white/40 border border-white/10' : 'bg-black/5 text-black/40 border border-black/5'}`}>
-                            LIVE
-                        </span>
+        <div className="break-inside-avoid shadow-xl h-full">
+            <AuroraCard className="h-full flex flex-col !p-0 overflow-hidden" noPadding>
+                {/* Header Gradient */}
+                <div className="bg-gradient-to-r from-blue-600/20 via-indigo-600/20 to-violet-600/20 p-6 pb-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <AuroraGradientText as="h4" className="font-bold flex items-center gap-2 text-lg">
+                            <CloudSun className="w-5 h-5 text-indigo-400" /> 天氣預報
+                        </AuroraGradientText>
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold font-mono tracking-wider bg-black/20 text-white/50 border border-white/5 backdrop-blur-sm">
+                                LIVE
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="space-y-5 flex-1 overflow-y-auto pt-1 pr-1 custom-scrollbar scroll-smooth">
+                <div className="space-y-4 flex-1 overflow-y-auto p-6 pt-2 custom-scrollbar scroll-smooth">
                     {isLoadingWeather ? (
-                        <div className="space-y-4">
+                        <div className="space-y-4 mt-2">
                             <SkeletonLoader type="list-item" count={4} isDarkMode={isDarkMode} />
                         </div>
                     ) : (
@@ -41,7 +44,6 @@ const WeatherWidget = ({ isDarkMode, weatherData, isLoadingWeather, currentLang 
                             const wData = weatherData?.[city];
                             const staticData = INFO_DB.weather.find(w => w.city === city) || {};
 
-                            // 智慧解析溫室：如果 API 返返 "10°C / 4°C"，就將佢哋拆開擺落 Day 同 Night
                             const rawTemp = wData?.temp || staticData.dayTemp || '--';
                             const hasSlash = typeof rawTemp === 'string' && rawTemp.includes('/');
 
@@ -57,36 +59,36 @@ const WeatherWidget = ({ isDarkMode, weatherData, isLoadingWeather, currentLang 
                             const timezone = staticData.tz || 'Asia/Tokyo';
 
                             return (
-                                <div key={city} className={`group rounded-2xl p-4 transition-all duration-300 ${isDarkMode ? 'bg-white/5 hover:bg-white/10 border-white/5' : 'bg-gray-100/50 hover:bg-white border-transparent shadow-sm hover:shadow-md'} border relative`}>
+                                <div key={city} className="group rounded-2xl p-4 transition-all duration-300 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-indigo-500/30 relative">
                                     <div className="flex items-start justify-between mb-3">
                                         <div>
-                                            <span className={`block font-black text-sm tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{getLocalizedCityName(city, currentLang)}</span>
+                                            <span className="block font-black text-sm tracking-tight text-white">{getLocalizedCityName(city, currentLang)}</span>
                                         </div>
-                                        <div className="text-[10px] opacity-40 font-mono font-bold mt-0.5">
+                                        <div className="text-[10px] opacity-40 font-mono font-bold mt-0.5 text-white">
                                             {getLocalCityTime(timezone)}
                                         </div>
                                     </div>
 
                                     {/* Scrollable Day/Night Weather */}
-                                    <div className="flex gap-3 overflow-x-auto custom-scrollbar-hide pb-1">
+                                    <div className="flex gap-3">
                                         {/* Day Forecast */}
-                                        <div className={`flex-1 min-w-[120px] p-2.5 rounded-xl border flex flex-col gap-1 ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-white border-gray-100'}`}>
+                                        <div className="flex-1 min-w-[100px] p-2.5 rounded-xl border flex flex-col gap-1 bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/10">
                                             <div className="flex items-center justify-between">
-                                                <span className="text-[9px] font-black opacity-40 uppercase tracking-widest text-orange-400">Daytime</span>
-                                                <span className="text-sm">{dayIcon}</span>
+                                                <span className="text-[9px] font-black opacity-60 uppercase tracking-widest text-amber-400">Day</span>
+                                                <span className="text-sm filter drop-shadow-lg">{dayIcon}</span>
                                             </div>
-                                            <div className="text-xl font-black">{dayTemp}</div>
-                                            <div className="text-[10px] font-bold opacity-60 truncate">{dayDesc}</div>
+                                            <div className="text-lg font-black text-amber-100">{dayTemp}</div>
+                                            <div className="text-[10px] font-bold opacity-60 truncate text-amber-200/70">{dayDesc}</div>
                                         </div>
 
                                         {/* Night Forecast */}
-                                        <div className={`flex-1 min-w-[120px] p-2.5 rounded-xl border flex flex-col gap-1 ${isDarkMode ? 'bg-indigo-500/10 border-indigo-400/20' : 'bg-indigo-50 border-indigo-200'}`}>
+                                        <div className="flex-1 min-w-[100px] p-2.5 rounded-xl border flex flex-col gap-1 bg-gradient-to-br from-indigo-500/10 to-transparent border-indigo-500/10">
                                             <div className="flex items-center justify-between">
-                                                <span className="text-[9px] font-black opacity-40 uppercase tracking-widest text-indigo-400">Night</span>
-                                                <span className="text-sm">{nightIcon}</span>
+                                                <span className="text-[9px] font-black opacity-60 uppercase tracking-widest text-indigo-400">Night</span>
+                                                <span className="text-sm filter drop-shadow-lg">{nightIcon}</span>
                                             </div>
-                                            <div className={`text-xl font-black ${isDarkMode ? 'text-indigo-300' : 'text-indigo-600'}`}>{nightTemp}</div>
-                                            <div className="text-[10px] font-bold opacity-60 truncate">{nightDesc}</div>
+                                            <div className="text-lg font-black text-indigo-100">{nightTemp}</div>
+                                            <div className="text-[10px] font-bold opacity-60 truncate text-indigo-200/70">{nightDesc}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -94,7 +96,7 @@ const WeatherWidget = ({ isDarkMode, weatherData, isLoadingWeather, currentLang 
                         })
                     )}
                 </div>
-            </div>
+            </AuroraCard>
         </div>
     );
 };

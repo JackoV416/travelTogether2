@@ -263,7 +263,7 @@ export default function SmartExportModal({ isOpen, onClose, isDarkMode, trip, tr
         setEditedShoppingList(selectedTrip?.shoppingList || []);
         setEditedBudget(selectedTrip?.budget || []);
         setEditedPackingList(selectedTrip?.packingList || []);
-    }, [selectedTrip]);
+    }, [selectedTrip?.id]);
 
     // V1.7.0: DnD Sensors
     const sensors = useSensors(

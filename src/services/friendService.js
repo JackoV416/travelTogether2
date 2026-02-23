@@ -12,7 +12,8 @@ import {
     onSnapshot,
     addDoc,
     arrayUnion,
-    arrayRemove
+    arrayRemove,
+    writeBatch
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -138,7 +139,7 @@ export const sendFriendRequestByUid = async (currentUserId, currentUserData, tar
 // 2. Accept Friend Request
 export const acceptFriendRequest = async (currentUserId, currentUserData, requestId, requestData) => {
     try {
-        const batch = db.batch(); // Use transactional logic ideally, but batch is good for now
+        const batch = writeBatch(db); // Use transactional logic ideally, but batch is good for now
 
         const targetUserId = requestData.fromUserId;
 

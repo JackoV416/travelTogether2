@@ -1,5 +1,4 @@
-import React from 'react';
-import { FileCheck, FileText, CheckCircle, Save } from 'lucide-react';
+import { getLocalizedContent } from '../../../utils/tripHelpers';
 
 const VisaTab = ({
     trip,
@@ -13,15 +12,16 @@ const VisaTab = ({
     setVisaForm,
     onSaveVisa,
     inputClasses,
-    glassCard
+    glassCard,
+    currentLang
 }) => {
     const visaStore = trip.visa || {};
 
     // Get member visa entries (excluding 'default')
-    const memberVisaEntries = Object.entries(visaStore).filter(([key]) => !['default'].includes(key));
+    const memberVisaEntries = Object.entries(visaStore).filter(([key]) => !['default', 'status', 'type', 'expiryDate', 'notes'].includes(key));
 
-    // Get my visa info
-    const myVisa = isSimulation ? visaStore.sim : (visaStore[user?.uid] || visaStore.default);
+    // Get my visa info - FOR SIMULATION: directly use trip.visa which is the object
+    const myVisa = isSimulation ? trip.visa : (visaStore[user?.uid] || visaStore.default);
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
@@ -83,16 +83,22 @@ const VisaTab = ({
                                     <span className="font-semibold">{myVisa.status}</span>
                                 </div>
                             )}
-                            {myVisa.number && (
+                            {(myVisa.number || myVisa.type) && (
                                 <div className="flex justify-between">
                                     <span className="opacity-70">簽證類型／備註</span>
-                                    <span className="font-semibold">{myVisa.number}</span>
+                                    <span className="font-semibold">{isSimulation ? myVisa.type : myVisa.number}</span>
                                 </div>
                             )}
-                            {myVisa.expiry && (
+                            {myVisa.notes && (
+                                <div className="flex flex-col mt-2 p-2 bg-white/5 rounded border border-white/10">
+                                    <span className="text-[10px] opacity-70 uppercase mb-1">NOTES</span>
+                                    <span className="text-xs">{getLocalizedContent(myVisa.notes, currentLang)}</span>
+                                </div>
+                            )}
+                            {(myVisa.expiry || myVisa.expiryDate) && (
                                 <div className="flex justify-between">
                                     <span className="opacity-70">有效期限</span>
-                                    <span className="font-mono">{myVisa.expiry}</span>
+                                    <span className="font-mono">{myVisa.expiry || myVisa.expiryDate}</span>
                                 </div>
                             )}
                             {typeof myVisa.needsPrint === 'boolean' && (

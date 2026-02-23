@@ -101,7 +101,7 @@ const GalleryTab = ({ trip, isDarkMode, readOnly = false, onUpdateFile, user, is
     };
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6 animate-fade-in" data-tour="gallery-content">
             {/* Header Stats */}
             <div className={`flex items-center justify-between p-4 rounded-2xl border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-gray-100 shadow-sm'}`}>
                 <div className="flex items-center gap-3">
@@ -109,8 +109,8 @@ const GalleryTab = ({ trip, isDarkMode, readOnly = false, onUpdateFile, user, is
                         <ImageIcon className="w-5 h-5" />
                     </div>
                     <div>
-                        <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{t ? t('trip.tabs.gallery') : '旅程相簿'}</h3>
-                        <p className="text-xs opacity-60">共收錄 {galleryImages.length} 張精彩照片</p>
+                        <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{t('trip.gallery.title')}</h3>
+                        <p className="text-xs opacity-60">{t('trip.gallery.photo_count', { count: galleryImages.length })}</p>
                     </div>
                 </div>
             </div>
@@ -147,7 +147,7 @@ const GalleryTab = ({ trip, isDarkMode, readOnly = false, onUpdateFile, user, is
                         <div className="absolute top-2 right-2 flex gap-1">
                             {/* Source Badge */}
                             <div className="px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-md text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                                {img.source === 'itinerary' ? '行程' : '檔案'}
+                                {img.source === 'itinerary' ? t('trip.gallery.source_itinerary') : t('trip.gallery.source_files')}
                             </div>
 
                             {/* Privacy Toggle (Only for Files in Edit Mode) */}
@@ -157,7 +157,7 @@ const GalleryTab = ({ trip, isDarkMode, readOnly = false, onUpdateFile, user, is
                                     <button
                                         onClick={(e) => handleTogglePublic(e, img)}
                                         className={`w-6 h-6 rounded-full flex items-center justify-center backdrop-blur-md transition-all ${img.isPublic ? 'bg-emerald-500 text-white shadow-emerald-500/40' : 'bg-black/50 text-white/50 hover:bg-black/70 hover:text-white'}`}
-                                        title={img.isPublic ? "已公開 (Public)" : "私人 (Private)"}
+                                        title={img.isPublic ? t('trip.gallery.public_label') : t('trip.gallery.private_label')}
                                     >
                                         {img.isPublic ? <Globe2 className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
                                     </button>
@@ -173,8 +173,8 @@ const GalleryTab = ({ trip, isDarkMode, readOnly = false, onUpdateFile, user, is
                     <div className={`p-4 rounded-full mb-4 ${isDarkMode ? 'bg-gray-800' : 'bg-white shadow-sm'}`}>
                         <ImageIcon className={`w-8 h-8 ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
                     </div>
-                    <h3 className="text-lg font-bold opacity-70">相簿空空如也</h3>
-                    <p className="text-sm opacity-50 mt-1">當您在行程或檔案中添加圖片時，它們會自動顯示在這裡。</p>
+                    <h3 className="text-lg font-bold opacity-70">{t('trip.gallery.empty_title')}</h3>
+                    <p className="text-sm opacity-50 mt-1">{t('trip.gallery.empty_desc')}</p>
                 </div>
             )}
 
@@ -231,7 +231,7 @@ const GalleryTab = ({ trip, isDarkMode, readOnly = false, onUpdateFile, user, is
                                         className={`flex items-center justify-center gap-2 w-full p-3 rounded-xl font-bold transition-all ${isDarkMode ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-100 hover:bg-gray-200'}`}
                                     >
                                         <ExternalLink className="w-4 h-4" />
-                                        查看原圖
+                                        {t('trip.gallery.view_original')}
                                     </a>
                                     <a
                                         href={selectedImage.url}
@@ -239,7 +239,7 @@ const GalleryTab = ({ trip, isDarkMode, readOnly = false, onUpdateFile, user, is
                                         className={`flex items-center justify-center gap-2 w-full p-3 rounded-xl font-bold transition-all ${isDarkMode ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}
                                     >
                                         <Download className="w-4 h-4" />
-                                        下載圖片
+                                        {t('trip.gallery.download')}
                                     </a>
                                 </div>
                             </div>

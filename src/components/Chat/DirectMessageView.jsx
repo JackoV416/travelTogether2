@@ -11,8 +11,10 @@ const DirectMessageView = ({ conversation, currentUser, isDarkMode, onBack }) =>
     const messagesEndRef = useRef(null);
 
     // Get Other User Details
-    const otherUserId = conversation.participants.find(id => id !== currentUser.uid);
-    const otherUser = conversation.participantDetails?.[otherUserId] || { displayName: 'User' };
+    const otherUserId = conversation?.participants?.find(id => id !== currentUser.uid);
+    const otherUser = conversation?.participantDetails?.[otherUserId] || { displayName: 'User' };
+
+    if (!conversation?.participants) return <div className="p-4 text-center opacity-50">Loading chat...</div>;
 
     useEffect(() => {
         if (!conversation?.id) return;
@@ -126,8 +128,8 @@ const DirectMessageView = ({ conversation, currentUser, isDarkMode, onBack }) =>
                         type="submit"
                         disabled={!newMessage.trim() || sending}
                         className={`p-3 rounded-full transition-all duration-300 shadow-lg ${!newMessage.trim()
-                                ? 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
-                                : 'bg-indigo-600 hover:bg-indigo-700 text-white hover:scale-105 active:scale-95 shadow-indigo-500/30'
+                            ? 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
+                            : 'bg-indigo-600 hover:bg-indigo-700 text-white hover:scale-105 active:scale-95 shadow-indigo-500/30'
                             }`}
                     >
                         <Send className="w-5 h-5 ml-0.5" />

@@ -150,8 +150,9 @@ const MapView2 = ({ items, trip, isDarkMode, onItemClick }) => {
 
     return (
         <div className="relative w-full h-full bg-transparent overflow-hidden rounded-2xl border border-white/10 shadow-2xl group/map leaflet-container-fix" data-tour="map-content">
-            <style dangerouslySetInnerHTML={{
-                __html: `
+            {/* Security Note: Fixed XSS Vulnerability by removing dangerouslySetInnerHTML */}
+            <style>
+                {`
                 .leaflet-container { background: ${isDarkMode ? '#0f172a' : '#f8fafc'} !important; width: 100%; height: 100%; }
                 .leaflet-control-zoom { border: none !important; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1) !important; margin-left: 20px !important; margin-bottom: 20px !important; }
                 .leaflet-control-zoom-in, .leaflet-control-zoom-out { 
@@ -172,7 +173,8 @@ const MapView2 = ({ items, trip, isDarkMode, onItemClick }) => {
                     box-shadow: inset 0 0 100px rgba(0,0,0,0.2);
                     z-index: 400;
                 }
-            `}} />
+                `}
+            </style>
 
             <MapContainer
                 center={initialCenter}
