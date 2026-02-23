@@ -30,7 +30,7 @@ const DashboardHeader = ({
         <div className="space-y-6" data-tour="dashboard-header">
             {/* Header: Compact Welcome + Actions */}
             {/* Header: Compact Welcome + Actions */}
-            <AuroraCard className="relative overflow-visible" noPadding={false}>
+            <AuroraCard className="relative overflow-visible z-30" noPadding={false}>
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 opacity-50 rounded-3xl pointer-events-none" />
 
                 <div className="flex flex-col md:flex-row justify-between items-center gap-6 relative z-10 w-full">
@@ -62,7 +62,7 @@ const DashboardHeader = ({
                                 <Search className="w-5 h-5" />
                                 <span className="hidden sm:inline text-sm font-bold">{t('dashboard.header.tooltips.search')}</span>
                             </button>
-                            <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-max px-2.5 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
+                            <div className="hidden md:flex absolute top-full left-1/2 -translate-x-1/2 mt-3 w-max px-2.5 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all duration-300 -translate-y-2 group-hover:translate-y-0 z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
                                 <span className="text-[10px] font-bold tracking-wide">{t('dashboard.header.tooltips.search')}</span>
                                 <Kbd keys={['⌘', 'K']} className="border-gray-600 bg-gray-700 text-gray-300" />
                             </div>
@@ -79,7 +79,7 @@ const DashboardHeader = ({
                                     <span className="hidden sm:inline font-bold">{t('dashboard.header.new_trip')}</span>
                                 </button>
                             </div>
-                            <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-max px-2.5 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
+                            <div className="hidden md:flex absolute top-full left-1/2 -translate-x-1/2 mt-3 w-max px-2.5 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all duration-300 -translate-y-2 group-hover:translate-y-0 z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
                                 <span className="text-[10px] font-bold tracking-wide">{t('dashboard.header.tooltips.new')}</span>
                                 <Kbd keys={['⇧', 'N']} className="border-gray-600 bg-gray-700 text-gray-300" />
                             </div>
@@ -98,7 +98,7 @@ const DashboardHeader = ({
                                     <span className="hidden sm:inline text-sm font-bold">{t('dashboard.header.smart_import')}</span>
                                 </button>
                             </div>
-                            <div className="hidden md:flex absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-max px-2.5 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
+                            <div className="hidden md:flex absolute top-full left-1/2 -translate-x-1/2 mt-3 w-max px-2.5 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all duration-300 -translate-y-2 group-hover:translate-y-0 z-[100] pointer-events-none shadow-xl border border-white/10 items-center gap-2">
                                 <span className="text-[10px] font-bold tracking-wide">{t('dashboard.header.tooltips.import')}</span>
                                 <Kbd keys={['⇧', 'I']} className="border-gray-600 bg-gray-700 text-gray-300" />
                             </div>

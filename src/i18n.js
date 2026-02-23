@@ -11,6 +11,9 @@ const resources = {
                 "login_desc": "Sign in to sync across devices"
             },
             "common": {
+                "notifications": {
+                    "title": "Notifications"
+                },
                 "search": "Search...",
                 "cancel": "Cancel",
                 "confirm": "Confirm",
@@ -1146,6 +1149,9 @@ const resources = {
                 "login_desc": "登入以同步所有裝置"
             },
             "common": {
+                "notifications": {
+                    "title": "通知中心"
+                },
                 "search": "搜尋...",
                 "confirm": "確認",
                 "cancel": "取消",
@@ -2344,6 +2350,9 @@ const resources = {
                 "Other": "其他"
             },
             "common": {
+                "notifications": {
+                    "title": "通知"
+                },
                 search: "搵嘢...",
                 confirm: "確認",
                 cancel: "取消",

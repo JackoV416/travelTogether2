@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "2.0.4";
-export const APP_VERSION_TAG = "Security Dependency Fix";
+export const APP_VERSION = "2.0.5";
+export const APP_VERSION_TAG = "UI Hygiene & Polish";
 export const APP_LAST_UPDATE = "2026-02-23";
 export const JARVIS_VERSION = "V0.0.6-Beta";
 

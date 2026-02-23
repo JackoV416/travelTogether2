@@ -90,7 +90,7 @@ export const INSURANCE_RESOURCES = [
 ];
 
 export const AUTHOR_NAME = "Jamie Kwok";
-export const APP_VERSION = "V2.0.3";
+export const APP_VERSION = "V2.0.5";
 export const VERSION_HISTORY = [
     {
         ver: "V1.3.1",
