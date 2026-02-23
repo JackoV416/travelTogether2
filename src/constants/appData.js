@@ -9,8 +9,8 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "2.0.3";
-export const APP_VERSION_TAG = "i18n Fix & UX Polish";
+export const APP_VERSION = "2.0.4";
+export const APP_VERSION_TAG = "Security Dependency Fix";
 export const APP_LAST_UPDATE = "2026-02-23";
 export const JARVIS_VERSION = "V0.0.6-Beta";
 
@@ -122,6 +122,33 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V2.0.4",
+        date: "2026-02-23",
+        tag: "Security Dependency Fix",
+        desc: {
+            "zh-TW": "依賴安全技、消除所有漏洞",
+            "zh-HK": "依賴安全技、消除晒所有漏洞",
+            "en": "Security Dependency Fix & Audit Clean"
+        },
+        details: {
+            "zh-TW": [
+                "🛡️ Security: `npm audit fix --force` 將漏洞從 10 個清零至 0",
+                "📦 Deps: 升級 `eslint` 10.0.1、`eslint-plugin-react` 7.22.0 解決 ReDoS 漏洞",
+                "✅ Build: 構建驗證通過，所有功能正常運作"
+            ],
+            "zh-HK": [
+                "🛡️ Security: `npm audit fix --force` 將漏洞從 10 個清零至 0",
+                "📦 Deps: 升級 `eslint` 10.0.1、`eslint-plugin-react` 7.22.0 解決 ReDoS 漏洞",
+                "✅ Build: Build 驗證通過，晒所有功能正常運作"
+            ],
+            "en": [
+                "🛡️ Security: `npm audit fix --force` cleared all 10 vulnerabilities to 0",
+                "📦 Deps: Upgraded `eslint` to 10.0.1, `eslint-plugin-react` to 7.22.0 — resolved ReDoS vulnerability",
+                "✅ Build: Verified build passes, all features functioning normally"
+            ]
+        }
+    },
     {
         ver: "V2.0.3",
         date: "2026-02-23",

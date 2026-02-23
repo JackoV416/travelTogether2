@@ -1,4 +1,4 @@
-# Travel Together V2 <kbd>V2.0.3</kbd>
+# Travel Together V2 <kbd>V2.0.4</kbd>
 
 [![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://travel-together-v2.vercel.app/)
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
@@ -419,7 +419,7 @@ graph TD
 
 ## 📋 版本紀錄 (History)
 
-| **V2.0.3** | **Security & UI Audit** | 🚀 最新版 |
+| **V2.0.4** | **Security & UI Audit** | 🚀 最新版 |
 | **V1.9.0** | **Social Revolution** | ✅ 已發布 |
 | **V1.8.0** | **Performance Audit** | ✅ 已發布 |
 | **V1.7.0** | **PDF Editor & Expansion** | ✅ 已發布 |
