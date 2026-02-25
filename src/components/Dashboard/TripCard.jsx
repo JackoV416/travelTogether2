@@ -1,182 +1,156 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { MapPin as MapIcon, Calendar, Shirt, Sun, Moon, CheckCircle2, Cloud, FileText } from 'lucide-react';
-import { getLocalizedCountryName, getLocalizedCityName, formatDate, getTripSummary, getSmartTips } from '../../utils/tripUtils';
+import { MapPin, Calendar, Users, Layers, ChevronRight, Bookmark } from 'lucide-react';
+import { getLocalizedCountryName, getLocalizedCityName, formatDate, getSmartTips, getTripSeasonDisplay } from '../../utils/tripUtils';
 import { COUNTRIES_DATA, DEFAULT_BG_IMAGE } from '../../constants/appData';
 import { AuroraCard } from '../Shared/AuroraComponents';
 
 const TripCard = ({ trip, currentLang, onSelect, setGlobalBg, cardWeather, isDarkMode }) => {
     const { t } = useTranslation();
+
     const cities = (trip.cities && trip.cities.length > 0) ? trip.cities : (trip.city ? [trip.city] : []);
     const displayCity = cities.slice(0, 2).map(c => getLocalizedCityName(c, currentLang)).join(currentLang === 'en' ? ', ' : '、') + (cities.length > 2 ? '...' : '');
-    const countryList = (trip.countries || [trip.country]).slice(0, 3).map(c => getLocalizedCountryName(c, currentLang)).join(currentLang === 'en' ? ', ' : '、');
+    const countryList = (trip.countries || [trip.country]).slice(0, 2).map(c => getLocalizedCountryName(c, currentLang)).join(currentLang === 'en' ? ', ' : '、');
 
-    // Countdown Calculation
-    const start = new Date(trip.startDate);
-    const end = trip.endDate ? new Date(trip.endDate) : null;
+    // Cover image: trip-specific → country default → fallback
+    const coverImg = trip.coverImage || trip.image || COUNTRIES_DATA[trip.country]?.image || DEFAULT_BG_IMAGE;
 
-    // Normalize "now" to start of today for consistent day-based comparison
+    // Countdown
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const start = new Date(trip.startDate);
+    const end = trip.endDate ? new Date(trip.endDate) : null;
+    const daysUntil = Math.ceil((start - today) / (1000 * 60 * 60 * 24));
 
-    const diffTime = start - today;
-    const daysUntil = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    let countdownLabel = "";
-    let badgeClass = "";
-
+    let statusLabel, badgeClass;
     if (end && end < today) {
-        countdownLabel = t('trip.status.ended');
-        badgeClass = "bg-gray-700/50 text-gray-400 border-gray-600";
+        statusLabel = t('trip.status.ended');
+        badgeClass = 'bg-gray-800/70 text-gray-300 border-gray-600/50';
     } else if (daysUntil > 0) {
-        countdownLabel = currentLang === 'en' ? `${daysUntil} ${t('trip.status.countdown')}` : `${t('trip.status.countdown')} ${daysUntil} ${t('trip.header.days_label')}`;
-        badgeClass = "bg-rose-500/20 text-rose-400 border-rose-500/30";
+        statusLabel = currentLang === 'en'
+            ? `${daysUntil}d ${t('trip.status.countdown')}`
+            : `${t('trip.status.countdown')} ${daysUntil} ${t('trip.header.days_label')}`;
+        badgeClass = 'bg-rose-500/30 text-rose-300 border-rose-500/30';
     } else {
-        countdownLabel = t('trip.status.ongoing');
-        badgeClass = "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+        statusLabel = t('trip.status.ongoing');
+        badgeClass = 'bg-emerald-500/30 text-emerald-300 border-emerald-500/30';
     }
 
-    // Calculate Status (Legacy but kept for label logic if needed, though replaced by countdown mostly)
-    let statusLabel = countdownLabel; // Use countdown/status label
+    // Season badge
+    const season = getTripSeasonDisplay(trip.startDate, currentLang);
 
     // Stats
     const memberCount = trip.members?.length || 1;
     const itemCount = Object.values(trip.itinerary || {}).flat().length || 0;
 
-    // V1.1 Phase 3: Smart Reminders (Dynamic)
+    // Checklist (smart tips)
     const checklist = getSmartTips(trip, t);
-    // Logic: If we have tips, show top 1. If no tips (fully planned), show '準備就緒'.
-    // TripCard fix: Use .text instead of .label to match getSmartTips output
-    const nextReminder = checklist.length > 0 ? checklist[0] : { text: t('trip.status.ready') || '準備就緒', done: true };
-    const remainingReminders = checklist.length > 1 ? checklist.length - 1 : 0;
     const allChecked = checklist.length === 0;
 
-    const dateRange = `${formatDate(trip.startDate)} - ${formatDate(trip.endDate)}`;
+    const dateRange = `${formatDate(trip.startDate)} → ${formatDate(trip.endDate)}`;
+    const tripName = (currentLang.includes('zh') && trip.name_zh) ? trip.name_zh : trip.name;
 
     return (
         <AuroraCard
             onClick={() => { setGlobalBg(COUNTRIES_DATA[trip.country]?.image || DEFAULT_BG_IMAGE); onSelect(trip); }}
-            className="h-64 cursor-pointer hover:-translate-y-1 hover:shadow-indigo-500/20 group"
+            className="break-inside-avoid overflow-hidden cursor-pointer group relative shadow-2xl hover:scale-[1.02] transition-all duration-500 border-none rounded-[1.75rem]"
             noPadding={true}
         >
-            {/* Background Image with Fallback Logic */}
-            <div className="absolute inset-0">
+            {/* Card Media — aspect-[4/5] like ExploreGrid */}
+            <div className="relative aspect-[4/5] overflow-hidden">
                 <img
-                    src={COUNTRIES_DATA[trip.country]?.image || DEFAULT_BG_IMAGE}
-                    alt={trip.country}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = DEFAULT_BG_IMAGE;
-                    }}
+                    src={coverImg}
+                    alt={trip.name}
+                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                    loading="lazy"
+                    onError={(e) => { e.target.onerror = null; e.target.src = DEFAULT_BG_IMAGE; }}
                 />
-            </div>
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-90" />
 
-            {/* Aurora Gradient Overlay - V2.0 */}
-            <div className="absolute inset-x-0 bottom-0 h-4/5 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                {/* Aurora hover glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
-            {/* Aurora Glow on Hover */}
-            <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-gradient-to-tl from-indigo-500/20 via-violet-500/10 to-transparent rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
-
-            <div className="absolute inset-0 p-4 flex flex-col justify-between text-white">
-
-                {/* Header: Tag & Reminders & Date */}
-                <div className="flex justify-between items-start mb-auto relative z-10 w-full">
-                    {/* Left: Status Tag */}
-                    <div className={`${badgeClass} text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm backdrop-blur-md border`}>
-                        {statusLabel}
+                {/* Top Badges Row */}
+                <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-20">
+                    <div className="flex flex-wrap gap-1.5 max-w-[75%]">
+                        {/* City badge */}
+                        {displayCity && (
+                            <span className="px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-xl text-white text-[11px] font-bold tracking-normal border border-white/10 shadow-lg leading-snug flex items-center gap-1">
+                                <MapPin className="w-3 h-3" />
+                                {displayCity}
+                            </span>
+                        )}
+                        {/* Season badge */}
+                        {season && (
+                            <span className={`px-2.5 py-1 rounded-lg backdrop-blur-xl text-white text-[11px] font-bold tracking-normal border border-white/10 shadow-lg leading-snug ${season.bg}`}>
+                                {season.text}
+                            </span>
+                        )}
                     </div>
 
-                    {/* Right: Reminders & Date Stack */}
-                    <div className="flex flex-col items-end gap-1.5">
-                        {/* Prep Reminders */}
-                        <div className="flex items-center gap-1">
-                            <div className="bg-black/40 backdrop-blur-md rounded-full px-2 py-1 flex items-center gap-1.5 border border-white/5 shadow-sm transition-all hover:bg-black/60 cursor-pointer group/check">
-                                <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center border ${allChecked ? 'bg-emerald-500 border-emerald-500' : 'border-white/20 group-hover/check:border-emerald-400'}`}>
-                                    {allChecked && <CheckCircle2 className="w-2.5 h-2.5 text-white" />}
-                                </span>
-                                <span className={`text-[10px] font-bold ${allChecked ? 'text-emerald-400 decoration-emerald-500/50' : 'text-white'}`}>
-                                    {nextReminder.text}
-                                </span>
-                            </div>
-                            {remainingReminders > 0 && (
-                                <div className="bg-black/40 backdrop-blur-md rounded-full w-6 h-6 flex items-center justify-center border border-white/5 text-[10px] font-bold shadow-sm">
-                                    +{remainingReminders}
-                                </div>
-                            )}
-                        </div>
+                    {/* Status badge top-right */}
+                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border backdrop-blur-md shadow-lg ${badgeClass}`}>
+                        {statusLabel}
+                    </span>
+                </div>
 
-                        {/* Moved Date Badge */}
-                        <div className="bg-black/40 backdrop-blur-md rounded-lg px-2 py-1 flex items-center gap-1.5 border border-white/5 shadow-sm">
+                {/* Prep Checklist Indicator (top-right bottom area) */}
+                {!allChecked && (
+                    <div className="absolute top-16 right-4 z-20">
+                        <div className="bg-amber-500/20 backdrop-blur-md border border-amber-500/30 rounded-xl px-2 py-1 flex items-center gap-1">
+                            <span className="text-[9px] font-bold text-amber-300">
+                                {checklist.length} {t('trip.status.tips') || 'tips'}
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                {/* Bottom Info */}
+                <div className="absolute bottom-0 left-0 right-0 z-10 p-4">
+                    {/* Trip Name */}
+                    <h3 className="text-white font-black text-lg leading-tight mb-1 line-clamp-2">
+                        {tripName}
+                    </h3>
+
+                    {/* Location */}
+                    <p className="text-white/70 text-xs font-semibold mb-3 flex items-center gap-1">
+                        <MapPin className="w-3 h-3 flex-shrink-0" />
+                        {displayCity}{countryList ? `, ${countryList}` : ''}
+                    </p>
+
+                    {/* Date Row */}
+                    <div className="flex items-center gap-1.5 mb-3">
+                        <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md rounded-lg px-2.5 py-1.5 border border-white/10">
                             <Calendar className="w-3 h-3 text-indigo-300" />
                             <span className="text-[10px] font-bold text-white/90">{dateRange}</span>
                         </div>
-                    </div>
-                </div>
-                {/* Footer: Details */}
-                <div>
-                    <h3 className="text-2xl font-bold leading-tight mb-1 shadow-sm">{trip.name}</h3>
-                    <div className="flex items-center gap-2 text-xs opacity-80 mb-2">
-                        <span className="flex items-center gap-1"><MapIcon className="w-3 h-3" /> {displayCity}, {countryList}</span>
-                    </div>
-
-                    {/* Clothing Row Only (Date Moved Up) */}
-                    <div className="flex flex-col gap-2 mb-2">
-
-                        {/* Weather & Clothing (Horizontal Split) */}
-                        {cardWeather.clothes && (cardWeather.clothes.includes('|') || cardWeather.clothes.includes('/')) ? (
-                            <div className="bg-black/40 backdrop-blur-md rounded-xl border border-white/5 overflow-hidden flex flex-col mt-2">
-                                {/* Top Row: Temp & Weather */}
-                                <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
-                                    <div className="flex items-center gap-2 w-1/2 justify-center border-r border-white/5 pr-2">
-                                        <Sun className="w-3.5 h-3.5 text-amber-400" />
-                                        <span className="text-sm font-bold">{cardWeather.temp.split('/')[0].trim()}</span>
-                                        <div className="w-3.5 h-3.5 flex items-center justify-center opacity-70 [&>svg]:w-full [&>svg]:h-full">
-                                            {cardWeather.icon}
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2 w-1/2 justify-center pl-2">
-                                        <Moon className="w-3.5 h-3.5 text-indigo-400" />
-                                        <span className="text-sm font-bold">{(cardWeather.temp.split('/')[1] || '').trim() || '--'}</span>
-                                        <div className="w-3.5 h-3.5 flex items-center justify-center opacity-70 [&>svg]:w-full [&>svg]:h-full">
-                                            {cardWeather.icon}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Bottom Row: Clothing */}
-                                <div className="flex items-center justify-between px-3 py-1.5 bg-black/20">
-                                    <div className="flex items-center gap-1.5 w-1/2 justify-center border-r border-white/5 pr-2 overflow-hidden">
-                                        <Shirt className="w-3 h-3 text-amber-200/50 flex-shrink-0" />
-                                        <span className="text-[9px] text-amber-100/80 truncate">
-                                            {cardWeather.dayClothes || cardWeather.clothes.split(/[|/]/)[0].replace('日：', '').trim()}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 w-1/2 justify-center pl-2 overflow-hidden">
-                                        <Shirt className="w-3 h-3 text-indigo-200/50 flex-shrink-0" />
-                                        <span className="text-[9px] text-indigo-100/80 truncate">
-                                            {cardWeather.nightClothes || cardWeather.clothes.split(/[|/]/)[1].replace('夜：', '').trim()}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="bg-white/10 rounded-lg px-2 py-1.5 backdrop-blur-sm flex items-center gap-2 text-xs opacity-90 border border-white/5">
-                                <Shirt className="w-3.5 h-3.5 text-pink-300 flex-shrink-0" />
-                                <span className="truncate">{cardWeather.clothes}</span>
+                        {/* Weather temp if available */}
+                        {cardWeather?.temp && (
+                            <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md rounded-lg px-2 py-1.5 border border-white/10">
+                                <span className="text-[10px] font-bold text-amber-300">{cardWeather.temp.split('/')[0]?.trim()}</span>
                             </div>
                         )}
                     </div>
 
-                    {/* Review / Stats Row */}
-                    <div className="flex items-center justify-between border-t border-white/5 pt-2 opacity-60 group-hover:opacity-100 transition-opacity text-[10px] font-mono">
-                        <div className="flex gap-3">
-                            <span>👥 {memberCount} {t('trip.footer.people')}</span>
-                            <span>📍 {itemCount} {t('trip.footer.items')}</span>
+                    {/* Stats Footer */}
+                    <div className="flex items-center justify-between border-t border-white/10 pt-2.5">
+                        <div className="flex items-center gap-3">
+                            <span className="flex items-center gap-1 text-white/60 text-[10px] font-bold">
+                                <Users className="w-3 h-3" />
+                                {memberCount}
+                            </span>
+                            <span className="flex items-center gap-1 text-white/60 text-[10px] font-bold">
+                                <Layers className="w-3 h-3" />
+                                {itemCount}
+                            </span>
+                            {allChecked && (
+                                <span className="text-emerald-400 text-[10px] font-bold">✓ {t('trip.status.ready') || '準備就緒'}</span>
+                            )}
                         </div>
-                        <div className="group-hover:text-indigo-300 transition-colors">
-                            {t('trip.footer.view_details')} →
+                        <div className="flex items-center gap-1 text-white/40 group-hover:text-indigo-300 transition-colors text-[10px] font-bold">
+                            {t('trip.footer.view_details') || '查看詳情'}
+                            <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                         </div>
                     </div>
                 </div>
