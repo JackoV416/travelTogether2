@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     Calendar, ShoppingBag, Wallet, Image, DollarSign, Footprints as FootprintsIcon,
-    Shield, Siren, FileCheck, Image as ImageIcon
+    Shield, Siren, Image as ImageIcon
 } from 'lucide-react';
 import MobileBottomNav from '../../Shared/MobileBottomNav';
 import {
@@ -104,7 +104,7 @@ const TripTabs = ({
                     { id: 'journal', label: '足跡', icon: FootprintsIcon },
                     { id: 'insurance', label: '保險', icon: Shield },
                     { id: 'emergency', label: '緊急', icon: Siren },
-                    { id: 'visa', label: '簽證', icon: FileCheck }
+                    { id: 'visa', label: '簽證', icon: Shield }
                 ].map(t => (
                     <button
                         key={t.id}
@@ -349,7 +349,7 @@ const TripTabs = ({
                                     { id: 'journal', label: '足跡', icon: FootprintsIcon, color: 'text-orange-500', bg: 'bg-orange-500/10' },
                                     { id: 'insurance', label: '保險', icon: Shield, color: 'text-purple-500', bg: 'bg-purple-500/10' },
                                     { id: 'emergency', label: '緊急', icon: Siren, color: 'text-red-500', bg: 'bg-red-500/10' },
-                                    { id: 'visa', label: '簽證', icon: FileCheck, color: 'text-teal-500', bg: 'bg-teal-500/10' }
+                                    { id: 'visa', label: '簽證', icon: Shield, color: 'text-teal-500', bg: 'bg-teal-500/10' }
                                 ].map((t, index) => (
                                     <button
                                         key={t.id}
