@@ -1,4 +1,6 @@
+import { CheckSquare, FileText, CheckCircle, Save } from 'lucide-react';
 import { getLocalizedContent } from '../../../utils/tripHelpers';
+
 
 const VisaTab = ({
     trip,
@@ -28,7 +30,7 @@ const VisaTab = ({
             {/* Destination Entry Info Card */}
             <div className={glassCard(isDarkMode) + " p-6"}>
                 <h3 className="font-bold mb-4 flex gap-2">
-                    <FileCheck className="w-5 h-5" /> 目的地入境與簽證資訊
+                    <CheckSquare className="w-5 h-5" /> 目的地入境與簽證資訊
                 </h3>
                 <div className="text-sm mb-3">
                     <div className="font-semibold mb-1">{displayCountry} {displayCity}</div>
