@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { doc, updateDoc, arrayUnion, deleteDoc, collection, addDoc, serverTimestamp, getDoc, increment, arrayRemove } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { Upload, Plus, Edit3, Trash2, MapPin, Calendar, Clock, DollarSign, User, Users, Sun, Cloud, CheckCircle, AlertCircle, Search, Filter, Camera, Download, AlertTriangle, Info, Loader2, Sparkles, LayoutGrid, List as ListIcon, Maximize2, Minimize2, MoveRight, ChevronLeft, Map as MapIcon, BrainCircuit, Wallet, Plane, Bus, Train, Car, ShoppingBag, BedDouble, Receipt, Newspaper, Siren, Star, UserCircle, UserPlus, FileUp, Lock, RefreshCw, Route, MonitorPlay, Save, CheckSquare, ClipboardCheck as FileCheck, History, PlaneTakeoff, Hotel, GripVertical, Printer, ArrowUpRight, Navigation, Phone, Globe2, Link as LinkIcon, Wifi, Utensils, Image, QrCode, Copy, Instagram, MapPinned, NotebookPen, Home, PiggyBank, Moon, ChevronRight, ChevronDown, Share2, Brain, Wand2, X, MessageCircle, Undo, Redo, Footprints as FootprintsIcon, Image as ImageIcon, Shield, FileText, Columns, KanbanSquare, Heart, GitFork, Eye, Settings, Shirt } from 'lucide-react';
+import { Upload, Plus, Edit3, Trash2, MapPin, Calendar, Clock, DollarSign, User, Users, Sun, Cloud, CheckCircle, AlertCircle, Search, Filter, Camera, Download, AlertTriangle, Info, Loader2, Sparkles, LayoutGrid, List as ListIcon, Maximize2, Minimize2, MoveRight, ChevronLeft, Map as MapIcon, BrainCircuit, Wallet, Plane, Bus, Train, Car, ShoppingBag, BedDouble, Receipt, Newspaper, Siren, Star, UserCircle, UserPlus, FileUp, Lock, RefreshCw, Route, MonitorPlay, Save, CheckSquare, History, PlaneTakeoff, Hotel, GripVertical, Printer, ArrowUpRight, Navigation, Phone, Globe2, Link as LinkIcon, Wifi, Utensils, Image, QrCode, Copy, Instagram, MapPinned, NotebookPen, Home, PiggyBank, Moon, ChevronRight, ChevronDown, Share2, Brain, Wand2, X, MessageCircle, Undo, Redo, Footprints as FootprintsIcon, Image as ImageIcon, Shield, FileText, Columns, KanbanSquare, Heart, GitFork, Eye, Settings, Shirt } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import MobileBottomNav from '../Shared/MobileBottomNav';
 import ActiveUsersList from './ActiveUsersList';
@@ -1973,7 +1973,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                     { id: 'footprints', label: t('trip.tabs.footprints'), icon: FootprintsIcon },
                                     { id: 'insurance', label: t('trip.tabs.insurance'), icon: Shield },
                                     { id: 'emergency', label: t('trip.tabs.emergency'), icon: Siren },
-                                    { id: 'visa', label: t('trip.tabs.visa'), icon: FileCheck }
+                                    { id: 'visa', label: t('trip.tabs.visa'), icon: CheckSquare }
                                 ]}
                             />
                         </div>
@@ -2319,7 +2319,7 @@ const TripDetailMainLayout = ({ t, trip, tripData, onBack, user, isDarkMode, set
                                     { id: 'packing', label: t('trip.tabs.packing'), icon: ShoppingBag, bg: 'bg-blue-500/20', color: 'text-blue-400' },
                                     { id: 'insurance', label: t('trip.tabs.insurance'), icon: Shield, bg: 'bg-teal-500/20', color: 'text-teal-400' },
                                     { id: 'emergency', label: t('trip.tabs.emergency'), icon: Siren, bg: 'bg-red-500/20', color: 'text-red-400' },
-                                    { id: 'visa', label: t('trip.tabs.visa'), icon: FileCheck, bg: 'bg-cyan-500/20', color: 'text-cyan-400' },
+                                    { id: 'visa', label: t('trip.tabs.visa'), icon: CheckSquare, bg: 'bg-cyan-500/20', color: 'text-cyan-400' },
                                 ].map(t => (
                                     <button
                                         key={t.id}
