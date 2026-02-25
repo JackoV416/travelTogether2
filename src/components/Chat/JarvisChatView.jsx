@@ -17,12 +17,12 @@ const JarvisChatView = ({ user, trip, isDarkMode }) => {
     const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
 
     const LOADING_MESSAGES = [
-        t('chat.jarvis.loading', "Jarvis 正在思考..."),
-        t('chat.jarvis.analyzing', "正在分析您的行程..."),
-        t('chat.jarvis.searching', "正在搜尋最佳建議..."),
-        t('chat.jarvis.organizing', "正在整理旅遊資訊..."),
-        t('chat.jarvis.budgeting', "正在計算預算..."),
-        t('chat.jarvis.gemini', "Jarvis 正在運用 Google Gemini 2.0...")
+        t('chat.jarvis.loading', "Jarvis Thinking..."),
+        t('chat.jarvis.analyzing', "Analyzing your journey..."),
+        t('chat.jarvis.searching', "Finding hidden gems..."),
+        t('chat.jarvis.organizing', "Organizing details..."),
+        t('chat.jarvis.budgeting', "Calculating costs..."),
+        t('chat.jarvis.gemini', "Jarvis × Gemini 2.0")
     ];
 
     useEffect(() => {
@@ -54,10 +54,21 @@ const JarvisChatView = ({ user, trip, isDarkMode }) => {
         try {
             // Local Match
             const findLocalMatch = (text) => {
-                const lower = text.toLowerCase();
+                const lower = text.trim().toLowerCase();
+                // 1. Priority: Exact match
                 if (LOCAL_FAQ[lower]) return LOCAL_FAQ[lower];
+
+                // 2. Priority: Only match keyword if it's the WHOLE intent or paired with limited words
+                // To prevent "Help me plan" matching "Help" (Emergency)
                 for (const key in LOCAL_FAQ) {
-                    if (LOCAL_FAQ[key].keywords.some(k => lower.includes(k.toLowerCase()))) {
+                    const keywords = LOCAL_FAQ[key].keywords;
+                    if (keywords.some(k => {
+                        const kw = k.toLowerCase();
+                        // Only match if the keyword is a dominant part of a short query
+                        // or if it matches as a whole word in a short sentence
+                        const regex = new RegExp(`\\b${kw}\\b`, 'i');
+                        return lower.length < 20 && regex.test(lower);
+                    })) {
                         return LOCAL_FAQ[key];
                     }
                 }
@@ -158,18 +169,22 @@ const JarvisChatView = ({ user, trip, isDarkMode }) => {
     const cardBg = isDarkMode ? 'bg-white/5' : 'bg-gray-50';
 
     return (
-        <div className="h-full flex flex-col animate-fade-in">
+        <div className="h-full flex flex-col animate-fade-in bg-slate-900/10">
             {/* Header */}
-            <div className={`p-4 border-b flex items-center justify-between ${isDarkMode ? 'border-gray-800 bg-gray-900/50' : 'border-gray-100 bg-white/50'}`}>
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-700 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                        <Bot className="w-5 h-5 text-white" />
+            <div className={`p-5 border-b flex items-center justify-between ${isDarkMode ? 'border-white/5 bg-slate-950/40' : 'border-gray-100 bg-white/50'} backdrop-blur-md`}>
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 flex items-center justify-center shadow-[0_8px_20px_-4px_rgba(79,70,229,0.5)] relative group overflow-hidden">
+                        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <Bot className="w-6 h-6 text-white relative z-10" />
                     </div>
                     <div>
-                        <h3 className="font-bold text-sm">{t('chat.jarvis.header_title', 'Jarvis AI 智能助手')}</h3>
-                        <div className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                            <span className="text-[10px] opacity-50 uppercase tracking-wider font-bold">{t('chat.jarvis.status_online', { version: JARVIS_VERSION })}</span>
+                        <h3 className="font-extrabold text-sm tracking-tight">{t('chat.jarvis.header_title', 'JARVIS AI ASSISTANT')}</h3>
+                        <div className="flex items-center gap-2">
+                            <span className="flex h-1.5 w-1.5 relative">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                            </span>
+                            <span className="text-[10px] opacity-60 uppercase tracking-widest font-black italic">{t('chat.jarvis.status_online', { version: JARVIS_VERSION })}</span>
                         </div>
                     </div>
                 </div>
@@ -185,11 +200,11 @@ const JarvisChatView = ({ user, trip, isDarkMode }) => {
                                 <Bot className="w-10 h-10 text-white relative z-20" />
                             </div>
                         </div>
-                        <h3 className={`text-sm font-black italic tracking-tighter mb-1 ${textMain}`}>{t('chat.jarvis.welcome_title', "HELLO, I'M JARVIS")}</h3>
-                        <p className="text-[10px] opacity-50 leading-relaxed mb-6 max-w-xs">
-                            {t('chat.jarvis.welcome_desc', '我是您的行程管家 Jarvis。問我任何關於旅遊或 App 操作的問題！')}
+                        <h3 className={`text-5xl font-black italic tracking-tight mb-4 ${textMain} uppercase`}>{t('chat.jarvis.welcome_title', "GREETINGS, I'M JARVIS")}</h3>
+                        <p className="text-xl opacity-60 leading-relaxed mb-12 max-w-full font-semibold px-12 text-center">
+                            {t('chat.jarvis.welcome_desc', 'Your elite travels logistics partner. Ready to craft your perfect journey.')}
                         </p>
-                        <div className="grid grid-cols-2 gap-2 w-full max-w-sm px-2">
+                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 w-full px-6">
                             {INITIAL_SUGGESTIONS.map(suggestion => {
                                 let label = suggestion.label;
                                 if (suggestion.value === 'quota') label = `💰 ${t('auth.login_to_fork', '查詢配額')}`; // Fallback mapping key reuse or new one
@@ -212,10 +227,11 @@ const JarvisChatView = ({ user, trip, isDarkMode }) => {
                                     <button
                                         key={suggestion.value}
                                         onClick={() => handleJarvisSend(suggestion.value)}
-                                        className={`p-3 rounded-xl border text-[10px] font-bold text-left transition-all hover:border-indigo-500/50 hover:bg-indigo-500/10 hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 group ${cardBg} border-white/5`}
+                                        className={`p-4 rounded-2xl border text-[11px] font-black tracking-tight text-left transition-all hover:border-indigo-500/50 hover:bg-indigo-500/10 hover:scale-[1.02] active:scale-[0.98] flex items-center gap-3 group ${cardBg} border-white/5 shadow-sm relative overflow-hidden`}
                                     >
-                                        <Sparkles className="w-3.5 h-3.5 text-indigo-400 opacity-40 group-hover:opacity-100" />
-                                        {label}
+                                        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/0 to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                        <Sparkles className="w-4 h-4 text-indigo-400 opacity-40 group-hover:opacity-100 transition-all" />
+                                        <span className="relative z-10">{label}</span>
                                     </button>
                                 );
                             })}
@@ -223,52 +239,59 @@ const JarvisChatView = ({ user, trip, isDarkMode }) => {
                     </div>
                 ) : (
                     jarvisMessages.map((msg) => (
-                        <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-end gap-2 animate-fade-in`}>
+                        <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-end gap-3 animate-fade-in`}>
                             {msg.role === 'jarvis' && (
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-700 flex items-center justify-center flex-shrink-0 mb-0.5 shadow-lg shadow-indigo-500/20">
-                                    <Bot className="w-4 h-4 text-white" />
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-700 flex items-center justify-center flex-shrink-0 mb-1 shadow-lg shadow-indigo-500/20">
+                                    <Bot className="w-5 h-5 text-white" />
                                 </div>
                             )}
-                            <div className={`max-w-[85%] flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                                <div className={`px-4 py-2.5 rounded-2xl text-sm whitespace-pre-wrap shadow-sm ${msg.role === 'user'
-                                    ? 'bg-indigo-600 text-white rounded-br-none shadow-indigo-500/10'
+                            <div className={`max-w-[92%] flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                                <div className={`px-6 py-4 rounded-3xl text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${msg.role === 'user'
+                                    ? 'bg-indigo-600 text-white rounded-br-none shadow-indigo-500/30'
                                     : msg.isError
-                                        ? 'bg-red-500/10 border border-red-500/20 text-red-300 rounded-bl-none'
-                                        : 'bg-white/5 border border-white/10 text-white rounded-bl-none'
+                                        ? 'bg-red-500/10 border border-red-500/30 text-red-200 rounded-bl-none backdrop-blur-sm'
+                                        : 'bg-white/5 border border-white/10 text-white rounded-bl-none backdrop-blur-xl'
                                     }`}>
                                     {msg.text}
                                 </div>
+                                <span className="text-[10px] opacity-30 mt-1 font-mono uppercase tracking-tighter">
+                                    {new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
                             </div>
                         </div>
                     ))
                 )}
 
                 {isJarvisThinking && (
-                    <div className="flex justify-start items-end gap-2 animate-fade-in w-full pr-10">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-700 flex items-center justify-center flex-shrink-0 mb-0.5 shadow-lg shadow-indigo-500/20">
-                            <Bot className="w-4 h-4 text-white" />
+                    <div className="flex justify-start items-end gap-3 animate-fade-in w-full pr-12">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-700 flex items-center justify-center flex-shrink-0 mb-1 shadow-lg shadow-indigo-500/20">
+                            <Bot className="w-5 h-5 text-white" />
                         </div>
-                        <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl rounded-bl-none p-3 space-y-2 max-w-sm">
-                            <div className="flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-2">
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
-                                    <span className="text-xs opacity-70 font-bold">
+                        <div className="flex-1 bg-white/5 border border-white/10 rounded-3xl rounded-bl-none p-5 space-y-4 max-w-[92%] backdrop-blur-xl relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/5 to-transparent opacity-50"></div>
+                            <div className="flex items-center justify-between gap-3 relative z-10">
+                                <div className="flex items-center gap-3">
+                                    <div className="relative">
+                                        <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
+                                        <div className="absolute inset-0 blur-sm bg-indigo-500/20 animate-pulse"></div>
+                                    </div>
+                                    <span className="text-xs text-white/80 font-black italic tracking-tight">
                                         {jarvisProgress.message || LOADING_MESSAGES[loadingMsgIndex]}
                                     </span>
                                 </div>
-                                <span className="text-[10px] opacity-40 font-mono">{jarvisProgress.percent}%</span>
+                                <span className="text-[10px] opacity-40 font-mono tracking-tighter">{jarvisProgress.percent}%</span>
                             </div>
-                            <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden relative z-10">
                                 <div
-                                    className="h-full bg-indigo-500 transition-all duration-300 ease-out"
-                                    style={{ width: `${Math.max(5, jarvisProgress.percent)}%` }}
+                                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 shadow-[0_0_8px_rgba(99,102,241,0.5)] transition-all duration-500 ease-out rounded-full"
+                                    style={{ width: `${Math.max(8, jarvisProgress.percent)}%` }}
                                 />
                             </div>
                             <button
                                 onClick={() => jarvisAbortRef.current?.abort()}
-                                className="w-full py-1.5 mt-1 border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-300 text-[10px] font-bold rounded-lg transition-colors flex items-center justify-center gap-1"
+                                className="w-full py-2.5 mt-2 border border-red-500/20 bg-red-500/5 hover:bg-red-500/20 text-red-300 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 group/btn relative z-10"
                             >
-                                <X className="w-3 h-3" /> {t('chat.jarvis.cancel_generation', '取消生成')}
+                                <X className="w-3.5 h-3.5 group-hover/btn:rotate-90 transition-transform" /> {t('chat.jarvis.cancel_generation', 'TERMINATE SEQUENCE')}
                             </button>
                         </div>
                     </div>
@@ -277,22 +300,25 @@ const JarvisChatView = ({ user, trip, isDarkMode }) => {
             </div>
 
             {/* Input Area */}
-            <div className={`p-4 border-t ${isDarkMode ? 'border-gray-800 bg-gray-900/50' : 'border-gray-100 bg-white/50'}`}>
-                <form onSubmit={(e) => { e.preventDefault(); handleJarvisSend(); }} className="relative flex items-center gap-2">
-                    <input
-                        type="text"
-                        value={jarvisInput}
-                        onChange={(e) => setJarvisInput(e.target.value)}
-                        placeholder={t('chat.jarvis.input_placeholder', "向 Jarvis 發問...")}
-                        disabled={isJarvisThinking}
-                        className={`flex-1 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all placeholder:opacity-30 disabled:opacity-50 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-100 border-gray-200 text-gray-900'}`}
-                    />
+            <div className={`p-6 border-t ${isDarkMode ? 'border-white/5 bg-slate-950/60' : 'border-gray-100 bg-white/50'} backdrop-blur-xl`}>
+                <form onSubmit={(e) => { e.preventDefault(); handleJarvisSend(); }} className="relative flex items-center gap-3">
+                    <div className="flex-1 relative group">
+                        <input
+                            type="text"
+                            value={jarvisInput}
+                            onChange={(e) => setJarvisInput(e.target.value)}
+                            placeholder={t('chat.jarvis.input_placeholder', "Command Jarvis...")}
+                            disabled={isJarvisThinking}
+                            className={`w-full rounded-2xl px-6 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition-all placeholder:opacity-40 disabled:opacity-50 border shadow-inner ${isDarkMode ? 'bg-slate-900/50 border-white/5 text-white' : 'bg-gray-100 border-gray-200 text-gray-900'}`}
+                        />
+                        <div className="absolute inset-0 rounded-2xl ring-1 ring-white/10 pointer-events-none group-focus-within:ring-indigo-500/50 transition-all"></div>
+                    </div>
                     <button
                         type="submit"
                         disabled={!jarvisInput.trim() || isJarvisThinking}
-                        className={`p-3 rounded-xl transition-all ${jarvisInput.trim() && !isJarvisThinking ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 scale-100 active:scale-90' : 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed'}`}
+                        className={`p-4 rounded-2xl transition-all duration-500 ${jarvisInput.trim() && !isJarvisThinking ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_10px_30px_-5px_rgba(79,70,229,0.5)] scale-100 hover:scale-105 active:scale-95' : 'bg-white/5 border border-white/5 text-white/20 cursor-not-allowed'}`}
                     >
-                        <Send className="w-4 h-4" />
+                        <Send className="w-5 h-5" />
                     </button>
                 </form>
             </div>

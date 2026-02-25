@@ -63,7 +63,7 @@ function ReloadPrompt({ isDarkMode }) {
                     <X className="w-4 h-4" />
                 </button>
             </div>
-            <style jsx>{`
+            <style>{`
                 .animate-spin-slow {
                     animation: spin 3s linear infinite;
                 }

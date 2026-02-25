@@ -9,12 +9,66 @@ export { COUNTRY_TRANSLATIONS, CITY_TRANSLATIONS, COUNTRIES_DATA };
 // --- Versioning & Metadata ---
 export const APP_AUTHOR = "Jamie Kwok";
 export const ADMIN_EMAILS = ["jamiekwok416@gmail.com"];
-export const APP_VERSION = "2.0.5";
-export const APP_VERSION_TAG = "UI Hygiene & Polish";
-export const APP_LAST_UPDATE = "2026-02-23";
-export const JARVIS_VERSION = "V0.0.6-Beta";
+export const APP_VERSION = "2.1.0";
+export const APP_VERSION_TAG = "Community Hub · QR Friends · Local OCR";
+export const APP_LAST_UPDATE = "2026-02-24";
+export const JARVIS_VERSION = "V0.0.8-Beta";
 
 export const JARVIS_VERSION_HISTORY = [
+    {
+        ver: "V0.0.8-Beta",
+        date: "2026-02-24",
+        tag: "Enhanced DM Logic",
+        desc: {
+            "zh-TW": "實裝 DM 功能並優化在地化體驗",
+            "zh-HK": "實裝 DM 功能並優化在地化體驗",
+            "en": "DM Logic Enhancement & Localization"
+        },
+        details: {
+            "zh-TW": [
+                "🚀 Actions: 實裝查看個人檔案、清除聊天紀錄及封鎖用戶功能",
+                "🌐 i18n: 完成 DM 菜單的所有語系翻譯",
+                "🛠️ UI: 修正 Header 遮擋與 Padding 問題"
+            ],
+            "zh-HK": [
+                "🚀 Actions: 實裝睇個人檔案、掃走啲對話同埋封鎖條友功能",
+                "🌐 i18n: 補完晒 DM 菜單嘅廣東話同英文翻譯",
+                "🛠️ UI: 修正 Header 遮擋同埋 Padding 問題"
+            ],
+            "en": [
+                "🚀 Actions: Implemented View Profile, Clear History, and Block User",
+                "🌐 i18n: Completed all localization keys for DM actions",
+                "🛠️ UI: Fixed Header collision and padding issues"
+            ]
+        }
+    },
+    {
+        ver: "V0.0.7-Beta",
+        date: "2026-02-24",
+        tag: "Stability & Quota Revolution",
+        desc: {
+            "zh-TW": "大幅度提升 AI 穩定性並統一會員限額 (50次/日)",
+            "zh-HK": "大幅度提升 AI 穩定性並統一會員限額 (50次/日)",
+            "en": "Major AI Stability Boost & Unified 50-Req/Day Quota"
+        },
+        details: {
+            "zh-TW": [
+                "🚀 Quota: 每位會員每日限額正式提升至 50 次",
+                "🛠️ Bug Fix: 徹底修復 AI 聊天室「正在連線」停滯與 Service Unavailable 問題",
+                "🤖 Engine: 移除幻覺模型 ID，改用穩定版 Gemini 2.0-Flash / 1.5-Flash"
+            ],
+            "zh-HK": [
+                "🚀 Quota: 每位會員每日限額正式提升至 50 次",
+                "🛠️ Bug Fix: 徹底修復 AI 聊天室「正在連線」停滯同 Service Unavailable 問題",
+                "🤖 Engine: 移除幻覺模型 ID，改用穩定版 Gemini 2.0-Flash / 1.5-Flash"
+            ],
+            "en": [
+                "🚀 Quota: Daily limit officially increased to 50 requests per member",
+                "🛠️ Bug Fix: Resolved 'Connecting...' hang and Service Unavailable in AI Chat",
+                "🤖 Engine: Replaced unstable model IDs with stable Gemini 2.0-Flash / 1.5-Flash"
+            ]
+        }
+    },
     {
         ver: "V0.0.6-Beta",
         date: "2026-02-23",
@@ -122,6 +176,75 @@ export const JARVIS_VERSION_HISTORY = [
 export const DEFAULT_BG_IMAGE = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop";
 
 export const VERSION_HISTORY = [
+    {
+        ver: "V2.1.0",
+        date: "2026-02-24",
+        tag: "Community Hub · QR Friends · Local OCR",
+        desc: {
+            "zh-TW": "社群探索、好友 QR 掃描、本地 OCR 識別三大革新",
+            "zh-HK": "社群探索、好友 QR 掃瞄、本地 OCR 識別三大革新",
+            "en": "Community Hub, QR Friend Scanner & Local OCR"
+        },
+        details: {
+            "zh-TW": [
+                "🌍 Community Hub: 全新 CommunityHero 英雄區，趨勢目的地、社群統計、極光漸層背景",
+                "❤️ Social Feed: Explore 卡片升級為社交媒體風格，即時點讚、瀏覽數、留言計數",
+                "🏆 Badges: Top Explorer 勛章、城市/季節在地化標籤（修復 CJK 截字問題）",
+                "📷 QR Friend: AddFriendModal 升級為 3 分頁，相機實時掃描 QR 即時發送好友請求",
+                "🔍 Local OCR: Tesseract.js 本地識別作為 Gemini AI 備援，支援 eng+chi_tra",
+                "🌐 i18n: community.* 與 friends.* 翻譯全面補完（en / zh-TW / zh-HK）",
+                "🔒 Security: 修復 unblockUser 未導出漏洞，強化即時封鎖狀態偵測"
+            ],
+            "zh-HK": [
+                "🌍 Community Hub: 全新 CommunityHero 英雄區，趨勢目的地、社群統計、極光漸層背景",
+                "❤️ Social Feed: Explore 卡片升級為社交媒體風格，即時點讚、瀏覽數同留言計數",
+                "🏆 Badges: Top Explorer 勛章、城市/季節在地化標籤（修復 CJK 截字問題）",
+                "📷 QR Friend: AddFriendModal 升級為 3 個 Tab，相機實時掃瞄 QR 即時發送好友請求",
+                "🔍 Local OCR: Tesseract.js 本地識別作為 Gemini AI 備援，支援 eng+chi_tra",
+                "🌐 i18n: community.* 同 friends.* 翻譯全面補完（en / zh-TW / zh-HK）",
+                "🔒 Security: 修復 unblockUser 未導出嘅漏洞，強化即時封鎖狀態偵測"
+            ],
+            "en": [
+                "🌍 Community Hub: New CommunityHero with trending destinations, live stats & Aurora gradient",
+                "❤️ Social Feed: Explore cards with real-time likes, view counts & comment counters",
+                "🏆 Badges: Top Explorer badge, localized city/season chips (fixed CJK text clipping)",
+                "📷 QR Friend: AddFriendModal upgraded to 3 tabs — camera-based QR scanner sends friend request instantly via jsqr",
+                "🔍 Local OCR: Tesseract.js fallback when Gemini AI is unavailable (eng+chi_tra, heuristic parser)",
+                "🌐 i18n: Full translations for community.* & friends.* in en / zh-TW / zh-HK",
+                "🔒 Security: Fixed unblockUser export bug & real-time block state detection in DM view"
+            ]
+        }
+    },
+    {
+        ver: "V2.0.7",
+        date: "2026-02-24",
+        tag: "DM Actions & UI Polish",
+        desc: {
+            "zh-TW": "強化的聊天動作與介面細節優化",
+            "zh-HK": "強化的聊天動作與介面細節優化",
+            "en": "Enhanced Chat Actions & UI Refinement"
+        },
+        details: {
+            "zh-TW": [
+                "💬 Chat: 實裝 DM 視窗功能菜單（查看個人檔案、清除紀錄、封鎖）",
+                "🛡️ Fix: 修復行程聊天與 DM 視窗 Header 按鈕被遮擋問題",
+                "🌐 i18n: 完善所有新增動作的多語言支援",
+                "👥 Sidebar: 優化 TripChatView 成員側邊欄交互體驗"
+            ],
+            "zh-HK": [
+                "💬 Chat: 實裝 DM 視窗功能菜單（睇個人檔案、掃走啲對話、封鎖條友）",
+                "🛡️ Fix: 修復行程聊天同 DM 視窗 Header 掣俾個 Modal 閂制遮住咗嘅問題",
+                "🌐 i18n: 補完晒所有新動作嘅多語言支援",
+                "👥 Sidebar: 優化 TripChatView 成員側邊欄互動體驗"
+            ],
+            "en": [
+                "💬 Chat: Implemented functional DM action menu (View Profile, Clear, Block)",
+                "🛡️ Fix: Resolved header action buttons being obscured by modal close button",
+                "🌐 i18n: Comprehensive localization for all new chat actions",
+                "👥 Sidebar: Refined member sidebar interaction in TripChatView"
+            ]
+        }
+    },
     {
         ver: "V2.0.4",
         date: "2026-02-23",

@@ -33,7 +33,7 @@ const SearchFilterBar = ({ onSearch, onSort, onFilter, currentSort, currentFilte
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none opacity-40">
+                <div className="absolute inset-y-0 right-0 pr-3 hidden md:flex items-center pointer-events-none opacity-40">
                     <span className="text-[10px] font-black border border-current px-1 rounded-md text-slate-400">⌘ K</span>
                 </div>
             </div>

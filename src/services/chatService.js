@@ -15,7 +15,10 @@ import {
     limit,
     arrayUnion,
     increment,
-    startAfter
+    startAfter,
+    deleteDoc,
+    writeBatch,
+    arrayRemove
 } from 'firebase/firestore';
 import { db, storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -151,18 +154,28 @@ export const listenToConversations = (userId, callback) => {
         // orderBy('updatedAt', 'desc') // Removed to bypass index requirement
     );
 
-    return onSnapshot(q, (snapshot) => {
-        const conversations = snapshot.docs.map(doc => ({
+    return onSnapshot(q, async (snapshot) => {
+        const conversationsRaw = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
 
-        // Client-side sort (Newest first)
-        conversations.sort((a, b) => {
-            const timeA = a.updatedAt?.toMillis ? a.updatedAt.toMillis() : (a.updatedAt?.seconds * 1000 || 0);
-            const timeB = b.updatedAt?.toMillis ? b.updatedAt.toMillis() : (b.updatedAt?.seconds * 1000 || 0);
-            return timeB - timeA;
-        });
+        // Fetch blocked users for current user to filter
+        const userRef = doc(db, 'users', userId);
+        const userSnap = await getDoc(userRef);
+        const blockedUsers = userSnap.data()?.blockedUsers || [];
+
+        // Filter and Client-side sort (Newest first)
+        const conversations = conversationsRaw
+            .filter(conv => {
+                const otherId = conv.participants.find(id => id !== userId);
+                return !blockedUsers.includes(otherId);
+            })
+            .sort((a, b) => {
+                const timeA = a.updatedAt?.toMillis ? a.updatedAt.toMillis() : (a.updatedAt?.seconds * 1000 || 0);
+                const timeB = b.updatedAt?.toMillis ? b.updatedAt.toMillis() : (b.updatedAt?.seconds * 1000 || 0);
+                return timeB - timeA;
+            });
 
         callback(conversations);
     });
@@ -202,3 +215,57 @@ export const markConversationAsRead = async (conversationId, userId) => {
         [`lastRead.${userId}`]: serverTimestamp() // Track read time
     });
 };
+
+/**
+ * Clears all messages in a specific conversation.
+ * @param {string} conversationId
+ */
+export const clearChatHistory = async (conversationId, currentUserId) => {
+    // 1. Ownership/Participant Check
+    const convRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
+    const convSnap = await getDoc(convRef);
+    if (!convSnap.exists() || !convSnap.data().participants.includes(currentUserId)) {
+        throw new Error("Unauthorized to clear history");
+    }
+
+    const messagesRef = collection(db, CONVERSATIONS_COLLECTION, conversationId, MESSAGES_COLLECTION);
+    const snapshot = await getDocs(messagesRef);
+
+    const batch = writeBatch(db);
+    snapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+    });
+
+    // Also update the conversation's last message
+    batch.update(convRef, {
+        lastMessage: null,
+        updatedAt: serverTimestamp()
+    });
+
+    await batch.commit();
+};
+
+/**
+ * Blocks a user by adding their ID to the current user's blocked list.
+ * @param {string} currentUserId
+ * @param {string} targetUserId
+ */
+export const blockUser = async (currentUserId, targetUserId) => {
+    const userRef = doc(db, 'users', currentUserId);
+    await updateDoc(userRef, {
+        blockedUsers: arrayUnion(targetUserId)
+    });
+};
+
+/**
+ * Unblocks a user.
+ * @param {string} currentUserId
+ * @param {string} targetUserId
+ */
+export const unblockUser = async (currentUserId, targetUserId) => {
+    const userRef = doc(db, 'users', currentUserId);
+    await updateDoc(userRef, {
+        blockedUsers: arrayRemove(targetUserId)
+    });
+};
+

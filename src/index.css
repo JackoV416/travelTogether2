@@ -166,3 +166,20 @@ input[type="text"].search-dark-override::placeholder {
 .animate-pulse-slow {
     animation: pulse-slow 3s infinite ease-in-out;
 }
+
+/* V2.1.0: QR Scanner viewfinder sweep animation */
+@keyframes scan-line {
+    0%   { top: 0%; opacity: 1; }
+    95%  { top: 96%; opacity: 1; }
+    100% { top: 96%; opacity: 0; }
+}
+
+.animate-scan-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #a78bfa, #7c3aed, #a78bfa, transparent);
+    box-shadow: 0 0 12px 3px rgba(167, 139, 250, 0.6);
+    animation: scan-line 2s linear infinite;
+}

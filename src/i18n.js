@@ -201,12 +201,34 @@ const resources = {
                 "friend_since": "Friends since {{date}}",
                 "already_friends": "Already friends",
                 "request_sent": "Request sent!",
+                "request_already_sent": "Request already sent",
                 "self_add": "Cannot add yourself",
                 "user_not_found": "User not found",
+                "my_qr_tab": "My QR",
+                "scan_tab": "Scan QR",
+                "qr_desc": "Let a friend scan this to add you instantly!",
+                "start_scan": "Start Scanning",
+                "tap_to_scan": "Tap START to scan a friend's QR code",
+                "qr_found": "QR Code Detected!",
+                "camera_error": "Camera access denied. Please allow camera in browser settings.",
                 "status": {
                     "online": "Online",
                     "offline": "Offline"
                 }
+            },
+            "community": {
+                "badge": "Discovery Hub",
+                "hero_title": "EXPLORE THE SHARED JOURNEY",
+                "hero_desc": "Discover itineraries shared by fellow travelers, find hidden gems, and start your next adventure with the community.",
+                "trending_now": "Trending Now",
+                "discovery_feed": "Discovery Feed",
+                "active_explorers": "Active Explorers",
+                "public_trips": "Public Trips",
+                "planners": "PLANNERS",
+                "personalized_subtitle": "Personalized for your journey",
+                "top_explorer": "Top Explorer",
+                "no_trips_found": "No Journeys Found",
+                "try_another_filter": "Try adjusting your filters"
             },
             "modal": {
                 "item_detail": {
@@ -1097,6 +1119,11 @@ const resources = {
                     "sent_attachment": "Sent an attachment",
                     "direct_messages": "Direct Messages",
                     "select_prompt": "Select a conversation or start a new one to begin messaging.",
+                    "menu": {
+                        "view_profile": "VIEW PROFILE",
+                        "clear_chat": "CLEAR HISTORY",
+                        "block_user": "BLOCK USER"
+                    },
                     "system": {
                         "jarvis_name": "Jarvis AI",
                         "jarvis_desc": "Always ready to provide trip suggestions...",
@@ -1136,6 +1163,11 @@ const resources = {
                     "empty": {
                         "title": "Connect with Travelers",
                         "desc": "Select a conversation or start a new one to begin messaging."
+                    },
+                    "menu": {
+                        "view_profile": "查看個人檔案",
+                        "clear_chat": "清除聊天紀錄",
+                        "block_user": "封鎖用戶"
                     }
                 }
             }
@@ -1332,12 +1364,34 @@ const resources = {
                 "friend_since": "於 {{date}} 成為好友",
                 "already_friends": "已經是好友了",
                 "request_sent": "邀請已發送",
+                "request_already_sent": "邀請已發送過了",
                 "self_add": "不能新增自己",
                 "user_not_found": "找不到此用戶",
+                "my_qr_tab": "我的 QR",
+                "scan_tab": "掃描 QR",
+                "qr_desc": "讓朋友掃描此碼即可加你為好友！",
+                "start_scan": "開始掃描",
+                "tap_to_scan": "點擊開始掃描朋友的 QR Code",
+                "qr_found": "QR Code 已偵測！",
+                "camera_error": "相機存取被拒絕，請在瀏覽器設定中允許相機權限。",
                 "status": {
                     "online": "線上",
                     "offline": "離線"
                 }
+            },
+            "community": {
+                "badge": "探索中心",
+                "hero_title": "探索共同的旅程",
+                "hero_desc": "發掘旅伴分享的行程，找到隱藏景點，與社群一起開展下一段冒險。",
+                "trending_now": "熱門目的地",
+                "discovery_feed": "探索動態",
+                "active_explorers": "活躍探索者",
+                "public_trips": "公開行程",
+                "planners": "人規劃中",
+                "personalized_subtitle": "為你的旅程量身定制",
+                "top_explorer": "頂尖探索者",
+                "no_trips_found": "找不到行程",
+                "try_another_filter": "試試調整篩選條件"
             },
             "modal": {
                 "item_detail": {
@@ -2912,26 +2966,60 @@ const resources = {
                     "reset_btn": "重置"
                 },
                 "friends": {
+                    "title": "朋友",
+                    "add_friend": "加朋友",
+                    "add_friend_title": "加新朋友",
+                    "add_friend_desc": "搵 Email、名字搜尋或掃 QR Code",
+                    "requests": "好友請求",
                     "recent_requests": "最近邀請",
                     "my_friends": "我嘅朋友",
                     "scan_qr": "掃瞄 QR",
-                    "my_qr": "我個 Code",
-                    "search_placeholder": "搵 email...",
+                    "my_qr": "我個 QR Code",
+                    "search_tab": "搜尋",
+                    "my_qr_tab": "我嘅 QR",
+                    "scan_tab": "掃 QR",
+                    "search_placeholder": "名字或 Email...",
                     "enter_email": "輸入朋友 Email",
+                    "enter_email_or_name": "輸入 Email 或名字",
                     "send_request": "發送請求",
                     "accept": "接受",
                     "reject": "狠心拒絕",
+                    "unfriend": "刪除好友",
+                    "block": "封鎖用戶",
+                    "cancel_request": "取消請求",
+                    "confirm_unfriend": "確定要刪除呢個朋友咩？",
+                    "confirm_block": "確定要封鎖呢個用戶咩？",
                     "no_friends": "仲未有朋友喎，快啲加人啦！",
                     "no_requests": "暫時冇請求",
                     "friend_since": "{{date}} 做咗朋友",
                     "already_friends": "已經係朋友喇",
-                    "request_sent": "請求已發送",
+                    "request_sent": "請求已發送！",
+                    "request_already_sent": "請求已經發送咗喇",
                     "self_add": "自己加唔到自己架",
                     "user_not_found": "搵唔到呢個人",
+                    "qr_desc": "讓朋友掃呢個碼即刻加你做朋友！",
+                    "start_scan": "開始掃瞄",
+                    "tap_to_scan": "撳開始掃瞄朋友嘅 QR Code",
+                    "qr_found": "QR Code 搵到喇！",
+                    "camera_error": "鏡頭唔俾用，請喺瀏覽器設定度開俾鏡頭。",
                     "status": {
                         "online": "在線",
                         "offline": "離線"
                     }
+                },
+                "community": {
+                    "badge": "探索中心",
+                    "hero_title": "探索共同嘅旅程",
+                    "hero_desc": "發掘旅伴分享嘅行程、搵到秘密景點，同社群一齊展開下一段旅程。",
+                    "trending_now": "熱門目的地",
+                    "discovery_feed": "探索動態",
+                    "active_explorers": "活躍探索者",
+                    "public_trips": "公開行程",
+                    "planners": "人規劃緊",
+                    "personalized_subtitle": "為你嘅旅程量身定制",
+                    "top_explorer": "頂尖探索者",
+                    "no_trips_found": "搵唔到行程喎",
+                    "try_another_filter": "試吓調整篩選條件"
                 },
                 "general": {
                     "language": "語言",
@@ -3475,6 +3563,11 @@ const resources = {
                 "sent_attachment": "發送了附件",
                 "direct_messages": "私人訊息",
                 "select_prompt": "選擇一個對話或開始新對話以傳送訊息。",
+                "menu": {
+                    "view_profile": "睇個人檔案",
+                    "clear_chat": "掃走啲對話",
+                    "block_user": "封鎖條友"
+                },
                 "system": {
                     "jarvis_name": "Jarvis AI",
                     "jarvis_desc": "隨時為您提供行程建議...",

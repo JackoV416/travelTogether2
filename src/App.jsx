@@ -220,18 +220,17 @@ const App = () => {
     useEffect(() => {
         if (!user?.uid) return;
 
-        // Import dynamically to avoid circular dependencies if any, or just standard import
+        let unsub;
+        // Import dynamically to avoid circular dependencies
         import('./services/friendService').then(({ listenToFriendRequests }) => {
-            const unsub = listenToFriendRequests(user.uid, (requests) => {
+            unsub = listenToFriendRequests(user.uid, (requests) => {
                 setFriendRequestCount(requests.length);
             });
-            return unsub;
-        }).then(unsub => {
-            // Cleanup handled by returning/effect cleanup if we stored unsub
-            // Ideally we need to store the unsub function
-        });
+        }).catch(err => console.error('Friend listener failed:', err));
 
-        // Better approach: Import at top level if possible.
+        return () => {
+            if (unsub) unsub();
+        };
     }, [user?.uid]);
 
     useEffect(() => {

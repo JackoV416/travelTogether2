@@ -38,32 +38,7 @@ const MobileBottomNav = ({
     return (
         <div className={`fixed bottom-0 left-0 right-0 z-[100] md:hidden border-t pb-[max(env(safe-area-inset-bottom),12px)] pt-3 transition-all duration-300 ${isDarkMode ? 'bg-gray-900/90 border-gray-800' : 'bg-white/90 border-gray-200'} backdrop-blur-2xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)]`}>
 
-            {/* View Toggle (Explore / My Trips) - Show on Dashboard */}
-            {!isInDetailView && (
-                <div className="flex items-center justify-center px-4 mb-3">
-                    <div className={`p-1 rounded-full flex items-center gap-1 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-                        {viewNavItems.map((item) => {
-                            const isActive = currentView === item.id ||
-                                (item.id === 'explore' && (currentView === 'dashboard' || currentView === 'explore')) ||
-                                (item.id === 'my_trips' && currentView === 'my_trips');
-
-                            return (
-                                <button
-                                    key={item.id}
-                                    data-tour={item.id === 'explore' ? 'explore-community' : 'my-trips-view'}
-                                    onClick={() => onViewChange && onViewChange(item.id === 'explore' ? 'dashboard' : item.id)}
-                                    className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${isActive
-                                        ? 'bg-white dark:bg-gray-700 shadow-md text-indigo-600 dark:text-indigo-400'
-                                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                                        }`}
-                                >
-                                    {item.label}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
+            {/* View Toggle (Explore / My Trips) - Removed per V2.0.5 UI Audit as it overlaps with Nav logic */}
 
             {/* Main Nav Row */}
             <div className="flex items-center justify-around px-4">

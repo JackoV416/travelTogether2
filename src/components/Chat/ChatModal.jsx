@@ -166,16 +166,18 @@ const ChatModal = ({ isOpen, onClose, currentUser, initialTargetUser = null, isD
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-0 md:p-4 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+        <div className="fixed inset-0 bg-slate-950/40 z-[100] flex items-center justify-center p-0 md:p-6 lg:p-12 backdrop-blur-md animate-fade-in" onClick={onClose}>
             <div
                 data-tour="chat-window"
-                className={`w-full h-full md:w-full md:max-w-6xl md:h-[85vh] md:rounded-3xl overflow-hidden shadow-2xl border flex flex-col-reverse md:flex-row transition-all duration-300
-                ${isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'}`}
+                role="dialog"
+                aria-label={t('chat.modal_title', 'Chat window')}
+                className={`w-full h-full md:w-[95vw] md:max-w-[95%] md:h-[90vh] md:rounded-[2rem] overflow-hidden shadow-[0_32px_100px_-20px_rgba(0,0,0,0.8)] border flex flex-col-reverse md:flex-row transition-all duration-500 transform scale-100 ring-1 ring-white/10
+                ${isDarkMode ? 'bg-slate-950/80 border-white/10' : 'bg-white/90 border-gray-200'}`}
                 onClick={e => e.stopPropagation()}
             >
                 {/* COLUMN 1: Left Navigation Rail (Desktop) / Bottom Nav (Mobile) */}
-                <div className={`flex md:flex-col items-center justify-around md:justify-start w-full md:w-20 lg:w-24 p-2 md:p-4 border-t md:border-t-0 md:border-r z-20 transition-colors pb-safe-area md:pb-4
-                    ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-gray-50 border-gray-200'}`}
+                <div className={`flex md:flex-col items-center justify-around md:justify-start w-full md:w-20 lg:w-24 p-2 md:p-6 border-t md:border-t-0 md:border-r z-20 transition-all pb-safe-area md:pb-6
+                    ${isDarkMode ? 'bg-slate-950/40 border-white/5' : 'bg-gray-50/80 border-gray-100'}`}
                 >
                     {/* User Avatar (Desktop Only) */}
                     <div className="hidden md:flex flex-col items-center mb-6 pt-2">
@@ -199,9 +201,9 @@ const ChatModal = ({ isOpen, onClose, currentUser, initialTargetUser = null, isD
                         <span className="text-[10px] font-bold">{t('chat.friends', '朋友')}</span>
                     </button>
 
-                    {/* Mobile Only: Close Button inside Bottom Nav */}
                     <button
                         onClick={onClose}
+                        aria-label={t('common.close', 'Close')}
                         className="md:hidden flex flex-col items-center justify-center gap-1 w-16 py-2.5 rounded-2xl transition-all text-gray-500 hover:bg-gray-200/50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-gray-200"
                     >
                         <X className="w-6 h-6" />
@@ -210,14 +212,14 @@ const ChatModal = ({ isOpen, onClose, currentUser, initialTargetUser = null, isD
                 </div>
 
                 {/* COLUMN 2: List View (Conversations / Friends) */}
-                <div className={`w-full md:w-80 lg:w-[400px] flex flex-col border-r transition-all ${isDarkMode ? 'border-gray-800 bg-gray-900/50' : 'border-gray-100 bg-gray-50/50'} ${activeConversation ? 'hidden md:flex' : 'flex-1 md:flex-none max-h-[100dvh]'} pt-safe-area md:pt-0`}>
+                <div className={`w-full md:w-80 lg:w-80 flex flex-col border-r transition-all ${isDarkMode ? 'border-white/5 bg-slate-900/30' : 'border-gray-100 bg-white/50'} ${activeConversation ? 'hidden md:flex' : 'flex-1 md:flex-none max-h-[100dvh]'} pt-safe-area md:pt-0`}>
                     {/* Header */}
-                    <div className="p-4 md:p-5 border-b border-gray-100 dark:border-gray-800 flex flex-col gap-4 transition-all min-h-[76px] shrink-0">
+                    <div className="p-6 border-b border-white/5 flex flex-col gap-5 transition-all min-h-[80px] shrink-0">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-2xl font-black tracking-tight">{activeTab === 'chats' ? t('chat.chats', '訊息') : t('chat.friends', '朋友')}</h2>
+                            <h2 className="text-2xl font-black tracking-tighter uppercase italic">{activeTab === 'chats' ? t('chat.chats', 'MESSAGES') : t('chat.friends', 'FRIENDS')}</h2>
                             {activeTab === 'chats' && (
-                                <button onClick={() => setShowNewChatInput(!showNewChatInput)} className="p-2.5 bg-gray-200/50 dark:bg-gray-800/50 rounded-full hover:bg-indigo-500 hover:text-white transition-colors group">
-                                    <Edit className="w-4 h-4 text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors" />
+                                <button onClick={() => setShowNewChatInput(!showNewChatInput)} className="p-2 bg-indigo-500/10 hover:bg-indigo-500 text-indigo-400 hover:text-white rounded-xl transition-all shadow-lg active:scale-95 group">
+                                    <Edit className="w-4 h-4" />
                                 </button>
                             )}
                         </div>
@@ -275,6 +277,7 @@ const ChatModal = ({ isOpen, onClose, currentUser, initialTargetUser = null, isD
                                     key={tripChatId}
                                     onClick={() => setActiveConversation({ id: tripChatId, type: 'trip', name: trip.name || '行程群組', tripId: trip.id })}
                                     className={`p-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 group ${isActive ? 'bg-indigo-600 shadow-lg shadow-indigo-500/30 text-white' : 'hover:bg-white/5 text-gray-500 dark:text-gray-400'}`}
+                                    aria-label={t('chat.trip_chat', { defaultValue: 'Trip chat: {{tripName}}', tripName: trip.name || '行程群組' })}
                                 >
                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${isActive ? 'bg-white/20' : 'bg-emerald-500/10 text-emerald-500'}`}>
                                         <Users className="w-5 h-5" />
@@ -323,19 +326,20 @@ const ChatModal = ({ isOpen, onClose, currentUser, initialTargetUser = null, isD
                 </div>
 
                 {/* Right Area (Message View) */}
-                <div className={`flex-1 flex flex-col relative ${!activeConversation ? 'hidden md:flex' : 'flex-1 md:flex-none bg-white dark:bg-gray-900 z-30'} pt-safe-area md:pt-0`}>
+                <div className={`flex-1 flex flex-col relative ${!activeConversation ? 'hidden md:flex' : 'flex-1 md:flex-1 bg-white dark:bg-gray-900 z-30'} pt-safe-area md:pt-0`}>
                     {activeConversation ? (
                         <>
                             {activeConversation.id === 'jarvis' ? (
                                 <JarvisChatView
-                                    currentUser={currentUser}
+                                    user={currentUser}
+                                    trip={trip}
                                     isDarkMode={isDarkMode}
                                     onBack={() => setActiveConversation(null)}
                                 />
                             ) : activeConversation.type === 'trip' && activeConversation.tripId ? (
                                 <TripChatView
-                                    tripId={activeConversation.tripId}
-                                    currentUser={currentUser}
+                                    trip={userTrips.find(t => t.id === activeConversation.tripId)}
+                                    user={currentUser}
                                     isDarkMode={isDarkMode}
                                     onBack={() => setActiveConversation(null)}
                                 />
@@ -361,6 +365,7 @@ const ChatModal = ({ isOpen, onClose, currentUser, initialTargetUser = null, isD
                     {/* Close Button (Absolute Top Right) */}
                     <button
                         onClick={onClose}
+                        aria-label={t('common.close', 'Close chat')}
                         className="absolute top-4 right-4 p-2 rounded-full bg-black/10 hover:bg-black/20 dark:bg-white/10 dark:hover:bg-white/20 z-50 transition-colors"
                     >
                         <X className="w-5 h-5" />

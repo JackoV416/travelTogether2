@@ -5,9 +5,8 @@
 import { doc, getDoc, setDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 
-// V1.4.5: Free tier limit (supports ~36 DAU with 10 API keys)
-// BYOK users bypass this limit entirely
-const DEFAULT_DAILY_LIMIT = 5;
+// V2.0.6: Increased per-member limit
+const DEFAULT_DAILY_LIMIT = 50;
 const QUOTA_COLLECTION = 'users';
 const QUOTA_DOC = 'ai_quota';
 

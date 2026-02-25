@@ -1,31 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Heart, Eye, MapPin, User, Loader2 } from 'lucide-react';
+import { Heart, Eye, MapPin, Loader2, Share2, MessageCircle, Trophy } from 'lucide-react';
 import { getLocalizedCityName, getTripSeasonDisplay } from '../../utils/tripUtils';
 import { PUBLIC_TRIPS_DATA, generateRandomMockTrips } from '../../constants/publicTripsData';
 import { AuroraCard, AuroraGradientText } from '../Shared/AuroraComponents';
 import { DEFAULT_BG_IMAGE } from '../../constants/appData';
 import FilterMenu from './FilterMenu';
+import CommunityHero from './CommunityHero';
 
 /**
  * ExploreGrid - Pinterest-style masonry grid for static public trips
- * V1.3.11: Infinite Scroll, Localized Filters, and Rating Logic
+ * V2.1.0: Social-First Community Hub with Hero Section & Enhanced Feed
  */
 const ExploreGrid = ({ isDarkMode, onSelectTrip, userTrips }) => {
     const { t, i18n } = useTranslation();
+    const currentLang = i18n.language;
+
     // Filters State
-    const [searchQuery, setSearchQuery] = React.useState('');
-    const [selectedCountries, setSelectedCountries] = React.useState([]);
-    const [selectedCities, setSelectedCities] = React.useState([]);
-    const [selectedBudget, setSelectedBudget] = React.useState('All');
-    const [selectedThemes, setSelectedThemes] = React.useState([]);
-    const [selectedRating, setSelectedRating] = React.useState('All');
-    const [selectedSeason, setSelectedSeason] = React.useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedCountries, setSelectedCountries] = useState([]);
+    const [selectedCities, setSelectedCities] = useState([]);
+    const [selectedBudget, setSelectedBudget] = useState('All');
+    const [selectedThemes, setSelectedThemes] = useState([]);
+    const [selectedRating, setSelectedRating] = useState('All');
+    const [selectedSeason, setSelectedSeason] = useState(null);
+
+    // Interaction State
+    const [likedTrips, setLikedTrips] = useState(new Set());
 
     // Data State
-    const [realTrips, setRealTrips] = React.useState([]);
-    // V1.5.0: Shuffle Mock Data on init for freshness + Inject Dates for Season Badge
-    const [mockTrips, setMockTrips] = React.useState(() => {
+    const [realTrips, setRealTrips] = useState([]);
+    const [mockTrips, setMockTrips] = useState(() => {
         const shuffled = [...PUBLIC_TRIPS_DATA].sort(() => 0.5 - Math.random());
         return shuffled.map(t => {
             const randomMonth = Math.floor(Math.random() * 12);
@@ -33,22 +38,19 @@ const ExploreGrid = ({ isDarkMode, onSelectTrip, userTrips }) => {
             futureDate.setMonth(futureDate.getMonth() + randomMonth);
             return {
                 ...t,
+                likes: Math.floor(Math.random() * 500) + 50,
                 randomFactor: Math.random() * 30,
-                startDate: t.startDate || futureDate.toISOString() // Assign random future date if missing
+                startDate: t.startDate || futureDate.toISOString()
             };
         });
     });
-    const [visibleTrips, setVisibleTrips] = React.useState([]);
-    const [isLoading, setIsLoading] = React.useState(true);
-
-    // Pagination State
-    const [visibleCount, setVisibleCount] = React.useState(20);
+    const [visibleTrips, setVisibleTrips] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(20);
 
     // Fetch Real Public Trips from Firestore
-    React.useEffect(() => {
-        const safetyTimer = setTimeout(() => {
-            setIsLoading(false);
-        }, 3000);
+    useEffect(() => {
+        const safetyTimer = setTimeout(() => setIsLoading(false), 3000);
 
         import('../../firebase').then(({ db }) => {
             import('firebase/firestore').then(({ collection, query, where, getDocs, limit }) => {
@@ -61,9 +63,9 @@ const ExploreGrid = ({ isDarkMode, onSelectTrip, userTrips }) => {
                     const fetched = snapshot.docs.map(doc => ({
                         id: doc.id,
                         ...doc.data(),
-                        hasRealFlights: !!doc.data().flightInfo, // Heuristic for "Real"
+                        likes: doc.data().likes || Math.floor(Math.random() * 100),
                         isMock: false,
-                        randomFactor: Math.random() * 40 // Boost real trips variance
+                        randomFactor: Math.random() * 40
                     }));
                     setRealTrips(fetched);
                     clearTimeout(safetyTimer);
@@ -78,24 +80,18 @@ const ExploreGrid = ({ isDarkMode, onSelectTrip, userTrips }) => {
         return () => clearTimeout(safetyTimer);
     }, []);
 
-    // Derived Lists for Dropdowns (Merge Real + Mock)
-    const combinedData = React.useMemo(() => {
-        // Deduplicate: If a real trip has the same name as a mock trip, hide the mock one
+    const combinedData = useMemo(() => {
         const realNames = new Set(realTrips.map(t => t.name));
         const filteredMock = mockTrips.filter(t => !realNames.has(t.name));
         return [...realTrips, ...filteredMock];
     }, [realTrips, mockTrips]);
 
-    // Derived Lists for Dropdowns (Unified with countries.js)
-    const countries = React.useMemo(() => {
-        // Get all unique country names from combinedData
+    const countries = useMemo(() => {
         const dataCountries = [...new Set(combinedData.map(t => t.country).filter(Boolean))];
-        // Ensure 'All' is at the top
         return ['All', ...dataCountries];
     }, [combinedData]);
 
-    const cities = React.useMemo(() => {
-        // If countries are selected, show cities from those countries based on MASTER_CITY_DB or current data
+    const citiesList = useMemo(() => {
         const dataCities = [...new Set(combinedData
             .filter(t => selectedCountries.length === 0 || selectedCountries.includes(t.country))
             .map(t => t.city)
@@ -104,37 +100,28 @@ const ExploreGrid = ({ isDarkMode, onSelectTrip, userTrips }) => {
         return ['All', ...dataCities];
     }, [combinedData, selectedCountries]);
 
-    const themes = ['All', 'Foodie', 'Culture', 'Shopping', 'History', 'Nature', 'Urban', 'Romance', 'Relaxing', 'Adventure', 'Family'];
+    const themesList = ['All', 'Foodie', 'Culture', 'Shopping', 'History', 'Nature', 'Urban', 'Romance', 'Relaxing', 'Adventure', 'Family'];
 
-    // Smart Recommendation & Filtering Engine
-    React.useEffect(() => {
+    useEffect(() => {
         let filtered = combinedData.filter(trip => {
-
-            // 1. Search
             const matchesSearch = !searchQuery || (
                 (trip.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (trip.name_zh || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (trip.city || '').toLowerCase().includes(searchQuery.toLowerCase())
             );
-
-            // 2. Multi-Select Filters
             const matchesCountry = selectedCountries.length === 0 || selectedCountries.includes(trip.country);
             const matchesCity = selectedCities.length === 0 || selectedCities.includes(trip.city);
             const matchesTheme = selectedThemes.length === 0 || (trip.tags && trip.tags.some(tag => selectedThemes.includes(tag)));
             const matchesRating = selectedRating === 'All' || (trip.rating || 0) >= selectedRating;
-
-            // Season Filter
             const matchSeason = !selectedSeason || (() => {
                 if (!trip.startDate) return false;
-                const date = new Date(trip.startDate);
-                const month = date.getMonth() + 1;
+                const month = new Date(trip.startDate).getMonth() + 1;
                 if (selectedSeason === 'spring') return month >= 3 && month <= 5;
                 if (selectedSeason === 'summer') return month >= 6 && month <= 8;
                 if (selectedSeason === 'autumn') return month >= 9 && month <= 11;
                 if (selectedSeason === 'winter') return month === 12 || month <= 2;
                 return false;
             })();
-
             let matchesBudget = true;
             const cost = trip.estimatedCost || 0;
             if (selectedBudget === 'Cheap') matchesBudget = cost < 5000;
@@ -144,93 +131,51 @@ const ExploreGrid = ({ isDarkMode, onSelectTrip, userTrips }) => {
             return matchesSearch && matchesCountry && matchesCity && matchesTheme && matchesBudget && matchesRating && matchSeason;
         });
 
-        // 3. Smart Ranking (Randomized)
-        const userCountries = new Set(userTrips?.map(t => t.country) || []);
-
+        const userCountriesSet = new Set(userTrips?.map(t => t.country) || []);
         filtered.sort((a, b) => {
-            let scoreA = a.randomFactor || 0; // Start with random noise
-            let scoreB = b.randomFactor || 0;
-
-            // Real Data Priority (Reduced slightly to allow mixing)
-            if (!a.isMock) scoreA += 15;
-            if (!b.isMock) scoreB += 15;
-
-            // Relevance
-            if (userCountries.has(a.country)) scoreA += 10;
-            if (userCountries.has(b.country)) scoreB += 10;
-
-            // Quality
-            scoreA += (a.rating || 0) * 2;
-            scoreB += (b.rating || 0) * 2;
-
+            let scoreA = (a.randomFactor || 0) + (a.rating || 0) * 5 + (userCountriesSet.has(a.country) ? 20 : 0) + (a.isMock ? 0 : 30);
+            let scoreB = (b.randomFactor || 0) + (b.rating || 0) * 5 + (userCountriesSet.has(b.country) ? 20 : 0) + (b.isMock ? 0 : 30);
             return scoreB - scoreA;
         });
 
         setVisibleTrips(filtered.slice(0, visibleCount));
-    }, [combinedData, searchQuery, selectedCountries, selectedCities, selectedThemes, selectedBudget, selectedRating, userTrips, visibleCount]);
+    }, [combinedData, searchQuery, selectedCountries, selectedCities, selectedThemes, selectedBudget, selectedRating, selectedSeason, userTrips, visibleCount]);
 
-    // Keyboard Shortcut for Search (Cmd+K)
-    const searchInputRef = React.useRef(null);
-    React.useEffect(() => {
-        const handleKeyDown = (e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-                e.preventDefault();
-                searchInputRef.current?.focus();
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
-
-    // Infinite Scroll Implementation
-    const handleScroll = React.useCallback(() => {
+    const handleScroll = useCallback(() => {
         if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 800) {
-            // Load more items
             setVisibleCount(prev => prev + 12);
-
-            // If we are nearing the end of data, generate more mock
             if (visibleCount >= combinedData.length - 10) {
                 const newTrips = generateRandomMockTrips(4, mockTrips.length);
                 setMockTrips(prev => [...prev, ...newTrips]);
             }
         }
-    }, [visibleCount, combinedData.length]);
+    }, [visibleCount, combinedData.length, mockTrips.length]);
 
-    React.useEffect(() => {
+    useEffect(() => {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, [handleScroll]);
 
-    // Adapter for FilterMenu
-    const filters = {
-        country: selectedCountries, // Now Array
-        city: selectedCities,       // Now Array
-        budget: selectedBudget,
-        theme: selectedThemes,      // Now Array
-        rating: selectedRating,
-        season: selectedSeason
+    const toggleLike = (e, tripId) => {
+        e.stopPropagation();
+        setLikedTrips(prev => {
+            const next = new Set(prev);
+            if (next.has(tripId)) next.delete(tripId);
+            else next.add(tripId);
+            return next;
+        });
     };
 
     const handleFilterChange = (key, value) => {
         if (key === 'country') {
-            // Toggle Logic
-            if (value === 'All') {
-                setSelectedCountries([]);
-                setSelectedCities([]);
-            } else {
-                setSelectedCountries(prev =>
-                    prev.includes(value) ? prev.filter(c => c !== value) : [...prev, value]
-                );
-                // Reset cities if country list changes significantly? 
-                // Maybe keep cities if they still belong to selected countries.
-                // For simplicity, let's not auto-clear cities unless 'All' is clicked.
-            }
+            if (value === 'All') { setSelectedCountries([]); setSelectedCities([]); }
+            else setSelectedCountries(prev => prev.includes(value) ? prev.filter(c => c !== value) : [...prev, value]);
         }
         else if (key === 'city') {
             if (value === 'All') setSelectedCities([]);
             else setSelectedCities(prev => prev.includes(value) ? prev.filter(c => c !== value) : [...prev, value]);
         }
-        else if (key === 'budget') setSelectedBudget(value); // Keep single for now
+        else if (key === 'budget') setSelectedBudget(value);
         else if (key === 'theme') {
             if (value === 'All') setSelectedThemes([]);
             else setSelectedThemes(prev => prev.includes(value) ? prev.filter(t => t !== value) : [...prev, value]);
@@ -238,140 +183,172 @@ const ExploreGrid = ({ isDarkMode, onSelectTrip, userTrips }) => {
         else if (key === 'rating') setSelectedRating(value);
         else if (key === 'season') setSelectedSeason(value);
         else if (key === 'clear') {
-            setSelectedCountries([]);
-            setSelectedCities([]);
-            setSelectedBudget('All');
-            setSelectedThemes([]);
-            setSelectedRating('All');
-            setSelectedSeason(null);
+            setSelectedCountries([]); setSelectedCities([]); setSelectedBudget('All');
+            setSelectedThemes([]); setSelectedRating('All'); setSelectedSeason(null);
         }
     };
 
-    return (
-        <div className="space-y-6">
-            <AuroraGradientText as="h3" className="text-xl font-black flex items-center gap-2 px-2">
-                <span className="text-2xl">🌍</span> {t('dashboard.explore_community') || 'Explore Community'}
-            </AuroraGradientText>
+    const filters = {
+        country: selectedCountries, city: selectedCities, budget: selectedBudget,
+        theme: selectedThemes, rating: selectedRating, season: selectedSeason
+    };
 
-            {/* Smart Filter Bar */}
-            <AuroraCard className="p-4 space-y-4 relative z-50">
-                <div className="flex flex-col md:flex-row gap-4">
-                    {/* Search */}
-                    <div className="flex-1 relative group">
+    return (
+        <div className="space-y-8 pb-20">
+            {/* Community Discovery Hero */}
+            <CommunityHero isDarkMode={isDarkMode} />
+
+            {/* Smart Discovery Section */}
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/10">
+                        <MapPin className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <AuroraGradientText as="h3" className="text-xl font-black italic tracking-tight uppercase">
+                            {t('community.discovery_feed') || 'Discovery Feed'}
+                        </AuroraGradientText>
+                        <p className="text-[10px] font-black text-gray-500 tracking-widest leading-none mt-1 uppercase italic">{t('community.personalized_subtitle') || 'Personalized for your journey'}</p>
+                    </div>
+                </div>
+
+                {/* Search & Filters */}
+                <div className="w-full md:w-auto flex items-center gap-3">
+                    <div className="relative group flex-1 md:w-64">
                         <input
-                            ref={searchInputRef}
                             type="text"
-                            placeholder={t('dashboard.search_placeholder') || "Search cities, trips..."}
+                            placeholder={t('dashboard.search_placeholder') || "Search..."}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-20 py-2.5 rounded-xl bg-black/5 border border-black/5 dark:border-white/10 dark:bg-black/20 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-medium placeholder:text-gray-400/80"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-black/5 dark:bg-black/40 border border-transparent focus:border-indigo-500/50 outline-none transition-all text-sm font-bold"
                         />
-                        <span className="absolute left-3 top-3 text-gray-400 group-focus-within:text-indigo-400 transition-colors">🔍</span>
-
-                        {/* Shortcut Hint */}
-                        <div className="absolute right-3 top-2.5 flex items-center gap-1 pointer-events-none opacity-60 group-focus-within:opacity-100 transition-opacity">
-                            <kbd className="hidden sm:inline-flex items-center h-5 px-1.5 text-[10px] font-medium text-gray-400 bg-white/10 border border-white/20 rounded">
-                                <span className="text-xs">⌘</span>K
-                            </kbd>
-                        </div>
+                        <span className="absolute left-3.5 top-3 text-gray-500">🔍</span>
                     </div>
-
-                    {/* Premium Filters */}
                     <FilterMenu
                         isDarkMode={isDarkMode}
                         countries={countries}
-                        cities={cities}
-                        themes={themes}
+                        cities={citiesList}
+                        themes={themesList}
                         filters={filters}
                         onFilterChange={handleFilterChange}
                     />
                 </div>
-            </AuroraCard>
-
-            {/* Masonry Layout */}
-            <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
-                {visibleTrips.map((trip, idx) => (
-                    <AuroraCard
-                        key={trip.id}
-                        onClick={() => onSelectTrip && onSelectTrip(trip)}
-                        className="break-inside-avoid mb-4 overflow-hidden cursor-pointer group relative shadow-2xl shadow-black/40 animate-fade-in hover:scale-[1.03] transition-transform duration-500"
-                        noPadding={true}
-                    >
-                        {/* Image Cover */}
-                        <div className="relative aspect-[3/4] overflow-hidden">
-                            <img
-                                src={trip.coverImage || DEFAULT_BG_IMAGE}
-                                alt={trip.name}
-                                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-115"
-                                loading={idx < 4 ? "eager" : "lazy"}
-                                fetchpriority={idx < 4 ? "high" : "auto"}
-                                onError={(e) => {
-                                    e.target.onerror = null;
-                                    e.target.src = DEFAULT_BG_IMAGE;
-                                }}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent opacity-90" />
-
-                            {/* Top Badges */}
-                            <div className="absolute top-4 left-4 flex flex-wrap gap-2 max-w-[85%]">
-                                {/* City Badge */}
-                                <span className="px-2.5 py-1 rounded-full bg-slate-950/60 backdrop-blur-xl text-white text-[10px] font-black tracking-widest border border-white/10 flex items-center gap-1.5 shadow-lg">
-                                    <MapPin className="w-3 h-3 text-indigo-400" /> {getLocalizedCityName(trip.city, i18n.language) || trip.city}
-                                </span>
-
-                                {/* Season Badge */}
-                                {(() => {
-                                    const season = getTripSeasonDisplay(trip.startDate, i18n.language);
-                                    return season && (
-                                        <span className={`px-2.5 py-1 rounded-full backdrop-blur-xl text-[10px] font-black tracking-widest border border-white/10 flex items-center gap-1.5 shadow-lg ${season.bg}`}>
-                                            {season.text}
-                                        </span>
-                                    );
-                                })()}
-                            </div>
-                        </div>
-
-                        <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
-                            <h4 className="font-black text-xl leading-tight mb-3 drop-shadow-2xl group-hover:text-indigo-300 transition-colors">
-                                {((i18n.language?.includes('zh')) && trip.name_zh) ? trip.name_zh : trip.name}
-                            </h4>
-
-                            <div className="flex items-center justify-between text-[11px] opacity-90 mb-4">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="w-7 h-7 rounded-full overflow-hidden border-2 border-white/20 bg-indigo-500/10 p-0.5">
-                                        <img src={trip.author.avatar} alt={trip.author.name} className="w-full h-full object-cover rounded-full" />
-                                    </div>
-                                    <span className="font-black tracking-tight truncate max-w-[100px]">{trip.author.name}</span>
-                                </div>
-                                <div className="flex items-center gap-1 bg-black/40 px-2 py-1 rounded-lg backdrop-blur-md border border-white/5">
-                                    <span className="text-yellow-400">★</span> <span className="font-black">{Number(trip.rating).toFixed(1)}</span> <span className="text-white/40 font-bold ml-1">({trip.reviews})</span>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between text-[10px] text-white/50 border-t border-white/5 pt-4">
-                                <div className="flex gap-2">
-                                    {trip.tags?.slice(0, 2).map(tag => (
-                                        <span key={tag} className="bg-indigo-500/10 text-indigo-300 px-2 py-0.5 rounded-md font-black tracking-widest uppercase border border-indigo-500/10">{t('themes.' + tag) || tag}</span>
-                                    ))}
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="flex items-center gap-1 font-bold"><Eye className="w-3.5 h-3.5 opacity-60" /> {trip.views > 1000 ? (trip.views / 1000).toFixed(1) + 'k' : trip.views}</span>
-                                    <span className="font-black text-emerald-400 text-xs">
-                                        {trip.estimatedCost < 5000 ? '$' : trip.estimatedCost > 15000 ? '$$$' : '$$'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </AuroraCard>
-                ))}
             </div>
 
-            {/* Loading Spinner */}
+            {/* Masonry Layout - Redesigned Card */}
+            <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6 px-2">
+                {visibleTrips.map((trip, idx) => {
+                    const isLiked = likedTrips.has(trip.id);
+                    const season = getTripSeasonDisplay(trip.startDate, currentLang);
+                    const tripName = ((currentLang.includes('zh')) && trip.name_zh) ? trip.name_zh : trip.name;
+
+                    return (
+                        <AuroraCard
+                            key={trip.id}
+                            onClick={() => onSelectTrip && onSelectTrip(trip)}
+                            className="break-inside-avoid mb-6 overflow-hidden cursor-pointer group relative shadow-2xl hover:scale-[1.02] transition-all duration-500 border-none rounded-[1.75rem]"
+                            noPadding={true}
+                        >
+                            {/* Card Media */}
+                            <div className="relative aspect-[4/5] overflow-hidden">
+                                <img
+                                    src={trip.coverImage || DEFAULT_BG_IMAGE}
+                                    alt={trip.name}
+                                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                                    loading={idx < 4 ? "eager" : "lazy"}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-90" />
+
+                                {/* Top Overlay Badges — no italic/uppercase/tracking-widest: they clip CJK chars */}
+                                <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-20">
+                                    <div className="flex flex-wrap gap-2 max-w-[70%]">
+                                        <span className="px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-xl text-white text-[11px] font-bold tracking-normal border border-white/10 shadow-lg leading-snug">
+                                            {getLocalizedCityName(trip.city, currentLang) || trip.city}
+                                        </span>
+                                        {season && (
+                                            <span className={`px-2.5 py-1 rounded-lg backdrop-blur-xl text-white text-[11px] font-bold tracking-normal border border-white/10 shadow-lg leading-snug ${season.bg}`}>
+                                                {season.text}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={(e) => toggleLike(e, trip.id)}
+                                        className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 ${isLiked ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/40 scale-110' : 'bg-black/40 backdrop-blur-md text-white/70 hover:text-white hover:bg-black/60 border border-white/10'}`}
+                                    >
+                                        <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+                                    </button>
+                                </div>
+
+                                {/* Rating Badge */}
+                                <div className="absolute bottom-4 left-4 z-20">
+                                    <div className="flex items-center gap-1 bg-amber-500 text-white px-2 py-1 rounded-lg text-[10px] font-black shadow-xl">
+                                        ★ {Number(trip.rating).toFixed(1)}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Card Content */}
+                            <div className="p-5 text-white bg-slate-950/40 backdrop-blur-2xl border-t border-white/5 space-y-4">
+                                <div className="space-y-1">
+                                    <h4 className="font-black text-lg leading-tight group-hover:text-indigo-300 transition-colors uppercase tracking-tighter italic">
+                                        {tripName}
+                                    </h4>
+                                    <div className="flex gap-2">
+                                        {trip.tags?.slice(0, 2).map(tag => (
+                                            <span key={tag} className="text-[9px] font-black uppercase tracking-widest text-indigo-400 opacity-80 decoration-indigo-500/50">#{t('themes.' + tag) || tag}</span>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="relative">
+                                            <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white/10 p-0.5">
+                                                <img src={trip.author.avatar} alt={trip.author.name} className="w-full h-full object-cover rounded-full" />
+                                            </div>
+                                            {idx % 3 === 0 && (
+                                                <div className="absolute -top-1 -right-1 bg-indigo-500 text-white rounded-full p-0.5 border border-white/20">
+                                                    <Trophy className="w-2 h-2" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <div className="text-[10px] font-black tracking-tight">{trip.author.name}</div>
+                                            <div className="text-[8px] font-bold text-gray-500 uppercase tracking-tighter">{t('community.top_explorer') || 'Top Explorer'}</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-4 text-white/40">
+                                        <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                                            <Eye className="w-3.5 h-3.5" />
+                                            {trip.views > 1000 ? (trip.views / 1000).toFixed(1) + 'k' : trip.views}
+                                        </div>
+                                        <div className="flex items-center gap-1 text-[10px] font-bold">
+                                            <MessageCircle className="w-3.5 h-3.5" />
+                                            {trip.reviews || 0}
+                                        </div>
+                                        <button className="hover:text-white transition-colors">
+                                            <Share2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </AuroraCard>
+                    );
+                })}
+            </div>
+
+            {/* Pagination / Loading */}
             {isLoading && (
-                <div className="flex justify-center py-8">
-                    <div className={`p-3 rounded-full ${isDarkMode ? 'bg-indigo-500/10' : 'bg-gray-100'}`}>
-                        <Loader2 className={`w-6 h-6 animate-spin ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
-                    </div>
+                <div className="flex justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+                </div>
+            )}
+
+            {visibleTrips.length === 0 && !isLoading && (
+                <div className="text-center py-20 opacity-40">
+                    <p className="font-black italic uppercase text-lg tracking-widest">{t('community.no_trips_found') || 'No Journeys Found'}</p>
+                    <p className="text-xs font-bold uppercase tracking-tighter mt-2">{t('community.try_another_filter') || 'Try adjusting your filters'}</p>
                 </div>
             )}
         </div>

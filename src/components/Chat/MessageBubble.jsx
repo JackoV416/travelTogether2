@@ -2,7 +2,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 
-const MessageBubble = ({ message, isMe, showAvatar, senderPhoto, senderName }) => {
+const MessageBubble = React.memo(({ message, isMe, showAvatar, senderPhoto, senderName }) => {
     return (
         <div className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'} group`}>
             {/* Avatar Gutter */}
@@ -41,6 +41,6 @@ const MessageBubble = ({ message, isMe, showAvatar, senderPhoto, senderName }) =
             </div>
         </div>
     );
-};
+});
 
 export default MessageBubble;

@@ -1,9 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { checkUserQuota, incrementUserQuota } from './ai-quota'; // V1.2.3 Centralized Quota
 
-// --- Multi-API Key + Multi-Model Configuration ---
-// Add multiple keys in .env: VITE_GEMINI_API_KEY, VITE_GEMINI_API_KEY_2, etc.
-// --- Multi-API Key + Multi-Model Configuration ---
+// --- Multi-API Key + Multi-Model Configuration (V2.0.6 Polish) ---
 // Add multiple keys in .env: VITE_GEMINI_API_KEY, VITE_GEMINI_API_KEY_2, etc.
 const getStoredKey = (provider = 'gemini') => {
     try {
@@ -16,7 +14,9 @@ const getStoredKey = (provider = 'gemini') => {
             // Actually, let's implement a rudimentary rotation based on minute or random to distribute load.
             const keys = settings.aiKeys[provider].filter(k => k && k.length > 5);
             if (keys.length > 0) {
-                return keys[Math.floor(Math.random() * keys.length)];
+                // V2.0.6: Stable selection based on time to distribute load without randomization jitter
+                const index = Math.floor(new Date().getMinutes() / (60 / keys.length)) % keys.length;
+                return keys[index];
             }
         }
 
@@ -37,7 +37,12 @@ const getStoredKey = (provider = 'gemini') => {
 const getStoredModel = () => {
     try {
         const settings = JSON.parse(localStorage.getItem('travelTogether_settings') || '{}');
-        return settings.userGeminiModel;
+        const model = settings.userGeminiModel;
+        // V2.0.6: Sanitize - Don't let hallucinated models in localStorage break the chain
+        if (model && (model.includes('3.1') || model.includes('2.5'))) {
+            return null;
+        }
+        return model;
     } catch { return null; }
 };
 
@@ -66,22 +71,23 @@ if (API_KEYS.length === 0) {
     console.warn("[Gemini AI] No valid API keys found. Add VITE_GEMINI_API_KEY to .env");
 }
 
-// V2.0.2: Model priority chain - Updated to Gemini 3.1
+// V2.0.7: Model priority chain - Using STABLE model IDs to prevent "Service Unavailable"
 const MODEL_CHAIN = [
     ...(getStoredModel() ? [getStoredModel()] : []), // User's custom model comes first!
-    "gemini-3.1-flash",       // FAST: Current fastest model
-    "gemini-3.1-flash-lite",  // BACKUP: Lower limits but available
-    "gemini-3.1-pro",         // HIGH-IQ: Complex tasks fallback
+    "gemini-2.0-flash",       // FAST: Most stable latest model
+    "gemini-1.5-flash",       // BACKUP: Broad availability
 ];
 
 let currentKeyIndex = 0;
 let currentModelIndex = 0;
 
-// V2.0.2: Enhanced MODEL_LIMITS with Gemini 3.1 models
+// V2.0.6: Unified MODEL_LIMITS to 50 RPD
 const MODEL_LIMITS = {
     "default": { RPM: 2, TPM: 32000, RPD: 50 },
-    "gemini-3.1-flash": { RPM: 5, TPM: 250000, RPD: 20 },
-    "gemini-3.1-flash-lite": { RPM: 10, TPM: 250000, RPD: 20 },
+    "gemini-2.0-flash": { RPM: 10, TPM: 500000, RPD: 50 },
+    "gemini-1.5-flash": { RPM: 15, TPM: 1000000, RPD: 50 },
+    "gemini-3.1-flash": { RPM: 5, TPM: 250000, RPD: 50 },
+    "gemini-3.1-flash-lite": { RPM: 10, TPM: 250000, RPD: 50 },
     "gemini-3.1-pro": { RPM: 2, TPM: 32000, RPD: 50 },
 };
 
@@ -97,7 +103,7 @@ const COOLDOWN_MS = 60000;
 // Persisted to localStorage to survive page refresh
 // ============================================
 const RPD_TRACKER_KEY = 'jarvis_rpd_tracker';
-const RPD_LIMIT_PER_KEY = 18; // Buffer under 20 limit
+const RPD_LIMIT_PER_KEY = 50; // Increased to match per-member limit
 
 /**
  * 📊 Get RPD usage data from localStorage
@@ -412,9 +418,9 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
         // 1. Report Progress
         const percent = Math.min(10 + Math.floor((attempt / maxAttempts) * 80), 95);
         if (onProgress) {
-            // V1.2.7: Better status messages
-            let msg = attempt === 0 ? "正在分析..." : `切換線路 (Attempt ${attempt + 1}/${maxAttempts})...`;
-            if (attempt > 3) msg = "網絡繁忙，正在尋找可用線路...";
+            // V2.0.7: Professional status messages
+            let msg = attempt === 0 ? "Analyzing..." : `Cycling link (Attempt ${attempt + 1}/${maxAttempts})...`;
+            if (attempt > 3) msg = "Network congestion detected, searching alternate route...";
 
             onProgress(msg, percent);
         }
@@ -424,7 +430,7 @@ const callWithSmartRetry = async (fnName, makeCall, importance = 'low', onProgre
         const rateLimitDelay = checkRateLimits(modelNameStr);
 
         if (rateLimitDelay > 0) {
-            if (onProgress) onProgress(`API 冷卻中 (Waiting ${Math.ceil(rateLimitDelay / 1000)}s)...`, percent);
+            if (onProgress) onProgress(`Link cooling down (Waiting ${Math.ceil(rateLimitDelay / 1000)}s)...`, percent);
             await new Promise(r => setTimeout(r, rateLimitDelay));
         }
 
@@ -527,7 +533,7 @@ export const AI_ERRORS = {
 // ============================================
 
 const AI_USAGE_KEY = "travelTogether_aiUsage";
-const DEFAULT_DAILY_LIMIT = 20; // Safe Quota based on Free Tier Limits (20 RPD)
+const DEFAULT_DAILY_LIMIT = 50; // V2.0.6: Unified limit
 
 /**
  * 📊 Get today's date string (YYYY-MM-DD)

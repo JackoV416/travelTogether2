@@ -80,7 +80,7 @@ const ConversationList = ({ conversations, currentUser, activeId, onSelect, load
                             />
                             {/* Online Status Dot */}
                             <div className="absolute bottom-0 right-0">
-                                <OnlineStatusDot isOnline={false} size="md" />
+                                <OnlineStatusDot isOnline={otherUser.isOnline || otherUser.status === 'online'} size="md" />
                             </div>
                         </div>
 
@@ -112,7 +112,7 @@ const ConversationList = ({ conversations, currentUser, activeId, onSelect, load
                                     ? 'font-bold text-gray-900 dark:text-white'
                                     : 'text-gray-500 dark:text-gray-400'
                                     }`}>
-                                    {conv.lastMessage?.text || t('chat.sent_attachment', 'Sent an attachment')}
+                                    {conv.lastMessage?.text || t('chat.no_messages_yet', 'Say hello to start chat...')}
                                 </p>
                                 {hasUnread && (
                                     <span className="min-w-[20px] h-5 flex items-center justify-center bg-indigo-600 text-white text-[11px] font-bold rounded-full px-1.5 ml-2">

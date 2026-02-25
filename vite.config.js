@@ -89,6 +89,10 @@ export default defineConfig({
             }
           }
         ]
+      },
+      devOptions: {
+        enabled: true,
+        type: 'module'
       }
     })
   ],
@@ -103,13 +107,24 @@ export default defineConfig({
       'firebase/app',
       'firebase/auth',
       'firebase/firestore',
-      'firebase/storage'
-    ],
-    exclude: [
-      // Exclude large data files from pre-bundling to speed up dev server
-      '@/constants/appData',
-      '@/constants/tripData',
-      '@/constants/masterCityDB'
+      'firebase/storage',
+      'canvas-confetti',
+      'clsx',
+      'tailwind-merge',
+      'date-fns',
+      '@dnd-kit/core',
+      '@dnd-kit/sortable',
+      '@dnd-kit/utilities',
+      '@tiptap/react',
+      '@tiptap/starter-kit',
+      '@tiptap/extension-underline',
+      '@tiptap/extension-text-align',
+      '@tiptap/extension-link',
+      '@tiptap/extension-placeholder',
+      'react-day-picker',
+      'tesseract.js',
+      'leaflet',
+      'react-leaflet'
     ]
   },
   server: {
@@ -117,28 +132,18 @@ export default defineConfig({
     strictPort: true,
     host: true,
     hmr: {
-      // Reduce HMR overhead for large files
-      overlay: false
+      overlay: true // Re-enable overlay for better debugging
     },
     headers: {
       'Cross-Origin-Opener-Policy': 'unsafe-none',
       'Cross-Origin-Embedder-Policy': 'unsafe-none'
     }
   },
-  appType: 'spa', // Ensure SPA fallback for client-side routing
+  appType: 'spa',
   build: {
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 1200, // Slightly higher for this project
     rollupOptions: {
       output: {
-        /* manualChunks: {
-          'react-core': ['react', 'react-dom', 'react-router-dom', 'react-i18next'],
-          'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
-          'icons': ['lucide-react'],
-          'export-libs': ['html2canvas', 'jspdf'],
-          'ai-engine': ['@google/generative-ai', 'tesseract.js'],
-          'charts': ['recharts'],
-          'editor': ['@tiptap/react', '@tiptap/starter-kit', '@tiptap/extension-underline', '@tiptap/extension-link']
-        }, */
         entryFileNames: `assets/[name]-[hash].js`,
         chunkFileNames: `assets/[name]-[hash].js`,
         assetFileNames: `assets/[name]-[hash].[ext]`
@@ -147,7 +152,7 @@ export default defineConfig({
   },
   define: {
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
-    __APP_VERSION__: JSON.stringify('V2.0.1')
+    __APP_VERSION__: JSON.stringify('V2.0.7')
   }
 })
-// Force Restart: Mon Jan 12 16:56:41 HKT 2026
+// Force Restart: Tue Feb 24 12:05:41 HKT 2026

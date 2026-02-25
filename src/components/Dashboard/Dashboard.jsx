@@ -32,6 +32,7 @@ import useDashboardData from '../../hooks/useDashboardData';
 import { checkAbuse } from '../../services/security';
 import { useTour } from '../../contexts/TourContext';
 import { parseImageDirectly, generateItineraryWithGemini } from '../../services/ai-parsing';
+import { extractTextFromImage, parseOcrTextToItems } from '../../services/localOcr';
 
 
 import SearchFilterBar from './SearchFilterBar';
@@ -351,26 +352,49 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                         throw new Error("AI_NO_RESULT");
                     }
                 } catch (aiErr) {
-                    console.warn("AI Import Failed, falling back to manual:", aiErr);
-                    // Fallback to manual input placeholder
+                    console.warn("[Gemini] Import failed, trying Local OCR fallback:", aiErr);
                     const dateKey = targetTrip.startDate || new Date().toISOString().split('T')[0];
-                    const newItem = {
-                        id: Date.now().toString(),
-                        name: `📎 已上傳: ${file.name}`,
-                        type: 'spot',
-                        time: '10:00',
-                        cost: 0,
-                        currency: globalSettings.currency,
-                        details: {
-                            location: "請手動編輯",
-                            desc: "Jarvis 未能識別詳情，請手動填入 (已附加原始檔案)"
-                        },
-                        attachment: base64,
-                        createdBy: { name: user.displayName, id: user.uid },
-                        needsManualInput: true
-                    };
-                    await updateDoc(docRef, { [`itinerary.${dateKey}`]: arrayUnion(newItem) });
-                    sendNotification("已上傳 (需手動編輯) 📸", "AI 未能識別，請手動編輯", 'warning');
+                    sendNotification("本地 OCR 識別中 🔍", "Gemini 不可用，啟用本地 Tesseract.js 識別...", 'info', 4000);
+
+                    try {
+                        // V2.1.0: Tesseract.js local OCR fallback
+                        const ocrText = await extractTextFromImage(file);
+                        const ocrItems = parseOcrTextToItems(ocrText, {
+                            city: targetTrip.city || targetTrip.cities?.[0],
+                            currency: targetTrip.currency || globalSettings.currency,
+                            date: dateKey
+                        });
+
+                        if (ocrItems.length > 0) {
+                            const batchPromises = ocrItems.map(item => ({
+                                ...item,
+                                attachment: base64,
+                                createdBy: { name: user.displayName, id: user.uid }
+                            })).map(newItem =>
+                                updateDoc(docRef, { [`itinerary.${dateKey}`]: arrayUnion(newItem) })
+                            );
+                            await Promise.all(batchPromises);
+                            sendNotification("本地 OCR 識別成功 🤖", `Tesseract 識別出 ${ocrItems.length} 個項目，請核對細節`, 'success');
+                        } else {
+                            throw new Error('OCR_NO_RESULT');
+                        }
+                    } catch (ocrErr) {
+                        console.warn("[LocalOCR] Also failed, saving as raw attachment:", ocrErr);
+                        const fallbackItem = {
+                            id: Date.now().toString(),
+                            name: `📎 已上傳: ${file.name}`,
+                            type: 'spot',
+                            time: '10:00',
+                            cost: 0,
+                            currency: globalSettings.currency,
+                            details: { location: '請手動編輯', desc: 'Jarvis 及本地 OCR 均未能識別，請手動填入' },
+                            attachment: base64,
+                            createdBy: { name: user.displayName, id: user.uid },
+                            needsManualInput: true
+                        };
+                        await updateDoc(docRef, { [`itinerary.${dateKey}`]: arrayUnion(fallbackItem) });
+                        sendNotification("已上傳 (需手動編輯) 📸", "AI 及本地 OCR 均未能識別，請手動編輯", 'warning');
+                    }
                 }
             }
             else if (type === 'budget') {
@@ -670,14 +694,7 @@ const Dashboard = ({ onSelectTrip, user, isDarkMode, onViewChange, onOpenSetting
                 isDarkMode={isDarkMode}
             />
 
-            {/* V1.3.1: Global Chat Entry Point */}
-            <GlobalChatFAB
-                isDarkMode={isDarkMode}
-                onClick={() => {
-                    if (onOpenChat) onOpenChat('jarvis');
-                    if (setChatInitialTab) setChatInitialTab('jarvis');
-                }}
-            />
+            {/* Removed redundant GlobalChatFAB per V2.0.5 audit - handled globally in App.jsx */}
 
             {/* V1.9.0: Mobile Bottom Nav with Explore/My Trips Toggle */}
             <MobileBottomNav

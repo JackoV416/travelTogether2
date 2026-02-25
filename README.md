@@ -1,10 +1,29 @@
-# Travel Together V2 <kbd>V2.0.5</kbd>
+# Travel Together V2 <kbd>V2.1.0</kbd>
 
 [![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://travel-together-v2.vercel.app/)
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
 [![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
 
 > **智能旅遊規劃助手** - 專為多人協作設計。支援即時同步、AI 行程建議與 PWA 離線使用。全站已升級至 **V2.0 世代**。
+
+### 🚀 V2.1.0: Community Discovery Hub & Chat Security (2026-02-24)
+**V2.1.0: [Social] 社群探索介面大革命 + 封鎖功能安全加固！**
+將「探索社群」由靜態卡片網格升級為社交優先的 Discovery Hub，並徹底修復封鎖/解封用戶的安全漏洞。
+
+### 🌟 V2.1.0 主要更新
+1. **Community Discovery Hub**: 全新 `CommunityHero` 英雄區域，整合趨勢目的地、社群統計與動態極光背景。
+2. **Social Feed Cards**: Explore 卡片升級為社交媒體風格，支援❤️即時點讚、👁️瀏覽數、💬留言數與 Top Explorer 勛章。
+3. **Chat Security Fix**: 修復 `unblockUser` 未導出漏洞；`DirectMessageView` 可即時偵測封鎖狀態並顯示解封介面。
+4. **Code Quality**: 清理 `DirectMessageView.jsx` 因工具損壞引入的語法錯誤 (triple backticks, misplaced closing tags)。
+
+### 🚀 V2.0.7: AI Chat UX & Stability Overhaul (2026-02-24)
+**V2.0.7: [Evolution] 聊天功能大強化與 Header 佈局修復！**
+實裝了 DM 視窗功能菜單（查看個人檔案、清除聊天紀錄、封鎖用戶），並徹底解決了 Modal Header 動作按鈕被關閉按鈕遮擋的 UI 痛點。
+
+### 🌟 V2.0.7 主要更新
+1. **DM Action Menu**: 實裝「查看個人檔案」、「清除紀錄」與「封鎖」功能，支援多國語言確認對話框。
+2. **Header Layout Fix**: 為 TripChatView 與 DirectMessageView 增加右側 Padding (pr-14)，避免與 Modal 關閉按鈕重疊。
+3. **Friend Sidebar**: 優化群組聊天成員列表側邊欄，增加玻璃擬態質感與過渡動畫。
 
 ### 🚀 V2.0.0: The Social & Chat Evolution (2026-02-23)
 **V2.0.0: [Evolution] 聊天介面與效能大躍進！**
